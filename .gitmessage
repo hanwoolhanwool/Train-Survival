@@ -1,0 +1,16 @@
+# <type>(<scope>): <subject — 한국어, 50자 이내, 마침표 없음>
+# ── 한 줄 비우기 ──
+# <body — 무엇을·왜 바꿨는지 한국어로 설명 (어떻게는 코드가 설명)>
+# ── 한 줄 비우기 ──
+# <footer — BREAKING CHANGE: 설명 / 이슈 참조 등>
+#
+# type: feat | fix | refactor | perf | chore | docs | test | style | build | ci
+# scope 예시: player enemy-ai combat inventory ui hud camera animation
+#            audio scene save network addressables shader vfx input
+#            physics build skill stats state docs packages
+#
+# 규칙 요약 (docs/conventions/git-commit-convention.md):
+# - 한 커밋 = 하나의 논리적 변경
+# - .cs 와 .cs.meta 는 항상 같은 커밋에
+# - 씬/프리팹/에셋 변경은 로직 커밋과 분리 (scene/prefab scope)
+# - 패키지 변경은 manifest.json + packages-lock.json 함께 chore(packages)
