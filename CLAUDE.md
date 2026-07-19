@@ -5,7 +5,7 @@
 ## 프로젝트 개요
 
 - Unity 6 (6000.5.3f1) / URP 17.5 / Input System / PC(StandaloneWindows64)
-- 프로젝트명 **Train Survival** (GitHub: hanwoolhanwool/Train-Survival) / 장르 **미정** — 어셈블리/네임스페이스는 접두어 `Game.*` 사용
+- 프로젝트명 **Train Survival** (GitHub: hanwoolhanwool/Train-Survival) / 장르 **협동 생존 크래프팅 (1~4인, PC/Steam)** — 기획·기술 문서는 `docs/design/` 참조. 어셈블리/네임스페이스는 접두어 `Game.*` 사용
 - 초기 세팅 상세: `Assets/SETUP.md` (씬 흐름, 테스트 실행, CI/CD, 도구)
 
 ## 코드 작성 규칙
