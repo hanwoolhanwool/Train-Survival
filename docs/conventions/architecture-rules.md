@@ -30,7 +30,7 @@
 ```
 Game.Utilities ← Game.Core ← Game.Systems ← Game.Gameplay ← Game.UI
                                    ↑               ↑ Unity.InputSystem
-                                   ↑               ↑ Unity.Netcode.Runtime
+                                   ↑               ↑ Unity.Netcode.Runtime + Unity.Netcode.Components
                                    ↑ Unity.Netcode.Runtime
 Game.Editor        → 전 어셈블리 참조 가능 (Editor 플랫폼 전용)
 Game.Tests.EditMode / Game.Tests.PlayMode → 전 어셈블리 참조 가능 (UNITY_INCLUDE_TESTS)
