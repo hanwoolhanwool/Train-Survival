@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fbf073bdae01ab42b3b7517479f1a66, type: 3}
+  m_Name: PlayerMovementSettings
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerMovementSettings
+  _walkSpeed: 4.5
+  _runSpeed: 7
+  _jumpHeight: 1.2
+  _airControlRatio: 0.5
+  _airAcceleration: 20
+  _gravity: 20
+  _lookSensitivity: 0.12
+  _maxPitch: 85

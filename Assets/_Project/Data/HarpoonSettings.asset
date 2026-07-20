@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77d0cc762d954844b90465210bc1200b, type: 3}
+  m_Name: HarpoonSettings
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Harpoon.HarpoonSettings
+  _maxRange: 20
+  _projectileSpeed: 40
+  _projectileRadius: 0.15
+  _reelSpeed: 8
+  _fireCooldown: 0.5
+  _missRecoveryDuration: 2.5
+  _arriveRadius: 1.2
+  _rangeTolerance: 2
+  _towInterpolationRate: 20
+  _retractSpeed: 14
+  _impactPauseDuration: 0.12
+  _waitingForServerTimeout: 1.5
