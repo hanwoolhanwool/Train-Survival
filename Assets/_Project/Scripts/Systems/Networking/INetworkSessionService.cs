@@ -23,5 +23,11 @@ namespace Game.Systems.Networking
         /// 종료는 비동기로 완료된다 — 호출 직후에는 <see cref="IsSessionActive"/>가 아직 true일 수 있다.
         /// </summary>
         void Shutdown();
+
+        /// <summary>
+        /// 호스트 전용 — 네트워크 씬 전환을 요청한다 (클라이언트는 자동 동기화).
+        /// 호스트가 아니거나 세션이 없으면 false.
+        /// </summary>
+        bool LoadGameplayScene(string sceneName);
     }
 }

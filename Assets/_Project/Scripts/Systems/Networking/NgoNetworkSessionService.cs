@@ -64,6 +64,19 @@ namespace Game.Systems.Networking
             return networkManager.StartClient();
         }
 
+        public bool LoadGameplayScene(string sceneName)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || !networkManager.IsHost || networkManager.SceneManager == null)
+            {
+                Debug.LogError("[NgoNetworkSessionService] 호스트 세션이 아니어서 씬 전환을 요청할 수 없습니다.");
+                return false;
+            }
+
+            return networkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single)
+                   == SceneEventProgressStatus.Started;
+        }
+
         public void Shutdown()
         {
             NetworkManager networkManager = NetworkManager.Singleton;
