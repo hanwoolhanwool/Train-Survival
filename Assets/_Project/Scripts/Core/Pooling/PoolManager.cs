@@ -40,7 +40,15 @@ namespace Game.Core.Pooling
                 return;
             }
 
-            GetOrCreateInstance().DespawnInternal(instance);
+            // 풀 매니저가 없으면(플레이 종료·씬 정리 중 파괴 순서 역전 등) 새로 만들지 않는다 —
+            // 새 풀은 이 인스턴스를 모르므로 등록 경고만 낸다. 조용히 파괴로 대체한다.
+            if (!HasInstance && Instance == null)
+            {
+                Destroy(instance);
+                return;
+            }
+
+            Instance.DespawnInternal(instance);
         }
 
         /// <summary>프리팹 인스턴스를 미리 생성해 풀에 채워 둔다. 로딩 구간에서 호출한다.</summary>
