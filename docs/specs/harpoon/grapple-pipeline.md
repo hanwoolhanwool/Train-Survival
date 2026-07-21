@@ -1,7 +1,7 @@
 # 집게(하푼) 그랩 파이프라인
 
 > **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-20 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [수직 슬라이스 스펙](../../design/Train-Survival-수직슬라이스-스펙.md)
+> **최종 갱신**: 2026-07-21 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [수직 슬라이스 스펙](../../design/Train-Survival-수직슬라이스-스펙.md)
 
 ## 1. 개요·목적
 
@@ -11,13 +11,13 @@
 
 ## 2. 범위 (Scope)
 
-**포함**: 발사 입력 게이트(`HarpoonStateMachine`), 훅 비행·충돌·되감기(`HarpoonProjectile` + `HarpoonHookMotion`), 호스트 검증 규칙(`GrabValidation`), 견인 시뮬레이션, 로프 연출(`HarpoonRopeRenderer`), 발사·견인의 비소유 클라이언트 브로드캐스트, 그랩 대상 공용 계약(`IGrabbable`).
+**포함**: 발사 입력 게이트(`HarpoonStateMachine`), 훅 비행·충돌·되감기(`HarpoonProjectile` + `HarpoonHookMotion`), 호스트 검증 규칙(`GrabValidation`), 견인 시뮬레이션, 로프 연출(`HarpoonRopeRenderer`), 발사·미스·견인의 비소유 클라이언트 브로드캐스트, 그랩 대상 공용 계약(`IGrabbable`), 손맛 검증 계측(`HarpoonSliceMetrics` + `TowMotionAnalyzer` — 에디터·개발 빌드 전용, 릴리스에서는 `[Conditional]`로 호출 제거).
 
 **미포함**:
 - 그랩 대상 자체 구현 — 자원(`ResourceNode`)은 [world 도메인](../world/scroll-and-streaming.md) 소관, 몬스터 그랩은 `IGrabbable` 인터페이스만 준비된 상태로 미구현 (M5 확장 대상).
 - 2·3단계 집게(무게 등급별 릴 속도, 다중 대상 등) — 슬라이스 범위 밖.
 - 발사음·팔 애니메이션 등 실제 리소스 — 로컬 표현 이벤트(`HarpoonFiredLocalEvent`)만 발행하고 구독 측(연출·오디오)은 이 문서 밖.
-- 네트워크 손맛 정량 실측(Q1~Q5, UTP 지연 프로파일) — §11 리스크에서 추적.
+- 정성 블라인드 테스트·악조건 프로파일 ③ 참고 계측 — §11 리스크에서 추적 (정량 프로파일 ②는 실측 완료).
 
 ## 3. 요구사항 → 설계 해석
 
@@ -151,7 +151,7 @@ stateDiagram-v2
 
 - **엣지 케이스 — 취소는 "로프 절단"**: 릴 감기(`Attached`) 중 우클릭 취소는 `BeginRetract()`가 아니라 `Cancel()`을 호출한다 — 슬라이스 스펙 §2.1이 취소를 "되감기"가 아닌 "절단"으로 명시했기 때문. 실패(빗나감·거부)만 되감기 연출을 탄다.
 - **엣지 케이스 — 안전 타임아웃**: `WaitingForServer`는 정상적으로 항상 서버 응답(`Attach`/`BeginRetract`)을 받지만, 대상이 이미 소멸된 채 늦게 도착하는 등의 상황을 대비해 `WaitingForServerTimeout` 초과 시 자동으로 `Retracting`으로 폴백한다.
-- **엣지 케이스 — 코스메틱 사본의 독립 판정**: 비소유 클라이언트의 훅(`LaunchCosmetic`)도 동일한 SphereCast로 `Flying → WaitingForServer/ImpactPause`를 스스로 판단하지만, 실제 그랩 결과는 뒤이어 도착하는 `GrabApproved/RejectedNotOwnerRpc`가 항상 덮어쓴다 — 코스메틱 판정은 시각적 근사치일 뿐 권위가 아니다.
+- **엣지 케이스 — 코스메틱 사본의 독립 판정**: 비소유 클라이언트의 훅(`LaunchCosmetic`)도 동일한 SphereCast로 `Flying → WaitingForServer/ImpactPause`를 스스로 판단하지만, 실제 결과는 뒤이어 도착하는 RPC가 항상 덮어쓴다 — 승인/거부는 `GrabApproved/RejectedNotOwnerRpc`, **빗나감은 `PlayRemoteMissRpc`**(각 클라이언트의 자원 위치가 스크롤 외삽으로 미세하게 달라 경계 사례에서 코스메틱이 "명중"으로 재현하면, 소유자 미스를 전파받지 못할 경우 `WaitingForServerTimeout` 1.5 s 동안 대상에 붙어 있는 화면 불일치가 생긴다 — 2026-07-21 플레이테스트에서 발견되어 미스 브로드캐스트 추가). 코스메틱 판정은 시각적 근사치일 뿐 권위가 아니다.
 
 ### 6.2 그랩 요청 시퀀스
 
@@ -165,6 +165,13 @@ sequenceDiagram
     Shooter->>Server: ReportFireServerRpc(origin, dir)
     Server->>Others: PlayRemoteFireRpc(origin, dir)
     Note over Others: 코스메틱 훅이 동일 궤적으로 비행
+
+    alt 빗나감 (지형 명중·사거리 초과)
+        Shooter->>Shooter: 미스 확정 → 되감기 연출
+        Shooter->>Server: ReportMissServerRpc()
+        Server->>Others: PlayRemoteMissRpc()
+        Note over Others: 코스메틱 재시뮬레이션 결과와 무관하게 훅 BeginRetract() 수렴
+    end
 
     Shooter->>Shooter: SphereCast 명중 → WaitingForServer (탄성 연출)
     Shooter->>Server: RequestGrabServerRpc(target, firePos, hitPoint)
@@ -210,6 +217,7 @@ sequenceDiagram
 | `HarpoonStateMachineTests` (9개) | Ready→Firing 전이, 비행 중 취소 무효, 미스 페널티 동안 재발사 불가, 취소는 쿨다운만 적용, 강제 해제 처리 |
 | `GrabValidationTests` (5개) | 정상 승인, 대상 소멸/점유 거부, 사거리 상한 초과 거부, 여유 구간 내 승인 |
 | `HarpoonHookMotionTests` (12개) | 전체 6단계 전이 경로, ImpactPause 자동 만료, WaitingForServer 안전 타임아웃, Idle에서의 무시 동작, Cancel의 전역성 |
+| `TowMotionAnalyzerTests` (10개) | Q3 견인 계측 순수 로직 — 워프·역행 검출, 되밀림 1회 집계, 시작 유예(0.2 s) 중 이상 미집계 |
 
 수동 검증: 호스트 단독 Play 스모크(벽 명중→되감기 37프레임, Attach→Retract 위치 추적)와 실제 호스트+클라이언트 2인 연결(MPPM 가상 플레이어)로 `ReportFireServerRpc`→`PlayRemoteFireRpc` 도달을 진단 로그로 확인.
 
@@ -217,10 +225,11 @@ sequenceDiagram
 
 | 항목 | 내용 |
 |---|---|
-| 손맛 정량 실측 미완료 | 슬라이스 스펙 §3의 Q1~Q5(UTP Network Simulator 지연 프로파일)를 아직 실측하지 않음 — 스택 유지 확정 전 필수 |
-| 코스메틱 사본과 실제 판정의 시각적 어긋남 | 비소유 클라이언트의 독립 SphereCast가 실제 사수의 판정과 드물게 다른 지점에서 멈출 수 있음. 권위는 항상 서버가 최종 확정하므로 게임플레이 영향은 없으나, 눈에 보이는 스냅이 있을 수 있음 — 실사용 관찰 필요 |
+| ~~손맛 정량 실측 미완료~~ → **프로파일 ② 실측 완료** (2026-07-21) | UTP Network Simulator(RTT 60 ms ± 10, 클라이언트 측)로 실측: **Q1** 전 발사 Δ0 프레임 통과 · **Q2** 평균 67 ms (57~82, n=42) ≪ 250 ms 통과 · **Q3** 전 견인 워프/역행 0 통과 · **Q4** 79발사 거부 0 = 불일치율 0 % (표본 100회+ 누적 중). 남은 것: Q4 표본 충족, 프로파일 ③ 참고 계측, 정성 블라인드 테스트 |
+| **명중 판정 시차·관통** (2026-07-21 발견, 미해결) | ① 훅이 총구(카메라 기준 +0.35, −0.25, 0.5)에서 카메라 forward와 평행선으로 비행 → 조준점과 상시 ~0.43 m 어긋나 유효 명중 여유(0.65 m) 대부분을 잠식 — "조준점에 가까운데 안 집힘". ② `SphereCast`는 캐스트 시작 시 겹친 콜라이더를 무시 → 컨베이어로 물체가 프레임 사이에 훅과 겹치면 드물게 관통. 수정안(조준점 수렴 발사 + 캐스트 전 겹침 검사)은 방향 결정 대기 |
+| 코스메틱 사본과 실제 판정의 시각적 어긋남 | 비소유 독립 SphereCast가 실제 사수의 판정과 드물게 다른 지점에서 멈출 수 있음. 미스 브로드캐스트 추가로 실패 케이스의 수렴 시간이 1.5 s → 약 1 RTT로 단축됐으나, 수렴 전 잔여 스냅은 남음 — 권위는 항상 서버가 최종 확정하므로 게임플레이 영향은 없음 |
 | `WaitingForServerTimeout`(1.5 s) 근거 미검증 | 악조건 프로파일(RTT 120 ms + 패킷로스 2 %)에서 충분한 여유인지 실측 전 |
-| 비포커스 에디터에서의 프레임 압축 | MPPM 가상 클라이언트가 비포커스 상태일 때 `Time.deltaTime`이 크게 뭉개져 중간 프레임 관찰이 어려움 — 테스트 환경 한계, 실제 빌드 클라이언트로 재확인 권장 |
+| 비포커스 에디터에서의 프레임 압축 | MPPM 가상 클라이언트가 비포커스 상태일 때 `Time.deltaTime`이 크게 뭉개져 중간 프레임 관찰이 어려움 — 테스트 환경 한계, 실제 빌드 클라이언트로 재확인 권장. 계측 로그(스택 트레이스 포함)도 발사·승인 순간 프레임 스파이크를 유발할 수 있음 |
 
 ## 12. 확장 여지
 
@@ -238,5 +247,6 @@ sequenceDiagram
 | 컨트롤러 | `HarpoonController.cs` | 〃 |
 | 연출 | `HarpoonRopeRenderer.cs`, `HarpoonEvents.cs` | 〃 |
 | 데이터 | `HarpoonSettings.cs` (+ `HarpoonSettings.asset`) | 〃 (+ `Assets/_Project/Data/`) |
+| 계측 | `HarpoonSliceMetrics.cs`, `TowMotionAnalyzer.cs` | 〃 |
 | 프리팹 | `HarpoonProjectile.prefab` | `Assets/_Project/Prefabs/` |
-| 테스트 | `HarpoonStateMachineTests.cs`, `GrabValidationTests.cs`, `HarpoonHookMotionTests.cs` | `Assets/_Project/Tests/EditMode/` |
+| 테스트 | `HarpoonStateMachineTests.cs`, `GrabValidationTests.cs`, `HarpoonHookMotionTests.cs`, `TowMotionAnalyzerTests.cs` | `Assets/_Project/Tests/EditMode/` |
