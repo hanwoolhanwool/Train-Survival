@@ -131,10 +131,8 @@ GameObject:
   - component: {fileID: 443216342}
   - component: {fileID: 443216341}
   - component: {fileID: 443216340}
-  - component: {fileID: 443216347}
   - component: {fileID: 443216346}
   - component: {fileID: 443216345}
-  - component: {fileID: 443216344}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -180,7 +178,7 @@ MonoBehaviour:
     Address: 127.0.0.1
     Port: 7777
     WebSocketPath: /
-    ServerListenAddress: 
+    ServerListenAddress: 127.0.0.1
     ClientBindPort: 0
   DebugSimulator:
     PacketDelayMS: 0
@@ -244,19 +242,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &443216344
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443216339}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1dbaae602f3139f4da0944bd1f1cb10d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.Systems::Game.Systems.Networking.NetworkLatencyProfileDriver
-  _clientProfile: 1
 --- !u!114 &443216345
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -295,39 +280,6 @@ MonoBehaviour:
     - rid: -2
       type: {class: , ns: , asm: }
     - rid: 6210491825230708865
-      type: {class: NetworkSimulatorPreset, ns: Unity.Multiplayer.Tools.NetworkSimulator.Runtime, asm: Unity.Multiplayer.Tools.NetworkSimulator.Runtime}
-      data:
-        <Name>k__BackingField: 
-        <Description>k__BackingField: 
-        <PacketDelayMs>k__BackingField: 0
-        <PacketJitterMs>k__BackingField: 0
-        <PacketLossInterval>k__BackingField: 0
-        <PacketLossPercent>k__BackingField: 0
---- !u!114 &443216347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443216339}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 98d9db9626104da59357651088226725, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Multiplayer.Tools.NetworkSimulator.Runtime::Unity.Multiplayer.Tools.NetworkSimulator.Runtime.NetworkSimulator
-  m_PresetAsset: {fileID: 0}
-  m_PresetReference:
-    rid: 6210491825230708864
-  m_Scenario:
-    rid: -2
-  m_IsScenarioSettingsFolded: 0
-  AutoRunScenario: 0
-  references:
-    version: 2
-    RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
-    - rid: 6210491825230708864
       type: {class: NetworkSimulatorPreset, ns: Unity.Multiplayer.Tools.NetworkSimulator.Runtime, asm: Unity.Multiplayer.Tools.NetworkSimulator.Runtime}
       data:
         <Name>k__BackingField: 
