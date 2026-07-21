@@ -6,6 +6,7 @@ namespace Game.Gameplay.Harpoon
     /// <summary>
     /// 집게로 낚아챌 수 있는 대상 계약 — 자원/몬스터 공용으로 설계한다 (슬라이스 스펙 §1.2).
     /// 상태 변경 메서드는 전부 서버(호스트)에서만 호출한다 — 그랩 확정·끌기는 호스트 소유 (§2.4).
+    /// 단 BeginPredictedTow/CancelPredictedTow는 예외로, 쏜 클라이언트의 로컬 선반영 계층이 호출한다.
     /// </summary>
     public interface IGrabbable
     {
@@ -28,5 +29,15 @@ namespace Game.Gameplay.Harpoon
 
         /// <summary>서버 전용 — 회수 완료(획득). 대상을 소멸 처리한다.</summary>
         void CompleteGrab();
+
+        /// <summary>
+        /// 클라이언트 로컬 — 쏜 클라이언트가 로컬 명중 시점에 호출하는 예측 고정.
+        /// 서버 확정 스냅샷이 도착할 때까지 이동 유도를 멈춰 그랩 전환 순간의 스냅을 없앤다.
+        /// 서버 확정 수신 시 자동 해제된다. 서버에서 호출하면 무시한다.
+        /// </summary>
+        void BeginPredictedTow();
+
+        /// <summary>클라이언트 로컬 — 예측 고정 해제 (거부·타임아웃·강제 해제). 원래 이동 유도로 복귀한다.</summary>
+        void CancelPredictedTow();
     }
 }

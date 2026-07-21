@@ -30,6 +30,9 @@ namespace Game.Gameplay.World
         private bool _hasPendingBinding;
         private bool _acquired;
 
+        // 클라이언트 로컬 — 쏜 클라이언트의 예측 고정 상태 (동기화되지 않는다).
+        private bool _predictedTow;
+
         public bool IsAvailableForGrab => IsSpawned && !_acquired && !_isTowed.Value;
 
         public bool IsClaimed => _isTowed.Value;
@@ -60,7 +63,28 @@ namespace Game.Gameplay.World
             }
 
             _acquired = false;
+            _predictedTow = false;
             ApplyScrolledPosition();
+        }
+
+        /// <summary>
+        /// 클라이언트 예측 고정 (§11 게스트 그랩 순간이동 — 수정안 A): 로컬 명중 시점에 컨베이어 유도를
+        /// 멈추고 현재 표시 위치에 고정한다. 서버 확정(_isTowed) 도착까지 계속 스크롤에 밀리면
+        /// 확정 순간 서버 고정 위치로 되돌아가는 스냅이 생기던 것을 막는다.
+        /// </summary>
+        public void BeginPredictedTow()
+        {
+            if (IsServer || !IsSpawned || _acquired || _isTowed.Value)
+            {
+                return;
+            }
+
+            _predictedTow = true;
+        }
+
+        public void CancelPredictedTow()
+        {
+            _predictedTow = false;
         }
 
         public bool TryClaimGrab(ulong grabberClientId)
@@ -126,6 +150,9 @@ namespace Game.Gameplay.World
 
             if (_isTowed.Value)
             {
+                // 서버 확정 도착 — 예측 고정을 자동 해제하고 견인 보간으로 수렴한다.
+                _predictedTow = false;
+
                 if (!IsServer)
                 {
                     // 30 Hz 스냅샷 사이를 짧은 지수 보간으로 메운다.
@@ -133,6 +160,12 @@ namespace Game.Gameplay.World
                     transform.position = Vector3.Lerp(transform.position, _towPosition.Value, t);
                 }
 
+                return;
+            }
+
+            if (_predictedTow)
+            {
+                // 예측 고정 — 서버 확정/거부 수신까지 현재 위치를 유지한다.
                 return;
             }
 
@@ -156,6 +189,7 @@ namespace Game.Gameplay.World
         {
             _hasPendingBinding = false;
             _acquired = false;
+            _predictedTow = false;
         }
     }
 }

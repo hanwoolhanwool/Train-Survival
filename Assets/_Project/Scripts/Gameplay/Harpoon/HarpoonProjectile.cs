@@ -15,6 +15,8 @@ namespace Game.Gameplay.Harpoon
     {
         private const float ArriveEpsilon = 0.1f;
 
+        private static readonly Collider[] OverlapBuffer = new Collider[8];
+
         private HarpoonHookMotion _motion;
         private Vector3 _direction;
         private float _speed;
@@ -23,6 +25,7 @@ namespace Game.Gameplay.Harpoon
         private float _retractSpeed;
         private float _traveled;
         private bool _collisionEnabled;
+        private Transform _ignoreRoot;
         private Transform _returnAnchor;
         private Transform _attachTarget;
         private Action<IGrabbable, Vector3> _onHit;
@@ -44,13 +47,15 @@ namespace Game.Gameplay.Harpoon
         /// <summary>
         /// 권위 발사 (소유자 전용) — 실제 충돌 판정을 수행하고 명중/미스 콜백을 정확히 한 번 호출한다.
         /// returnAnchor는 실패 시 되돌아갈 총구 — 살아있는 동안 매 프레임 위치를 따라간다.
+        /// ignoreRoot는 사수 자신의 루트 — 겹침 검사에서 자기 콜라이더를 제외한다.
         /// </summary>
         public void Launch(
             Vector3 origin, Vector3 direction, float speed, float radius, float maxRange,
-            Transform returnAnchor, float retractSpeed, float impactPauseDuration, float waitingForServerTimeout,
+            Transform ignoreRoot, Transform returnAnchor,
+            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout,
             Action<IGrabbable, Vector3> onHit, Action onMiss)
         {
-            SetupCommon(origin, direction, speed, maxRange, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout);
+            SetupCommon(origin, direction, speed, maxRange, ignoreRoot, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout);
             _radius = radius;
             _collisionEnabled = true;
             _onHit = onHit;
@@ -63,9 +68,10 @@ namespace Game.Gameplay.Harpoon
         /// </summary>
         public void LaunchCosmetic(
             Vector3 origin, Vector3 direction, float speed, float radius, float maxRange,
-            Transform returnAnchor, float retractSpeed, float impactPauseDuration, float waitingForServerTimeout)
+            Transform ignoreRoot, Transform returnAnchor,
+            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout)
         {
-            SetupCommon(origin, direction, speed, maxRange, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout);
+            SetupCommon(origin, direction, speed, maxRange, ignoreRoot, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout);
             _radius = radius;
             // 실제 발사와 동일하게 충돌 판정을 로컬 재현한다 — 벽에 막히는 타이밍이 사수가 보는 것과 일치한다.
             // 그랩 가능 대상 명중 시에는 콜백 없이 WaitingForServer로만 전이하고, 실제 결과는 뒤따르는
@@ -77,12 +83,14 @@ namespace Game.Gameplay.Harpoon
 
         private void SetupCommon(
             Vector3 origin, Vector3 direction, float speed, float maxRange,
-            Transform returnAnchor, float retractSpeed, float impactPauseDuration, float waitingForServerTimeout)
+            Transform ignoreRoot, Transform returnAnchor,
+            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout)
         {
             _motion = new HarpoonHookMotion(impactPauseDuration, waitingForServerTimeout);
             _direction = direction.sqrMagnitude > 0f ? direction.normalized : Vector3.forward;
             _speed = speed;
             _maxRange = maxRange;
+            _ignoreRoot = ignoreRoot;
             _returnAnchor = returnAnchor;
             _retractSpeed = Mathf.Max(0.1f, retractSpeed);
             _traveled = 0f;
@@ -154,23 +162,18 @@ namespace Game.Gameplay.Harpoon
             float step = _speed * Time.deltaTime;
             Vector3 current = transform.position;
 
+            // SphereCast는 시작 시점에 이미 겹친 콜라이더를 무시하므로, 컨베이어로 물체가
+            // 프레임 사이에 훅 위치까지 이동해 겹친 경우를 캐스트 전에 잡는다 (§11 관통 해소).
+            if (_collisionEnabled && TryGetOverlapHit(current, out Collider overlapped, out Vector3 overlapPoint))
+            {
+                ResolveHit(overlapped, overlapPoint);
+                return;
+            }
+
             if (_collisionEnabled &&
                 Physics.SphereCast(current, _radius, _direction, out RaycastHit hit, step, ~0, QueryTriggerInteraction.Ignore))
             {
-                transform.position = hit.point;
-                var grabbable = hit.collider.GetComponentInParent<IGrabbable>();
-                if (grabbable != null)
-                {
-                    _motion.NotifyGrabbableHit();
-                    _onHit?.Invoke(grabbable, hit.point);
-                }
-                else
-                {
-                    // 그랩 불가 지형·구조물 명중 = 빗나감 — 사라지지 않고 되감기로 전이한다.
-                    _motion.NotifyMiss();
-                    _onMiss?.Invoke();
-                }
-
+                ResolveHit(hit.collider, hit.point);
                 return;
             }
 
@@ -183,6 +186,62 @@ namespace Game.Gameplay.Harpoon
             }
 
             transform.position = current + _direction * step;
+        }
+
+        private bool TryGetOverlapHit(Vector3 position, out Collider nearest, out Vector3 nearestPoint)
+        {
+            nearest = null;
+            nearestPoint = position;
+
+            int count = Physics.OverlapSphereNonAlloc(position, _radius, OverlapBuffer, ~0, QueryTriggerInteraction.Ignore);
+            float bestSqr = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                Collider candidate = OverlapBuffer[i];
+                if (_ignoreRoot != null && candidate.transform.root == _ignoreRoot)
+                {
+                    continue;
+                }
+
+                Vector3 point = GetClosestPointSafe(candidate, position);
+                float sqr = (point - position).sqrMagnitude;
+                if (sqr < bestSqr)
+                {
+                    bestSqr = sqr;
+                    nearest = candidate;
+                    nearestPoint = point;
+                }
+            }
+
+            return nearest != null;
+        }
+
+        private static Vector3 GetClosestPointSafe(Collider collider, Vector3 position)
+        {
+            // 비볼록 MeshCollider는 ClosestPoint를 지원하지 않는다 — AABB 근사로 대체.
+            if (collider is MeshCollider mesh && !mesh.convex)
+            {
+                return collider.bounds.ClosestPoint(position);
+            }
+
+            return collider.ClosestPoint(position);
+        }
+
+        private void ResolveHit(Collider collider, Vector3 hitPoint)
+        {
+            transform.position = hitPoint;
+            var grabbable = collider.GetComponentInParent<IGrabbable>();
+            if (grabbable != null)
+            {
+                _motion.NotifyGrabbableHit();
+                _onHit?.Invoke(grabbable, hitPoint);
+            }
+            else
+            {
+                // 그랩 불가 지형·구조물 명중 = 빗나감 — 사라지지 않고 되감기로 전이한다.
+                _motion.NotifyMiss();
+                _onMiss?.Invoke();
+            }
         }
 
         private void UpdateAttached()
@@ -231,6 +290,7 @@ namespace Game.Gameplay.Harpoon
             _onMiss = null;
             _attachTarget = null;
             _returnAnchor = null;
+            _ignoreRoot = null;
         }
 
         public void OnSpawned()

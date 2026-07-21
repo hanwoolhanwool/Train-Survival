@@ -27,10 +27,15 @@ namespace Game.Gameplay.Harpoon
         [SerializeField] private HarpoonProjectile _projectilePrefab;
         [SerializeField] private HarpoonRopeRenderer _rope;
 
+        private static readonly RaycastHit[] AimHitBuffer = new RaycastHit[8];
+
         private HarpoonStateMachine _stateMachine;
         private HarpoonProjectile _activeProjectile;
         private Vector3 _lastFirePosition;
         private double _localHitTime;
+
+        // 소유자 클라이언트 전용 — 로컬 명중 후 서버 확정 대기 중 예측 고정한 대상 (§11 수정안 A).
+        private IGrabbable _predictedTowTarget;
 
         // 서버 전용 — 이 플레이어가 견인 중인 대상.
         private IGrabbable _serverTowTarget;
@@ -54,6 +59,7 @@ namespace Game.Gameplay.Harpoon
             if (IsOwner)
             {
                 HarpoonSliceMetrics.EndTowTracking("디스폰");
+                CancelPredictedTow();
             }
 
             DiscardActiveProjectile();
@@ -75,6 +81,14 @@ namespace Game.Gameplay.Harpoon
             {
                 _stateMachine.Tick(Time.deltaTime);
                 UpdateOwnerInput();
+
+                // 예측 고정 안전장치 — 승인/거부가 끝내 오지 않아 훅이 타임아웃 되감기로
+                // 넘어갔으면(WaitingForServerTimeout) 대상을 컨베이어 유도로 복귀시킨다.
+                if (_predictedTowTarget != null &&
+                    (_activeProjectile == null || !_activeProjectile.IsAlive || _activeProjectile.IsFailing))
+                {
+                    CancelPredictedTow();
+                }
 
                 // Q3 계측 — 견인 중 대상(=부착된 훅) 이동의 워프/역행 검출 (소유자 화면 기준, §3.2).
                 if (_activeProjectile != null && _activeProjectile.IsAttached)
@@ -122,7 +136,7 @@ namespace Game.Gameplay.Harpoon
             EventBus<HarpoonFiredLocalEvent>.Publish(new HarpoonFiredLocalEvent(OwnerClientId));
 
             Vector3 origin = _muzzle != null ? _muzzle.position : _lastFirePosition;
-            Vector3 direction = _aimSource != null ? _aimSource.forward : transform.forward;
+            Vector3 direction = ComputeFireDirection(origin);
 
             SpawnAuthoritativeProjectile(origin, direction);
 
@@ -140,8 +154,35 @@ namespace Game.Gameplay.Harpoon
             _activeProjectile.Launch(
                 origin, direction,
                 _settings.ProjectileSpeed, _settings.ProjectileRadius, _settings.MaxRange,
-                _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout,
+                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout,
                 OnProjectileHit, OnProjectileMiss);
+        }
+
+        /// <summary>
+        /// 조준점 수렴 발사 방향 (§11 명중 판정 시차 해소): 총구는 카메라에서 어긋나 있으므로
+        /// 카메라 평행 발사는 조준점과 상시 ~0.4 m 어긋난다. 카메라 중심 레이로 조준점을 구해
+        /// 총구→조준점 방향으로 수렴시킨다. 판정은 기존대로 훅 경로의 SphereCast가 수행한다.
+        /// </summary>
+        private Vector3 ComputeFireDirection(Vector3 muzzleOrigin)
+        {
+            Vector3 aimOrigin = _aimSource != null ? _aimSource.position : transform.position;
+            Vector3 aimForward = _aimSource != null ? _aimSource.forward : transform.forward;
+
+            Vector3 aimPoint = aimOrigin + aimForward * _settings.MaxRange;
+            int count = Physics.RaycastNonAlloc(
+                aimOrigin, aimForward, AimHitBuffer, _settings.MaxRange, ~0, QueryTriggerInteraction.Ignore);
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit hit = AimHitBuffer[i];
+                if (hit.distance < bestDistance && hit.transform.root != transform.root)
+                {
+                    bestDistance = hit.distance;
+                    aimPoint = hit.point;
+                }
+            }
+
+            return HarpoonAimMath.ResolveFireDirection(muzzleOrigin, aimPoint, aimForward);
         }
 
         private void OnProjectileHit(IGrabbable grabbable, Vector3 hitPoint)
@@ -150,7 +191,21 @@ namespace Game.Gameplay.Harpoon
             _stateMachine.NotifyLocalHit();
             HarpoonSliceMetrics.RecordLocalHit();
 
+            // 예측 고정 (§11 수정안 A): 서버 확정 도착까지 대상이 컨베이어로 계속 밀리면 확정 순간
+            // 서버 고정 위치로 스냅되므로, 로컬 명중 즉시 고정한다. 호스트는 확정이 즉시라 불필요.
+            if (!IsServer)
+            {
+                grabbable.BeginPredictedTow();
+                _predictedTowTarget = grabbable;
+            }
+
             RequestGrabServerRpc(grabbable.NetworkObject, _lastFirePosition, hitPoint);
+        }
+
+        private void CancelPredictedTow()
+        {
+            _predictedTowTarget?.CancelPredictedTow();
+            _predictedTowTarget = null;
         }
 
         private void OnProjectileMiss()
@@ -299,6 +354,9 @@ namespace Game.Gameplay.Harpoon
                 _activeProjectile.AttachTo(targetObject.transform);
             }
 
+            // 예측 고정은 대상이 _isTowed 스냅샷 수신 시 스스로 해제한다 — 여기서는 추적만 끝낸다.
+            _predictedTowTarget = null;
+
             _stateMachine.NotifyGrabApproved();
         }
 
@@ -307,6 +365,7 @@ namespace Game.Gameplay.Harpoon
         {
             // 판정 불일치 (Q4): 로프가 미끄러져 빠지는 연출로 미스 전환 → 미스 페널티 (§2.4).
             HarpoonSliceMetrics.RecordGrabRejected(verdict);
+            CancelPredictedTow();
             _activeProjectile?.BeginRetract();
             _stateMachine.NotifyGrabRejected();
             EventBus<HarpoonMissLocalEvent>.Publish(new HarpoonMissLocalEvent(true));
@@ -324,6 +383,7 @@ namespace Game.Gameplay.Harpoon
         private void ForceReleaseOwnerRpc()
         {
             HarpoonSliceMetrics.EndTowTracking("강제 해제");
+            CancelPredictedTow();
             _activeProjectile?.BeginRetract();
             _stateMachine.NotifyForcedRelease();
         }
@@ -356,7 +416,7 @@ namespace Game.Gameplay.Harpoon
             _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
             _activeProjectile.LaunchCosmetic(
                 origin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, _settings.MaxRange,
-                _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout);
+                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout);
         }
 
         [Rpc(SendTo.NotOwner)]
