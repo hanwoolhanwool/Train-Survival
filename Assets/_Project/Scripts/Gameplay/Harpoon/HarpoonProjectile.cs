@@ -38,6 +38,9 @@ namespace Game.Gameplay.Harpoon
         public bool IsFailing => _motion != null &&
             (_motion.Phase == HookPhase.ImpactPause || _motion.Phase == HookPhase.Retracting);
 
+        /// <summary>대상에 부착되어 견인을 따라가는 중인지 — Q3 견인 샘플 계측 구간 판별에 사용.</summary>
+        public bool IsAttached => _motion != null && _motion.Phase == HookPhase.Attached;
+
         /// <summary>
         /// 권위 발사 (소유자 전용) — 실제 충돌 판정을 수행하고 명중/미스 콜백을 정확히 한 번 호출한다.
         /// returnAnchor는 실패 시 되돌아갈 총구 — 살아있는 동안 매 프레임 위치를 따라간다.

@@ -51,6 +51,11 @@ namespace Game.Gameplay.Harpoon
                 ServerReleaseTow();
             }
 
+            if (IsOwner)
+            {
+                HarpoonSliceMetrics.EndTowTracking("디스폰");
+            }
+
             DiscardActiveProjectile();
         }
 
@@ -70,6 +75,13 @@ namespace Game.Gameplay.Harpoon
             {
                 _stateMachine.Tick(Time.deltaTime);
                 UpdateOwnerInput();
+
+                // Q3 계측 — 견인 중 대상(=부착된 훅) 이동의 워프/역행 검출 (소유자 화면 기준, §3.2).
+                if (_activeProjectile != null && _activeProjectile.IsAttached)
+                {
+                    Vector3 anchor = _muzzle != null ? _muzzle.position : transform.position;
+                    HarpoonSliceMetrics.RecordTowSample(_activeProjectile.transform.position, anchor, Time.deltaTime);
+                }
             }
 
             UpdateRopeVisual();
@@ -93,6 +105,7 @@ namespace Game.Gameplay.Harpoon
             if (mouse.rightButton.wasPressedThisFrame && _stateMachine.TryCancel())
             {
                 // 취소: 로프 절단, 대상은 그 자리에 낙하. 미스 페널티 없음 — 쿨다운만 (§2.1).
+                HarpoonSliceMetrics.EndTowTracking("취소");
                 DiscardActiveProjectile();
                 CancelGrabServerRpc();
             }
@@ -100,6 +113,8 @@ namespace Game.Gameplay.Harpoon
 
         private void Fire()
         {
+            int inputFrame = Time.frameCount;
+
             // 발사 시점 플레이어 위치 — 호스트 거리 검증의 기준점으로 보고에 포함한다 (§2.4).
             _lastFirePosition = transform.position;
 
@@ -110,6 +125,9 @@ namespace Game.Gameplay.Harpoon
             Vector3 direction = _aimSource != null ? _aimSource.forward : transform.forward;
 
             SpawnAuthoritativeProjectile(origin, direction);
+
+            // Q1 계측 — 로컬 연출(이벤트 발행 + 훅 스폰)까지 마친 시점의 프레임 차를 기록한다.
+            HarpoonSliceMetrics.RecordFire(inputFrame);
 
             // 다른 클라이언트에게도 발사 모습을 보여준다 (연출 전용, 판정에는 영향 없음).
             ReportFireServerRpc(origin, direction);
@@ -130,6 +148,7 @@ namespace Game.Gameplay.Harpoon
         {
             _localHitTime = Time.realtimeSinceStartupAsDouble;
             _stateMachine.NotifyLocalHit();
+            HarpoonSliceMetrics.RecordLocalHit();
 
             RequestGrabServerRpc(grabbable.NetworkObject, _lastFirePosition, hitPoint);
         }
@@ -137,7 +156,13 @@ namespace Game.Gameplay.Harpoon
         private void OnProjectileMiss()
         {
             _stateMachine.NotifyMiss();
+            HarpoonSliceMetrics.RecordMiss();
             EventBus<HarpoonMissLocalEvent>.Publish(new HarpoonMissLocalEvent(false));
+
+            // 미스도 다른 클라이언트에 전파한다 — 비소유 코스메틱 훅은 충돌을 로컬 재시뮬레이션하므로
+            // 경계 사례에서 "명중"으로 재현해 승인/거부 RPC를 기다릴 수 있다. 소유자 미스가 정답임을
+            // 알려주지 않으면 WaitingForServerTimeout(1.5 s)까지 대상에 붙어 있는 화면 불일치가 생긴다.
+            ReportMissServerRpc();
         }
 
         private void UpdateRopeVisual()
@@ -266,7 +291,8 @@ namespace Game.Gameplay.Harpoon
         private void GrabApprovedOwnerRpc(NetworkObjectReference targetRef)
         {
             double latencyMs = (Time.realtimeSinceStartupAsDouble - _localHitTime) * 1000.0;
-            Debug.Log($"[HarpoonController] Q2 계측 — 로컬 명중 → 그랩 승인 수신: {latencyMs:F0} ms");
+            HarpoonSliceMetrics.RecordGrabApproved(latencyMs);
+            HarpoonSliceMetrics.BeginTowTracking(_settings.ReelSpeed);
 
             if (targetRef.TryGet(out NetworkObject targetObject) && _activeProjectile != null)
             {
@@ -280,7 +306,7 @@ namespace Game.Gameplay.Harpoon
         private void GrabRejectedOwnerRpc(GrabVerdict verdict)
         {
             // 판정 불일치 (Q4): 로프가 미끄러져 빠지는 연출로 미스 전환 → 미스 페널티 (§2.4).
-            Debug.Log($"[HarpoonController] Q4 계측 — 호스트 거부: {verdict}");
+            HarpoonSliceMetrics.RecordGrabRejected(verdict);
             _activeProjectile?.BeginRetract();
             _stateMachine.NotifyGrabRejected();
             EventBus<HarpoonMissLocalEvent>.Publish(new HarpoonMissLocalEvent(true));
@@ -289,6 +315,7 @@ namespace Game.Gameplay.Harpoon
         [Rpc(SendTo.Owner)]
         private void TargetArrivedOwnerRpc()
         {
+            HarpoonSliceMetrics.EndTowTracking("도착");
             DiscardActiveProjectile();
             _stateMachine.NotifyTargetArrived();
         }
@@ -296,6 +323,7 @@ namespace Game.Gameplay.Harpoon
         [Rpc(SendTo.Owner)]
         private void ForceReleaseOwnerRpc()
         {
+            HarpoonSliceMetrics.EndTowTracking("강제 해제");
             _activeProjectile?.BeginRetract();
             _stateMachine.NotifyForcedRelease();
         }
@@ -306,6 +334,19 @@ namespace Game.Gameplay.Harpoon
         private void ReportFireServerRpc(Vector3 origin, Vector3 direction)
         {
             PlayRemoteFireRpc(origin, direction);
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ReportMissServerRpc()
+        {
+            PlayRemoteMissRpc();
+        }
+
+        [Rpc(SendTo.NotOwner)]
+        private void PlayRemoteMissRpc()
+        {
+            // 코스메틱 훅이 어느 단계에 있든 즉시 되감기로 수렴시킨다 (BeginRetract는 Idle 가드가 있어 안전).
+            _activeProjectile?.BeginRetract();
         }
 
         [Rpc(SendTo.NotOwner)]
