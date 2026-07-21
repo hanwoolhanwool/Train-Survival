@@ -218,6 +218,7 @@ sequenceDiagram
 | `GrabValidationTests` (5개) | 정상 승인, 대상 소멸/점유 거부, 사거리 상한 초과 거부, 여유 구간 내 승인 |
 | `HarpoonHookMotionTests` (12개) | 전체 6단계 전이 경로, ImpactPause 자동 만료, WaitingForServer 안전 타임아웃, Idle에서의 무시 동작, Cancel의 전역성 |
 | `TowMotionAnalyzerTests` (10개) | Q3 견인 계측 순수 로직 — 워프·역행 검출, 되밀림 1회 집계, 시작 유예(0.2 s) 중 이상 미집계 |
+| `HarpoonAimMathTests` (4개) | 조준점 수렴 발사 방향 — 원거리 평행 수렴·총구 뒤/총구 겹침 조준점 폴백 |
 
 수동 검증: 호스트 단독 Play 스모크(벽 명중→되감기 37프레임, Attach→Retract 위치 추적)와 실제 호스트+클라이언트 2인 연결(MPPM 가상 플레이어)로 `ReportFireServerRpc`→`PlayRemoteFireRpc` 도달을 진단 로그로 확인.
 
@@ -226,10 +227,10 @@ sequenceDiagram
 | 항목 | 내용 |
 |---|---|
 | ~~손맛 정량 실측 미완료~~ → **정량 검증 종결 (Q1~Q5)** (2026-07-21) | **프로파일 ② (RTT 60 ms ± 10, 클라이언트 측)**: **Q1** 전 발사 Δ0 프레임 통과 · **Q2** 평균 67~72 ms (57~85) ≪ 250 ms 통과 · **Q3** 전 견인 워프/역행 0 통과 · **Q4** 101발사 · 거부 0 = 불일치율 0 % (표본 100회+ 충족) 통과. **Q5**: 호스트 측 100발사 계측에서 Δ0 · 워프/역행 0 · 거부 0 — 로컬 체감과 동일 (호스트 표본은 `LocalSendRpcTarget` 경유·Q2 0 ms라 프로파일 ② 표본과 분리 집계). **프로파일 ③ 참고 계측 완료** — 역행 소수 감지는 아래 별도 행. Boot 씬 시뮬레이터 중복 부착 제거(467a08f) 후 프로파일 ② 재계측 Q2 평균 66 ms (57~76, n=23)로 동일 대역 — 기존 수치 유효성 교차 확인. 남은 것: 정성 블라인드 테스트 |
-| **프로파일 ③ 견인 역행** (2026-07-21 발견, 연출 처방 후보) | RTT 120 ms ± 20 + 로스 2 % 참고 계측(Q2 평균 125 ms로 적용 검증)에서 견인 5회 중 **초반 2회에 역행 총 3프레임** (최대 프레임 이동 0.16~0.19 m, 워프 0, 이후 3회 정상). 로스 시 30 Hz 견인 스냅샷 유실을 짧은 보간 버퍼가 흡수하지 못한 것으로 추정 — 세션 초반 보간 워밍업 가설도 미배제 (표본 5회). Q3 기준("③에서도 역행 없음") 엄격 적용 시 미달이나 비연속·미세 규모라 참고 기록으로 종결, 처방 시 견인 보간 버퍼 확대부터. **주의**: 이 계측은 Boot 씬 `NetworkSimulator` 중복 부착(지연 비정상 적용 유발, 467a08f로 제거) 상태에서 수행 — 연출 처방 판단 전 정상 환경 재계측 권장 |
-| **세션 종료 시 `t.GetParent() == nullptr` 어설션** (2026-07-21 발견, 원인 미조사) | 플레이 세션 종료부에 `Assertion failed on expression: 't.GetParent() == nullptr'`가 수 회 반복 (호스트·클라이언트 세션 모두에서 관찰). 풀 반환 또는 DDOL 이동 시 부모가 남은 Transform의 재부모화가 의심 — `PoolManager` 반환 경로의 부모 초기화 타이밍 확인 필요 |
-| **명중 판정 시차·관통** (2026-07-21 발견, 미해결) | ① 훅이 총구(카메라 기준 +0.35, −0.25, 0.5)에서 카메라 forward와 평행선으로 비행 → 조준점과 상시 ~0.43 m 어긋나 유효 명중 여유(0.65 m) 대부분을 잠식 — "조준점에 가까운데 안 집힘". ② `SphereCast`는 캐스트 시작 시 겹친 콜라이더를 무시 → 컨베이어로 물체가 프레임 사이에 훅과 겹치면 드물게 관통. 수정안(조준점 수렴 발사 + 캐스트 전 겹침 검사)은 방향 결정 대기 |
-| **게스트 그랩 확정 순간이동** (2026-07-21 발견, 수정 방향 확정 A+B·구현 대기) | 그랩 성공 시 호스트는 스냅이 거의 없는데 게스트는 훅·대상이 길게 순간이동. 원인 3중: ① **RTT 간극(주범)** — 서버는 `TryClaimGrab` 즉시 대상을 컨베이어에서 제외·고정하지만, 게스트는 `_isTowed` 스냅샷 도착(틱 간격+편도 지연)까지 계속 스크롤 유도를 적용 → 도착 순간 `scrollSpeed × (편도 지연+틱 간격)`만큼 되돌아가며, 보간 계수 20(시정수 50 ms)이라 사실상 스냅으로 보임. ② **훅 중심 스냅** — `AttachTo` 후 `UpdateAttached`가 훅 위치에 대상 pivot을 그대로 대입해 명중 표면→중심으로 점프 (호스트·게스트 공통이나 게스트에선 ①과 겹쳐 길어 보임). ③ 게스트 표시 거리 외삽 오차만큼의 상시 오프셋. **채택 수정안**: **A — 클라이언트 예측 고정**: 로컬 명중(또는 승인 수신) 시점에 게스트가 대상을 예측적으로 컨베이어에서 제외하고 현재 로컬 위치에 고정, 이후 `_towPosition` 스냅샷 보간으로 서버 위치에 수렴 (거부 시 컨베이어 유도로 복귀 — 로컬 선반영+호스트 확정 패턴의 확장, `ResourceNode` 측 변경은 [world 스펙 §11](../world/scroll-and-streaming.md) 참조). **B — 부착점 오프셋 유지**: `AttachTo`에서 명중점의 대상 로컬 오프셋을 저장하고 `UpdateAttached`가 `TransformPoint(오프셋)`을 추적해 중심 스냅 제거 (연출로 오프셋을 서서히 0으로 줄이는 선택지 포함) |
+| **프로파일 ③ 견인 역행** (2026-07-21 발견, 연출 처방 후보) | RTT 120 ms ± 20 + 로스 2 % 참고 계측(Q2 평균 125 ms로 적용 검증)에서 견인 5회 중 **초반 2회에 역행 총 3프레임** (최대 프레임 이동 0.16~0.19 m, 워프 0, 이후 3회 정상). 로스 시 30 Hz 견인 스냅샷 유실을 짧은 보간 버퍼가 흡수하지 못한 것으로 추정 — 세션 초반 보간 워밍업 가설도 미배제 (표본 5회). Q3 기준("③에서도 역행 없음") 엄격 적용 시 미달이나 비연속·미세 규모라 참고 기록으로 종결, 처방 시 견인 보간 버퍼 확대부터. **주의**: 이 계측은 Boot 씬 `NetworkSimulator` 중복 부착(지연 비정상 적용 유발, 467a08f로 제거) 상태에서 수행 — 연출 처방 판단 전 정상 환경 재계측 권장. 예측 고정 구현(2026-07-21, 아래 게스트 순간이동 행)이 견인 표시에 영향을 주므로 재계측은 수정 반영 상태로 수행할 것 |
+| ~~세션 종료 시 `t.GetParent() == nullptr` 어설션~~ → **원인 확정·워크어라운드 적용** (2026-07-21) | 에디터 재현·이분법으로 원인 확정: **Multiplayer Tools 2.2.9의 `RuntimeUpdater`가 만드는 숨김 `[RuntimeUpdaterBehaviour]` 오브젝트** (HideAndDontSave + DontDestroyOnLoad로 생성 후, 플레이 종료 시 GameObject가 아닌 컴포넌트만 파괴 → 잔류 오브젝트당 1회 어설션). **`PoolManager` 반환 경로는 무관 실증** — 풀 재부모화 32건이 그대로 있어도 해당 오브젝트만 제거하면 어설션 0회. 재현 조건은 "플레이 중 세션 Shutdown 후 플레이 종료" (Shutdown 없이 종료하면 미발생). 에디터 전용 정리 스크립트 `MultiplayerToolsHiddenUpdaterCleanup`(ExitingPlayMode에서 잔류 오브젝트 파괴)로 해소, 재현 시나리오에서 0회 확인. 패키지가 수정되면 스크립트 제거 |
+| ~~명중 판정 시차·관통~~ → **해소** (2026-07-21) | ① 총구 시차: **조준점 수렴 발사**로 해소 (사용자 결정) — `Fire()`가 카메라 중심 레이(사수 자신 제외)로 조준점을 구해 총구→조준점 방향으로 발사 (`HarpoonAimMath.ResolveFireDirection`, 조준점이 총구 뒤이면 카메라 전방 폴백). 판정은 기존대로 훅 경로 SphereCast — 초근접에서만 미세 각도 차 잔존. ② 관통: `UpdateFlying`이 SphereCast 전 `OverlapSphere` 겹침 검사로 프레임 사이에 겹친 콜라이더를 잡는다 (사수 루트 제외 — 총구 인접 자기 콜라이더 오탐 방지, 비볼록 MeshCollider는 AABB 근사) |
+| ~~게스트 그랩 확정 순간이동~~ → **수정안 A 구현 완료 · B는 롤백** (2026-07-21 구현, 2026-07-22 B 롤백, 실플레이 재검증 대기) | 원인 3중: ① **RTT 간극(주범)** — 서버는 `TryClaimGrab` 즉시 대상을 컨베이어에서 제외·고정하지만, 게스트는 `_isTowed` 스냅샷 도착까지 계속 스크롤 유도를 적용 → 도착 순간 `scrollSpeed × (편도 지연+틱 간격)`만큼 스냅. ② **훅 중심 스냅** — `UpdateAttached`가 대상 pivot을 그대로 대입. ③ 게스트 표시 거리 외삽 오차 상시 오프셋. **구현**: **A — 클라이언트 예측 고정**: `IGrabbable.BeginPredictedTow/CancelPredictedTow` 추가, 쏜 클라이언트가 로컬 명중 시점에 대상을 예측 고정(호스트는 제외), `_isTowed` 수신 시 자동 해제 후 `_towPosition` 보간 수렴, 거부·강제 해제·타임아웃(컨트롤러 Update 안전장치) 시 컨베이어 복귀 (`ResourceNode` 측 변경은 [world 스펙 §11](../world/scroll-and-streaming.md) 참조). **B — 부착점 오프셋 유지는 구현 후 롤백** (사용자 결정, 2026-07-22) — `AttachTo`는 기존대로 대상 중심(pivot) 부착. 주범 ①은 A로 제거됐고 ②(중심 스냅)·③은 잔존 — 실플레이(호스트+게스트)에서 잔여 체감을 재검증 후 ② 재처방 여부 판단 |
 | 코스메틱 사본과 실제 판정의 시각적 어긋남 | 비소유 독립 SphereCast가 실제 사수의 판정과 드물게 다른 지점에서 멈출 수 있음. 미스 브로드캐스트 추가로 실패 케이스의 수렴 시간이 1.5 s → 약 1 RTT로 단축됐으나, 수렴 전 잔여 스냅은 남음 — 권위는 항상 서버가 최종 확정하므로 게임플레이 영향은 없음 |
 | ~~`WaitingForServerTimeout`(1.5 s) 근거 미검증~~ → **실측 확인** (2026-07-21) | 악조건 프로파일 ③(RTT 120 ms ± 20 + 로스 2 %) 실측에서 승인 수신 지연 최대 135 ms — 1.5 s 대비 10배 이상 여유 확인 |
 | 비포커스 에디터에서의 프레임 압축 | MPPM 가상 클라이언트가 비포커스 상태일 때 `Time.deltaTime`이 크게 뭉개져 중간 프레임 관찰이 어려움 — 테스트 환경 한계, 실제 빌드 클라이언트로 재확인 권장. 계측 로그(스택 트레이스 포함)도 발사·승인 순간 프레임 스파이크를 유발할 수 있음 |
@@ -246,10 +247,12 @@ sequenceDiagram
 |---|---|---|
 | 조작 게이트 | `HarpoonState.cs`, `HarpoonStateMachine.cs` | `Assets/_Project/Scripts/Gameplay/Harpoon/` |
 | 훅 비행 | `HarpoonHookMotion.cs`, `HarpoonProjectile.cs` | 〃 |
+| 조준 보정 | `HarpoonAimMath.cs` | 〃 |
 | 호스트 검증 | `GrabValidation.cs`, `IGrabbable.cs` | 〃 |
 | 컨트롤러 | `HarpoonController.cs` | 〃 |
 | 연출 | `HarpoonRopeRenderer.cs`, `HarpoonEvents.cs` | 〃 |
 | 데이터 | `HarpoonSettings.cs` (+ `HarpoonSettings.asset`) | 〃 (+ `Assets/_Project/Data/`) |
 | 계측 | `HarpoonSliceMetrics.cs`, `TowMotionAnalyzer.cs` | 〃 |
 | 프리팹 | `HarpoonProjectile.prefab` | `Assets/_Project/Prefabs/` |
-| 테스트 | `HarpoonStateMachineTests.cs`, `GrabValidationTests.cs`, `HarpoonHookMotionTests.cs`, `TowMotionAnalyzerTests.cs` | `Assets/_Project/Tests/EditMode/` |
+| 테스트 | `HarpoonStateMachineTests.cs`, `GrabValidationTests.cs`, `HarpoonHookMotionTests.cs`, `TowMotionAnalyzerTests.cs`, `HarpoonAimMathTests.cs` | `Assets/_Project/Tests/EditMode/` |
+| 에디터 워크어라운드 | `MultiplayerToolsHiddenUpdaterCleanup.cs` (세션 종료 어설션 — §11) | `Assets/_Project/Scripts/Editor/` |
