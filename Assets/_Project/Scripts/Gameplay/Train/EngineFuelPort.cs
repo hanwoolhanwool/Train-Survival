@@ -9,9 +9,9 @@ using UnityEngine.InputSystem;
 namespace Game.Gameplay.Train
 {
     /// <summary>
-    /// 기관차 엔진 연료 투입구 (기획서 §3.4) — E키 1회 = 자원 1개 투입 (든 슬롯 무관) +
-    /// 자원 슬롯을 든 상태의 좌클릭으로도 1개 투입.
-    /// 투입 확정은 호스트: 요청 RPC를 받아 (개인 핫바 차감 + 연료 충전)을 원자적으로 확정한다
+    /// 기관차 엔진 연료 투입구 (기획서 §3.4) — 자원 슬롯을 든 상태에서 E키 또는 좌클릭 1회 = 든 칸의 자원 1개 투입.
+    /// 자원이 아닌 칸(집게·리볼버)을 들고 있으면 투입되지 않으며, 소모되는 칸은 항상 "현재 든 칸"이다.
+    /// 투입 확정은 호스트: 요청 RPC를 받아 (개인 핫바의 지정 칸 차감 + 연료 충전)을 원자적으로 확정한다
     /// (네트워크 문서 §4 — 개인 인벤토리도 호스트 권위, 복제 방지).
     /// 기관차 위 투입 지점에 배치한다 (열차 원점 고정이므로 씬 고정 위치).
     /// </summary>
@@ -19,6 +19,9 @@ namespace Game.Gameplay.Train
     {
         [SerializeField] private FuelSettings _fuelSettings;
         [SerializeField, Min(0.5f)] private float _interactRadius = 3f;
+
+        [Tooltip("투입구를 '쳐다봤다'고 볼 시선 정렬 하한 (카메라 전방·투입구 방향 내적). 1에 가까울수록 정면만 인정.")]
+        [SerializeField, Range(0f, 1f)] private float _lookDotThreshold = 0.8f;
 
         private bool _localInRange;
 
@@ -38,25 +41,36 @@ namespace Game.Gameplay.Train
 
             bool inRange = (localPlayer.transform.position - transform.position).sqrMagnitude
                 <= _interactRadius * _interactRadius;
-            SetLocalInRange(inRange);
+            // 근처 + 투입구를 쳐다봤을 때만 안내·투입한다 (지나가기만 해도 뜨던 안내 제거).
+            bool ready = inRange && IsLookingAtPort(localPlayer);
+            SetLocalInRange(ready);
 
-            if (!inRange)
+            if (!ready)
             {
                 return;
             }
+
+            // 자원 슬롯을 든 상태에서만 투입한다 — 무기 슬롯이면 발사·조작과 겹치지 않고, 어떤 칸이 소모될지 명확하다.
+            HotbarController hotbar = localPlayer.GetComponent<HotbarController>();
+            if (hotbar == null || hotbar.IsPanelOpen ||
+                hotbar.SelectedItemType != HotbarItemType.Resource)
+            {
+                return;
+            }
+
+            int selectedSlot = hotbar.SelectedIndex;
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.eKey.wasPressedThisFrame)
             {
-                RequestDepositServerRpc();
+                RequestDepositServerRpc(selectedSlot);
                 return;
             }
 
-            // 자원 슬롯을 든 상태의 좌클릭 투입 — 무기 슬롯이 아니므로 발사와 겹치지 않는다 (기획서 §3.4).
             Mouse mouse = Mouse.current;
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame && IsHoldingResource(localPlayer))
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
             {
-                RequestDepositServerRpc();
+                RequestDepositServerRpc(selectedSlot);
             }
         }
 
@@ -71,11 +85,22 @@ namespace Game.Gameplay.Train
             return manager.LocalClient.PlayerObject;
         }
 
-        private static bool IsHoldingResource(NetworkObject localPlayer)
+        /// <summary>로컬 플레이어 카메라가 투입구를 향하고 있는지 — 카메라를 못 찾으면 거리만으로 폴백한다.</summary>
+        private bool IsLookingAtPort(NetworkObject localPlayer)
         {
-            HotbarController hotbar = localPlayer.GetComponent<HotbarController>();
-            return hotbar != null && !hotbar.IsPanelOpen &&
-                hotbar.SelectedItemType == HotbarItemType.Resource;
+            Camera camera = localPlayer.GetComponentInChildren<Camera>();
+            if (camera == null)
+            {
+                return true;
+            }
+
+            Vector3 toPort = transform.position - camera.transform.position;
+            if (toPort.sqrMagnitude < 0.0001f)
+            {
+                return true;
+            }
+
+            return Vector3.Dot(camera.transform.forward, toPort.normalized) >= _lookDotThreshold;
         }
 
         private void SetLocalInRange(bool inRange)
@@ -90,7 +115,7 @@ namespace Game.Gameplay.Train
         // ── 호스트: 투입 확정 (인벤토리 차감 + 연료 충전, 원자적) ──────────
 
         [Rpc(SendTo.Server, RequireOwnership = false)]
-        private void RequestDepositServerRpc(RpcParams rpcParams = default)
+        private void RequestDepositServerRpc(int slotIndex, RpcParams rpcParams = default)
         {
             ulong senderClientId = rpcParams.Receive.SenderClientId;
             NetworkManager manager = NetworkManager.Singleton;
@@ -109,8 +134,9 @@ namespace Game.Gameplay.Train
                 return;
             }
 
+            // 든 칸의 자원만 소모한다 — 그 칸이 자원이 아니면 ServerTryRemoveAt이 실패한다 (호스트 검증).
             IResourceInventory inventory = client.PlayerObject.GetComponent<IResourceInventory>();
-            if (inventory == null || !inventory.ServerTryRemove(1))
+            if (inventory == null || !inventory.ServerTryRemoveAt(slotIndex, 1))
             {
                 return;
             }
