@@ -10,8 +10,8 @@ namespace Game.Gameplay.Monsters
     public sealed class MonsterSettings : ScriptableObject
     {
         [Header("이동 (커스텀 조향 — NavMesh 불사용)")]
-        [SerializeField, Min(0.5f)] private float _moveSpeed = 8.5f;
-        [SerializeField, Min(0f)] private float _chaseSpeedMargin = 1.5f;
+        [SerializeField, Min(0.5f)] private float _moveSpeed = 6.5f;
+        [SerializeField, Min(0f)] private float _chaseSpeedMargin = 0.7f;
         [SerializeField, Min(0.5f)] private float _avoidProbeDistance = 3f;
         [SerializeField, Min(0.1f)] private float _leapHorizontalRange = 3f;
 
