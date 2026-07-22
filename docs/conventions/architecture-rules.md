@@ -29,7 +29,7 @@
 
 ```
 Game.Utilities ← Game.Core ← Game.Systems ← Game.Gameplay ← Game.UI
-                                   ↑               ↑ Unity.InputSystem
+                                   ↑               ↑ Unity.InputSystem    ↑ Unity.InputSystem (UI 토글 입력)
                                    ↑               ↑ Unity.Netcode.Runtime + Unity.Netcode.Components
                                    ↑ Unity.Netcode.Runtime
 Game.Editor        → 전 어셈블리 참조 가능 (Editor 플랫폼 전용)

@@ -1,0 +1,164 @@
+using Game.Core.Events;
+using Game.Core.Services;
+using Game.Gameplay.Combat;
+using Game.Gameplay.Cycle;
+using Game.Gameplay.Monsters;
+using Game.Gameplay.Player;
+using Game.Gameplay.World;
+using UnityEngine;
+
+namespace Game.UI
+{
+    /// <summary>
+    /// M2 코어 루프 HUD — Day/국면·연료·체력·무기/탄약·처치 수 표시.
+    /// UI는 상태를 소유하지 않는다: 권위/로컬 표현 이벤트 구독 + 읽기 전용 서비스 조회로 갱신만 한다.
+    /// 자원 카운터·이탈 경고·조준점은 <see cref="SliceHud"/>가 담당한다 (S — 책임 분리).
+    /// </summary>
+    public sealed class CoreLoopHud : MonoBehaviour
+    {
+        private const float BannerHoldSeconds = 4f;
+
+        private float _fuel;
+        private float _fuelCapacity;
+        private float _health;
+        private float _maxHealth;
+        private WeaponSlot _weaponSlot;
+        private int _rounds;
+        private int _capacity;
+        private bool _reloading;
+        private int _killCount;
+        private string _bannerText;
+        private float _bannerUntilTime;
+        private float _deathUntilTime;
+
+        private void OnEnable()
+        {
+            EventBus<DayPhaseChangedEvent>.Subscribe(OnDayPhaseChanged);
+            EventBus<FuelChangedEvent>.Subscribe(OnFuelChanged);
+            EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
+            EventBus<PlayerDiedEvent>.Subscribe(OnPlayerDied);
+            EventBus<WeaponSelectedLocalEvent>.Subscribe(OnWeaponSelected);
+            EventBus<RevolverAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
+            EventBus<MonsterDiedEvent>.Subscribe(OnMonsterDied);
+        }
+
+        private void OnDisable()
+        {
+            EventBus<DayPhaseChangedEvent>.Unsubscribe(OnDayPhaseChanged);
+            EventBus<FuelChangedEvent>.Unsubscribe(OnFuelChanged);
+            EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
+            EventBus<PlayerDiedEvent>.Unsubscribe(OnPlayerDied);
+            EventBus<WeaponSelectedLocalEvent>.Unsubscribe(OnWeaponSelected);
+            EventBus<RevolverAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
+            EventBus<MonsterDiedEvent>.Unsubscribe(OnMonsterDied);
+        }
+
+        private void OnDayPhaseChanged(DayPhaseChangedEvent evt)
+        {
+            _bannerText = evt.Phase == DayPhase.Night
+                ? $"<color=red>Day {evt.DayNumber} — 밤이 온다. 열차를 지켜라!</color>"
+                : $"<color=yellow>Day {evt.DayNumber} — 아침이 밝았다</color>";
+            _bannerUntilTime = Time.unscaledTime + BannerHoldSeconds;
+        }
+
+        private void OnFuelChanged(FuelChangedEvent evt)
+        {
+            _fuel = evt.Fuel;
+            _fuelCapacity = evt.Capacity;
+        }
+
+        private void OnPlayerHealthChanged(PlayerHealthChangedEvent evt)
+        {
+            if (evt.IsLocalPlayer)
+            {
+                _health = evt.Health;
+                _maxHealth = evt.MaxHealth;
+            }
+        }
+
+        private void OnPlayerDied(PlayerDiedEvent evt)
+        {
+            if (evt.IsLocalPlayer)
+            {
+                _deathUntilTime = Time.unscaledTime + BannerHoldSeconds;
+            }
+        }
+
+        private void OnWeaponSelected(WeaponSelectedLocalEvent evt)
+        {
+            _weaponSlot = evt.Slot;
+        }
+
+        private void OnAmmoChanged(RevolverAmmoChangedLocalEvent evt)
+        {
+            _rounds = evt.RoundsLoaded;
+            _capacity = evt.Capacity;
+            _reloading = evt.IsReloading;
+        }
+
+        private void OnMonsterDied(MonsterDiedEvent evt)
+        {
+            _killCount += 1;
+        }
+
+        private void OnGUI()
+        {
+            DrawStatusPanel();
+            DrawBanner();
+        }
+
+        private void DrawStatusPanel()
+        {
+            GUILayout.BeginArea(new Rect(20f, 100f, 360f, 200f));
+
+            if (ServiceLocator.TryGet(out IDayCycleService cycle))
+            {
+                string phase = cycle.Phase == DayPhase.Night ? "밤" : "낮";
+                int remaining = Mathf.CeilToInt(cycle.PhaseRemaining);
+                GUILayout.Label($"Day {cycle.DayNumber} · {phase} (남은 시간 {remaining / 60}:{remaining % 60:00})");
+            }
+
+            if (_fuelCapacity > 0f)
+            {
+                string fuelText = $"연료: {_fuel:F0} / {_fuelCapacity:F0}";
+                GUILayout.Label(_fuel <= 0f ? $"<color=red>{fuelText} — 감속 중!</color>" : fuelText);
+            }
+
+            if (_maxHealth > 0f)
+            {
+                string healthText = $"체력: {_health:F0} / {_maxHealth:F0}";
+                GUILayout.Label(_health <= _maxHealth * 0.3f ? $"<color=red>{healthText}</color>" : healthText);
+            }
+
+            if (_weaponSlot == WeaponSlot.Revolver)
+            {
+                GUILayout.Label(_reloading ? "리볼버: 재장전 중…" : $"리볼버: {_rounds} / {_capacity}");
+            }
+            else
+            {
+                GUILayout.Label("집게 [2: 리볼버]");
+            }
+
+            if (_killCount > 0)
+            {
+                GUILayout.Label($"처치: {_killCount}");
+            }
+
+            GUILayout.EndArea();
+        }
+
+        private void DrawBanner()
+        {
+            if (Time.unscaledTime < _bannerUntilTime && !string.IsNullOrEmpty(_bannerText))
+            {
+                GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.2f, 400f, 30f), _bannerText);
+            }
+
+            if (Time.unscaledTime < _deathUntilTime)
+            {
+                GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.35f, 400f, 30f),
+                    "<color=red>사망 — 잠시 후 후미 칸에서 부활</color>");
+            }
+        }
+    }
+}

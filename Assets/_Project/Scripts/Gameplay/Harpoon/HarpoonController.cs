@@ -1,6 +1,7 @@
 using Game.Core.Events;
 using Game.Core.Pooling;
 using Game.Core.Services;
+using Game.Gameplay.Inventory;
 using Game.Gameplay.World;
 using Unity.Netcode;
 using UnityEngine;
@@ -41,6 +42,9 @@ namespace Game.Gameplay.Harpoon
         private IGrabbable _serverTowTarget;
 
         public HarpoonState State => _stateMachine != null ? _stateMachine.State : HarpoonState.Ready;
+
+        /// <summary>무기 슬롯 활성 여부 — 무기 전환 시스템이 제어한다. 소유자 입력 게이트 (M2).</summary>
+        public bool InputEnabled { get; set; } = true;
 
         public override void OnNetworkSpawn()
         {
@@ -106,7 +110,7 @@ namespace Game.Gameplay.Harpoon
         private void UpdateOwnerInput()
         {
             Mouse mouse = Mouse.current;
-            if (mouse == null)
+            if (mouse == null || !InputEnabled)
             {
                 return;
             }
@@ -311,7 +315,17 @@ namespace Game.Gameplay.Harpoon
 
             if ((next - anchor).sqrMagnitude <= _settings.ArriveRadius * _settings.ArriveRadius)
             {
-                // 획득 확정 — 공유 카운터 증가(권위 이벤트는 카운터가 발행) 후 대상 소멸.
+                // 획득 확정 — 개인 인벤토리 수납 (기획서 §3.4). 가득 차면 획득 대신 그 자리 낙하.
+                IResourceInventory inventory = GetComponent<IResourceInventory>();
+                if (inventory == null || !inventory.ServerTryAdd(1))
+                {
+                    ServerReleaseTow();
+                    ForceReleaseOwnerRpc();
+                    ForceReleaseNotOwnerRpc();
+                    return;
+                }
+
+                // 팀 누적 채집 통계 (권위 이벤트는 카운터가 발행).
                 if (ServiceLocator.TryGet(out ISharedResourceCounter counter))
                 {
                     counter.AddResource();

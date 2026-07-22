@@ -250,13 +250,22 @@ namespace Game.Gameplay.Player
         [Rpc(SendTo.Owner)]
         private void BeginRespawnOwnerRpc(Vector3 respawnPosition, float delaySeconds)
         {
-            if (!_respawning)
+            BeginOwnerRespawn(respawnPosition, delaySeconds);
+        }
+
+        /// <summary>
+        /// 소유자 부활 절차 — 대기 후 지정 위치로 복귀한다. 이탈 사망(내부)과 전투 사망(PlayerHealth, M2)이
+        /// 같은 흐름을 재사용한다. 대기 중에는 입력이 정지된다. 소유자에서만 동작한다.
+        /// </summary>
+        public void BeginOwnerRespawn(Vector3 respawnPosition, float delaySeconds, System.Action onCompleted = null)
+        {
+            if (IsOwner && !_respawning)
             {
-                StartCoroutine(RespawnRoutine(respawnPosition, delaySeconds));
+                StartCoroutine(RespawnRoutine(respawnPosition, delaySeconds, onCompleted));
             }
         }
 
-        private IEnumerator RespawnRoutine(Vector3 respawnPosition, float delaySeconds)
+        private IEnumerator RespawnRoutine(Vector3 respawnPosition, float delaySeconds, System.Action onCompleted)
         {
             _respawning = true;
             yield return new WaitForSeconds(delaySeconds);
@@ -266,6 +275,7 @@ namespace Game.Gameplay.Player
             _verticalSpeed = 0f;
             _respawning = false;
             RespawnCompleteServerRpc();
+            onCompleted?.Invoke();
         }
 
         [Rpc(SendTo.Server)]

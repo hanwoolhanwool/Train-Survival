@@ -9,7 +9,7 @@ namespace Game.Gameplay.World
     /// 호스트가 두 NetworkVariable을 갱신하고, 클라이언트는 수신 값 사이를 속도로 외삽 + 스무딩해
     /// <see cref="IWorldScrollService"/>로 노출한다. Game 씬에 1개 배치한다.
     /// </summary>
-    public sealed class WorldScrollController : NetworkBehaviour, IWorldScrollService
+    public sealed class WorldScrollController : NetworkBehaviour, IWorldScrollService, IWorldScrollSpeedControl
     {
         [SerializeField] private WorldScrollSettings _settings;
 
@@ -35,6 +35,11 @@ namespace Game.Gameplay.World
             {
                 ServiceLocator.Register<IWorldScrollService>(this);
             }
+
+            if (!ServiceLocator.IsRegistered<IWorldScrollSpeedControl>())
+            {
+                ServiceLocator.Register<IWorldScrollSpeedControl>(this);
+            }
         }
 
         public override void OnNetworkDespawn()
@@ -42,6 +47,11 @@ namespace Game.Gameplay.World
             if (ServiceLocator.TryGet(out IWorldScrollService service) && ReferenceEquals(service, this))
             {
                 ServiceLocator.Unregister<IWorldScrollService>();
+            }
+
+            if (ServiceLocator.TryGet(out IWorldScrollSpeedControl control) && ReferenceEquals(control, this))
+            {
+                ServiceLocator.Unregister<IWorldScrollSpeedControl>();
             }
         }
 
