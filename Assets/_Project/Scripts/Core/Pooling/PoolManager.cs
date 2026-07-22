@@ -21,6 +21,8 @@ namespace Game.Core.Pooling
 
         private readonly HashSet<GameObject> _inactiveInstances = new HashSet<GameObject>();
 
+        private bool _isQuitting;
+
         public static GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, Transform parent = null)
         {
             return GetOrCreateInstance().SpawnInternal(prefab, position, rotation, parent);
@@ -103,8 +105,21 @@ namespace Game.Core.Pooling
             return instance;
         }
 
+        // 애플리케이션/플레이 종료 중에는 풀로 되돌리지 않는다 — 이때 풀(DontDestroyOnLoad) 아래로
+        // 재부모화(SetParent)하면 파괴 순서가 뒤엉켜 't.GetParent() == nullptr' 어서션이 뜬다.
+        // 어차피 정리 중이므로 엔진 파괴에 맡긴다. (에디터 종료 시에만 나던 무해한 어서션의 흔한 원인)
+        private void OnApplicationQuit()
+        {
+            _isQuitting = true;
+        }
+
         private void DespawnInternal(GameObject instance)
         {
+            if (_isQuitting)
+            {
+                return;
+            }
+
             if (!_instanceToPrefab.TryGetValue(instance, out GameObject prefab))
             {
                 Debug.LogWarning($"[PoolManager] 풀에서 생성되지 않은 오브젝트를 Despawn 했습니다. Destroy로 대체합니다: {instance.name}", instance);
