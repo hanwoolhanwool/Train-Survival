@@ -40,6 +40,8 @@ namespace Game.Gameplay.Player
         private bool _serverDeathPending;
         private bool _needsInitialPlacement;
         private bool _inventoryPanelOpen;
+        private bool _standingOnWorldFrame;
+        private float _groundGraceTimer;
 
         public PlayerMovementState MovementState => _movementState.Value;
 
@@ -170,7 +172,19 @@ namespace Game.Gameplay.Player
             }
 
             float targetSpeed = run ? _settings.RunSpeed : _settings.WalkSpeed;
-            bool grounded = _characterController.isGrounded;
+
+            // 스트리밍 타일 지면은 이음새·회수 순간 isGrounded가 깜빡인다 — 코요테 유예로 접지 상태를 유지해
+            // 순간 공중 제어 전환(느려짐)·수직 튐을 막는다.
+            if (_characterController.isGrounded)
+            {
+                _groundGraceTimer = _settings.GroundGraceSeconds;
+            }
+            else
+            {
+                _groundGraceTimer -= Time.deltaTime;
+            }
+
+            bool grounded = _groundGraceTimer > 0f;
 
             _horizontalVelocity = PlayerMotor.ComputeHorizontalVelocity(
                 _horizontalVelocity, wishDirection * targetSpeed,
@@ -182,6 +196,7 @@ namespace Game.Gameplay.Player
                 if (keyboard.spaceKey.wasPressedThisFrame)
                 {
                     _verticalSpeed = PlayerMotor.GetJumpSpeed(_settings.JumpHeight, _settings.Gravity);
+                    _groundGraceTimer = 0f;
                 }
             }
             else
@@ -191,8 +206,15 @@ namespace Game.Gameplay.Player
 
             Vector3 motion = (_horizontalVelocity + Vector3.up * _verticalSpeed) * Time.deltaTime;
 
-            // 상시 외력형 (§4.2): 지상 접지 중에는 스크롤 속도를 읽어 로컬로 뒤로 밀린다. RPC 없음.
-            if (grounded && IsStandingOnWorldFrame() && ServiceLocator.TryGet(out IWorldScrollService scroll))
+            // 접지 프레임에 밟고 있는 표면을 기억한다 — 공중에서는 이 값을 유지해 이륙 당시의 기준 프레임을 이어간다.
+            if (grounded)
+            {
+                _standingOnWorldFrame = IsStandingOnWorldFrame();
+            }
+
+            // 상시 외력형 (§4.2): 지상(월드 프레임) 위에서는 스크롤 속도만큼 로컬로 뒤로 밀린다. RPC 없음.
+            // 점프 중에도 이륙한 표면이 지상이면 계속 밀어야 제자리 점프가 열차와 함께 떠내려가지 않는다.
+            if (_standingOnWorldFrame && ServiceLocator.TryGet(out IWorldScrollService scroll))
             {
                 motion += Vector3.back * (scroll.ScrollSpeed * Time.deltaTime);
             }
