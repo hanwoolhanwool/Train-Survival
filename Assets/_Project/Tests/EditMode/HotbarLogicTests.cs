@@ -76,6 +76,28 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void 지정_칸_차감은_다른_칸을_건드리지_않는다()
+        {
+            // 엔진 투입은 든 칸(선택 슬롯)만 소모해야 한다 — 3번 칸을 들고 눌러도 4번 칸이 줄면 안 된다.
+            HotbarSlotView[] slots = CreateDefaultSlots();
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 5);
+            slots[3] = new HotbarSlotView(HotbarItemType.Resource, 3);
+
+            Assert.That(HotbarLogic.TryRemoveResourceAt(slots, 2), Is.True);
+            Assert.That(slots[2].Count, Is.EqualTo(4), "든 칸(3번)만 줄어든다");
+            Assert.That(slots[3].Count, Is.EqualTo(3), "다른 칸(4번)은 그대로");
+        }
+
+        [Test]
+        public void 지정_칸이_자원이_아니면_차감이_실패한다()
+        {
+            HotbarSlotView[] slots = CreateDefaultSlots();
+
+            Assert.That(HotbarLogic.TryRemoveResourceAt(slots, 0), Is.False, "집게 칸은 소모 대상이 아니다");
+            Assert.That(HotbarLogic.TryRemoveResourceAt(slots, 4), Is.False, "빈 칸도 실패");
+        }
+
+        [Test]
         public void 총량과_상한은_현재_배치를_따른다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();

@@ -6,7 +6,11 @@ namespace Game.Gameplay.Inventory
     /// </summary>
     public interface ILocalHotbar
     {
+        /// <summary>전체 슬롯 수 (핫바 + 가방) — I 창이 그리는 범위.</summary>
         int SlotCount { get; }
+
+        /// <summary>앞쪽 핫바 칸 수 — 화면 하단 핫바·숫자 키 1~5가 그리는 범위.</summary>
+        int HotbarSize { get; }
 
         int StackSize { get; }
 

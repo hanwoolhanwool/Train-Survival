@@ -53,6 +53,25 @@ namespace Game.Gameplay.Inventory
             return false;
         }
 
+        /// <summary>
+        /// 지정한 칸에서 자원 1개를 차감한다 (엔진 투입 = 든 칸의 자원 소모, 기획서 §3.4).
+        /// 그 칸이 자원 스택이 아니거나 범위 밖이면 실패한다 — 어떤 칸이 소모될지 모호하지 않다.
+        /// </summary>
+        public static bool TryRemoveResourceAt(HotbarSlotView[] slots, int index)
+        {
+            if (index < 0 || index >= slots.Length ||
+                slots[index].ItemType != HotbarItemType.Resource || slots[index].Count <= 0)
+            {
+                return false;
+            }
+
+            int remaining = slots[index].Count - 1;
+            slots[index] = remaining > 0
+                ? new HotbarSlotView(HotbarItemType.Resource, remaining)
+                : new HotbarSlotView(HotbarItemType.None, 0);
+            return true;
+        }
+
         /// <summary>현재 소지한 자원 총량.</summary>
         public static int CountResource(HotbarSlotView[] slots)
         {

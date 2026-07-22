@@ -35,6 +35,9 @@ namespace Game.Gameplay.Inventory
 
         public int SlotCount => _settings != null ? _settings.SlotCount : 0;
 
+        /// <summary>앞쪽 핫바 칸 수 — 숫자 키 1~5로 드는 칸 (나머지는 보관 가방).</summary>
+        public int HotbarSize => _settings != null ? _settings.HotbarSize : 0;
+
         public int StackSize => _settings != null ? _settings.StackSize : 1;
 
         public int Count
@@ -110,6 +113,26 @@ namespace Game.Gameplay.Inventory
             for (int i = 0; i < amount; i++)
             {
                 if (!HotbarLogic.TryRemoveResource(slots))
+                {
+                    return false;
+                }
+            }
+
+            ApplySlots(slots);
+            return true;
+        }
+
+        public bool ServerTryRemoveAt(int slotIndex, int amount)
+        {
+            if (!IsServer || amount <= 0)
+            {
+                return false;
+            }
+
+            HotbarSlotView[] slots = CopySlots();
+            for (int i = 0; i < amount; i++)
+            {
+                if (!HotbarLogic.TryRemoveResourceAt(slots, slotIndex))
                 {
                     return false;
                 }

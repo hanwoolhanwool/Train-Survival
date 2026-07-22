@@ -17,5 +17,11 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>자원을 차감한다. 잔량 부족 시 실패. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
         bool ServerTryRemove(int amount);
+
+        /// <summary>
+        /// 지정한 슬롯에서 자원을 차감한다 (엔진 투입 = 든 칸 소모). 그 칸이 자원이 아니면 실패.
+        /// 서버 전용 — 클라이언트 호출은 항상 false.
+        /// </summary>
+        bool ServerTryRemoveAt(int slotIndex, int amount);
     }
 }

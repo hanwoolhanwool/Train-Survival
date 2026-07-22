@@ -95,7 +95,7 @@ namespace Game.UI
 
         private void DrawHotbar(ILocalHotbar hotbar)
         {
-            int slotCount = hotbar.SlotCount;
+            int slotCount = hotbar.HotbarSize;
             float totalWidth = slotCount * SlotSize + (slotCount - 1) * SlotGap;
             float startX = (Screen.width - totalWidth) * 0.5f;
             float y = Screen.height - SlotSize - 16f;
@@ -124,25 +124,45 @@ namespace Game.UI
             bool holdingResource = hotbar.GetSlot(hotbar.SelectedIndex).ItemType == HotbarItemType.Resource;
             string prompt = holdingResource
                 ? "E 또는 좌클릭 — 연료 투입 (자원 1개)"
-                : "E — 연료 투입 (자원 1개)";
+                : "자원 슬롯(숫자 키 1~5)을 든 채 E — 연료 투입";
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f),
                 $"<color=yellow>{prompt}</color>");
         }
 
         private void DrawInventoryPanel(ILocalHotbar hotbar)
         {
-            var rect = new Rect(Screen.width * 0.5f - 190f, Screen.height * 0.5f - 150f, 380f, 230f);
+            const int columns = 5;
+            int hotbarSize = hotbar.HotbarSize;
+            int total = hotbar.SlotCount;
+            int bagSize = Mathf.Max(0, total - hotbarSize);
+            int bagRows = bagSize > 0 ? Mathf.CeilToInt(bagSize / (float)columns) : 0;
+
+            float stride = SlotSize + SlotGap;
+            float gridWidth = columns * SlotSize + (columns - 1) * SlotGap;
+            float panelWidth = gridWidth + 40f;
+            float panelHeight = 34f + 20f + SlotSize + 16f + 20f + bagRows * stride + 12f + 90f;
+
+            var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
+                panelWidth, panelHeight);
             GUI.Box(rect, "인벤토리 / 캐릭터 상태 [I 닫기] — 드래그로 재배치");
 
-            int slotCount = hotbar.SlotCount;
-            float totalWidth = slotCount * SlotSize + (slotCount - 1) * SlotGap;
-            float slotsX = rect.x + (rect.width - totalWidth) * 0.5f;
-            float slotsY = rect.y + 36f;
+            float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
+            float cursorY = rect.y + 34f;
+
+            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "핫바 [숫자 키 1~5]");
+            cursorY += 20f;
+            float hotbarRowY = cursorY;
+            cursorY += SlotSize + 16f;
+
+            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "가방");
+            cursorY += 20f;
+            float bagStartY = cursorY;
+            cursorY += bagRows * stride + 12f;
 
             Event current = Event.current;
-            for (int i = 0; i < slotCount; i++)
+            for (int i = 0; i < total; i++)
             {
-                var slotRect = new Rect(slotsX + i * (SlotSize + SlotGap), slotsY, SlotSize, SlotSize);
+                Rect slotRect = GetPanelSlotRect(i, hotbarSize, columns, stride, gridX, hotbarRowY, bagStartY);
                 GUI.Box(slotRect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition) &&
@@ -177,11 +197,27 @@ namespace Game.UI
                 GUI.Box(dragRect, GetSlotLabel(hotbar.GetSlot(_dragFromIndex), hotbar.StackSize));
             }
 
-            GUILayout.BeginArea(new Rect(rect.x + 16f, slotsY + SlotSize + 12f, rect.width - 32f, 110f));
+            GUILayout.BeginArea(new Rect(rect.x + 16f, cursorY, rect.width - 32f, 84f));
             GUILayout.Label("— 캐릭터 상태 —");
             GUILayout.Label(_maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
             GUILayout.Label("체온·허기: 이후 지역 시스템(M4)에서 추가");
             GUILayout.EndArea();
+        }
+
+        /// <summary>I 창에서 슬롯 i의 사각형 — 앞쪽 <paramref name="hotbarSize"/>칸은 핫바 행, 나머지는 가방 격자.</summary>
+        private static Rect GetPanelSlotRect(
+            int index, int hotbarSize, int columns, float stride, float gridX, float hotbarRowY, float bagStartY)
+        {
+            if (index < hotbarSize)
+            {
+                return new Rect(gridX + index * stride, hotbarRowY, SlotSize, SlotSize);
+            }
+
+            int bagIndex = index - hotbarSize;
+            return new Rect(
+                gridX + bagIndex % columns * stride,
+                bagStartY + bagIndex / columns * stride,
+                SlotSize, SlotSize);
         }
     }
 }

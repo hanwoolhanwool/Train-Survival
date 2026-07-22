@@ -25,6 +25,8 @@ namespace Game.Gameplay.Inventory
 
         public int SlotCount => _inventory != null ? _inventory.SlotCount : 0;
 
+        public int HotbarSize => _inventory != null ? _inventory.HotbarSize : 0;
+
         public int StackSize => _inventory != null ? _inventory.StackSize : 1;
 
         public int SelectedIndex => _selectedIndex;
@@ -134,7 +136,8 @@ namespace Game.Gameplay.Inventory
 
         private void Select(int index)
         {
-            _selectedIndex = Mathf.Clamp(index, 0, Mathf.Max(0, SlotCount - 1));
+            // 선택은 핫바 칸(1~5)에 한정한다 — 가방 칸은 I 창 드래그로만 다룬다.
+            _selectedIndex = Mathf.Clamp(index, 0, Mathf.Max(0, HotbarSize - 1));
             EventBus<HotbarSelectionChangedLocalEvent>.Publish(
                 new HotbarSelectionChangedLocalEvent(_selectedIndex, SelectedItemType));
         }
