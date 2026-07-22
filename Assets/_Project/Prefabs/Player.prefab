@@ -16,8 +16,8 @@ GameObject:
   - component: {fileID: 7642862762512348835}
   - component: {fileID: 7965373453658798524}
   - component: {fileID: 8243473584988639474}
-  - component: {fileID: 551227531318949525}
   - component: {fileID: 5117626470427924656}
+  - component: {fileID: 1201866139057853754}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -81,7 +81,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1360489433
+  GlobalObjectIdHash: 1135503018
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -208,21 +208,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: 7bdc58d4205f619428eb217f5ecb7af9, type: 2}
   _trainLayout: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
---- !u!114 &551227531318949525
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604351592624257845}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2e750d9132e6e5144af18e933329232d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.PlayerWeaponLoadout
-  ShowTopMostFoldoutHeaderGroup: 1
-  _harpoon: {fileID: 7642862762512348835}
-  _revolver: {fileID: 7965373453658798524}
 --- !u!114 &5117626470427924656
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -237,6 +222,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.PlayerInventory
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: 40ce8f47ffc032f4395cf30dca7d5108, type: 2}
+--- !u!114 &1201866139057853754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 411a8d4cb31dc34408db4c3ae06519bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.HotbarController
+  ShowTopMostFoldoutHeaderGroup: 1
+  _harpoon: {fileID: 7642862762512348835}
+  _revolver: {fileID: 7965373453658798524}
 --- !u!1 &2635673702125266619
 GameObject:
   m_ObjectHideFlags: 0
@@ -327,7 +327,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 56390a8e5d6b61c40bec530b6a94c339, type: 2}
+  - {fileID: 2100000, guid: a9097bd654d37654d9f5a9f9ab28ceee, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -359,7 +359,7 @@ LineRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.025
+        value: 0.015
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -368,7 +368,7 @@ LineRenderer:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 1
-        value: 0.01
+        value: 0.005
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -380,8 +380,8 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 0.9019608, b: 0.5019608, a: 0.9019608}
-      key1: {r: 1, g: 0.9019608, b: 0.5019608, a: 0.2}
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
