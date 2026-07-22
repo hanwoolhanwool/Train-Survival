@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a488dafd38e96f42a2e7970ef688bfb, type: 3}
+  m_Name: WaveSettings
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.WaveSettings
+  _baseCountPerNight: 6
+  _countGrowthPerDay: 3
+  _totalCountCap: 24
+  _baseSpawnInterval: 5
+  _intervalReductionPerDay: 0.4
+  _minSpawnInterval: 1.5
+  _baseMaxAlive: 5
+  _maxAliveGrowthPerDay: 1
+  _maxAliveCap: 12
+  _minLateralOffset: 14
+  _maxLateralOffset: 24
+  _spawnZMin: -15
+  _spawnZMax: 25
