@@ -2,6 +2,7 @@ using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Combat;
 using Game.Gameplay.Cycle;
+using Game.Gameplay.Inventory;
 using Game.Gameplay.Monsters;
 using Game.Gameplay.Player;
 using Game.Gameplay.World;
@@ -22,7 +23,7 @@ namespace Game.UI
         private float _fuelCapacity;
         private float _health;
         private float _maxHealth;
-        private WeaponSlot _weaponSlot;
+        private HotbarItemType _selectedItem;
         private int _rounds;
         private int _capacity;
         private bool _reloading;
@@ -37,7 +38,7 @@ namespace Game.UI
             EventBus<FuelChangedEvent>.Subscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<PlayerDiedEvent>.Subscribe(OnPlayerDied);
-            EventBus<WeaponSelectedLocalEvent>.Subscribe(OnWeaponSelected);
+            EventBus<HotbarSelectionChangedLocalEvent>.Subscribe(OnHotbarSelectionChanged);
             EventBus<RevolverAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
             EventBus<MonsterDiedEvent>.Subscribe(OnMonsterDied);
         }
@@ -48,7 +49,7 @@ namespace Game.UI
             EventBus<FuelChangedEvent>.Unsubscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<PlayerDiedEvent>.Unsubscribe(OnPlayerDied);
-            EventBus<WeaponSelectedLocalEvent>.Unsubscribe(OnWeaponSelected);
+            EventBus<HotbarSelectionChangedLocalEvent>.Unsubscribe(OnHotbarSelectionChanged);
             EventBus<RevolverAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
             EventBus<MonsterDiedEvent>.Unsubscribe(OnMonsterDied);
         }
@@ -84,9 +85,9 @@ namespace Game.UI
             }
         }
 
-        private void OnWeaponSelected(WeaponSelectedLocalEvent evt)
+        private void OnHotbarSelectionChanged(HotbarSelectionChangedLocalEvent evt)
         {
-            _weaponSlot = evt.Slot;
+            _selectedItem = evt.ItemType;
         }
 
         private void OnAmmoChanged(RevolverAmmoChangedLocalEvent evt)
@@ -130,13 +131,9 @@ namespace Game.UI
                 GUILayout.Label(_health <= _maxHealth * 0.3f ? $"<color=red>{healthText}</color>" : healthText);
             }
 
-            if (_weaponSlot == WeaponSlot.Revolver)
+            if (_selectedItem == HotbarItemType.Revolver)
             {
                 GUILayout.Label(_reloading ? "리볼버: 재장전 중…" : $"리볼버: {_rounds} / {_capacity}");
-            }
-            else
-            {
-                GUILayout.Label("집게 [2: 리볼버]");
             }
 
             if (_killCount > 0)

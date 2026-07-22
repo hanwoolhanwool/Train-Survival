@@ -1,6 +1,7 @@
 using System.Collections;
 using Game.Core.Events;
 using Game.Core.Services;
+using Game.Gameplay.Inventory;
 using Game.Gameplay.Train;
 using Game.Gameplay.World;
 using Unity.Netcode;
@@ -38,6 +39,7 @@ namespace Game.Gameplay.Player
         private bool _respawning;
         private bool _serverDeathPending;
         private bool _needsInitialPlacement;
+        private bool _inventoryPanelOpen;
 
         public PlayerMovementState MovementState => _movementState.Value;
 
@@ -61,6 +63,7 @@ namespace Game.Gameplay.Player
                 _needsInitialPlacement = true;
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+                EventBus<InventoryPanelToggledLocalEvent>.Subscribe(OnInventoryPanelToggled);
             }
         }
 
@@ -68,9 +71,18 @@ namespace Game.Gameplay.Player
         {
             if (IsOwner)
             {
+                EventBus<InventoryPanelToggledLocalEvent>.Unsubscribe(OnInventoryPanelToggled);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
+        }
+
+        /// <summary>I 창 토글 (기획서 §3.4) — 열려 있는 동안 시점 회전을 멈추고 커서를 드래그용으로 푼다.</summary>
+        private void OnInventoryPanelToggled(InventoryPanelToggledLocalEvent evt)
+        {
+            _inventoryPanelOpen = evt.IsOpen;
+            Cursor.lockState = evt.IsOpen ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = evt.IsOpen;
         }
 
         private void Update()
@@ -111,7 +123,11 @@ namespace Game.Gameplay.Player
                 return;
             }
 
-            UpdateLook();
+            if (!_inventoryPanelOpen)
+            {
+                UpdateLook();
+            }
+
             UpdateMove();
             UpdateFallBehindWarning();
             UpdateDebugInput();

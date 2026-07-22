@@ -1,23 +1,5 @@
 namespace Game.Gameplay.Combat
 {
-    /// <summary>무기 슬롯 (기획서 §6.2 — 집게도 무기 슬롯 사용).</summary>
-    public enum WeaponSlot : byte
-    {
-        Harpoon = 0,
-        Revolver = 1,
-    }
-
-    /// <summary>로컬 표현 이벤트 — 자기 무기 슬롯 전환. HUD 무기 표시용.</summary>
-    public readonly struct WeaponSelectedLocalEvent
-    {
-        public readonly WeaponSlot Slot;
-
-        public WeaponSelectedLocalEvent(WeaponSlot slot)
-        {
-            Slot = slot;
-        }
-    }
-
     /// <summary>로컬 표현 이벤트 — 리볼버 발사 연출 (발사음·총구 화염). 입력 즉시 발행 (지연 0).</summary>
     public readonly struct RevolverFiredLocalEvent
     {

@@ -1,33 +1,31 @@
 namespace Game.Gameplay.Inventory
 {
     /// <summary>
-    /// 권위 이벤트 — 개인 인벤토리 잔량 변경. 호스트 확정 값의 동기화 수신 시점에 각 피어에서 발행된다.
-    /// HUD 핫바가 자기 플레이어 플래그로 걸러 구독한다.
+    /// 로컬 표현 이벤트 — 자기 핫바의 선택 슬롯 변경 (숫자 키 1~5). HUD 무기/아이템 표시용.
     /// </summary>
-    public readonly struct InventoryChangedEvent
+    public readonly struct HotbarSelectionChangedLocalEvent
     {
-        public readonly ulong ClientId;
+        public readonly int SlotIndex;
 
-        /// <summary>이 피어에서 자기 플레이어의 인벤토리인가 (HUD 필터용).</summary>
-        public readonly bool IsLocalPlayer;
+        public readonly HotbarItemType ItemType;
 
-        public readonly int Count;
-
-        public readonly int Capacity;
-
-        public readonly int SlotCount;
-
-        public readonly int StackSize;
-
-        public InventoryChangedEvent(
-            ulong clientId, bool isLocalPlayer, int count, int capacity, int slotCount, int stackSize)
+        public HotbarSelectionChangedLocalEvent(int slotIndex, HotbarItemType itemType)
         {
-            ClientId = clientId;
-            IsLocalPlayer = isLocalPlayer;
-            Count = count;
-            Capacity = capacity;
-            SlotCount = slotCount;
-            StackSize = stackSize;
+            SlotIndex = slotIndex;
+            ItemType = itemType;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 인벤토리/상태 창(I키) 토글. 열려 있는 동안 시점 회전·무기 입력이 정지된다 (기획서 §3.4).
+    /// </summary>
+    public readonly struct InventoryPanelToggledLocalEvent
+    {
+        public readonly bool IsOpen;
+
+        public InventoryPanelToggledLocalEvent(bool isOpen)
+        {
+            IsOpen = isOpen;
         }
     }
 }
