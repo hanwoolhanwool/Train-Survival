@@ -1,5 +1,7 @@
 using System;
 using Game.Core.Pooling;
+using Game.Core.Services;
+using Game.Gameplay.World;
 using UnityEngine;
 
 namespace Game.Gameplay.Harpoon
@@ -25,6 +27,7 @@ namespace Game.Gameplay.Harpoon
         private float _retractSpeed;
         private float _traveled;
         private bool _collisionEnabled;
+        private bool _scrollWithWorld;
         private Transform _ignoreRoot;
         private Transform _returnAnchor;
         private Transform _attachTarget;
@@ -48,14 +51,16 @@ namespace Game.Gameplay.Harpoon
         /// 권위 발사 (소유자 전용) — 실제 충돌 판정을 수행하고 명중/미스 콜백을 정확히 한 번 호출한다.
         /// returnAnchor는 실패 시 되돌아갈 총구 — 살아있는 동안 매 프레임 위치를 따라간다.
         /// ignoreRoot는 사수 자신의 루트 — 겹침 검사에서 자기 콜라이더를 제외한다.
+        /// scrollWithWorld가 true면 발사 시점 사수가 지상(월드 프레임)에 있었다는 뜻 — 훅도 컨베이어를
+        /// 따라 함께 밀려 지면 위 대상과 같은 프레임에서 움직인다 (열차 위 발사면 false).
         /// </summary>
         public void Launch(
             Vector3 origin, Vector3 direction, float speed, float radius, float maxRange,
             Transform ignoreRoot, Transform returnAnchor,
-            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout,
+            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout, bool scrollWithWorld,
             Action<IGrabbable, Vector3> onHit, Action onMiss)
         {
-            SetupCommon(origin, direction, speed, maxRange, ignoreRoot, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout);
+            SetupCommon(origin, direction, speed, maxRange, ignoreRoot, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout, scrollWithWorld);
             _radius = radius;
             _collisionEnabled = true;
             _onHit = onHit;
@@ -69,9 +74,9 @@ namespace Game.Gameplay.Harpoon
         public void LaunchCosmetic(
             Vector3 origin, Vector3 direction, float speed, float radius, float maxRange,
             Transform ignoreRoot, Transform returnAnchor,
-            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout)
+            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout, bool scrollWithWorld)
         {
-            SetupCommon(origin, direction, speed, maxRange, ignoreRoot, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout);
+            SetupCommon(origin, direction, speed, maxRange, ignoreRoot, returnAnchor, retractSpeed, impactPauseDuration, waitingForServerTimeout, scrollWithWorld);
             _radius = radius;
             // 실제 발사와 동일하게 충돌 판정을 로컬 재현한다 — 벽에 막히는 타이밍이 사수가 보는 것과 일치한다.
             // 그랩 가능 대상 명중 시에는 콜백 없이 WaitingForServer로만 전이하고, 실제 결과는 뒤따르는
@@ -84,7 +89,7 @@ namespace Game.Gameplay.Harpoon
         private void SetupCommon(
             Vector3 origin, Vector3 direction, float speed, float maxRange,
             Transform ignoreRoot, Transform returnAnchor,
-            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout)
+            float retractSpeed, float impactPauseDuration, float waitingForServerTimeout, bool scrollWithWorld)
         {
             _motion = new HarpoonHookMotion(impactPauseDuration, waitingForServerTimeout);
             _direction = direction.sqrMagnitude > 0f ? direction.normalized : Vector3.forward;
@@ -93,6 +98,7 @@ namespace Game.Gameplay.Harpoon
             _ignoreRoot = ignoreRoot;
             _returnAnchor = returnAnchor;
             _retractSpeed = Mathf.Max(0.1f, retractSpeed);
+            _scrollWithWorld = scrollWithWorld;
             _traveled = 0f;
             _attachTarget = null;
             transform.SetPositionAndRotation(origin, Quaternion.LookRotation(_direction));
@@ -154,6 +160,29 @@ namespace Game.Gameplay.Harpoon
                     break;
 
                 // WaitingForServer / ImpactPause: 제자리 대기 (Tick의 타이머가 자동 전이시킨다).
+            }
+
+            // 지상 발사분(scrollWithWorld)은 컨베이어 프레임에 실려 함께 밀린다 — 지면·대상과 같은
+            // 프레임에서 움직여야 발사 후 목표에서 어긋나지 않는다 (열차 위 발사분은 밀림 없음).
+            if (_scrollWithWorld)
+            {
+                ApplyWorldScroll();
+            }
+        }
+
+        private void ApplyWorldScroll()
+        {
+            // 부착(대상 추종)·되감기(총구 추종)는 이미 컨베이어에 실린 대상을 따라가므로 이중 적용을 피한다.
+            // 스스로 위치를 관리하는 Flying / WaitingForServer / ImpactPause 단계에서만 밀어준다.
+            HookPhase phase = _motion.Phase;
+            if (phase == HookPhase.Attached || phase == HookPhase.Retracting || phase == HookPhase.Idle)
+            {
+                return;
+            }
+
+            if (ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                transform.position += Vector3.back * (scroll.ScrollSpeed * Time.deltaTime);
             }
         }
 

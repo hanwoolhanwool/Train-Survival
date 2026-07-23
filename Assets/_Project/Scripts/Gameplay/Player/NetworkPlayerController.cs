@@ -45,6 +45,12 @@ namespace Game.Gameplay.Player
 
         public PlayerMovementState MovementState => _movementState.Value;
 
+        /// <summary>
+        /// 접지 프레임 기준 — 현재 지상(월드 프레임) 위에 서 있는지. 공중에서는 이륙 당시 값을 유지한다.
+        /// 발사체가 발사 시점의 기준 프레임(정지=열차 위 / 스크롤=지상)을 이어받는 데 쓴다.
+        /// </summary>
+        public bool StandingOnWorldFrame => _standingOnWorldFrame;
+
         private void Awake()
         {
             _characterController = GetComponent<CharacterController>();

@@ -2,6 +2,7 @@ using Game.Core.Events;
 using Game.Core.Pooling;
 using Game.Core.Services;
 using Game.Gameplay.Inventory;
+using Game.Gameplay.Player;
 using Game.Gameplay.World;
 using Unity.Netcode;
 using UnityEngine;
@@ -32,6 +33,7 @@ namespace Game.Gameplay.Harpoon
 
         private HarpoonStateMachine _stateMachine;
         private HarpoonProjectile _activeProjectile;
+        private NetworkPlayerController _player;
         private Vector3 _lastFirePosition;
         private double _localHitTime;
 
@@ -51,6 +53,7 @@ namespace Game.Gameplay.Harpoon
             _stateMachine = new HarpoonStateMachine(
                 _settings != null ? _settings.MissRecoveryDuration : 2.5f,
                 _settings != null ? _settings.FireCooldown : 0.5f);
+            _player = GetComponent<NetworkPlayerController>();
         }
 
         public override void OnNetworkDespawn()
@@ -142,23 +145,27 @@ namespace Game.Gameplay.Harpoon
             Vector3 origin = _muzzle != null ? _muzzle.position : _lastFirePosition;
             Vector3 direction = ComputeFireDirection(origin);
 
-            SpawnAuthoritativeProjectile(origin, direction);
+            // 발사 시점 사수의 기준 프레임을 훅에 물려준다 — 지상(월드 프레임) 발사분은 컨베이어를 따라
+            // 함께 밀려 지면 위 대상과 어긋나지 않고, 열차 위 발사분은 밀림 없이 그대로 날아간다.
+            bool scrollWithWorld = _player != null && _player.StandingOnWorldFrame;
+
+            SpawnAuthoritativeProjectile(origin, direction, scrollWithWorld);
 
             // Q1 계측 — 로컬 연출(이벤트 발행 + 훅 스폰)까지 마친 시점의 프레임 차를 기록한다.
             HarpoonSliceMetrics.RecordFire(inputFrame);
 
             // 다른 클라이언트에게도 발사 모습을 보여준다 (연출 전용, 판정에는 영향 없음).
-            ReportFireServerRpc(origin, direction);
+            ReportFireServerRpc(origin, direction, scrollWithWorld);
         }
 
-        private void SpawnAuthoritativeProjectile(Vector3 origin, Vector3 direction)
+        private void SpawnAuthoritativeProjectile(Vector3 origin, Vector3 direction, bool scrollWithWorld)
         {
             DiscardActiveProjectile();
             _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
             _activeProjectile.Launch(
                 origin, direction,
                 _settings.ProjectileSpeed, _settings.ProjectileRadius, _settings.MaxRange,
-                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout,
+                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld,
                 OnProjectileHit, OnProjectileMiss);
         }
 
@@ -405,9 +412,9 @@ namespace Game.Gameplay.Harpoon
         // ── 비소유 클라이언트: 발사·견인 연출 브로드캐스트 (판정에 영향 없음) ────
 
         [Rpc(SendTo.Server)]
-        private void ReportFireServerRpc(Vector3 origin, Vector3 direction)
+        private void ReportFireServerRpc(Vector3 origin, Vector3 direction, bool scrollWithWorld)
         {
-            PlayRemoteFireRpc(origin, direction);
+            PlayRemoteFireRpc(origin, direction, scrollWithWorld);
         }
 
         [Rpc(SendTo.Server)]
@@ -424,13 +431,13 @@ namespace Game.Gameplay.Harpoon
         }
 
         [Rpc(SendTo.NotOwner)]
-        private void PlayRemoteFireRpc(Vector3 origin, Vector3 direction)
+        private void PlayRemoteFireRpc(Vector3 origin, Vector3 direction, bool scrollWithWorld)
         {
             DiscardActiveProjectile();
             _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
             _activeProjectile.LaunchCosmetic(
                 origin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, _settings.MaxRange,
-                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout);
+                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld);
         }
 
         [Rpc(SendTo.NotOwner)]
