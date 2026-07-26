@@ -29,8 +29,12 @@ namespace Game.Gameplay.Train
         // 이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m) — 호스트가 시뮬레이션해 복제한다(손잡이-이탈저항 스펙 §6).
         private readonly NetworkList<float> _ejectOffsets = new NetworkList<float>();
 
-        // 호스트 전용 — 칸별 손잡이 잡은 인원 수, 소실 확정 여부(복제 불필요, 결과 offset만 복제).
+        // 표현이 완전히 사라지도록 소실 거리에서 더 물러난 뒤 시뮬을 멈추는 여유 거리(m).
+        private const float EjectFreezeExtraMeters = 40f;
+
+        // 호스트 전용 — 칸별 손잡이 잡은 인원 수, 소실 앵커 정리 여부, 시뮬 정지 여부(복제 불필요, 결과 offset만 복제).
         private int[] _grabberCounts;
+        private bool[] _lostMarked;
         private bool[] _ejectSettled;
 
         // 호스트 전용 — 이탈 칸별 스폰된 손잡이 앵커.
@@ -295,6 +299,7 @@ namespace Game.Gameplay.Train
 
             _grabberCounts = new int[count];
             _ejectSettled = new bool[count];
+            _lostMarked = new bool[count];
         }
 
         /// <summary>이탈-멀쩡한 칸을 손잡이 저항을 반영해 매 프레임 이동시킨다(호스트, 손잡이-이탈저항 스펙 §4·§6).</summary>
@@ -328,18 +333,19 @@ namespace Game.Gameplay.Train
                     _ejectOffsets[i] = next;
                 }
 
-                if (EjectMotionMath.IsCarLost(next, _durabilitySettings.LostDistance, grabbers))
+                // 소실 확정(회수 불가): 손잡이 앵커를 1회 정리한다(기획서 §9.1).
+                if (!_lostMarked[i] && EjectMotionMath.IsCarLost(next, _durabilitySettings.LostDistance, grabbers))
+                {
+                    _lostMarked[i] = true;
+                    ServerDespawnAnchorsFor(i);
+                }
+
+                // 표현이 완전히 사라진 뒤에야 시뮬을 멈춘다 — 소실 칸이 화면에 프리즈된 채 남지 않게 한다.
+                if (next >= _durabilitySettings.LostDistance + EjectFreezeExtraMeters)
                 {
                     _ejectSettled[i] = true;
-                    OnCarSettledLost(i);
                 }
             }
-        }
-
-        /// <summary>칸이 영구 소실로 확정됐을 때(호스트) — 그 칸의 손잡이 앵커를 정리한다.</summary>
-        private void OnCarSettledLost(int carIndex)
-        {
-            ServerDespawnAnchorsFor(carIndex);
         }
 
         // ── 손잡이 앵커 스폰/소멸 (손잡이-이탈저항 스펙 §5) ──────────────────

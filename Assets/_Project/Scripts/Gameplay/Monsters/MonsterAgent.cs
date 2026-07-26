@@ -203,8 +203,11 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
-            // 목표가 갑판 위에 있고 열차 측면에 붙었으면 도약해 승차한다.
-            bool targetOnDeck = IsOnDeck(target.position) || target.position.y >= _trainLayout.DeckHeight - 0.5f;
+            // 목표가 갑판 위에 있거나 열차 부위(칸·연결부, 열차 발판 내부)면 도약해 승차한다 —
+            // 열차를 노릴 때 몸통을 관통해 걸어 들어가지 않고 지붕에 올라 공격하게 한다(§M3).
+            bool targetOnDeck = IsOnDeck(target.position)
+                || target.position.y >= _trainLayout.DeckHeight - 0.5f
+                || IsWithinTrainFootprint(target.position);
             float sideDistance = Mathf.Abs(transform.position.x) - _trainLayout.CarWidth * 0.5f;
             bool alongTrain = transform.position.z > _trainLayout.RearZ - 2f &&
                 transform.position.z < _trainLayout.FrontZ + 2f;

@@ -116,7 +116,10 @@ namespace Game.Gameplay.Train
             // 열차는 원점 고정(미회전) → 로컬 -Z가 곧 후방. 원위치에서 오프셋만큼 뒤로 민다.
             transform.localPosition = _originalLocalPosition + Vector3.back * offset;
 
-            SetRenderers(offset < _ejectHideMeters);
+            // 이탈 칸도 소실 전까지는 단단하다 — 플레이어가 밟거나 관통하지 않도록 콜라이더를 유지한다.
+            bool present = offset < _ejectHideMeters;
+            SetRenderers(present);
+            SetColliders(present);
         }
 
         private void OnTrainInitialized(TrainInitializedEvent _)
@@ -155,20 +158,19 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            // 편성에서 빠진 칸 — 밟거나 공격 대상이 되지 않도록 콜라이더는 끈다.
-            SetColliders(false);
-
             if (car.Health <= 0f)
             {
-                // 파괴됨: 즉시 소멸 (잔해 연출은 후속).
+                // 파괴됨: 즉시 소멸 (잔해 연출은 후속). 표현·콜라이더 모두 끈다.
                 _ejecting = false;
                 SetRenderers(false);
+                SetColliders(false);
             }
             else
             {
-                // 이탈(멀쩡): 호스트 오프셋을 추종해 뒤로 흘러간다(Update에서 배치).
+                // 이탈(멀쩡): 여전히 단단한 물체 — 콜라이더를 켠 채 호스트 오프셋을 추종해 뒤로 흘러간다(Update에서 배치).
                 _ejecting = true;
                 SetRenderers(true);
+                SetColliders(true);
             }
         }
 
