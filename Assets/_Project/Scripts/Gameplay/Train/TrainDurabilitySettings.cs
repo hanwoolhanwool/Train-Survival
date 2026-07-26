@@ -17,8 +17,27 @@ namespace Game.Gameplay.Train
         [Tooltip("칸보다 낮게 잡아 '연결부를 노리는' 공략이 성립하도록 한다.")]
         [SerializeField, Min(1f)] private float _couplingMaxHealth = 60f;
 
+        [Header("이탈 이동·손잡이 저항 (손잡이-이탈저항 스펙 §4)")]
+        [Tooltip("스크롤 속도에 더해 이탈 칸이 뒤로 밀려나는 기본 속도(m/s).")]
+        [SerializeField, Min(0f)] private float _ejectExtraSpeed = 2f;
+
+        [Tooltip("손잡이 1인당 상쇄 속도(m/s). 후퇴 속도의 약 0.6~0.8배로 잡으면 '1인=지연, 2인=회수'가 성립.")]
+        [SerializeField, Min(0f)] private float _pullPerGrabber = 6f;
+
+        [Tooltip("아무도 안 잡은 채 이 거리(m) 넘게 멀어지면 칸 영구 소실.")]
+        [SerializeField, Min(5f)] private float _lostDistance = 45f;
+
         /// <summary>연결부 최대 체력.</summary>
         public float CouplingMaxHealth => _couplingMaxHealth;
+
+        /// <summary>스크롤 위에 더해지는 기본 후퇴 속도(m/s).</summary>
+        public float EjectExtraSpeed => _ejectExtraSpeed;
+
+        /// <summary>손잡이 1인당 상쇄 속도(m/s).</summary>
+        public float PullPerGrabber => _pullPerGrabber;
+
+        /// <summary>영구 소실 거리(m).</summary>
+        public float LostDistance => _lostDistance;
 
         /// <summary>칸 종류의 최대 체력. 기관차는 파괴 불가이므로 양의 무한대를 돌려준다.</summary>
         public float MaxHealthFor(CarType type)

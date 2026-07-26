@@ -315,6 +315,13 @@ namespace Game.Gameplay.Harpoon
                 return;
             }
 
+            // 앵커(손잡이): 릴 감지 않고 붙잡기만 한다 — 대상 이동·저항은 대상 측(호스트)이 담당하고, 여기서는
+            // 로프만 유지한다. 해제는 우클릭 취소(CancelGrab)나 대상 despawn(위 강제 해제)으로만 일어난다.
+            if (_serverTowTarget.Kind == GrabKind.Anchor)
+            {
+                return;
+            }
+
             Vector3 anchor = transform.position + Vector3.up * 0.5f;
             Vector3 current = _serverTowTarget.NetworkObject.transform.position;
             Vector3 next = Vector3.MoveTowards(current, anchor, _settings.ReelSpeed * Time.deltaTime);

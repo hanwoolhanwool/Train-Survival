@@ -33,6 +33,8 @@ namespace Game.Gameplay.World
         // 클라이언트 로컬 — 쏜 클라이언트의 예측 고정 상태 (동기화되지 않는다).
         private bool _predictedTow;
 
+        public GrabKind Kind => GrabKind.Reel;
+
         public bool IsAvailableForGrab => IsSpawned && !_acquired && !_isTowed.Value;
 
         public bool IsClaimed => _isTowed.Value;

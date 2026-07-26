@@ -469,8 +469,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.CarView
   _carIndex: 0
-  _ejectDespawnMeters: 50
-  _ejectExtraSpeed: 2
+  _ejectHideMeters: 50
 --- !u!1 &443216339
 GameObject:
   m_ObjectHideFlags: 0
@@ -874,8 +873,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.CarView
   _carIndex: 2
-  _ejectDespawnMeters: 50
-  _ejectExtraSpeed: 2
+  _ejectHideMeters: 50
 --- !u!1 &1071275281
 GameObject:
   m_ObjectHideFlags: 0
@@ -1515,6 +1513,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Cycle.DayCycleController
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: cebd7edcc6ad52647b7d72614016e1d6, type: 2}
+  _enableDebugPhaseKeys: 1
 --- !u!1 &1775290601
 GameObject:
   m_ObjectHideFlags: 0
@@ -1641,8 +1640,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.CarView
   _carIndex: 1
-  _ejectDespawnMeters: 50
-  _ejectExtraSpeed: 2
+  _ejectHideMeters: 50
 --- !u!1 &1830727641
 GameObject:
   m_ObjectHideFlags: 0
@@ -1772,6 +1770,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _layoutSettings: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
   _durabilitySettings: {fileID: 11400000, guid: 4773a26aca96cec4ab58bd8a81311f3a, type: 2}
+  _handrailAnchorPrefab: {fileID: 539284835093577434, guid: b49d4a069f9536c48af31a873c4abfd1, type: 3}
 --- !u!114 &1904839122
 MonoBehaviour:
   m_ObjectHideFlags: 0

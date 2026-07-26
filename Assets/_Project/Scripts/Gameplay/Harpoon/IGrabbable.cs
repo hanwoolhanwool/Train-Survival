@@ -3,6 +3,16 @@ using UnityEngine;
 
 namespace Game.Gameplay.Harpoon
 {
+    /// <summary>집게 그랩의 종류 — 대상을 다루는 방식이 달라진다.</summary>
+    public enum GrabKind
+    {
+        /// <summary>플레이어 쪽으로 릴 감아 회수(자원·몬스터). 기본.</summary>
+        Reel,
+
+        /// <summary>무거운 대상에 앵커를 걸어 붙잡기만 함(손잡이) — 릴 없이 로프 유지, 저항력 발생.</summary>
+        Anchor,
+    }
+
     /// <summary>
     /// 집게로 낚아챌 수 있는 대상 계약 — 자원/몬스터 공용으로 설계한다 (슬라이스 스펙 §1.2).
     /// 상태 변경 메서드는 전부 서버(호스트)에서만 호출한다 — 그랩 확정·끌기는 호스트 소유 (§2.4).
@@ -11,6 +21,9 @@ namespace Game.Gameplay.Harpoon
     public interface IGrabbable
     {
         NetworkObject NetworkObject { get; }
+
+        /// <summary>그랩 방식 — <see cref="GrabKind.Reel"/>은 릴 감기, <see cref="GrabKind.Anchor"/>는 붙잡기(릴 없음).</summary>
+        GrabKind Kind { get; }
 
         /// <summary>그랩 가능한 상태인지 (미소멸·미점유). 서버 기준 진실.</summary>
         bool IsAvailableForGrab { get; }

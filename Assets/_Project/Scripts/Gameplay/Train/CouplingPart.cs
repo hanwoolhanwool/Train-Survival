@@ -17,6 +17,7 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(0)] private int _couplingIndex;
 
         private Renderer[] _renderers;
+        private bool _registeredAsTarget;
 
         // ── IDamageable — 몬스터가 공격하는 표적면 (데미지 확정은 호스트) ──────────
 
@@ -37,10 +38,7 @@ namespace Game.Gameplay.Train
 
         private void Start()
         {
-            if (ServiceLocator.TryGet(out ITrainTargetRegistry registry))
-            {
-                registry.Register(transform, this);
-            }
+            UpdateTargetRegistration();
         }
 
         private void OnEnable()
@@ -60,9 +58,34 @@ namespace Game.Gameplay.Train
 
         private void OnDestroy()
         {
-            if (ServiceLocator.TryGet(out ITrainTargetRegistry registry))
+            if (_registeredAsTarget && ServiceLocator.TryGet(out ITrainTargetRegistry registry))
             {
                 registry.Unregister(transform);
+                _registeredAsTarget = false;
+            }
+        }
+
+        /// <summary>
+        /// 공격 대상 등록을 현재 상태에 맞춘다 — 끊겼거나 잇는 칸이 이탈하면 즉시 표적에서 빠진다
+        /// (Feature 1: 연결 해제된 연결부는 더 이상 몬스터 공격 대상이 아니다).
+        /// </summary>
+        private void UpdateTargetRegistration()
+        {
+            if (!ServiceLocator.TryGet(out ITrainTargetRegistry registry))
+            {
+                return;
+            }
+
+            bool eligible = IsCouplingLive();
+            if (eligible && !_registeredAsTarget)
+            {
+                registry.Register(transform, this);
+                _registeredAsTarget = true;
+            }
+            else if (!eligible && _registeredAsTarget)
+            {
+                registry.Unregister(transform);
+                _registeredAsTarget = false;
             }
         }
 
@@ -91,6 +114,8 @@ namespace Game.Gameplay.Train
         private void SyncFromState()
         {
             bool live = IsCouplingLive();
+            UpdateTargetRegistration();
+
             if (_renderers == null)
             {
                 return;

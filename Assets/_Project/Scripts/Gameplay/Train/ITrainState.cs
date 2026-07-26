@@ -18,5 +18,8 @@ namespace Game.Gameplay.Train
 
         /// <summary>인덱스의 연결부 상태를 읽는다. 범위 밖이면 false.</summary>
         bool TryGetCoupling(int index, out CouplingState coupling);
+
+        /// <summary>이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m). 붙어 있거나 범위 밖이면 0.</summary>
+        float GetEjectOffset(int index);
     }
 }

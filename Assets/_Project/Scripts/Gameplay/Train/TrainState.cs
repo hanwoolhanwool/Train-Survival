@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Game.Core.Events;
+using Game.Core.Pooling;
 using Game.Core.Services;
+using Game.Gameplay.World;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -13,13 +15,26 @@ namespace Game.Gameplay.Train
     /// 기관차(인덱스 0)는 파괴 불가 — 불변식은 <see cref="TrainStateLogic"/>이 강제한다.
     /// Train 루트(씬 NetworkObject)에 1개 배치한다.
     /// </summary>
-    public sealed class TrainState : NetworkBehaviour, ITrainState, ITrainDamageSink
+    public sealed class TrainState : NetworkBehaviour, ITrainState, ITrainDamageSink, ITrainGrabResistance
     {
         [SerializeField] private TrainLayoutSettings _layoutSettings;
         [SerializeField] private TrainDurabilitySettings _durabilitySettings;
 
+        [Tooltip("이탈 칸의 손잡이 그랩 앵커 프리팹(NetworkObject). 칸이 이탈할 때 앞·뒤 끝에 하나씩 스폰된다.")]
+        [SerializeField] private HandrailAnchor _handrailAnchorPrefab;
+
         private readonly NetworkList<CarState> _cars = new NetworkList<CarState>();
         private readonly NetworkList<CouplingState> _couplings = new NetworkList<CouplingState>();
+
+        // 이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m) — 호스트가 시뮬레이션해 복제한다(손잡이-이탈저항 스펙 §6).
+        private readonly NetworkList<float> _ejectOffsets = new NetworkList<float>();
+
+        // 호스트 전용 — 칸별 손잡이 잡은 인원 수, 소실 확정 여부(복제 불필요, 결과 offset만 복제).
+        private int[] _grabberCounts;
+        private bool[] _ejectSettled;
+
+        // 호스트 전용 — 이탈 칸별 스폰된 손잡이 앵커.
+        private readonly Dictionary<int, List<HandrailAnchor>> _carAnchors = new Dictionary<int, List<HandrailAnchor>>();
 
         public int CarCount => _cars.Count;
 
@@ -45,6 +60,11 @@ namespace Game.Gameplay.Train
                 ServiceLocator.Register<ITrainDamageSink>(this);
             }
 
+            if (!ServiceLocator.IsRegistered<ITrainGrabResistance>())
+            {
+                ServiceLocator.Register<ITrainGrabResistance>(this);
+            }
+
             // 스폰 시점의 편성으로 표현을 재동기화한다 — 신규 시작과 후발 접속(복제된 목록) 모두 이 경로로 반영된다.
             EventBus<TrainInitializedEvent>.Publish(new TrainInitializedEvent(_cars.Count));
         }
@@ -62,6 +82,24 @@ namespace Game.Gameplay.Train
             if (ServiceLocator.TryGet(out ITrainDamageSink sink) && ReferenceEquals(sink, this))
             {
                 ServiceLocator.Unregister<ITrainDamageSink>();
+            }
+
+            if (ServiceLocator.TryGet(out ITrainGrabResistance resist) && ReferenceEquals(resist, this))
+            {
+                ServiceLocator.Unregister<ITrainGrabResistance>();
+            }
+
+            if (IsServer)
+            {
+                ServerDespawnAllAnchors();
+            }
+        }
+
+        private void Update()
+        {
+            if (IsServer)
+            {
+                ServerSimulateEjection();
             }
         }
 
@@ -99,6 +137,36 @@ namespace Game.Gameplay.Train
 
             coupling = default;
             return false;
+        }
+
+        public float GetEjectOffset(int index)
+        {
+            return index >= 0 && index < _ejectOffsets.Count ? _ejectOffsets[index] : 0f;
+        }
+
+        // ── ITrainGrabResistance — 손잡이 앵커가 호출하는 호스트 전용 저항 카운트 ──────────
+
+        void ITrainGrabResistance.AddGrabber(int carIndex)
+        {
+            if (IsServer && _grabberCounts != null && carIndex >= 0 && carIndex < _grabberCounts.Length)
+            {
+                _grabberCounts[carIndex]++;
+            }
+        }
+
+        void ITrainGrabResistance.RemoveGrabber(int carIndex)
+        {
+            if (IsServer && _grabberCounts != null && carIndex >= 0 && carIndex < _grabberCounts.Length)
+            {
+                _grabberCounts[carIndex] = Mathf.Max(0, _grabberCounts[carIndex] - 1);
+            }
+        }
+
+        int ITrainGrabResistance.GetGrabberCount(int carIndex)
+        {
+            return _grabberCounts != null && carIndex >= 0 && carIndex < _grabberCounts.Length
+                ? _grabberCounts[carIndex]
+                : 0;
         }
 
         // ── 호스트 권위: 변이 확정 (원자적으로 스냅샷 계산 후 일괄 반영) ──────────
@@ -153,6 +221,7 @@ namespace Game.Gameplay.Train
 
             if (detached.Length > 0)
             {
+                ServerSpawnAnchorsForDetached(detached);
                 BroadcastCarsDetachedRpc(detached);
             }
         }
@@ -187,6 +256,7 @@ namespace Game.Gameplay.Train
             BroadcastCouplingBrokenRpc(index);
             if (detached.Length > 0)
             {
+                ServerSpawnAnchorsForDetached(detached);
                 BroadcastCarsDetachedRpc(detached);
             }
         }
@@ -216,6 +286,142 @@ namespace Game.Gameplay.Train
             {
                 _couplings.Add(couplings[i]);
             }
+
+            _ejectOffsets.Clear();
+            for (int i = 0; i < count; i++)
+            {
+                _ejectOffsets.Add(0f);
+            }
+
+            _grabberCounts = new int[count];
+            _ejectSettled = new bool[count];
+        }
+
+        /// <summary>이탈-멀쩡한 칸을 손잡이 저항을 반영해 매 프레임 이동시킨다(호스트, 손잡이-이탈저항 스펙 §4·§6).</summary>
+        private void ServerSimulateEjection()
+        {
+            if (_durabilitySettings == null || _ejectOffsets.Count != _cars.Count)
+            {
+                return;
+            }
+
+            float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
+            float dt = Time.deltaTime;
+
+            for (int i = 0; i < _cars.Count; i++)
+            {
+                CarState car = _cars[i];
+                // 연쇄 이탈로 떨어져 나갔지만 파괴는 아닌 칸만 이동한다. 정상·파괴 칸은 스킵.
+                bool ejecting = !car.Attached && car.Health > 0f;
+                if (!ejecting || _ejectSettled[i])
+                {
+                    continue;
+                }
+
+                int grabbers = _grabberCounts[i];
+                float netVelocity = EjectMotionMath.ComputeNetVelocity(
+                    scrollSpeed, _durabilitySettings.EjectExtraSpeed, grabbers, _durabilitySettings.PullPerGrabber);
+                float next = EjectMotionMath.StepOffset(_ejectOffsets[i], netVelocity, dt);
+
+                if (!Mathf.Approximately(next, _ejectOffsets[i]))
+                {
+                    _ejectOffsets[i] = next;
+                }
+
+                if (EjectMotionMath.IsCarLost(next, _durabilitySettings.LostDistance, grabbers))
+                {
+                    _ejectSettled[i] = true;
+                    OnCarSettledLost(i);
+                }
+            }
+        }
+
+        /// <summary>칸이 영구 소실로 확정됐을 때(호스트) — 그 칸의 손잡이 앵커를 정리한다.</summary>
+        private void OnCarSettledLost(int carIndex)
+        {
+            ServerDespawnAnchorsFor(carIndex);
+        }
+
+        // ── 손잡이 앵커 스폰/소멸 (손잡이-이탈저항 스펙 §5) ──────────────────
+
+        private void ServerSpawnAnchorsForDetached(int[] detached)
+        {
+            if (_handrailAnchorPrefab == null || _layoutSettings == null)
+            {
+                return;
+            }
+
+            foreach (int carIndex in detached)
+            {
+                if (_carAnchors.ContainsKey(carIndex))
+                {
+                    continue;
+                }
+
+                ComputeCarEndPositions(carIndex, out Vector3 frontEnd, out Vector3 rearEnd);
+                var anchors = new List<HandrailAnchor>(2)
+                {
+                    ServerSpawnAnchor(carIndex, frontEnd),
+                    ServerSpawnAnchor(carIndex, rearEnd),
+                };
+                _carAnchors[carIndex] = anchors;
+            }
+        }
+
+        private HandrailAnchor ServerSpawnAnchor(int carIndex, Vector3 endLocalPosition)
+        {
+            GameObject instance = PoolManager.Spawn(
+                _handrailAnchorPrefab.gameObject, endLocalPosition, Quaternion.identity);
+            var anchor = instance.GetComponent<HandrailAnchor>();
+            anchor.ServerSetup(carIndex, endLocalPosition);
+            anchor.NetworkObject.Spawn();
+            return anchor;
+        }
+
+        private void ServerDespawnAnchorsFor(int carIndex)
+        {
+            if (!_carAnchors.TryGetValue(carIndex, out List<HandrailAnchor> anchors))
+            {
+                return;
+            }
+
+            foreach (HandrailAnchor anchor in anchors)
+            {
+                if (anchor != null && anchor.NetworkObject != null && anchor.NetworkObject.IsSpawned)
+                {
+                    anchor.NetworkObject.Despawn(true);
+                }
+            }
+
+            _carAnchors.Remove(carIndex);
+        }
+
+        private void ServerDespawnAllAnchors()
+        {
+            foreach (List<HandrailAnchor> anchors in _carAnchors.Values)
+            {
+                foreach (HandrailAnchor anchor in anchors)
+                {
+                    if (anchor != null && anchor.NetworkObject != null && anchor.NetworkObject.IsSpawned)
+                    {
+                        anchor.NetworkObject.Despawn(true);
+                    }
+                }
+            }
+
+            _carAnchors.Clear();
+        }
+
+        /// <summary>슬롯 기준 칸 앞·뒤 끝의 손잡이 위치(열차 원점 좌표). 앞 끝(+Z)이 엔진 쪽 = 본대에서 잡기 쉬운 쪽.</summary>
+        private void ComputeCarEndPositions(int carIndex, out Vector3 frontEnd, out Vector3 rearEnd)
+        {
+            float carLength = _layoutSettings.CarLength;
+            float gap = _layoutSettings.CouplingGap;
+            float centerZ = _layoutSettings.FrontZ - carLength * 0.5f - carIndex * (carLength + gap);
+            float y = _layoutSettings.DeckHeight;
+
+            frontEnd = new Vector3(0f, y, centerZ + carLength * 0.5f);
+            rearEnd = new Vector3(0f, y, centerZ - carLength * 0.5f);
         }
 
         private float MaxHealthFor(CarType type)
