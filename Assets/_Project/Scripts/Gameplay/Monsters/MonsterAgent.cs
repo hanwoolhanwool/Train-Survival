@@ -120,8 +120,30 @@ namespace Game.Gameplay.Monsters
             ServerSync();
         }
 
+        /// <summary>
+        /// 가장 가까운 공격 대상 — 살아있는 플레이어와 공격 가능한 열차 부위(칸·연결부) 중 최근접(§M3 — 몬스터가 열차 공격).
+        /// 열차 부위는 <see cref="ITrainTargetRegistry"/>로 조회한다(연결부가 밤 방어전의 핵심 방어 목표, 기획서 §9).
+        /// </summary>
         private Transform FindNearestAliveTarget()
         {
+            Transform nearest = FindNearestPlayer(out float bestSqr);
+
+            if (ServiceLocator.TryGet(out ITrainTargetRegistry registry)
+                && registry.TryGetNearest(transform.position, out Transform trainTarget, out _))
+            {
+                float sqr = (trainTarget.position - transform.position).sqrMagnitude;
+                if (sqr < bestSqr)
+                {
+                    nearest = trainTarget;
+                }
+            }
+
+            return nearest;
+        }
+
+        private Transform FindNearestPlayer(out float bestSqr)
+        {
+            bestSqr = float.MaxValue;
             NetworkManager manager = NetworkManager.Singleton;
             if (manager == null)
             {
@@ -129,7 +151,6 @@ namespace Game.Gameplay.Monsters
             }
 
             Transform nearest = null;
-            float bestSqr = float.MaxValue;
             foreach (NetworkClient client in manager.ConnectedClientsList)
             {
                 NetworkObject playerObject = client.PlayerObject;

@@ -5,6 +5,7 @@ using Game.Gameplay.Cycle;
 using Game.Gameplay.Inventory;
 using Game.Gameplay.Monsters;
 using Game.Gameplay.Player;
+using Game.Gameplay.Train;
 using Game.Gameplay.World;
 using UnityEngine;
 
@@ -31,6 +32,9 @@ namespace Game.UI
         private string _bannerText;
         private float _bannerUntilTime;
         private float _deathUntilTime;
+        private int _detachedCars;
+        private string _trainAlertText;
+        private float _trainAlertUntilTime;
 
         private void OnEnable()
         {
@@ -41,6 +45,9 @@ namespace Game.UI
             EventBus<HotbarSelectionChangedLocalEvent>.Subscribe(OnHotbarSelectionChanged);
             EventBus<RevolverAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
             EventBus<MonsterDiedEvent>.Subscribe(OnMonsterDied);
+            EventBus<CouplingBrokenEvent>.Subscribe(OnCouplingBroken);
+            EventBus<CarsDetachedEvent>.Subscribe(OnCarsDetached);
+            EventBus<CarDestroyedEvent>.Subscribe(OnCarDestroyed);
         }
 
         private void OnDisable()
@@ -52,6 +59,9 @@ namespace Game.UI
             EventBus<HotbarSelectionChangedLocalEvent>.Unsubscribe(OnHotbarSelectionChanged);
             EventBus<RevolverAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
             EventBus<MonsterDiedEvent>.Unsubscribe(OnMonsterDied);
+            EventBus<CouplingBrokenEvent>.Unsubscribe(OnCouplingBroken);
+            EventBus<CarsDetachedEvent>.Unsubscribe(OnCarsDetached);
+            EventBus<CarDestroyedEvent>.Unsubscribe(OnCarDestroyed);
         }
 
         private void OnDayPhaseChanged(DayPhaseChangedEvent evt)
@@ -102,6 +112,26 @@ namespace Game.UI
             _killCount += 1;
         }
 
+        private void OnCouplingBroken(CouplingBrokenEvent evt)
+        {
+            _trainAlertText = $"<color=red>연결부 파괴! (#{evt.Index})</color>";
+            _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
+        }
+
+        private void OnCarsDetached(CarsDetachedEvent evt)
+        {
+            int count = evt.Indices != null ? evt.Indices.Length : 0;
+            _detachedCars += count;
+            _trainAlertText = $"<color=red>{count}칸 이탈!</color>";
+            _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
+        }
+
+        private void OnCarDestroyed(CarDestroyedEvent evt)
+        {
+            _trainAlertText = $"<color=red>칸 파괴! (#{evt.Index})</color>";
+            _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
+        }
+
         private void OnGUI()
         {
             DrawStatusPanel();
@@ -141,6 +171,11 @@ namespace Game.UI
                 GUILayout.Label($"처치: {_killCount}");
             }
 
+            if (_detachedCars > 0)
+            {
+                GUILayout.Label($"<color=red>이탈 칸: {_detachedCars}</color>");
+            }
+
             GUILayout.EndArea();
         }
 
@@ -155,6 +190,11 @@ namespace Game.UI
             {
                 GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.35f, 400f, 30f),
                     "<color=red>사망 — 잠시 후 후미 칸에서 부활</color>");
+            }
+
+            if (Time.unscaledTime < _trainAlertUntilTime && !string.IsNullOrEmpty(_trainAlertText))
+            {
+                GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.28f, 400f, 30f), _trainAlertText);
             }
         }
     }
