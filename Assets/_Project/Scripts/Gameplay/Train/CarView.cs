@@ -12,6 +12,8 @@ namespace Game.Gameplay.Train
     /// 데미지 확정·연쇄 이탈·이탈 이동은 호스트가 담당하고 여기서는 복제된 상태를 표현만 한다.
     /// 각 칸(Car_Locomotive/Car_1/...) 오브젝트에 부착하고 <see cref="_carIndex"/>를 편성 순서(0 = 기관차)로 지정한다.
     /// </summary>
+    // 지붕 위 플레이어가 칸의 이번 프레임 이동량을 정확히 따라가도록, 칸 위치 갱신을 플레이어 이동보다 먼저 실행한다.
+    [DefaultExecutionOrder(-100)]
     public sealed class CarView : MonoBehaviour, IDamageable
     {
         [Tooltip("편성 순서 인덱스 — 0 = 기관차(선두), 값이 클수록 후방. TrainState의 칸 배열과 1:1 대응.")]

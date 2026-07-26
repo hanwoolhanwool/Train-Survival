@@ -41,6 +41,9 @@ namespace Game.Gameplay.Player
         private bool _needsInitialPlacement;
         private bool _inventoryPanelOpen;
         private bool _standingOnWorldFrame;
+        private CarView _ridingCar;
+        private Vector3 _ridingCarLastPos;
+        private bool _ridingCarTracked;
         private float _groundGraceTimer;
 
         public PlayerMovementState MovementState => _movementState.Value;
@@ -215,7 +218,7 @@ namespace Game.Gameplay.Player
             // 접지 프레임에 밟고 있는 표면을 기억한다 — 공중에서는 이 값을 유지해 이륙 당시의 기준 프레임을 이어간다.
             if (grounded)
             {
-                _standingOnWorldFrame = IsStandingOnWorldFrame();
+                ProbeGround();
             }
 
             // 상시 외력형 (§4.2): 지상(월드 프레임) 위에서는 스크롤 속도만큼 로컬로 뒤로 밀린다. RPC 없음.
@@ -225,19 +228,48 @@ namespace Game.Gameplay.Player
                 motion += Vector3.back * (scroll.ScrollSpeed * Time.deltaTime);
             }
 
+            // 이탈 칸 지붕에 서 있으면 칸이 실제 이동한 만큼(위치 델타) 함께 실려 간다(무빙 플랫폼).
+            // 속도가 아닌 실제 이동량을 쓰므로 dt 스파이크·네트워크 틱 점프에도 칸과 어긋나지 않는다. 정지 칸은 델타 0.
+            if (_ridingCar != null)
+            {
+                Vector3 carPosition = _ridingCar.transform.position;
+                if (_ridingCarTracked)
+                {
+                    motion += carPosition - _ridingCarLastPos;
+                }
+
+                _ridingCarLastPos = carPosition;
+                _ridingCarTracked = true;
+            }
+            else
+            {
+                _ridingCarTracked = false;
+            }
+
             _characterController.Move(motion);
         }
 
-        private bool IsStandingOnWorldFrame()
+        /// <summary>접지 표면을 한 번의 레이로 판정 — 지상(월드 프레임) 여부와 밟고 있는 칸(무빙 플랫폼)을 함께 갱신한다.</summary>
+        private void ProbeGround()
         {
+            _standingOnWorldFrame = false;
+            CarView car = null;
+
             Vector3 origin = transform.position + Vector3.up * 0.1f;
             if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit,
                     _characterController.height * 0.5f + 0.4f, ~0, QueryTriggerInteraction.Ignore))
             {
-                return hit.collider.GetComponentInParent<WorldFrameSurface>() != null;
+                _standingOnWorldFrame = hit.collider.GetComponentInParent<WorldFrameSurface>() != null;
+                car = hit.collider.GetComponentInParent<CarView>();
             }
 
-            return false;
+            // 다른 칸으로 옮겨 탔거나 칸에서 내려오면 위치 델타 추적을 리셋한다(엉뚱한 큰 델타 방지).
+            if (car != _ridingCar)
+            {
+                _ridingCarTracked = false;
+            }
+
+            _ridingCar = car;
         }
 
         private void UpdateFallBehindWarning()
