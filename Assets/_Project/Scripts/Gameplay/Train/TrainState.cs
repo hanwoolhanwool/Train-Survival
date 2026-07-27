@@ -144,6 +144,36 @@ namespace Game.Gameplay.Train
                 && GetEjectOffset(index) < _durabilitySettings.LostDistance;
         }
 
+        /// <summary>
+        /// 살아 있는 연결부 중 가장 후미만 공격 대상이다(후미 순차 파괴 규칙 — <see cref="TrainStateLogic.IsCouplingTargetable"/>과
+        /// 동일 규칙을 복제 목록에서 할당 없이 판정한다. 조회 빈도가 높아 스냅샷 배열을 만들지 않는다).
+        /// </summary>
+        public bool IsCouplingTargetable(int index)
+        {
+            if (!IsCouplingLive(index))
+            {
+                return false;
+            }
+
+            for (int i = index + 1; i < _couplings.Count; i++)
+            {
+                if (IsCouplingLive(i))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>연결부가 끊기지 않았고 잇는 두 칸(index, index+1)이 모두 편성에 살아 붙어 있는지.</summary>
+        private bool IsCouplingLive(int index)
+        {
+            return TryGetCoupling(index, out CouplingState coupling) && !coupling.Broken
+                && TryGetCar(index, out CarState front) && TrainStateLogic.IsCarPresent(front)
+                && TryGetCar(index + 1, out CarState rear) && TrainStateLogic.IsCarPresent(rear);
+        }
+
         // ── ITrainGrabResistance — 손잡이 앵커가 호출하는 호스트 전용 저항 카운트 ──────────
 
         void ITrainGrabResistance.AddGrabber(int carIndex)

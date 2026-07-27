@@ -188,13 +188,37 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
-        /// 연결부 하나에 데미지를 적용한다. 이미 끊김·양쪽 칸 미연결·범위 밖이면 무시한다.
+        /// 연결부 <paramref name="index"/>가 지금 공격(타겟팅) 가능한지 — 살아 있는 연결부 중 가장 후미여야 한다.
+        /// 연결부는 열차 끝에서부터 순차적으로만 끊을 수 있다: 뒤쪽에 살아 있는 연결부가 하나라도 남아 있으면
+        /// 앞쪽 연결부(예: 기관차-다음 칸)는 표적이 아니다.
+        /// </summary>
+        public static bool IsCouplingTargetable(CouplingState[] couplings, CarState[] cars, int index)
+        {
+            if (!IsCouplingLive(couplings, cars, index))
+            {
+                return false;
+            }
+
+            for (int i = index + 1; i < couplings.Length; i++)
+            {
+                if (IsCouplingLive(couplings, cars, i))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 연결부 하나에 데미지를 적용한다. 이미 끊김·양쪽 칸 미연결·범위 밖이거나,
+        /// 뒤쪽에 살아 있는 연결부가 남아 있으면(후미 순차 파괴 규칙) 무시한다.
         /// 끊기면 <see cref="CouplingDamageResult.Broken"/>을 돌려주며, 후방 칸 이탈은 호출부가 <see cref="DetachFrom"/>로 처리한다.
         /// </summary>
         public static CouplingDamageResult ApplyCouplingDamage(
             CouplingState[] couplings, CarState[] cars, int index, float amount)
         {
-            if (amount <= 0f || !IsCouplingLive(couplings, cars, index))
+            if (amount <= 0f || !IsCouplingTargetable(couplings, cars, index))
             {
                 return CouplingDamageResult.Ignored;
             }

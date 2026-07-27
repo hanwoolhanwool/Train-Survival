@@ -27,5 +27,11 @@ namespace Game.Gameplay.Train
         /// 정적 배치된 손잡이 앵커가 잡기 가능 시점을 게이트하는 데 쓴다(복제 데이터 기반이라 전 피어 동일 판정).
         /// </summary>
         bool IsCarGrabbable(int index);
+
+        /// <summary>
+        /// 인덱스의 연결부가 지금 공격(타겟팅) 가능한지 — 살아 있는 연결부 중 가장 후미여야 한다
+        /// (연결부는 열차 끝에서부터 순차 파괴, 복제 데이터 기반이라 전 피어 동일 판정).
+        /// </summary>
+        bool IsCouplingTargetable(int index);
     }
 }

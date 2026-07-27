@@ -199,17 +199,59 @@ namespace Game.Tests.EditMode
         [Test]
         public void 연결부_파괴는_그_뒤_칸부터_후방_연쇄_이탈로_이어진다()
         {
-            // 연결부 1(칸1-칸2 사이) 파괴 → 칸2 이하 이탈. 칸들은 멀쩡(체력 유지).
+            // 후미 연결부 2(칸2-칸3 사이) 파괴 → 칸3 이탈. 칸들은 멀쩡(체력 유지).
             CarState[] cars = BuildTrain(4);
             CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(4, 60f);
 
-            TrainStateLogic.ApplyCouplingDamage(couplings, cars, 1, 999f);
-            int[] detached = TrainStateLogic.DetachFrom(cars, 1 + 1);
+            TrainStateLogic.ApplyCouplingDamage(couplings, cars, 2, 999f);
+            int[] detached = TrainStateLogic.DetachFrom(cars, 2 + 1);
 
-            Assert.That(detached, Is.EqualTo(new[] { 2, 3 }));
-            Assert.That(cars[1].Attached, Is.True, "연결부 앞 칸은 유지");
-            Assert.That(cars[2].Attached, Is.False);
-            Assert.That(cars[2].Health, Is.GreaterThan(0f), "이탈 칸은 파괴가 아니라 멀쩡히 떨어져 나감");
+            Assert.That(detached, Is.EqualTo(new[] { 3 }));
+            Assert.That(cars[2].Attached, Is.True, "연결부 앞 칸은 유지");
+            Assert.That(cars[3].Attached, Is.False);
+            Assert.That(cars[3].Health, Is.GreaterThan(0f), "이탈 칸은 파괴가 아니라 멀쩡히 떨어져 나감");
+        }
+
+        [Test]
+        public void 연결부는_살아있는_것_중_가장_후미만_표적이다()
+        {
+            CarState[] cars = BuildTrain(3);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(3, 60f);
+
+            Assert.That(TrainStateLogic.IsCouplingTargetable(couplings, cars, 1), Is.True, "후미 연결부는 표적");
+            Assert.That(TrainStateLogic.IsCouplingTargetable(couplings, cars, 0), Is.False,
+                "뒤 연결부가 살아 있는 동안 앞(기관차-다음 칸) 연결부는 표적이 아니다");
+
+            TrainStateLogic.ApplyCouplingDamage(couplings, cars, 1, 999f);
+            TrainStateLogic.DetachFrom(cars, 2);
+
+            Assert.That(TrainStateLogic.IsCouplingTargetable(couplings, cars, 0), Is.True,
+                "후미가 끊기면 그 앞 연결부가 새 표적이 된다");
+        }
+
+        [Test]
+        public void 앞쪽_연결부_데미지는_후미가_살아있는_동안_무시된다()
+        {
+            CarState[] cars = BuildTrain(3);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(3, 60f);
+
+            Assert.That(TrainStateLogic.ApplyCouplingDamage(couplings, cars, 0, 20f),
+                Is.EqualTo(CouplingDamageResult.Ignored));
+            Assert.That(couplings[0].Health, Is.EqualTo(60f), "표적이 아니므로 체력 변화 없음");
+        }
+
+        [Test]
+        public void 후방_칸_파괴로_뒤_연결부가_죽으면_앞_연결부가_표적이_된다()
+        {
+            // 칸2 파괴 → 연결부 1·2 절단 + 칸3 이탈 → 연결부 0이 유일하게 살아 있는 연결부 = 표적.
+            CarState[] cars = BuildTrain(4);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(4, 60f);
+
+            TrainStateLogic.DestroyAndDetach(cars, 2);
+            TrainStateLogic.BreakCoupling(couplings, 1);
+            TrainStateLogic.BreakCoupling(couplings, 2);
+
+            Assert.That(TrainStateLogic.IsCouplingTargetable(couplings, cars, 0), Is.True);
         }
 
         [Test]

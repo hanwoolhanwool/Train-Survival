@@ -9,7 +9,7 @@ namespace Game.Gameplay.Train
     /// <summary>
     /// QA 테스트용 디버그 핫키 (릴리스에서는 <see cref="_enableQaKeys"/>를 끈다).
     /// - 숫자패드 + : 게임 재시작(Game 씬 재로드, 호스트 권위로 편성·웨이브·사이클 초기화).
-    /// - 숫자패드 7 : 앞쪽부터 살아있는 연결부 1개 파괴(후방 연쇄 이탈 테스트).
+    /// - 숫자패드 7 : 현재 표적 가능한(후미) 연결부 1개 파괴(후방 연쇄 이탈 테스트).
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
     /// </summary>
     public sealed class QaDebugHotkeys : NetworkBehaviour
@@ -53,7 +53,7 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>앞쪽부터 살아있는(성한·양쪽 칸 존재) 연결부를 하나 찾아 파괴한다.</summary>
+        /// <summary>지금 표적 가능한 연결부(살아 있는 것 중 가장 후미 — 순차 파괴 규칙)를 찾아 파괴한다.</summary>
         [Rpc(SendTo.Server, RequireOwnership = false)]
         private void RequestBreakCouplingServerRpc()
         {
@@ -62,11 +62,9 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            for (int i = 0; i < train.CouplingCount; i++)
+            for (int i = train.CouplingCount - 1; i >= 0; i--)
             {
-                if (train.TryGetCoupling(i, out CouplingState coupling) && !coupling.Broken
-                    && train.TryGetCar(i, out CarState front) && TrainStateLogic.IsCarPresent(front)
-                    && train.TryGetCar(i + 1, out CarState rear) && TrainStateLogic.IsCarPresent(rear))
+                if (train.IsCouplingTargetable(i))
                 {
                     sink.ApplyCouplingDamage(i, float.MaxValue);
                     return;

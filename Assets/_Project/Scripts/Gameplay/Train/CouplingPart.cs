@@ -21,7 +21,8 @@ namespace Game.Gameplay.Train
 
         // ── IDamageable — 몬스터가 공격하는 표적면 (데미지 확정은 호스트) ──────────
 
-        public bool IsAlive => IsCouplingLive();
+        /// <summary>살아 있는 연결부 중 가장 후미만 공격 대상이다(후미 순차 파괴 — 앞쪽 연결부는 뒤가 끊겨야 표적이 된다).</summary>
+        public bool IsAlive => IsCouplingTargetable();
 
         public void ApplyDamage(float amount, ulong instigatorClientId)
         {
@@ -66,8 +67,8 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
-        /// 공격 대상 등록을 현재 상태에 맞춘다 — 끊겼거나 잇는 칸이 이탈하면 즉시 표적에서 빠진다
-        /// (Feature 1: 연결 해제된 연결부는 더 이상 몬스터 공격 대상이 아니다).
+        /// 공격 대상 등록을 현재 상태에 맞춘다 — 끊겼거나 잇는 칸이 이탈하면 즉시 표적에서 빠지고
+        /// (Feature 1), 뒤쪽에 살아 있는 연결부가 남아 있는 동안에도 표적이 아니다(후미 순차 파괴).
         /// </summary>
         private void UpdateTargetRegistration()
         {
@@ -76,7 +77,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            bool eligible = IsCouplingLive();
+            bool eligible = IsCouplingTargetable();
             if (eligible && !_registeredAsTarget)
             {
                 registry.Register(transform, this);
@@ -96,7 +97,8 @@ namespace Game.Gameplay.Train
 
         private void OnCouplingStateChanged(CouplingStateChangedEvent evt)
         {
-            if (evt.Index == _couplingIndex)
+            // 자기 연결부는 물론, 뒤쪽 연결부가 끊기면 이 연결부가 새 후미 표적이 되므로 함께 재동기화한다.
+            if (evt.Index >= _couplingIndex)
             {
                 SyncFromState();
             }
@@ -104,8 +106,9 @@ namespace Game.Gameplay.Train
 
         private void OnCarStateChanged(CarStateChangedEvent evt)
         {
-            // 잇는 두 칸(c, c+1) 중 하나라도 이탈·파괴되면 연결 표현이 사라져야 한다.
-            if (evt.Index == _couplingIndex || evt.Index == _couplingIndex + 1)
+            // 잇는 두 칸(c, c+1)의 이탈·파괴는 연결 표현을 끄고, 그보다 뒤 칸의 변화는
+            // 뒤쪽 연결부의 생사를 바꿔 이 연결부의 표적 여부(후미 순차 파괴)를 바꿀 수 있다.
+            if (evt.Index >= _couplingIndex)
             {
                 SyncFromState();
             }
@@ -127,7 +130,13 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>연결부가 끊기지 않았고 잇는 두 칸이 모두 편성에 살아 붙어 있는지.</summary>
+        /// <summary>공격 대상인지 — 살아 있는 연결부 중 가장 후미(복제 데이터 기반, 전 피어 동일 판정).</summary>
+        private bool IsCouplingTargetable()
+        {
+            return ServiceLocator.TryGet(out ITrainState train) && train.IsCouplingTargetable(_couplingIndex);
+        }
+
+        /// <summary>연결부가 끊기지 않았고 잇는 두 칸이 모두 편성에 살아 붙어 있는지(연결 표현용).</summary>
         private bool IsCouplingLive()
         {
             if (!ServiceLocator.TryGet(out ITrainState train))
