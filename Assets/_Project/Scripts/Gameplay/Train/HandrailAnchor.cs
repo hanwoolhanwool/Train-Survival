@@ -17,9 +17,16 @@ namespace Game.Gameplay.Train
         [Tooltip("이 손잡이가 속한 칸의 편성 인덱스(0 = 기관차). TrainState의 칸 배열과 대응.")]
         [SerializeField, Min(0)] private int _carIndex;
 
+        [Tooltip("이탈 칸이 뒤로 이만큼(m) 멀어지면 표현을 끈다 — CarView의 소실 표현과 같은 거리로 맞춘다.")]
+        [SerializeField, Min(5f)] private float _ejectHideMeters = 50f;
+
         // 이탈 오프셋 0(붙어 있을 때)일 때의 손잡이 위치 — 씬 배치 위치를 그대로 기준으로 캐시한다.
         private Vector3 _baseSlotPosition;
         private bool _claimed;
+
+        private Renderer[] _renderers;
+        private Collider[] _colliders;
+        private bool _presentationVisible = true;
 
         public GrabKind Kind => GrabKind.Anchor;
 
@@ -34,6 +41,9 @@ namespace Game.Gameplay.Train
         {
             // 씬에 저작된 배치 위치가 곧 슬롯(오프셋 0) 기준이다. 이후 Update가 이 값에서 오프셋만큼 뒤로 민다.
             _baseSlotPosition = transform.position;
+
+            _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+            _colliders = GetComponentsInChildren<Collider>(includeInactive: true);
         }
 
         public override void OnNetworkSpawn()
@@ -99,8 +109,42 @@ namespace Game.Gameplay.Train
 
             // 칸의 이탈 오프셋만큼 기준 슬롯 위치에서 뒤(-Z)로 민다. 열차 원점 고정(미회전)이라 로컬=월드.
             // CarView가 읽는 것과 동일한 복제 오프셋이므로 호스트·클라 모두에서 위치가 일치한다.
-            float offset = ServiceLocator.TryGet(out ITrainState train) ? train.GetEjectOffset(_carIndex) : 0f;
+            float offset = 0f;
+            CarState car = default;
+            bool hasCar = false;
+            if (ServiceLocator.TryGet(out ITrainState train))
+            {
+                offset = train.GetEjectOffset(_carIndex);
+                hasCar = train.TryGetCar(_carIndex, out car);
+            }
+
             transform.position = _baseSlotPosition + Vector3.back * offset;
+
+            // 표현은 칸과 운명을 같이한다 — 파괴된 칸은 즉시, 이탈 칸은 소실 표현 거리에서 함께 사라진다.
+            // NetworkObject 자체는 despawn하지 않는다(스펙 §5 — 재결합·다음 판 대비 씬 유지).
+            bool visible = !hasCar
+                || TrainStateLogic.IsCarPresent(car)
+                || (car.Health > 0f && offset < _ejectHideMeters);
+            SetPresentationVisible(visible);
+        }
+
+        private void SetPresentationVisible(bool visible)
+        {
+            if (_presentationVisible == visible)
+            {
+                return;
+            }
+
+            _presentationVisible = visible;
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                _renderers[i].enabled = visible;
+            }
+
+            for (int i = 0; i < _colliders.Length; i++)
+            {
+                _colliders[i].enabled = visible;
+            }
         }
     }
 }
