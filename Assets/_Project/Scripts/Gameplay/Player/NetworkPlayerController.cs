@@ -32,6 +32,12 @@ namespace Game.Gameplay.Player
 
         private const string GameplaySceneName = "Game";
 
+        // 접지 프로브에서 최근접 정적 면과 칸 지붕을 '같은 평면'으로 간주하는 높이 차(m) —
+        // 승차 램프 상단이 지붕보다 최대 ~15cm 높게 겹치는 저작 여유를 흡수한다.
+        private const float CoplanarSurfaceTolerance = 0.3f;
+
+        private static readonly RaycastHit[] GroundProbeHits = new RaycastHit[8];
+
         private CharacterController _characterController;
         private Vector3 _horizontalVelocity;
         private float _verticalSpeed;
@@ -249,18 +255,49 @@ namespace Game.Gameplay.Player
             _characterController.Move(motion);
         }
 
-        /// <summary>접지 표면을 한 번의 레이로 판정 — 지상(월드 프레임) 여부와 밟고 있는 칸(무빙 플랫폼)을 함께 갱신한다.</summary>
+        /// <summary>접지 표면 판정 — 지상(월드 프레임) 여부와 밟고 있는 칸(무빙 플랫폼)을 함께 갱신한다.</summary>
         private void ProbeGround()
         {
             _standingOnWorldFrame = false;
             CarView car = null;
 
+            // 전체 히트를 모아 최근접 면과 거의 같은 높이의 칸(CarView)이 있으면 칸을 우선한다.
+            // 이탈 칸이 승차 램프 등 정적 지형과 같은 평면으로 겹치는 구간에서 정적 면이 몇 cm 먼저
+            // 맞더라도 무빙 플랫폼 추적이 끊기지 않게 하기 위함이다(끊기면 칸만 떠나고 플레이어가 남는다).
             Vector3 origin = transform.position + Vector3.up * 0.1f;
-            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit,
-                    _characterController.height * 0.5f + 0.4f, ~0, QueryTriggerInteraction.Ignore))
+            float maxDistance = _characterController.height * 0.5f + 0.4f;
+            int count = Physics.RaycastNonAlloc(
+                origin, Vector3.down, GroundProbeHits, maxDistance, ~0, QueryTriggerInteraction.Ignore);
+
+            float closest = float.PositiveInfinity;
+            Collider closestCollider = null;
+            float carDistance = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
             {
-                _standingOnWorldFrame = hit.collider.GetComponentInParent<WorldFrameSurface>() != null;
-                car = hit.collider.GetComponentInParent<CarView>();
+                RaycastHit candidate = GroundProbeHits[i];
+                if (candidate.distance < closest)
+                {
+                    closest = candidate.distance;
+                    closestCollider = candidate.collider;
+                }
+
+                if (candidate.distance < carDistance)
+                {
+                    CarView candidateCar = candidate.collider.GetComponentInParent<CarView>();
+                    if (candidateCar != null)
+                    {
+                        carDistance = candidate.distance;
+                        car = candidateCar;
+                    }
+                }
+            }
+
+            // 허용 오차보다 확실히 아래에 있는 칸은 실제 지지면이 아니다(예: 램프 중턱 아래로 칸이 지나가는 경우).
+            if (car == null || carDistance > closest + CoplanarSurfaceTolerance)
+            {
+                car = null;
+                _standingOnWorldFrame = closestCollider != null
+                    && closestCollider.GetComponentInParent<WorldFrameSurface>() != null;
             }
 
             // 다른 칸으로 옮겨 탔거나 칸에서 내려오면 위치 델타 추적을 리셋한다(엉뚱한 큰 델타 방지).
