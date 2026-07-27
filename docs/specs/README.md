@@ -12,6 +12,11 @@
 | `harpoon/` | [grapple-pipeline.md](harpoon/grapple-pipeline.md) | 집게 발사→판정→견인 파이프라인, 실패 되감기 연출, 원격 시각 브로드캐스트 |
 | `world/` | [scroll-and-streaming.md](world/scroll-and-streaming.md) | 열차 고정 + 월드 스크롤 좌표계, 지형 타일 스트리밍, 지상 자원 스폰 |
 | `player/` | [network-movement.md](player/network-movement.md) | 소유자 권위 1인칭 이동, 호스트 개입 상태 머신 골격, 낙하·이탈·부활 |
+| `cycle/` (M2) | [day-night-cycle.md](cycle/day-night-cycle.md) | 낮→밤→Day+1 타임라인, 호스트 누적 시간 + 각 피어 순수 파생 |
+| `monsters/` (M2) | [wave-and-steering.md](monsters/wave-and-steering.md) | 밤 웨이브 스폰, NavMesh 불사용 호스트 조향 AI, 저주기 스냅샷 보간 |
+| `combat/` (M2) | [revolver-fire.md](combat/revolver-fire.md) | 리볼버 사격 — 로컬 판정 → 호스트 거리 재검증·데미지 확정 |
+| `inventory/` (M2) | [hotbar.md](inventory/hotbar.md) | 통합 핫바 5칸 + 가방 15칸, `NetworkList` 호스트 권위 개인 인벤토리 |
+| `world/` (M2) | [fuel-loop.md](world/fuel-loop.md) | 엔진 투입→충전→소모→감속 연료 루프, 속도 제어면 분리 |
 
 ## 대표 명세 추천 순서 (심사자용)
 
