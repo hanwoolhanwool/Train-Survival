@@ -32,6 +32,9 @@ namespace Game.Gameplay.Train
         private int[] _grabberCounts;
         private bool[] _ejectSettled;
 
+        // 호스트 전용 — 칸별 현재 밀림 속도(m/s). 분리 순간 0(관성으로 열차를 따라감)에서 감속도만큼 서서히 오른다.
+        private float[] _ejectPushSpeeds;
+
         public int CarCount => _cars.Count;
 
         public int CouplingCount => _couplings.Count;
@@ -323,6 +326,7 @@ namespace Game.Gameplay.Train
 
             _grabberCounts = new int[count];
             _ejectSettled = new bool[count];
+            _ejectPushSpeeds = new float[count];
         }
 
         /// <summary>이탈-멀쩡한 칸을 손잡이 저항을 반영해 매 프레임 이동시킨다(호스트, 손잡이-이탈저항 스펙 §4·§6).</summary>
@@ -334,6 +338,7 @@ namespace Game.Gameplay.Train
             }
 
             float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
+            float targetPushSpeed = EjectMotionMath.ComputeTargetPushSpeed(scrollSpeed, _durabilitySettings.EjectExtraSpeed);
             float dt = Time.deltaTime;
 
             for (int i = 0; i < _cars.Count; i++)
@@ -341,14 +346,25 @@ namespace Game.Gameplay.Train
                 CarState car = _cars[i];
                 // 연쇄 이탈로 떨어져 나갔지만 파괴는 아닌 칸만 이동한다. 정상·파괴 칸은 스킵.
                 bool ejecting = !car.Attached && car.Health > 0f;
-                if (!ejecting || _ejectSettled[i])
+                if (!ejecting)
+                {
+                    // 다음 분리가 다시 관성(속도 0)부터 시작하도록 리셋해 둔다.
+                    _ejectPushSpeeds[i] = 0f;
+                    continue;
+                }
+
+                if (_ejectSettled[i])
                 {
                     continue;
                 }
 
+                // 분리 직후엔 관성으로 열차를 따라가다 감속도만큼 서서히 뒤처진다(밀림 속도 0 → 목표 램프).
+                float pushSpeed = EjectMotionMath.StepPushSpeed(
+                    _ejectPushSpeeds[i], targetPushSpeed, _durabilitySettings.EjectDeceleration, dt);
+                _ejectPushSpeeds[i] = pushSpeed;
+
                 int grabbers = _grabberCounts[i];
-                float netVelocity = EjectMotionMath.ComputeNetVelocity(
-                    scrollSpeed, _durabilitySettings.EjectExtraSpeed, grabbers, _durabilitySettings.PullPerGrabber);
+                float netVelocity = EjectMotionMath.ComputeNetVelocity(pushSpeed, grabbers, _durabilitySettings.PullPerGrabber);
                 float next = EjectMotionMath.StepOffset(_ejectOffsets[i], netVelocity, dt);
 
                 if (!Mathf.Approximately(next, _ejectOffsets[i]))
