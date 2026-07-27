@@ -54,6 +54,18 @@ namespace Game.Gameplay.Train
             }
 
             _claimed = false;
+
+            // 풀에서 꺼낸 앵커를 열차 계층 아래로 정리한다(부모 없는 DontDestroyOnLoad 상주 대신).
+            // 위치는 월드 좌표로 직접 구동하므로 부모는 계층 정리 용도일 뿐이다.
+            ReparentUnderTrain();
+        }
+
+        private void ReparentUnderTrain()
+        {
+            if (ServiceLocator.TryGet(out ITrainState train) && train is Component trainComponent)
+            {
+                transform.SetParent(trainComponent.transform, worldPositionStays: true);
+            }
         }
 
         public bool TryClaimGrab(ulong grabberClientId)
