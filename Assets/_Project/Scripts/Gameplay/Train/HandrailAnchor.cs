@@ -1,4 +1,3 @@
-using Game.Core.Pooling;
 using Game.Core.Services;
 using Game.Gameplay.Harpoon;
 using Unity.Netcode;
@@ -7,65 +6,39 @@ using UnityEngine;
 namespace Game.Gameplay.Train
 {
     /// <summary>
-    /// 이탈 칸의 손잡이 그랩 앵커 (손잡이-이탈저항 스펙 §5). 집게로 잡으면 릴 감기지 않고 그 칸의 저항 인원을 +1 한다.
-    /// 호스트가 칸의 이탈 오프셋을 따라 위치를 계산·복제하고, 클라이언트는 복제 위치로 표시한다(집게 명중 판정용 콜라이더).
-    /// 칸이 이탈할 때 <see cref="TrainState"/>가 앞·뒤 끝에 하나씩 스폰하고, 소실 시 despawn한다. NetworkObject 프리팹.
+    /// 각 칸의 손잡이 그랩 앵커 (손잡이-이탈저항 스펙 §5). 집게로 잡으면 릴 감기지 않고 그 칸의 저항 인원을 +1 한다.
+    /// 씬에 정적 배치된 InScenePlaced NetworkObject다 — 처음부터 상시 존재하고, 그 칸이 이탈해 뒤로 밀려나는
+    /// 동안에만 잡을 수 있다(소실·미이탈이면 불가). 위치는 복제된 이탈 오프셋(<see cref="ITrainState.GetEjectOffset"/>)을
+    /// 읽어 기준 슬롯 위치에서 뒤로 밀어 계산한다 — <see cref="CarView"/>와 동일 소스라 전 피어 위치가 일치한다.
+    /// NetworkObject는 집게가 대상을 식별(NetworkObjectReference)하는 데만 쓰인다(위치는 복제하지 않는다).
     /// </summary>
-    public sealed class HandrailAnchor : NetworkBehaviour, IGrabbable, IPoolable
+    public sealed class HandrailAnchor : NetworkBehaviour, IGrabbable
     {
-        private const ulong NoGrabber = ulong.MaxValue;
+        [Tooltip("이 손잡이가 속한 칸의 편성 인덱스(0 = 기관차). TrainState의 칸 배열과 대응.")]
+        [SerializeField, Min(0)] private int _carIndex;
 
-        [SerializeField, Min(1f)] private float _positionLerpRate = 25f;
-
-        private readonly NetworkVariable<Vector3> _syncedPosition = new NetworkVariable<Vector3>();
-        private readonly NetworkVariable<int> _carIndex = new NetworkVariable<int>(-1);
-        private readonly NetworkVariable<ulong> _grabberClientId = new NetworkVariable<ulong>(NoGrabber);
-
-        private Vector3 _endLocalPosition;
-        private int _pendingCarIndex = -1;
-        private Vector3 _pendingEndLocalPosition;
-        private bool _hasPending;
+        // 이탈 오프셋 0(붙어 있을 때)일 때의 손잡이 위치 — 씬 배치 위치를 그대로 기준으로 캐시한다.
+        private Vector3 _baseSlotPosition;
         private bool _claimed;
 
         public GrabKind Kind => GrabKind.Anchor;
 
-        /// <summary>이탈 중인 칸의 손잡이만 잡을 수 있다(스펙: 이탈 중인 칸만). 소실·재결합·미이탈이면 불가.</summary>
-        public bool IsAvailableForGrab => IsSpawned && !_claimed && IsCarEjecting();
+        /// <summary>이탈 중인 칸의 손잡이만 잡을 수 있다(스펙: 이탈 중이고 소실 전인 칸만). 서버 기준 진실.</summary>
+        public bool IsAvailableForGrab =>
+            IsSpawned && !_claimed
+            && ServiceLocator.TryGet(out ITrainState train) && train.IsCarGrabbable(_carIndex);
 
         public bool IsClaimed => _claimed;
 
-        /// <summary>서버 전용 — 스폰 직전 (칸 인덱스, 슬롯 기준 칸 끝 위치)를 예약한다. OnNetworkSpawn에서 반영된다.</summary>
-        public void ServerSetup(int carIndex, Vector3 endLocalPosition)
+        private void Awake()
         {
-            _pendingCarIndex = carIndex;
-            _pendingEndLocalPosition = endLocalPosition;
-            _hasPending = true;
+            // 씬에 저작된 배치 위치가 곧 슬롯(오프셋 0) 기준이다. 이후 Update가 이 값에서 오프셋만큼 뒤로 민다.
+            _baseSlotPosition = transform.position;
         }
 
         public override void OnNetworkSpawn()
         {
-            if (IsServer && _hasPending)
-            {
-                _carIndex.Value = _pendingCarIndex;
-                _endLocalPosition = _pendingEndLocalPosition;
-                _grabberClientId.Value = NoGrabber;
-                _hasPending = false;
-                UpdateServerPosition();
-            }
-
             _claimed = false;
-
-            // 풀에서 꺼낸 앵커를 열차 계층 아래로 정리한다(부모 없는 DontDestroyOnLoad 상주 대신).
-            // 위치는 월드 좌표로 직접 구동하므로 부모는 계층 정리 용도일 뿐이다.
-            ReparentUnderTrain();
-        }
-
-        private void ReparentUnderTrain()
-        {
-            if (ServiceLocator.TryGet(out ITrainState train) && train is Component trainComponent)
-            {
-                transform.SetParent(trainComponent.transform, worldPositionStays: true);
-            }
         }
 
         public bool TryClaimGrab(ulong grabberClientId)
@@ -76,11 +49,10 @@ namespace Game.Gameplay.Train
             }
 
             _claimed = true;
-            _grabberClientId.Value = grabberClientId;
 
             if (ServiceLocator.TryGet(out ITrainGrabResistance resist))
             {
-                resist.AddGrabber(_carIndex.Value);
+                resist.AddGrabber(_carIndex);
             }
 
             return true;
@@ -94,11 +66,10 @@ namespace Game.Gameplay.Train
             }
 
             _claimed = false;
-            _grabberClientId.Value = NoGrabber;
 
             if (ServiceLocator.TryGet(out ITrainGrabResistance resist))
             {
-                resist.RemoveGrabber(_carIndex.Value);
+                resist.RemoveGrabber(_carIndex);
             }
         }
 
@@ -126,49 +97,10 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            if (IsServer)
-            {
-                UpdateServerPosition();
-            }
-            else
-            {
-                float t = 1f - Mathf.Exp(-_positionLerpRate * Time.deltaTime);
-                transform.position = Vector3.Lerp(transform.position, _syncedPosition.Value, t);
-            }
-        }
-
-        /// <summary>호스트: 칸의 이탈 오프셋만큼 슬롯 끝에서 뒤로 민 위치로 앵커를 배치하고 복제한다.</summary>
-        private void UpdateServerPosition()
-        {
-            float offset = ServiceLocator.TryGet(out ITrainState train) ? train.GetEjectOffset(_carIndex.Value) : 0f;
-
-            // 열차 원점 고정(미회전) → 슬롯 기준 로컬 좌표가 곧 월드 좌표. 뒤(-Z)로 오프셋만큼 민다.
-            Vector3 pos = _endLocalPosition + Vector3.back * offset;
-            transform.position = pos;
-            _syncedPosition.Value = pos;
-        }
-
-        private bool IsCarEjecting()
-        {
-            return ServiceLocator.TryGet(out ITrainState train)
-                && train.TryGetCar(_carIndex.Value, out CarState car)
-                && !car.Attached && car.Health > 0f;
-        }
-
-        public void OnSpawned()
-        {
-        }
-
-        public void OnDespawned()
-        {
-            // 소실 despawn 시 잡고 있던 저항이 남지 않도록 정리(정상 흐름에선 소실=0인이라 무해).
-            if (IsServer)
-            {
-                ReleaseGrab();
-            }
-
-            _hasPending = false;
-            _claimed = false;
+            // 칸의 이탈 오프셋만큼 기준 슬롯 위치에서 뒤(-Z)로 민다. 열차 원점 고정(미회전)이라 로컬=월드.
+            // CarView가 읽는 것과 동일한 복제 오프셋이므로 호스트·클라 모두에서 위치가 일치한다.
+            float offset = ServiceLocator.TryGet(out ITrainState train) ? train.GetEjectOffset(_carIndex) : 0f;
+            transform.position = _baseSlotPosition + Vector3.back * offset;
         }
     }
 }

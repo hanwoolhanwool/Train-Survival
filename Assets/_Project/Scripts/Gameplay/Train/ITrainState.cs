@@ -21,5 +21,11 @@ namespace Game.Gameplay.Train
 
         /// <summary>이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m). 붙어 있거나 범위 밖이면 0.</summary>
         float GetEjectOffset(int index);
+
+        /// <summary>
+        /// 인덱스의 칸 손잡이를 집게로 잡을 수 있는 상태인지 — 이탈 중(미부착·미파괴)이고 아직 소실 전.
+        /// 정적 배치된 손잡이 앵커가 잡기 가능 시점을 게이트하는 데 쓴다(복제 데이터 기반이라 전 피어 동일 판정).
+        /// </summary>
+        bool IsCarGrabbable(int index);
     }
 }
