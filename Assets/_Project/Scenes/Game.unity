@@ -1519,6 +1519,7 @@ GameObject:
   - component: {fileID: 1904839119}
   - component: {fileID: 1904839120}
   - component: {fileID: 1904839122}
+  - component: {fileID: 1904839123}
   m_Layer: 0
   m_Name: Train
   m_TagString: Untagged
@@ -1601,6 +1602,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aead4d068dde01d479659035ede830ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainTargetRegistry
+--- !u!114 &1904839123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79e9b5e1039a6f842a68deda12ef355f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.QaDebugHotkeys
+  ShowTopMostFoldoutHeaderGroup: 1
+  _enableQaKeys: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
