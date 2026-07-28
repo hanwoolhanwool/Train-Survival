@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 8243473584988639474}
   - component: {fileID: 5117626470427924656}
   - component: {fileID: 1201866139057853754}
+  - component: {fileID: 5447795796761736459}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -237,6 +238,22 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _harpoon: {fileID: 7642862762512348835}
   _revolver: {fileID: 7965373453658798524}
+  _hammer: {fileID: 5447795796761736459}
+--- !u!114 &5447795796761736459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5c4e31251fd8634f97f832e8c6f6d56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.RepairHammerController
+  ShowTopMostFoldoutHeaderGroup: 1
+  _settings: {fileID: 11400000, guid: fb705012c7acb2e43a6ea47f4d831dfc, type: 2}
+  _aimSource: {fileID: 1609037139869776444}
 --- !u!1 &2635673702125266619
 GameObject:
   m_ObjectHideFlags: 0
