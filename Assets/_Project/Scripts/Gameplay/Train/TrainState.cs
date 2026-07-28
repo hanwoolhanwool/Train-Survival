@@ -425,55 +425,135 @@ namespace Game.Gameplay.Train
             }
         }
 
-        // ── ITrainExpansion — 후미 칸 증설 (§M3 — 칸 증설/연결) ──────────
+        // ── ITrainExpansion — 칸 건설(재건·후미 증설)·건축물 설치 (§M3) ──────────
 
         public int MaxCarCount => _expansionSettings != null ? _expansionSettings.MaxCarCount : CarCount;
 
-        public bool CanAppendCar(CarType type)
+        public int CarBuildCost => _expansionSettings != null ? _expansionSettings.CarBuildCost : 0;
+
+        public int StructureBuildCost => _expansionSettings != null ? _expansionSettings.StructureBuildCost : 0;
+
+        public bool CanBuildCar()
         {
-            return TrainStateLogic.CanAppendCar(SnapshotCars(), type, MaxCarCount);
+            return FindBuildSlot() >= 0;
         }
 
         /// <summary>
-        /// 후미에 새 칸 1개를 잇는다 — 칸·연결부·건축물 슬롯·이탈 오프셋을 함께 늘려 원자적으로 확정한다.
-        /// 네 목록의 Add가 같은 프레임에 커밋되므로 클라이언트에 부분 편성이 보이지 않는다.
+        /// 칸 1개를 짓는다 — 첫 빈 슬롯(파괴·소실)이면 그 자리 재건(앞 연결부 복구), 없으면 후미 증설.
+        /// 관련 목록 변이가 같은 프레임에 커밋되므로 클라이언트에 부분 편성이 보이지 않는다.
         /// </summary>
-        public bool ServerTryAppendCar(CarType type)
+        public bool ServerTryBuildCar()
         {
-            if (!IsServer || !CanAppendCar(type))
+            if (!IsServer)
             {
                 return false;
             }
 
-            float carMax = MaxHealthFor(type);
-            _cars.Add(new CarState
+            int slot = FindBuildSlot();
+            if (slot < 0)
             {
-                Type = type,
-                Health = carMax,
-                MaxHealth = carMax,
-                Attached = true,
-            });
+                return false;
+            }
 
+            float carMax = MaxHealthFor(CarType.Standard);
             float couplingMax = _durabilitySettings != null ? _durabilitySettings.CouplingMaxHealth : 1f;
-            _couplings.Add(new CouplingState
+            bool rebuilt = slot < _cars.Count;
+
+            if (slot == _cars.Count)
             {
-                Health = couplingMax,
-                MaxHealth = couplingMax,
-                Broken = false,
-            });
+                // 후미 증설 — 칸·연결부·건축물 슬롯·이탈 오프셋을 함께 늘린다.
+                _cars.Add(new CarState
+                {
+                    Type = CarType.Standard,
+                    Health = carMax,
+                    MaxHealth = carMax,
+                    Attached = true,
+                });
+                _couplings.Add(new CouplingState
+                {
+                    Health = couplingMax,
+                    MaxHealth = couplingMax,
+                    Broken = false,
+                });
+                _structures.Add(default);
+                _ejectOffsets.Add(0f);
 
-            float structureMax = _durabilitySettings != null ? _durabilitySettings.StructureMaxHealth : 1f;
-            _structures.Add(TrainStateLogic.MakeStructureFor(type, structureMax));
+                Array.Resize(ref _grabberCounts, _cars.Count);
+                Array.Resize(ref _ejectSettled, _cars.Count);
+                Array.Resize(ref _ejectPushSpeeds, _cars.Count);
+            }
+            else
+            {
+                // 빈 슬롯 재건 — 순수 로직으로 스냅샷을 고쳐 일괄 되쓴다.
+                CarState[] cars = SnapshotCars();
+                CouplingState[] couplings = SnapshotCouplings();
+                StructureState[] structures = SnapshotStructures();
+                TrainStateLogic.RebuildSlot(cars, couplings, structures, slot, carMax, couplingMax);
 
-            _ejectOffsets.Add(0f);
+                WriteBackCars(cars);
+                WriteBackCouplings(couplings);
+                WriteBackStructures(structures);
 
-            int count = _cars.Count;
-            Array.Resize(ref _grabberCounts, count);
-            Array.Resize(ref _ejectSettled, count);
-            Array.Resize(ref _ejectPushSpeeds, count);
+                // 이탈 시뮬 흔적을 지워 제자리에서 다시 시작하게 한다.
+                if (slot < _ejectOffsets.Count && _ejectOffsets[slot] != 0f)
+                {
+                    _ejectOffsets[slot] = 0f;
+                }
 
-            BroadcastCarAppendedRpc(count - 1, type);
+                if (_grabberCounts != null && slot < _grabberCounts.Length)
+                {
+                    _grabberCounts[slot] = 0;
+                    _ejectSettled[slot] = false;
+                    _ejectPushSpeeds[slot] = 0f;
+                }
+            }
+
+            BroadcastCarBuiltRpc(slot, rebuilt);
             return true;
+        }
+
+        public bool CanBuildStructure(int carIndex)
+        {
+            return TrainStateLogic.CanBuildStructureAt(SnapshotStructures(), SnapshotCars(), carIndex);
+        }
+
+        /// <summary>칸 위에 건축물 1개를 설치한다 — 최대 체력으로 시작, 파괴된 건축물 자리에는 새로 지을 수 있다.</summary>
+        public bool ServerTryBuildStructure(int carIndex)
+        {
+            if (!IsServer)
+            {
+                return false;
+            }
+
+            CarState[] cars = SnapshotCars();
+            StructureState[] structures = SnapshotStructures();
+            float structureMax = _durabilitySettings != null ? _durabilitySettings.StructureMaxHealth : 1f;
+            if (!TrainStateLogic.BuildStructure(structures, cars, carIndex, structureMax))
+            {
+                return false;
+            }
+
+            WriteBackStructures(structures);
+            BroadcastStructureBuiltRpc(carIndex);
+            return true;
+        }
+
+        /// <summary>지금 지을 슬롯 — 첫 빈 슬롯(파괴·소실) 우선, 없으면 후미 새 슬롯. 없으면 -1.</summary>
+        private int FindBuildSlot()
+        {
+            float lostDistance = _durabilitySettings != null ? _durabilitySettings.LostDistance : float.MaxValue;
+            return TrainStateLogic.FindBuildSlot(SnapshotCars(), SnapshotEjectOffsets(), lostDistance, MaxCarCount);
+        }
+
+        private float[] SnapshotEjectOffsets()
+        {
+            var snapshot = new float[_ejectOffsets.Count];
+            for (int i = 0; i < _ejectOffsets.Count; i++)
+            {
+                snapshot[i] = _ejectOffsets[i];
+            }
+
+            return snapshot;
         }
 
         // ── IFuelLoadProvider — 연료 소모 가중치 입력 (기획서 §7.1 트레이드오프) ──────────
@@ -524,8 +604,8 @@ namespace Game.Gameplay.Train
                 _couplings.Add(couplings[i]);
             }
 
-            float structureMax = _durabilitySettings != null ? _durabilitySettings.StructureMaxHealth : 1f;
-            StructureState[] structures = TrainStateLogic.BuildInitialStructures(order, structureMax);
+            // 건축물 슬롯은 전부 빈 상태로 시작한다 — 건축물은 설치(수리 망치 우클릭)로만 생긴다.
+            StructureState[] structures = TrainStateLogic.BuildInitialStructures(count);
             for (int i = 0; i < structures.Length; i++)
             {
                 _structures.Add(structures[i]);
@@ -718,9 +798,15 @@ namespace Game.Gameplay.Train
         }
 
         [Rpc(SendTo.Everyone)]
-        private void BroadcastCarAppendedRpc(int index, CarType type)
+        private void BroadcastStructureBuiltRpc(int index)
         {
-            EventBus<CarAppendedEvent>.Publish(new CarAppendedEvent(index, type));
+            EventBus<StructureBuiltEvent>.Publish(new StructureBuiltEvent(index));
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastCarBuiltRpc(int index, bool rebuilt)
+        {
+            EventBus<CarBuiltEvent>.Publish(new CarBuiltEvent(index, rebuilt));
         }
     }
 }

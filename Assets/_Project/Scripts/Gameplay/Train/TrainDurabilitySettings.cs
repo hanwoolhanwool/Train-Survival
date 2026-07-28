@@ -9,9 +9,9 @@ namespace Game.Gameplay.Train
     [CreateAssetMenu(fileName = "TrainDurabilitySettings", menuName = "Game/Train Durability Settings")]
     public sealed class TrainDurabilitySettings : ScriptableObject
     {
-        [Header("칸 종류별 최대 체력 (§M3)")]
+        [Header("칸 최대 체력 (§M3)")]
+        [Tooltip("확장 칸 공통 최대 체력 — 칸의 개성은 종류가 아니라 칸 위 건축물이 만든다.")]
         [SerializeField, Min(1f)] private float _standardCarMaxHealth = 100f;
-        [SerializeField, Min(1f)] private float _greenhouseCarMaxHealth = 80f;
 
         [Header("연결부 (기획서 §9 — 밤 방어전 핵심 방어 목표)")]
         [Tooltip("칸보다 낮게 잡아 '연결부를 노리는' 공략이 성립하도록 한다.")]
@@ -55,15 +55,7 @@ namespace Game.Gameplay.Train
         /// <summary>칸 종류의 최대 체력. 기관차는 파괴 불가이므로 양의 무한대를 돌려준다.</summary>
         public float MaxHealthFor(CarType type)
         {
-            switch (type)
-            {
-                case CarType.Locomotive:
-                    return float.PositiveInfinity;
-                case CarType.Greenhouse:
-                    return _greenhouseCarMaxHealth;
-                default:
-                    return _standardCarMaxHealth;
-            }
+            return type == CarType.Locomotive ? float.PositiveInfinity : _standardCarMaxHealth;
         }
     }
 }

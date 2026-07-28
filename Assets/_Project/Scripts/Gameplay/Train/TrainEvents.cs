@@ -122,19 +122,74 @@ namespace Game.Gameplay.Train
     }
 
     /// <summary>
-    /// 후미에 새 칸이 증설됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3 — 칸 증설/연결).
-    /// 증설 연출·HUD 안내가 구독한다.
+    /// 칸이 지어짐 — 후미 증설 또는 빈 슬롯 재건. 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3).
+    /// 건설 연출·HUD 안내가 구독한다.
     /// </summary>
-    public readonly struct CarAppendedEvent
+    public readonly struct CarBuiltEvent
     {
         public readonly int Index;
 
-        public readonly CarType Type;
+        /// <summary>true = 파괴·소실된 슬롯 재건, false = 후미 새 칸 증설.</summary>
+        public readonly bool Rebuilt;
 
-        public CarAppendedEvent(int index, CarType type)
+        public CarBuiltEvent(int index, bool rebuilt)
         {
             Index = index;
-            Type = type;
+            Rebuilt = rebuilt;
+        }
+    }
+
+    /// <summary>칸 위에 건축물이 설치됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3).</summary>
+    public readonly struct StructureBuiltEvent
+    {
+        public readonly int Index;
+
+        public StructureBuiltEvent(int index)
+        {
+            Index = index;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 수리 망치가 지금 겨누고 있는 열차 부위와 그 상태. 조준 HUD("칸 #2 70/100 — 좌클릭 수리")용.
+    /// 겨눈 대상·체력·설치 가능 여부가 바뀔 때마다 발행된다.
+    /// </summary>
+    public readonly struct HammerTargetLocalEvent
+    {
+        public readonly bool HasTarget;
+
+        public readonly TrainPartKind Kind;
+
+        public readonly int Index;
+
+        public readonly float Health;
+
+        public readonly float MaxHealth;
+
+        /// <summary>지금 좌클릭으로 수리 효과가 있는지(손상돼 있고 수리 가능한 부위).</summary>
+        public readonly bool CanRepair;
+
+        /// <summary>지금 우클릭으로 이 칸에 건축물을 설치할 수 있는지(칸 부위를 겨눌 때만).</summary>
+        public readonly bool CanBuildStructure;
+
+        public readonly int StructureCost;
+
+        /// <summary>설치 비용을 지불할 자원이 있는지.</summary>
+        public readonly bool CanAffordStructure;
+
+        public HammerTargetLocalEvent(bool hasTarget, TrainPartKind kind, int index,
+            float health, float maxHealth, bool canRepair,
+            bool canBuildStructure, int structureCost, bool canAffordStructure)
+        {
+            HasTarget = hasTarget;
+            Kind = kind;
+            Index = index;
+            Health = health;
+            MaxHealth = maxHealth;
+            CanRepair = canRepair;
+            CanBuildStructure = canBuildStructure;
+            StructureCost = structureCost;
+            CanAffordStructure = canAffordStructure;
         }
     }
 

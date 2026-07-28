@@ -25,6 +25,7 @@ namespace Game.UI
         private bool _expansionInRange;
         private int _expansionCost;
         private bool _expansionAffordable;
+        private HammerTargetLocalEvent _hammerTarget;
         private bool _panelOpen;
         private int _dragFromIndex = -1;
 
@@ -33,6 +34,7 @@ namespace Game.UI
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Subscribe(OnEnginePrompt);
             EventBus<ExpansionPromptLocalEvent>.Subscribe(OnExpansionPrompt);
+            EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
         }
 
         private void OnDisable()
@@ -40,6 +42,7 @@ namespace Game.UI
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Unsubscribe(OnEnginePrompt);
             EventBus<ExpansionPromptLocalEvent>.Unsubscribe(OnExpansionPrompt);
+            EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
         }
 
         private void OnPlayerHealthChanged(PlayerHealthChangedEvent evt)
@@ -63,6 +66,11 @@ namespace Game.UI
             _expansionAffordable = evt.CanAfford;
         }
 
+        private void OnHammerTarget(HammerTargetLocalEvent evt)
+        {
+            _hammerTarget = evt;
+        }
+
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
@@ -84,6 +92,7 @@ namespace Game.UI
             DrawHotbar(hotbar);
             DrawEnginePrompt(hotbar);
             DrawExpansionPrompt();
+            DrawHammerTarget();
 
             if (_panelOpen)
             {
@@ -152,10 +161,59 @@ namespace Game.UI
             }
 
             string prompt = _expansionAffordable
-                ? $"E — 온실칸 증설 (자원 {_expansionCost}개)"
-                : $"온실칸 증설에 자원 {_expansionCost}개 필요";
+                ? $"E — 칸 건설 (자원 {_expansionCost}개)"
+                : $"칸 건설에 자원 {_expansionCost}개 필요";
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.58f, 300f, 24f),
                 $"<color=yellow>{prompt}</color>");
+        }
+
+        /// <summary>망치 조준 라벨 — 겨눈 부위의 체력과 가능한 조작(수리/설치)을 조준점 아래에 보여준다(수리 과정 가시화).</summary>
+        private void DrawHammerTarget()
+        {
+            if (!_hammerTarget.HasTarget || _panelOpen)
+            {
+                return;
+            }
+
+            string partName;
+            switch (_hammerTarget.Kind)
+            {
+                case TrainPartKind.Coupling:
+                    partName = $"연결부 #{_hammerTarget.Index}";
+                    break;
+                case TrainPartKind.Structure:
+                    partName = $"건축물 (#{_hammerTarget.Index}번 칸)";
+                    break;
+                default:
+                    partName = _hammerTarget.Index == 0 ? "기관차" : $"칸 #{_hammerTarget.Index}";
+                    break;
+            }
+
+            string healthText = float.IsPositiveInfinity(_hammerTarget.MaxHealth)
+                ? "파괴 불가"
+                : $"{_hammerTarget.Health:F0} / {_hammerTarget.MaxHealth:F0}";
+
+            string action;
+            if (_hammerTarget.CanRepair)
+            {
+                action = " — 좌클릭 수리";
+            }
+            else if (_hammerTarget.CanBuildStructure)
+            {
+                action = _hammerTarget.CanAffordStructure
+                    ? $" — 우클릭 온실 돔 설치 (자원 {_hammerTarget.StructureCost}개)"
+                    : $" — 돔 설치엔 자원 {_hammerTarget.StructureCost}개 필요";
+            }
+            else
+            {
+                action = string.Empty;
+            }
+
+            string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth
+                ? "orange"
+                : "white";
+            GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.54f, 400f, 24f),
+                $"<color={color}>{partName}: {healthText}{action}</color>");
         }
 
         private void DrawInventoryPanel(ILocalHotbar hotbar)

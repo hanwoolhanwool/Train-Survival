@@ -254,45 +254,49 @@ namespace Game.Gameplay.Train
 
         // ── 칸 위 건축물 (기획서 §9 — 칸 위의 각 건축물도 개별 파괴 가능) ──────────────────
 
-        /// <summary>이 칸 종류에 붙박이 건축물이 있는지 — M3에서는 온실칸의 온실 돔만 해당한다.</summary>
-        public static bool HasBuiltInStructure(CarType type)
-        {
-            return type == CarType.Greenhouse;
-        }
-
         /// <summary>건축물이 존재하고 파괴되지 않았는지(표현·공격·수리 대상).</summary>
         public static bool IsStructureAlive(StructureState structure)
         {
             return structure.Present && structure.Health > 0f;
         }
 
-        /// <summary>칸 종류에 맞는 건축물 슬롯 상태를 만든다 — 건축물이 없는 종류는 빈 슬롯(Present=false).</summary>
-        public static StructureState MakeStructureFor(CarType type, float maxHealth)
+        /// <summary>초기 건축물 배열을 만든다(인덱스 = 칸 인덱스 1:1) — 전부 빈 슬롯. 건축물은 설치로만 생긴다.</summary>
+        public static StructureState[] BuildInitialStructures(int carCount)
         {
-            bool present = HasBuiltInStructure(type);
-            return new StructureState
-            {
-                Present = present,
-                Health = present ? maxHealth : 0f,
-                MaxHealth = present ? maxHealth : 0f,
-            };
+            return carCount > 0 ? new StructureState[carCount] : Array.Empty<StructureState>();
         }
 
-        /// <summary>편성 순서대로 초기 건축물 배열을 만든다(인덱스 = 칸 인덱스 1:1).</summary>
-        public static StructureState[] BuildInitialStructures(CarType[] order, float maxHealth)
+        /// <summary>
+        /// 이 칸에 건축물을 설치할 수 있는지 — 칸이 편성에 살아 붙어 있고(기관차 제외),
+        /// 살아 있는 건축물이 아직 없어야 한다. 파괴된 건축물 자리에는 새로 지을 수 있다.
+        /// </summary>
+        public static bool CanBuildStructureAt(StructureState[] structures, CarState[] cars, int index)
         {
-            if (order == null)
+            if (structures == null || cars == null
+                || index < 0 || index >= structures.Length || index >= cars.Length)
             {
-                return Array.Empty<StructureState>();
+                return false;
             }
 
-            var structures = new StructureState[order.Length];
-            for (int i = 0; i < order.Length; i++)
+            return IsCarPresent(cars[index]) && IsDestructible(cars[index].Type)
+                && !IsStructureAlive(structures[index]);
+        }
+
+        /// <summary>칸 위에 건축물을 설치한다 — 최대 체력으로 시작. 설치 불가 자리면 false.</summary>
+        public static bool BuildStructure(StructureState[] structures, CarState[] cars, int index, float maxHealth)
+        {
+            if (!CanBuildStructureAt(structures, cars, index))
             {
-                structures[i] = MakeStructureFor(order[i], maxHealth);
+                return false;
             }
 
-            return structures;
+            structures[index] = new StructureState
+            {
+                Present = true,
+                Health = maxHealth,
+                MaxHealth = maxHealth,
+            };
+            return true;
         }
 
         /// <summary>
@@ -387,28 +391,64 @@ namespace Game.Gameplay.Train
             return true;
         }
 
-        // ── 칸 증설 (개발 가이드 §M3 — 칸 증설/연결, 기획서 §7.1) ──────────────────
+        // ── 칸 건설 (개발 가이드 §M3 — 칸 증설/연결, 기획서 §7.1) ──────────────────
 
         /// <summary>
-        /// 후미에 이 종류의 칸을 이을 수 있는지 — 파괴 가능한 종류·상한 미만이어야 하고,
-        /// 기존 전 슬롯이 살아 붙어 있어야 한다(이탈·파괴 슬롯 뒤에 잇으면 연결부 규약(c = 칸 c ↔ c+1)이 깨진다).
+        /// 지금 칸을 지을 슬롯을 찾는다 — 선두부터 훑어 첫 '비어 있는' 슬롯(파괴됐거나 소실 거리 밖으로
+        /// 사라진 칸)을 재건 대상으로 돌려주고, 빈 슬롯이 없으면 상한 미만일 때 후미 새 슬롯(= 칸 수)을 돌려준다.
+        /// 첫 빈 슬롯의 칸이 아직 가까이서 이탈 중(회수 다툼 중)이면 -1 — 그 자리에 겹쳐 지을 수 없고,
+        /// 연결부 규약(c = 칸 c ↔ c+1) 때문에 그 슬롯을 건너뛰고 뒤에 지을 수도 없다.
         /// </summary>
-        public static bool CanAppendCar(CarState[] cars, CarType type, int maxCarCount)
+        public static int FindBuildSlot(CarState[] cars, float[] ejectOffsets, float lostDistance, int maxCarCount)
         {
-            if (cars == null || cars.Length == 0 || !IsDestructible(type) || cars.Length >= maxCarCount)
+            if (cars == null || cars.Length == 0)
             {
-                return false;
+                return -1;
             }
 
             for (int i = 0; i < cars.Length; i++)
             {
-                if (!IsCarPresent(cars[i]))
+                if (IsCarPresent(cars[i]))
                 {
-                    return false;
+                    continue;
                 }
+
+                bool destroyed = cars[i].Health <= 0f;
+                bool lost = ejectOffsets != null && i < ejectOffsets.Length && ejectOffsets[i] >= lostDistance;
+                return destroyed || lost ? i : -1;
             }
 
-            return true;
+            return cars.Length < maxCarCount ? cars.Length : -1;
+        }
+
+        /// <summary>슬롯 하나를 새 확장 칸으로 재건한다 — 칸을 최대 체력·연결 상태로 되살리고 앞 연결부를 복구한다.</summary>
+        public static void RebuildSlot(CarState[] cars, CouplingState[] couplings, StructureState[] structures,
+            int index, float carMaxHealth, float couplingMaxHealth)
+        {
+            cars[index] = new CarState
+            {
+                Type = CarType.Standard,
+                Health = carMaxHealth,
+                MaxHealth = carMaxHealth,
+                Attached = true,
+            };
+
+            // 앞 연결부(index-1 = 칸 index-1 ↔ index)를 복구한다 — 재건은 첫 빈 슬롯에서만 일어나므로 앞 칸은 건재하다.
+            if (couplings != null && index - 1 >= 0 && index - 1 < couplings.Length)
+            {
+                couplings[index - 1] = new CouplingState
+                {
+                    Health = couplingMaxHealth,
+                    MaxHealth = couplingMaxHealth,
+                    Broken = false,
+                };
+            }
+
+            // 옛 건축물 잔해는 함께 사라진다 — 새 칸은 빈 슬롯으로 시작한다.
+            if (structures != null && index < structures.Length)
+            {
+                structures[index] = default;
+            }
         }
     }
 }

@@ -8,9 +8,10 @@ using UnityEngine.InputSystem;
 namespace Game.Gameplay.Train
 {
     /// <summary>
-    /// 후미 칸 증설 포트 (§M3 — 칸 증설/연결, 기획서 §7.1) — 현재 후미 칸 뒤끝에 붙어 다니는 상호작용 지점.
-    /// 근처에서 포트를 쳐다보고 E키 = 개인 인벤토리 자원으로 비용을 지불하고 온실칸 1칸을 잇는다.
-    /// 확정은 호스트: 요청 RPC를 받아 (자원 차감 + 편성 증설)을 원자적으로 확정한다 (엔진 투입과 동일 패턴).
+    /// 칸 건설 포트 (§M3 — 칸 증설/연결, 기획서 §7.1) — 현재 후미 칸 뒤끝에 붙어 다니는 상호작용 지점.
+    /// 근처에서 포트를 쳐다보고 E키 = 개인 인벤토리 자원으로 비용을 지불하고 확장 칸 1칸을 짓는다
+    /// (파괴·소실된 중간 슬롯이 있으면 그 자리부터 재건, 없으면 후미 증설).
+    /// 확정은 호스트: 요청 RPC를 받아 (자원 차감 + 건설)을 원자적으로 확정한다 (엔진 투입과 동일 패턴).
     /// Train 루트(씬 NetworkObject)의 자식으로 배치한다 — 위치는 복제 편성 상태로 전 피어가 동일하게 계산한다.
     /// </summary>
     public sealed class TrainExpansionPort : NetworkBehaviour
@@ -79,10 +80,10 @@ namespace Game.Gameplay.Train
             bool inRange = (localPlayer.transform.position - transform.position).sqrMagnitude
                 <= _interactRadius * _interactRadius;
             bool available = ServiceLocator.TryGet(out ITrainExpansion expansion)
-                && expansion.CanAppendCar(CarType.Greenhouse);
+                && expansion.CanBuildCar();
             bool ready = inRange && available && IsLookingAtPort(localPlayer);
 
-            int cost = _expansionSettings.GreenhouseCarCost;
+            int cost = _expansionSettings.CarBuildCost;
             IResourceInventory inventory = localPlayer.GetComponent<IResourceInventory>();
             bool affordable = inventory != null && inventory.Count >= cost;
 
@@ -138,11 +139,11 @@ namespace Game.Gameplay.Train
 
             _localInRange = inRange;
             _localAffordable = affordable;
-            int cost = _expansionSettings != null ? _expansionSettings.GreenhouseCarCost : 0;
+            int cost = _expansionSettings != null ? _expansionSettings.CarBuildCost : 0;
             EventBus<ExpansionPromptLocalEvent>.Publish(new ExpansionPromptLocalEvent(inRange, cost, affordable));
         }
 
-        // ── 호스트: 증설 확정 (자원 차감 + 편성 증설, 원자적) ──────────
+        // ── 호스트: 건설 확정 (자원 차감 + 재건/증설, 원자적) ──────────
 
         [Rpc(SendTo.Server, RequireOwnership = false)]
         private void RequestBuildServerRpc(RpcParams rpcParams = default)
@@ -164,22 +165,21 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            if (!ServiceLocator.TryGet(out ITrainExpansion expansion)
-                || !expansion.CanAppendCar(CarType.Greenhouse))
+            if (!ServiceLocator.TryGet(out ITrainExpansion expansion) || !expansion.CanBuildCar())
             {
                 return;
             }
 
             IResourceInventory inventory = client.PlayerObject.GetComponent<IResourceInventory>();
-            if (inventory == null || !inventory.ServerTryRemove(_expansionSettings.GreenhouseCarCost))
+            if (inventory == null || !inventory.ServerTryRemove(_expansionSettings.CarBuildCost))
             {
                 return;
             }
 
-            // 차감 후 증설이 실패하면(같은 프레임 경쟁 등) 자원을 되돌려 원자성을 지킨다.
-            if (!expansion.ServerTryAppendCar(CarType.Greenhouse))
+            // 차감 후 건설이 실패하면(같은 프레임 경쟁 등) 자원을 되돌려 원자성을 지킨다.
+            if (!expansion.ServerTryBuildCar())
             {
-                inventory.ServerTryAdd(_expansionSettings.GreenhouseCarCost);
+                inventory.ServerTryAdd(_expansionSettings.CarBuildCost);
             }
         }
     }

@@ -11,7 +11,7 @@ namespace Game.Gameplay.Train
     /// QA 테스트용 디버그 핫키 (릴리스에서는 <see cref="_enableQaKeys"/>를 끈다).
     /// - 숫자패드 + : 게임 재시작(Game 씬 재로드, 호스트 권위로 편성·웨이브·사이클 초기화).
     /// - 숫자패드 7 : 현재 표적 가능한(후미) 연결부 1개 파괴(후방 연쇄 이탈 테스트).
-    /// - 숫자패드 8 : 후미에 온실칸 1칸 무료 증설(§M3 증설 테스트 — 비용 경로는 증설 포트로 검증).
+    /// - 숫자패드 8 : 칸 1칸 무료 건설 — 빈 슬롯(파괴·소실) 재건 우선, 없으면 후미 증설(비용 경로는 건설 포트로 검증).
     /// - 숫자패드 9 : 요청자에게 자원 10개 지급(증설 비용·연료 투입 테스트).
     /// - 숫자패드 6 : 표적 연결부·후미 칸·건축물에 샘플 데미지 30(수리 망치 테스트).
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
@@ -49,7 +49,7 @@ namespace Game.Gameplay.Train
 
             if (keyboard.numpad8Key.wasPressedThisFrame)
             {
-                RequestAppendGreenhouseServerRpc();
+                RequestBuildCarServerRpc();
             }
 
             if (keyboard.numpad9Key.wasPressedThisFrame)
@@ -92,13 +92,13 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>후미에 온실칸 1칸을 무료 증설한다 — 비용 지불 경로는 증설 포트가 따로 검증한다.</summary>
+        /// <summary>칸 1칸을 무료 건설한다(빈 슬롯 재건 우선) — 비용 지불 경로는 건설 포트가 따로 검증한다.</summary>
         [Rpc(SendTo.Server, RequireOwnership = false)]
-        private void RequestAppendGreenhouseServerRpc()
+        private void RequestBuildCarServerRpc()
         {
             if (ServiceLocator.TryGet(out ITrainExpansion expansion))
             {
-                expansion.ServerTryAppendCar(CarType.Greenhouse);
+                expansion.ServerTryBuildCar();
             }
         }
 

@@ -13,12 +13,17 @@ namespace Game.Gameplay.Train
         [Tooltip("기관차 포함 최대 칸 수 — 씬의 예비 칸 슬롯(Car_N·Connector_N·손잡이 앵커) 수와 맞춘다.")]
         [SerializeField, Min(1)] private int _maxCarCount = 5;
 
-        [Header("증설 비용 (자원 개수)")]
-        [Tooltip("온실칸 1칸 증설에 드는 자원 수 — 증설 포트에서 개인 인벤토리 총량으로 지불한다.")]
-        [SerializeField, Min(0)] private int _greenhouseCarCost = 5;
+        [Header("건설 비용 (자원 개수)")]
+        [Tooltip("확장 칸 1칸 건설(재건·증설 공통)에 드는 자원 수 — 증설 포트에서 개인 인벤토리 총량으로 지불한다.")]
+        [SerializeField, Min(0)] private int _carBuildCost = 5;
+
+        [Tooltip("칸 위 건축물(온실 돔 등) 1개 설치에 드는 자원 수 — 수리 망치 우클릭으로 지불한다.")]
+        [SerializeField, Min(0)] private int _structureBuildCost = 3;
 
         public int MaxCarCount => _maxCarCount;
 
-        public int GreenhouseCarCost => _greenhouseCarCost;
+        public int CarBuildCost => _carBuildCost;
+
+        public int StructureBuildCost => _structureBuildCost;
     }
 }

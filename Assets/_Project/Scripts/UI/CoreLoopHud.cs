@@ -49,7 +49,8 @@ namespace Game.UI
             EventBus<CarsDetachedEvent>.Subscribe(OnCarsDetached);
             EventBus<CarDestroyedEvent>.Subscribe(OnCarDestroyed);
             EventBus<StructureDestroyedEvent>.Subscribe(OnStructureDestroyed);
-            EventBus<CarAppendedEvent>.Subscribe(OnCarAppended);
+            EventBus<StructureBuiltEvent>.Subscribe(OnStructureBuilt);
+            EventBus<CarBuiltEvent>.Subscribe(OnCarBuilt);
         }
 
         private void OnDisable()
@@ -65,7 +66,8 @@ namespace Game.UI
             EventBus<CarsDetachedEvent>.Unsubscribe(OnCarsDetached);
             EventBus<CarDestroyedEvent>.Unsubscribe(OnCarDestroyed);
             EventBus<StructureDestroyedEvent>.Unsubscribe(OnStructureDestroyed);
-            EventBus<CarAppendedEvent>.Unsubscribe(OnCarAppended);
+            EventBus<StructureBuiltEvent>.Unsubscribe(OnStructureBuilt);
+            EventBus<CarBuiltEvent>.Unsubscribe(OnCarBuilt);
         }
 
         private void OnDayPhaseChanged(DayPhaseChangedEvent evt)
@@ -142,10 +144,17 @@ namespace Game.UI
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
-        private void OnCarAppended(CarAppendedEvent evt)
+        private void OnStructureBuilt(StructureBuiltEvent evt)
         {
-            string label = evt.Type == CarType.Greenhouse ? "온실칸" : "화물칸";
-            _trainAlertText = $"<color=lime>{label} 증설! (#{evt.Index})</color>";
+            _trainAlertText = $"<color=lime>건축물 설치! (#{evt.Index}번 칸)</color>";
+            _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
+        }
+
+        private void OnCarBuilt(CarBuiltEvent evt)
+        {
+            _trainAlertText = evt.Rebuilt
+                ? $"<color=lime>칸 재건! (#{evt.Index})</color>"
+                : $"<color=lime>칸 증설! (#{evt.Index})</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
