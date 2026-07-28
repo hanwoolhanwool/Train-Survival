@@ -17,6 +17,10 @@ namespace Game.Gameplay.Train
         [Tooltip("칸보다 낮게 잡아 '연결부를 노리는' 공략이 성립하도록 한다.")]
         [SerializeField, Min(1f)] private float _couplingMaxHealth = 60f;
 
+        [Header("칸 위 건축물 (기획서 §9 — 개별 파괴 가능)")]
+        [Tooltip("붙박이 건축물(온실 돔 등)의 최대 체력 — 칸보다 낮게 잡아 건축물부터 노출되는 위험을 만든다.")]
+        [SerializeField, Min(1f)] private float _structureMaxHealth = 50f;
+
         [Header("이탈 이동·손잡이 저항 (손잡이-이탈저항 스펙 §4)")]
         [Tooltip("스크롤 속도에 더해 이탈 칸이 뒤로 밀려나는 기본 속도(m/s).")]
         [SerializeField, Min(0f)] private float _ejectExtraSpeed = 2f;
@@ -32,6 +36,9 @@ namespace Game.Gameplay.Train
 
         /// <summary>연결부 최대 체력.</summary>
         public float CouplingMaxHealth => _couplingMaxHealth;
+
+        /// <summary>칸 위 붙박이 건축물의 최대 체력.</summary>
+        public float StructureMaxHealth => _structureMaxHealth;
 
         /// <summary>스크롤 위에 더해지는 기본 후퇴 속도(m/s).</summary>
         public float EjectExtraSpeed => _ejectExtraSpeed;

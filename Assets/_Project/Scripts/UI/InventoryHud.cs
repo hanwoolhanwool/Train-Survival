@@ -22,6 +22,9 @@ namespace Game.UI
         private float _health;
         private float _maxHealth;
         private bool _engineInRange;
+        private bool _expansionInRange;
+        private int _expansionCost;
+        private bool _expansionAffordable;
         private bool _panelOpen;
         private int _dragFromIndex = -1;
 
@@ -29,12 +32,14 @@ namespace Game.UI
         {
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Subscribe(OnEnginePrompt);
+            EventBus<ExpansionPromptLocalEvent>.Subscribe(OnExpansionPrompt);
         }
 
         private void OnDisable()
         {
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Unsubscribe(OnEnginePrompt);
+            EventBus<ExpansionPromptLocalEvent>.Unsubscribe(OnExpansionPrompt);
         }
 
         private void OnPlayerHealthChanged(PlayerHealthChangedEvent evt)
@@ -49,6 +54,13 @@ namespace Game.UI
         private void OnEnginePrompt(EnginePromptLocalEvent evt)
         {
             _engineInRange = evt.InRange;
+        }
+
+        private void OnExpansionPrompt(ExpansionPromptLocalEvent evt)
+        {
+            _expansionInRange = evt.InRange;
+            _expansionCost = evt.Cost;
+            _expansionAffordable = evt.CanAfford;
         }
 
         private void Update()
@@ -71,6 +83,7 @@ namespace Game.UI
 
             DrawHotbar(hotbar);
             DrawEnginePrompt(hotbar);
+            DrawExpansionPrompt();
 
             if (_panelOpen)
             {
@@ -88,6 +101,8 @@ namespace Game.UI
                     return "리볼버";
                 case HotbarItemType.Resource:
                     return $"자원\n{slot.Count}/{stackSize}";
+                case HotbarItemType.Hammer:
+                    return "망치";
                 default:
                     return string.Empty;
             }
@@ -126,6 +141,20 @@ namespace Game.UI
                 ? "E 또는 좌클릭 — 연료 투입 (자원 1개)"
                 : "자원 슬롯(숫자 키 1~5)을 든 채 E — 연료 투입";
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f),
+                $"<color=yellow>{prompt}</color>");
+        }
+
+        private void DrawExpansionPrompt()
+        {
+            if (!_expansionInRange || _panelOpen)
+            {
+                return;
+            }
+
+            string prompt = _expansionAffordable
+                ? $"E — 온실칸 증설 (자원 {_expansionCost}개)"
+                : $"온실칸 증설에 자원 {_expansionCost}개 필요";
+            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.58f, 300f, 24f),
                 $"<color=yellow>{prompt}</color>");
         }
 

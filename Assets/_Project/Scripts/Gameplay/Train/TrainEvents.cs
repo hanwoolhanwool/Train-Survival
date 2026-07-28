@@ -95,4 +95,66 @@ namespace Game.Gameplay.Train
             Indices = indices;
         }
     }
+
+    /// <summary>한 칸 위 건축물의 상태가 바뀜(체력) — 건축물 표현(StructureView)이 구독한다.</summary>
+    public readonly struct StructureStateChangedEvent
+    {
+        public readonly int Index;
+
+        public readonly StructureState State;
+
+        public StructureStateChangedEvent(int index, StructureState state)
+        {
+            Index = index;
+            State = state;
+        }
+    }
+
+    /// <summary>칸 위 건축물이 파괴됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3, 기획서 §9).</summary>
+    public readonly struct StructureDestroyedEvent
+    {
+        public readonly int Index;
+
+        public StructureDestroyedEvent(int index)
+        {
+            Index = index;
+        }
+    }
+
+    /// <summary>
+    /// 후미에 새 칸이 증설됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3 — 칸 증설/연결).
+    /// 증설 연출·HUD 안내가 구독한다.
+    /// </summary>
+    public readonly struct CarAppendedEvent
+    {
+        public readonly int Index;
+
+        public readonly CarType Type;
+
+        public CarAppendedEvent(int index, CarType type)
+        {
+            Index = index;
+            Type = type;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 자기 플레이어의 증설 포트 상호작용 범위 진입/이탈. HUD 안내("E — 온실칸 증설")용.
+    /// 범위·비용 충족 상태가 바뀔 때마다 발행된다.
+    /// </summary>
+    public readonly struct ExpansionPromptLocalEvent
+    {
+        public readonly bool InRange;
+
+        public readonly int Cost;
+
+        public readonly bool CanAfford;
+
+        public ExpansionPromptLocalEvent(bool inRange, int cost, bool canAfford)
+        {
+            InRange = inRange;
+            Cost = cost;
+            CanAfford = canAfford;
+        }
+    }
 }

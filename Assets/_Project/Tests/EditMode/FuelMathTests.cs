@@ -52,5 +52,24 @@ namespace Game.Tests.EditMode
 
             Assert.That(6f - next, Is.EqualTo(0.03f).Within(0.001f), "1.5 m/s² × 0.02 s = 0.03 m/s");
         }
+
+        [Test]
+        public void 소모율은_끌고_있는_칸_수에_비례해_가산된다()
+        {
+            Assert.That(FuelMath.ComputeConsumptionPerSecond(0.5f, 0.15f, 2), Is.EqualTo(0.8f).Within(0.001f),
+                "기본 편성(화물 2칸) = 기존 소모율 0.8 유지");
+            Assert.That(FuelMath.ComputeConsumptionPerSecond(0.5f, 0.15f, 4), Is.EqualTo(1.1f).Within(0.001f),
+                "증설 2칸 → 소모 증가 (기획서 §7.1 트레이드오프)");
+            Assert.That(FuelMath.ComputeConsumptionPerSecond(0.5f, 0.15f, 0), Is.EqualTo(0.5f).Within(0.001f),
+                "칸을 모두 잃으면 기본 소모만 남는다");
+        }
+
+        [Test]
+        public void 소모율_음수_입력은_방어된다()
+        {
+            Assert.That(FuelMath.ComputeConsumptionPerSecond(-1f, 0.15f, 2), Is.EqualTo(0.3f).Within(0.001f));
+            Assert.That(FuelMath.ComputeConsumptionPerSecond(0.5f, -1f, 2), Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(FuelMath.ComputeConsumptionPerSecond(0.5f, 0.15f, -3), Is.EqualTo(0.5f).Within(0.001f));
+        }
     }
 }

@@ -7,6 +7,9 @@ namespace Game.Gameplay.Inventory
         Harpoon = 1,
         Revolver = 2,
         Resource = 3,
+
+        /// <summary>수리 망치 (기획서 §9 — 열차 부위 수리 도구, §M3).</summary>
+        Hammer = 4,
     }
 
     /// <summary>

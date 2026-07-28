@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Combat;
@@ -30,6 +31,9 @@ namespace Game.Gameplay.Train
         private bool _ejecting;
         private bool _registeredAsTarget;
 
+        /// <summary>편성 인덱스 — 수리 망치 등 부위 식별이 필요한 도구가 읽는다.</summary>
+        public int CarIndex => _carIndex;
+
         // ── IDamageable — 몬스터가 공격하는 표적면 (데미지 확정은 호스트) ──────────
 
         /// <summary>파괴 가능(기관차 아님)하고 편성에 살아 붙어 있을 때만 공격 대상이 된다.</summary>
@@ -46,9 +50,26 @@ namespace Game.Gameplay.Train
         private void Awake()
         {
             // 렌더러·콜라이더가 칸 오브젝트 자신 또는 자식 어디에 있든 덮도록 자기 포함으로 수집한다.
-            _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
-            _colliders = GetComponentsInChildren<Collider>(includeInactive: true);
+            // 단, 칸 위 건축물(StructureView) 서브트리는 제외한다 — 건축물 표시는 StructureView가 따로
+            // 결정하므로(개별 파괴), 칸 표현 토글이 파괴된 건축물을 되살리면 안 된다.
+            _renderers = CollectOutsideStructures<Renderer>();
+            _colliders = CollectOutsideStructures<Collider>();
             _originalLocalPosition = transform.localPosition;
+        }
+
+        private T[] CollectOutsideStructures<T>() where T : Component
+        {
+            T[] all = GetComponentsInChildren<T>(includeInactive: true);
+            var filtered = new List<T>(all.Length);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].GetComponentInParent<StructureView>() == null)
+                {
+                    filtered.Add(all[i]);
+                }
+            }
+
+            return filtered.ToArray();
         }
 
         private void Start()
@@ -139,9 +160,24 @@ namespace Game.Gameplay.Train
 
         private void SyncFromState()
         {
-            if (ServiceLocator.TryGet(out ITrainState train) && train.TryGetCar(_carIndex, out CarState car))
+            if (!ServiceLocator.TryGet(out ITrainState train))
+            {
+                return;
+            }
+
+            if (train.TryGetCar(_carIndex, out CarState car))
             {
                 ApplyState(car);
+            }
+            else
+            {
+                // 증설 전 예비 슬롯 — 편성에 없으므로 표현·콜라이더를 끈 채 대기한다(§M3 — 슬롯 사전 확보 방식).
+                // 증설되면 목록 Add → CarStateChangedEvent로 이 자리에서 다시 나타난다.
+                _lastState = default;
+                _ejecting = false;
+                UpdateTargetRegistration();
+                SetRenderers(false);
+                SetColliders(false);
             }
         }
 

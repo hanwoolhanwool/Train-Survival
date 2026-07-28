@@ -31,10 +31,18 @@ namespace Game.Gameplay.Train
 
         public float CouplingGap => _couplingGap;
 
-        /// <summary>연결부 포함 총 길이 (기관차 + 2칸 기본 구성 ≈ 39 m).</summary>
+        /// <summary>연결부 포함 총 길이 (기관차 + 2칸 기본 구성 ≈ 39 m). 증설 칸은 여기 안 들어간다 — 초기 편성 기준.</summary>
         public float TotalLength => _carCount * _carLength + (_carCount - 1) * _couplingGap;
 
         public float FrontZ => TotalLength * 0.5f;
+
+        /// <summary>
+        /// 편성 인덱스 칸의 중심 Z — 선두(FrontZ)는 고정이고 열차는 후미로만 자라므로 증설 칸(초기 편성 밖 인덱스)에도 유효하다.
+        /// </summary>
+        public float CarCenterZ(int index)
+        {
+            return FrontZ - _carLength * 0.5f - index * (_carLength + _couplingGap);
+        }
 
         public float RearZ => -TotalLength * 0.5f;
 

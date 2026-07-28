@@ -7,10 +7,10 @@ namespace Game.Gameplay.Train
     /// </summary>
     public interface ITrainState
     {
-        /// <summary>편성 칸 수(파괴·이탈한 칸도 슬롯은 유지되므로 값은 불변).</summary>
+        /// <summary>편성 칸 수 — 파괴·이탈한 칸도 슬롯은 유지되며, 후미 증설 시에만 늘어난다(§M3).</summary>
         int CarCount { get; }
 
-        /// <summary>연결부 수(= 칸 수 - 1, 초기 편성 기준 불변).</summary>
+        /// <summary>연결부 수(= 칸 수 - 1, 증설 시 함께 늘어난다).</summary>
         int CouplingCount { get; }
 
         /// <summary>인덱스의 칸 상태를 읽는다. 범위 밖이면 false.</summary>
@@ -18,6 +18,9 @@ namespace Game.Gameplay.Train
 
         /// <summary>인덱스의 연결부 상태를 읽는다. 범위 밖이면 false.</summary>
         bool TryGetCoupling(int index, out CouplingState coupling);
+
+        /// <summary>인덱스 칸 위 건축물 슬롯 상태를 읽는다(인덱스 = 칸 인덱스). 범위 밖이면 false.</summary>
+        bool TryGetStructure(int index, out StructureState structure);
 
         /// <summary>이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m). 붙어 있거나 범위 밖이면 0.</summary>
         float GetEjectOffset(int index);

@@ -11,6 +11,16 @@ namespace Game.Gameplay.World
             return Mathf.Max(0f, fuel - consumptionPerSecond * deltaTime);
         }
 
+        /// <summary>
+        /// 끌고 있는 칸 수를 반영한 초당 소모율 — 기본 소모 + 화물칸 수 × 칸당 소모
+        /// (기획서 §7.1 — 칸이 늘수록 연료 소모 증가, 칸이 이탈하면 그만큼 가벼워진다).
+        /// </summary>
+        public static float ComputeConsumptionPerSecond(float basePerSecond, float perCarPerSecond, int attachedCarCount)
+        {
+            return Mathf.Max(0f, basePerSecond)
+                + Mathf.Max(0f, perCarPerSecond) * Mathf.Max(0, attachedCarCount);
+        }
+
         /// <summary>연료 잔량을 충전한다 (최대 저장량 초과 방지).</summary>
         public static float AddFuel(float fuel, float amount, float capacity)
         {

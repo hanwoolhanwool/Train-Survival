@@ -5,7 +5,7 @@ namespace Game.Gameplay.Inventory
 {
     /// <summary>
     /// 통합 핫바 인벤토리 — 호스트 권위 (기획서 §3.4, 네트워크 문서 §4: 개인 소유물이라도 증감·슬롯 이동 확정은 호스트).
-    /// 무기와 자원이 한 핫바 5칸에 들어가며, 시작 배치는 1번 집게 · 2번 리볼버.
+    /// 무기와 자원이 한 핫바 5칸에 들어가며, 시작 배치는 1번 집게 · 2번 리볼버 · 3번 수리 망치.
     /// 슬롯 목록은 NetworkList로 동기화하고, 규칙 판정은 순수 <see cref="HotbarLogic"/>이 담당한다.
     /// Player 프리팹에 부착한다.
     /// </summary>
@@ -178,6 +178,11 @@ namespace Game.Gameplay.Inventory
                 else if (i == 1)
                 {
                     slot.ItemType = HotbarItemType.Revolver;
+                    slot.Count = 1;
+                }
+                else if (i == 2)
+                {
+                    slot.ItemType = HotbarItemType.Hammer;
                     slot.Count = 1;
                 }
 

@@ -251,5 +251,164 @@ namespace Game.Gameplay.Train
             couplings[index] = coupling;
             return true;
         }
+
+        // ── 칸 위 건축물 (기획서 §9 — 칸 위의 각 건축물도 개별 파괴 가능) ──────────────────
+
+        /// <summary>이 칸 종류에 붙박이 건축물이 있는지 — M3에서는 온실칸의 온실 돔만 해당한다.</summary>
+        public static bool HasBuiltInStructure(CarType type)
+        {
+            return type == CarType.Greenhouse;
+        }
+
+        /// <summary>건축물이 존재하고 파괴되지 않았는지(표현·공격·수리 대상).</summary>
+        public static bool IsStructureAlive(StructureState structure)
+        {
+            return structure.Present && structure.Health > 0f;
+        }
+
+        /// <summary>칸 종류에 맞는 건축물 슬롯 상태를 만든다 — 건축물이 없는 종류는 빈 슬롯(Present=false).</summary>
+        public static StructureState MakeStructureFor(CarType type, float maxHealth)
+        {
+            bool present = HasBuiltInStructure(type);
+            return new StructureState
+            {
+                Present = present,
+                Health = present ? maxHealth : 0f,
+                MaxHealth = present ? maxHealth : 0f,
+            };
+        }
+
+        /// <summary>편성 순서대로 초기 건축물 배열을 만든다(인덱스 = 칸 인덱스 1:1).</summary>
+        public static StructureState[] BuildInitialStructures(CarType[] order, float maxHealth)
+        {
+            if (order == null)
+            {
+                return Array.Empty<StructureState>();
+            }
+
+            var structures = new StructureState[order.Length];
+            for (int i = 0; i < order.Length; i++)
+            {
+                structures[i] = MakeStructureFor(order[i], maxHealth);
+            }
+
+            return structures;
+        }
+
+        /// <summary>
+        /// 건축물 하나에 데미지를 적용한다. 칸이 편성에 살아 붙어 있고 건축물이 살아 있을 때만 유효하다
+        /// (이탈·파괴된 칸 위의 건축물은 칸과 운명을 같이하므로 별도 표적이 아니다).
+        /// </summary>
+        public static CarDamageResult ApplyStructureDamage(
+            StructureState[] structures, CarState[] cars, int index, float amount)
+        {
+            if (structures == null || cars == null || amount <= 0f
+                || index < 0 || index >= structures.Length || index >= cars.Length)
+            {
+                return CarDamageResult.Ignored;
+            }
+
+            if (!IsCarPresent(cars[index]) || !IsStructureAlive(structures[index]))
+            {
+                return CarDamageResult.Ignored;
+            }
+
+            StructureState structure = structures[index];
+            structure.Health = Mathf.Max(0f, structure.Health - amount);
+            structures[index] = structure;
+
+            return structure.Health <= 0f ? CarDamageResult.Destroyed : CarDamageResult.Damaged;
+        }
+
+        // ── 수리 (기획서 §9 — 수리 망치. 파괴·이탈된 부위의 복구(재결합)는 미결이라 불가) ──────────────────
+
+        /// <summary>
+        /// 칸을 수리한다 — 편성에 살아 붙어 있고 만피가 아닐 때만. 기관차는 파괴 불가(체력 무한)라 수리 대상이 아니다.
+        /// </summary>
+        public static bool RepairCar(CarState[] cars, int index, float amount)
+        {
+            if (cars == null || index < 0 || index >= cars.Length || amount <= 0f)
+            {
+                return false;
+            }
+
+            CarState car = cars[index];
+            if (!IsCarPresent(car) || !IsDestructible(car.Type) || car.Health >= car.MaxHealth)
+            {
+                return false;
+            }
+
+            car.Health = Mathf.Min(car.MaxHealth, car.Health + amount);
+            cars[index] = car;
+            return true;
+        }
+
+        /// <summary>연결부를 수리한다 — 살아 있는(잇는 두 칸이 건재한) 연결부만. 끊긴 연결부는 되살릴 수 없다.</summary>
+        public static bool RepairCoupling(CouplingState[] couplings, CarState[] cars, int index, float amount)
+        {
+            if (amount <= 0f || !IsCouplingLive(couplings, cars, index))
+            {
+                return false;
+            }
+
+            CouplingState coupling = couplings[index];
+            if (coupling.Health >= coupling.MaxHealth)
+            {
+                return false;
+            }
+
+            coupling.Health = Mathf.Min(coupling.MaxHealth, coupling.Health + amount);
+            couplings[index] = coupling;
+            return true;
+        }
+
+        /// <summary>건축물을 수리한다 — 칸이 살아 붙어 있고 건축물이 살아 있을 때만. 파괴된 건축물 재건은 M5(건설) 범위.</summary>
+        public static bool RepairStructure(StructureState[] structures, CarState[] cars, int index, float amount)
+        {
+            if (structures == null || cars == null || amount <= 0f
+                || index < 0 || index >= structures.Length || index >= cars.Length)
+            {
+                return false;
+            }
+
+            if (!IsCarPresent(cars[index]) || !IsStructureAlive(structures[index]))
+            {
+                return false;
+            }
+
+            StructureState structure = structures[index];
+            if (structure.Health >= structure.MaxHealth)
+            {
+                return false;
+            }
+
+            structure.Health = Mathf.Min(structure.MaxHealth, structure.Health + amount);
+            structures[index] = structure;
+            return true;
+        }
+
+        // ── 칸 증설 (개발 가이드 §M3 — 칸 증설/연결, 기획서 §7.1) ──────────────────
+
+        /// <summary>
+        /// 후미에 이 종류의 칸을 이을 수 있는지 — 파괴 가능한 종류·상한 미만이어야 하고,
+        /// 기존 전 슬롯이 살아 붙어 있어야 한다(이탈·파괴 슬롯 뒤에 잇으면 연결부 규약(c = 칸 c ↔ c+1)이 깨진다).
+        /// </summary>
+        public static bool CanAppendCar(CarState[] cars, CarType type, int maxCarCount)
+        {
+            if (cars == null || cars.Length == 0 || !IsDestructible(type) || cars.Length >= maxCarCount)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < cars.Length; i++)
+            {
+                if (!IsCarPresent(cars[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

@@ -14,7 +14,12 @@ namespace Game.Gameplay.World
         [SerializeField, Min(0f)] private float _initialFuel = 60f;
 
         [Header("소모·충전")]
-        [SerializeField, Min(0f)] private float _consumptionPerSecond = 0.8f;
+        [Tooltip("기관차 기본 소모율(초당) — 끌고 있는 칸 수와 무관한 고정분.")]
+        [SerializeField, Min(0f)] private float _consumptionPerSecond = 0.5f;
+
+        [Tooltip("연결된 화물칸 1칸당 추가 소모율(초당) — 칸 증설 트레이드오프 (기획서 §7.1).")]
+        [SerializeField, Min(0f)] private float _consumptionPerCar = 0.15f;
+
         [SerializeField, Min(0f)] private float _fuelPerResource = 6f;
 
         [Header("감속")]
@@ -26,6 +31,9 @@ namespace Game.Gameplay.World
         public float InitialFuel => _initialFuel;
 
         public float ConsumptionPerSecond => _consumptionPerSecond;
+
+        /// <summary>연결된 화물칸 1칸당 추가 소모율(초당) — 칸 증설 트레이드오프 (기획서 §7.1).</summary>
+        public float ConsumptionPerCar => _consumptionPerCar;
 
         /// <summary>자원 1개를 엔진에 투입할 때 충전되는 연료량 (기획서 §3.4).</summary>
         public float FuelPerResource => _fuelPerResource;

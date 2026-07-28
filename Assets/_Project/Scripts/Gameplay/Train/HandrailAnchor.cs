@@ -112,7 +112,8 @@ namespace Game.Gameplay.Train
             float offset = 0f;
             CarState car = default;
             bool hasCar = false;
-            if (ServiceLocator.TryGet(out ITrainState train))
+            bool hasTrain = ServiceLocator.TryGet(out ITrainState train);
+            if (hasTrain)
             {
                 offset = train.GetEjectOffset(_carIndex);
                 hasCar = train.TryGetCar(_carIndex, out car);
@@ -120,11 +121,12 @@ namespace Game.Gameplay.Train
 
             transform.position = _baseSlotPosition + Vector3.back * offset;
 
-            // 표현은 칸과 운명을 같이한다 — 파괴된 칸은 즉시, 이탈 칸은 소실 표현 거리에서 함께 사라진다.
+            // 표현은 칸과 운명을 같이한다 — 파괴된 칸은 즉시, 이탈 칸은 소실 표현 거리에서 함께 사라지고,
+            // 증설 전 예비 슬롯(편성 밖 인덱스)의 손잡이는 칸이 생길 때까지 숨긴다.
             // NetworkObject 자체는 despawn하지 않는다(스펙 §5 — 재결합·다음 판 대비 씬 유지).
-            bool visible = !hasCar
-                || TrainStateLogic.IsCarPresent(car)
-                || (car.Health > 0f && offset < _ejectHideMeters);
+            bool visible = !hasTrain
+                || (hasCar && (TrainStateLogic.IsCarPresent(car)
+                    || (car.Health > 0f && offset < _ejectHideMeters)));
             SetPresentationVisible(visible);
         }
 

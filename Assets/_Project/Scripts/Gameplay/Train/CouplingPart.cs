@@ -19,6 +19,9 @@ namespace Game.Gameplay.Train
         private Renderer[] _renderers;
         private bool _registeredAsTarget;
 
+        /// <summary>연결부 인덱스 — 수리 망치 등 부위 식별이 필요한 도구가 읽는다.</summary>
+        public int CouplingIndex => _couplingIndex;
+
         // ── IDamageable — 몬스터가 공격하는 표적면 (데미지 확정은 호스트) ──────────
 
         /// <summary>살아 있는 연결부 중 가장 후미만 공격 대상이다(후미 순차 파괴 — 앞쪽 연결부는 뒤가 끊겨야 표적이 된다).</summary>

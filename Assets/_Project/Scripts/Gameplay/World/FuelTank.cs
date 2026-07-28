@@ -66,7 +66,11 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            _fuel.Value = FuelMath.ConsumeFuel(_fuel.Value, _settings.ConsumptionPerSecond, Time.deltaTime);
+            // 끌고 있는 칸 수가 소모율에 가산된다 (기획서 §7.1 트레이드오프). 열차 상태가 아직 없으면 기본 소모만.
+            int attachedCars = ServiceLocator.TryGet(out IFuelLoadProvider load) ? load.AttachedCarCount : 0;
+            float perSecond = FuelMath.ComputeConsumptionPerSecond(
+                _settings.ConsumptionPerSecond, _settings.ConsumptionPerCar, attachedCars);
+            _fuel.Value = FuelMath.ConsumeFuel(_fuel.Value, perSecond, Time.deltaTime);
 
             float target = FuelMath.ComputeTargetScrollSpeed(
                 _scrollSettings.BaseScrollSpeed, _fuel.Value, _settings.DepletedSpeedRatio);

@@ -2,6 +2,7 @@ using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Combat;
 using Game.Gameplay.Harpoon;
+using Game.Gameplay.Train;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -18,6 +19,7 @@ namespace Game.Gameplay.Inventory
     {
         [SerializeField] private HarpoonController _harpoon;
         [SerializeField] private RevolverController _revolver;
+        [SerializeField] private RepairHammerController _hammer;
 
         private PlayerInventory _inventory;
         private int _selectedIndex;
@@ -154,6 +156,11 @@ namespace Game.Gameplay.Inventory
             if (_revolver != null)
             {
                 _revolver.InputEnabled = selected == HotbarItemType.Revolver;
+            }
+
+            if (_hammer != null)
+            {
+                _hammer.InputEnabled = selected == HotbarItemType.Hammer;
             }
         }
 

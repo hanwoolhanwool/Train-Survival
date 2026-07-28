@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Services;
@@ -8,19 +9,24 @@ using UnityEngine;
 namespace Game.Gameplay.Train
 {
     /// <summary>
-    /// 열차 편성 상태 모델 — 호스트 권위 (개발 가이드 §6.3: 칸 배열·연결부를 호스트가 소유하는 단일 상태 모델).
+    /// 열차 편성 상태 모델 — 호스트 권위 (개발 가이드 §6.3: 칸 배열·연결부·건축물을 호스트가 소유하는 단일 상태 모델).
     /// 규칙 판정은 순수 <see cref="TrainStateLogic"/>이 담당하고, 여기서는 <see cref="NetworkList{T}"/> 복제와
     /// 변이 확정·권위 이벤트 발행만 맡는다. 변화는 원자적으로 확정 후 전파되므로 클라이언트에 부분 적용 상태가 보이지 않는다.
     /// 기관차(인덱스 0)는 파괴 불가 — 불변식은 <see cref="TrainStateLogic"/>이 강제한다.
     /// Train 루트(씬 NetworkObject)에 1개 배치한다.
     /// </summary>
-    public sealed class TrainState : NetworkBehaviour, ITrainState, ITrainDamageSink, ITrainGrabResistance
+    public sealed class TrainState : NetworkBehaviour,
+        ITrainState, ITrainDamageSink, ITrainGrabResistance, ITrainRepairSink, ITrainExpansion, IFuelLoadProvider
     {
         [SerializeField] private TrainLayoutSettings _layoutSettings;
         [SerializeField] private TrainDurabilitySettings _durabilitySettings;
+        [SerializeField] private TrainExpansionSettings _expansionSettings;
 
         private readonly NetworkList<CarState> _cars = new NetworkList<CarState>();
         private readonly NetworkList<CouplingState> _couplings = new NetworkList<CouplingState>();
+
+        // 칸 위 붙박이 건축물 — 인덱스 = 칸 인덱스 1:1 (기획서 §9 — 건축물 개별 파괴).
+        private readonly NetworkList<StructureState> _structures = new NetworkList<StructureState>();
 
         // 이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m) — 호스트가 시뮬레이션해 복제한다(손잡이-이탈저항 스펙 §6).
         private readonly NetworkList<float> _ejectOffsets = new NetworkList<float>();
@@ -48,6 +54,7 @@ namespace Game.Gameplay.Train
 
             _cars.OnListChanged += OnCarsChanged;
             _couplings.OnListChanged += OnCouplingsChanged;
+            _structures.OnListChanged += OnStructuresChanged;
 
             if (!ServiceLocator.IsRegistered<ITrainState>())
             {
@@ -64,6 +71,21 @@ namespace Game.Gameplay.Train
                 ServiceLocator.Register<ITrainGrabResistance>(this);
             }
 
+            if (!ServiceLocator.IsRegistered<ITrainRepairSink>())
+            {
+                ServiceLocator.Register<ITrainRepairSink>(this);
+            }
+
+            if (!ServiceLocator.IsRegistered<ITrainExpansion>())
+            {
+                ServiceLocator.Register<ITrainExpansion>(this);
+            }
+
+            if (!ServiceLocator.IsRegistered<IFuelLoadProvider>())
+            {
+                ServiceLocator.Register<IFuelLoadProvider>(this);
+            }
+
             // 스폰 시점의 편성으로 표현을 재동기화한다 — 신규 시작과 후발 접속(복제된 목록) 모두 이 경로로 반영된다.
             EventBus<TrainInitializedEvent>.Publish(new TrainInitializedEvent(_cars.Count));
         }
@@ -72,6 +94,7 @@ namespace Game.Gameplay.Train
         {
             _cars.OnListChanged -= OnCarsChanged;
             _couplings.OnListChanged -= OnCouplingsChanged;
+            _structures.OnListChanged -= OnStructuresChanged;
 
             if (ServiceLocator.TryGet(out ITrainState service) && ReferenceEquals(service, this))
             {
@@ -86,6 +109,21 @@ namespace Game.Gameplay.Train
             if (ServiceLocator.TryGet(out ITrainGrabResistance resist) && ReferenceEquals(resist, this))
             {
                 ServiceLocator.Unregister<ITrainGrabResistance>();
+            }
+
+            if (ServiceLocator.TryGet(out ITrainRepairSink repair) && ReferenceEquals(repair, this))
+            {
+                ServiceLocator.Unregister<ITrainRepairSink>();
+            }
+
+            if (ServiceLocator.TryGet(out ITrainExpansion expansion) && ReferenceEquals(expansion, this))
+            {
+                ServiceLocator.Unregister<ITrainExpansion>();
+            }
+
+            if (ServiceLocator.TryGet(out IFuelLoadProvider load) && ReferenceEquals(load, this))
+            {
+                ServiceLocator.Unregister<IFuelLoadProvider>();
             }
         }
 
@@ -109,6 +147,11 @@ namespace Game.Gameplay.Train
             ServerApplyCouplingDamage(couplingIndex, amount);
         }
 
+        void ITrainDamageSink.ApplyStructureDamage(int carIndex, float amount)
+        {
+            ServerApplyStructureDamage(carIndex, amount);
+        }
+
         public bool TryGetCar(int index, out CarState car)
         {
             if (index >= 0 && index < _cars.Count)
@@ -130,6 +173,18 @@ namespace Game.Gameplay.Train
             }
 
             coupling = default;
+            return false;
+        }
+
+        public bool TryGetStructure(int index, out StructureState structure)
+        {
+            if (index >= 0 && index < _structures.Count)
+            {
+                structure = _structures[index];
+                return true;
+            }
+
+            structure = default;
             return false;
         }
 
@@ -292,10 +347,161 @@ namespace Game.Gameplay.Train
             }
         }
 
+        /// <summary>칸 위 건축물에 데미지를 적용한다 — 칸과 달리 연쇄가 없어 건축물 하나만 원자적으로 갱신된다(기획서 §9).</summary>
+        public void ServerApplyStructureDamage(int index, float amount)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            CarState[] cars = SnapshotCars();
+            StructureState[] structures = SnapshotStructures();
+            CarDamageResult result = TrainStateLogic.ApplyStructureDamage(structures, cars, index, amount);
+            if (result == CarDamageResult.Ignored)
+            {
+                return;
+            }
+
+            WriteBackStructures(structures);
+
+            if (result == CarDamageResult.Destroyed)
+            {
+                BroadcastStructureDestroyedRpc(index);
+            }
+        }
+
+        // ── ITrainRepairSink — 수리 망치가 호출하는 호스트 전용 수리면 (기획서 §9) ──────────
+
+        public bool ServerApplyRepair(TrainPartKind kind, int index, float amount)
+        {
+            if (!IsServer)
+            {
+                return false;
+            }
+
+            switch (kind)
+            {
+                case TrainPartKind.Car:
+                {
+                    CarState[] cars = SnapshotCars();
+                    if (!TrainStateLogic.RepairCar(cars, index, amount))
+                    {
+                        return false;
+                    }
+
+                    WriteBackCars(cars);
+                    return true;
+                }
+
+                case TrainPartKind.Coupling:
+                {
+                    CarState[] cars = SnapshotCars();
+                    CouplingState[] couplings = SnapshotCouplings();
+                    if (!TrainStateLogic.RepairCoupling(couplings, cars, index, amount))
+                    {
+                        return false;
+                    }
+
+                    WriteBackCouplings(couplings);
+                    return true;
+                }
+
+                case TrainPartKind.Structure:
+                {
+                    CarState[] cars = SnapshotCars();
+                    StructureState[] structures = SnapshotStructures();
+                    if (!TrainStateLogic.RepairStructure(structures, cars, index, amount))
+                    {
+                        return false;
+                    }
+
+                    WriteBackStructures(structures);
+                    return true;
+                }
+
+                default:
+                    return false;
+            }
+        }
+
+        // ── ITrainExpansion — 후미 칸 증설 (§M3 — 칸 증설/연결) ──────────
+
+        public int MaxCarCount => _expansionSettings != null ? _expansionSettings.MaxCarCount : CarCount;
+
+        public bool CanAppendCar(CarType type)
+        {
+            return TrainStateLogic.CanAppendCar(SnapshotCars(), type, MaxCarCount);
+        }
+
+        /// <summary>
+        /// 후미에 새 칸 1개를 잇는다 — 칸·연결부·건축물 슬롯·이탈 오프셋을 함께 늘려 원자적으로 확정한다.
+        /// 네 목록의 Add가 같은 프레임에 커밋되므로 클라이언트에 부분 편성이 보이지 않는다.
+        /// </summary>
+        public bool ServerTryAppendCar(CarType type)
+        {
+            if (!IsServer || !CanAppendCar(type))
+            {
+                return false;
+            }
+
+            float carMax = MaxHealthFor(type);
+            _cars.Add(new CarState
+            {
+                Type = type,
+                Health = carMax,
+                MaxHealth = carMax,
+                Attached = true,
+            });
+
+            float couplingMax = _durabilitySettings != null ? _durabilitySettings.CouplingMaxHealth : 1f;
+            _couplings.Add(new CouplingState
+            {
+                Health = couplingMax,
+                MaxHealth = couplingMax,
+                Broken = false,
+            });
+
+            float structureMax = _durabilitySettings != null ? _durabilitySettings.StructureMaxHealth : 1f;
+            _structures.Add(TrainStateLogic.MakeStructureFor(type, structureMax));
+
+            _ejectOffsets.Add(0f);
+
+            int count = _cars.Count;
+            Array.Resize(ref _grabberCounts, count);
+            Array.Resize(ref _ejectSettled, count);
+            Array.Resize(ref _ejectPushSpeeds, count);
+
+            BroadcastCarAppendedRpc(count - 1, type);
+            return true;
+        }
+
+        // ── IFuelLoadProvider — 연료 소모 가중치 입력 (기획서 §7.1 트레이드오프) ──────────
+
+        /// <summary>기관차가 끌고 있는(연결·생존) 화물칸 수 — 칸이 이탈·파괴되면 즉시 줄어 소모도 가벼워진다.</summary>
+        public int AttachedCarCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < _cars.Count; i++)
+                {
+                    CarState car = _cars[i];
+                    if (car.Type != CarType.Locomotive && TrainStateLogic.IsCarPresent(car))
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
         private void ServerInitialize()
         {
             _cars.Clear();
             _couplings.Clear();
+            _structures.Clear();
 
             int count = _layoutSettings != null ? _layoutSettings.CarCount : 0;
             var order = new CarType[count];
@@ -316,6 +522,13 @@ namespace Game.Gameplay.Train
             for (int i = 0; i < couplings.Length; i++)
             {
                 _couplings.Add(couplings[i]);
+            }
+
+            float structureMax = _durabilitySettings != null ? _durabilitySettings.StructureMaxHealth : 1f;
+            StructureState[] structures = TrainStateLogic.BuildInitialStructures(order, structureMax);
+            for (int i = 0; i < structures.Length; i++)
+            {
+                _structures.Add(structures[i]);
             }
 
             _ejectOffsets.Clear();
@@ -407,6 +620,17 @@ namespace Game.Gameplay.Train
             return snapshot;
         }
 
+        private StructureState[] SnapshotStructures()
+        {
+            var snapshot = new StructureState[_structures.Count];
+            for (int i = 0; i < _structures.Count; i++)
+            {
+                snapshot[i] = _structures[i];
+            }
+
+            return snapshot;
+        }
+
         private void WriteBackCars(CarState[] snapshot)
         {
             for (int i = 0; i < snapshot.Length && i < _cars.Count; i++)
@@ -429,6 +653,17 @@ namespace Game.Gameplay.Train
             }
         }
 
+        private void WriteBackStructures(StructureState[] snapshot)
+        {
+            for (int i = 0; i < snapshot.Length && i < _structures.Count; i++)
+            {
+                if (!_structures[i].Equals(snapshot[i]))
+                {
+                    _structures[i] = snapshot[i];
+                }
+            }
+        }
+
         private void OnCarsChanged(NetworkListEvent<CarState> change)
         {
             if (change.Type == NetworkListEvent<CarState>.EventType.Value
@@ -444,6 +679,15 @@ namespace Game.Gameplay.Train
                 || change.Type == NetworkListEvent<CouplingState>.EventType.Add)
             {
                 EventBus<CouplingStateChangedEvent>.Publish(new CouplingStateChangedEvent(change.Index, change.Value));
+            }
+        }
+
+        private void OnStructuresChanged(NetworkListEvent<StructureState> change)
+        {
+            if (change.Type == NetworkListEvent<StructureState>.EventType.Value
+                || change.Type == NetworkListEvent<StructureState>.EventType.Add)
+            {
+                EventBus<StructureStateChangedEvent>.Publish(new StructureStateChangedEvent(change.Index, change.Value));
             }
         }
 
@@ -465,6 +709,18 @@ namespace Game.Gameplay.Train
         private void BroadcastCarsDetachedRpc(int[] indices)
         {
             EventBus<CarsDetachedEvent>.Publish(new CarsDetachedEvent(indices));
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastStructureDestroyedRpc(int index)
+        {
+            EventBus<StructureDestroyedEvent>.Publish(new StructureDestroyedEvent(index));
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastCarAppendedRpc(int index, CarType type)
+        {
+            EventBus<CarAppendedEvent>.Publish(new CarAppendedEvent(index, type));
         }
     }
 }
