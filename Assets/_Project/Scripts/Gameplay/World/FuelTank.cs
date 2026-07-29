@@ -86,7 +86,12 @@ namespace Game.Gameplay.World
 
         private void OnFuelChanged(float previous, float current)
         {
-            EventBus<FuelChangedEvent>.Publish(new FuelChangedEvent(current, Capacity));
+            // 소모율은 각 피어가 같은 입력(설정 SO + 복제 편성)으로 재계산한다 — 클라이언트 HUD에도 정확히 뜬다.
+            int attachedCars = ServiceLocator.TryGet(out IFuelLoadProvider load) ? load.AttachedCarCount : 0;
+            float perSecond = _settings != null
+                ? FuelMath.ComputeConsumptionPerSecond(_settings.ConsumptionPerSecond, _settings.ConsumptionPerCar, attachedCars)
+                : 0f;
+            EventBus<FuelChangedEvent>.Publish(new FuelChangedEvent(current, Capacity, perSecond));
         }
     }
 }

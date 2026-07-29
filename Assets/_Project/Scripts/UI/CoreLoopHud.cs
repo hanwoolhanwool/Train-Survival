@@ -22,6 +22,7 @@ namespace Game.UI
 
         private float _fuel;
         private float _fuelCapacity;
+        private float _fuelConsumptionPerSecond;
         private float _health;
         private float _maxHealth;
         private HotbarItemType _selectedItem;
@@ -82,6 +83,7 @@ namespace Game.UI
         {
             _fuel = evt.Fuel;
             _fuelCapacity = evt.Capacity;
+            _fuelConsumptionPerSecond = evt.ConsumptionPerSecond;
         }
 
         private void OnPlayerHealthChanged(PlayerHealthChangedEvent evt)
@@ -177,7 +179,8 @@ namespace Game.UI
 
             if (_fuelCapacity > 0f)
             {
-                string fuelText = $"연료: {_fuel:F0} / {_fuelCapacity:F0}";
+                // 소모율을 함께 보여준다 — 칸 증설 트레이드오프(칸 수 → 소모 증가)를 눈으로 확인할 수 있다.
+                string fuelText = $"연료: {_fuel:F0} / {_fuelCapacity:F0}  (-{_fuelConsumptionPerSecond:F2}/s)";
                 GUILayout.Label(_fuel <= 0f ? $"<color=red>{fuelText} — 감속 중!</color>" : fuelText);
             }
 
