@@ -46,6 +46,20 @@ namespace Game.Gameplay.Player
     }
 
     /// <summary>
+    /// 로컬 표현 이벤트 — 세션 메뉴(Esc) 열림/닫힘. 열려 있는 동안 시점 회전을 멈추고 커서를 버튼 클릭용으로 푼다
+    /// (I 창과 동일한 처리 — 플레이어 컨트롤러·무기 게이트가 구독한다).
+    /// </summary>
+    public readonly struct SessionMenuToggledLocalEvent
+    {
+        public readonly bool IsOpen;
+
+        public SessionMenuToggledLocalEvent(bool isOpen)
+        {
+            IsOpen = isOpen;
+        }
+    }
+
+    /// <summary>
     /// 권위 이벤트 — 플레이어 체력 변경. 호스트 확정 값의 동기화 수신 시점에 각 피어에서 발행된다.
     /// HUD 체력 표시가 자기 클라이언트 ID로 걸러 구독한다.
     /// </summary>

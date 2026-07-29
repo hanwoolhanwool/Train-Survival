@@ -2,6 +2,7 @@ using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Combat;
 using Game.Gameplay.Harpoon;
+using Game.Gameplay.Player;
 using Game.Gameplay.Train;
 using Unity.Netcode;
 using UnityEngine;
@@ -24,6 +25,7 @@ namespace Game.Gameplay.Inventory
         private PlayerInventory _inventory;
         private int _selectedIndex;
         private bool _panelOpen;
+        private bool _sessionMenuOpen;
 
         public int SlotCount => _inventory != null ? _inventory.SlotCount : 0;
 
@@ -38,8 +40,8 @@ namespace Game.Gameplay.Inventory
             ? _inventory.GetSlot(_selectedIndex).ItemType
             : HotbarItemType.None;
 
-        /// <summary>I 창이 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
-        public bool IsPanelOpen => _panelOpen;
+        /// <summary>UI(I 창·세션 메뉴)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
+        public bool IsPanelOpen => _panelOpen || _sessionMenuOpen;
 
         private void Awake()
         {
@@ -54,6 +56,7 @@ namespace Game.Gameplay.Inventory
             }
 
             EventBus<InventoryPanelToggledLocalEvent>.Subscribe(OnPanelToggled);
+            EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
 
             if (!ServiceLocator.IsRegistered<ILocalHotbar>())
             {
@@ -71,6 +74,7 @@ namespace Game.Gameplay.Inventory
             }
 
             EventBus<InventoryPanelToggledLocalEvent>.Unsubscribe(OnPanelToggled);
+            EventBus<SessionMenuToggledLocalEvent>.Unsubscribe(OnSessionMenuToggled);
 
             if (ServiceLocator.TryGet(out ILocalHotbar hotbar) && ReferenceEquals(hotbar, this))
             {
@@ -97,7 +101,7 @@ namespace Game.Gameplay.Inventory
                 return;
             }
 
-            if (!_panelOpen)
+            if (!IsPanelOpen)
             {
                 UpdateSelectionInput();
             }
@@ -146,7 +150,7 @@ namespace Game.Gameplay.Inventory
 
         private void ApplyWeaponGates()
         {
-            HotbarItemType selected = _panelOpen ? HotbarItemType.None : SelectedItemType;
+            HotbarItemType selected = IsPanelOpen ? HotbarItemType.None : SelectedItemType;
 
             if (_harpoon != null)
             {
@@ -167,6 +171,11 @@ namespace Game.Gameplay.Inventory
         private void OnPanelToggled(InventoryPanelToggledLocalEvent evt)
         {
             _panelOpen = evt.IsOpen;
+        }
+
+        private void OnSessionMenuToggled(SessionMenuToggledLocalEvent evt)
+        {
+            _sessionMenuOpen = evt.IsOpen;
         }
     }
 }

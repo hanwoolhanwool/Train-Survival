@@ -46,6 +46,7 @@ namespace Game.Gameplay.Player
         private bool _serverDeathPending;
         private bool _needsInitialPlacement;
         private bool _inventoryPanelOpen;
+        private bool _sessionMenuOpen;
         private bool _standingOnWorldFrame;
         private CarView _ridingCar;
         private Vector3 _ridingCarLastPos;
@@ -81,6 +82,7 @@ namespace Game.Gameplay.Player
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
                 EventBus<InventoryPanelToggledLocalEvent>.Subscribe(OnInventoryPanelToggled);
+                EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
             }
         }
 
@@ -89,6 +91,7 @@ namespace Game.Gameplay.Player
             if (IsOwner)
             {
                 EventBus<InventoryPanelToggledLocalEvent>.Unsubscribe(OnInventoryPanelToggled);
+                EventBus<SessionMenuToggledLocalEvent>.Unsubscribe(OnSessionMenuToggled);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
@@ -98,8 +101,21 @@ namespace Game.Gameplay.Player
         private void OnInventoryPanelToggled(InventoryPanelToggledLocalEvent evt)
         {
             _inventoryPanelOpen = evt.IsOpen;
-            Cursor.lockState = evt.IsOpen ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = evt.IsOpen;
+            ApplyCursorState();
+        }
+
+        /// <summary>세션 메뉴(Esc) 토글 — I 창과 동일하게 시점 회전을 멈추고 커서를 버튼 클릭용으로 푼다.</summary>
+        private void OnSessionMenuToggled(SessionMenuToggledLocalEvent evt)
+        {
+            _sessionMenuOpen = evt.IsOpen;
+            ApplyCursorState();
+        }
+
+        private void ApplyCursorState()
+        {
+            bool uiOpen = _inventoryPanelOpen || _sessionMenuOpen;
+            Cursor.lockState = uiOpen ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = uiOpen;
         }
 
         private void Update()
@@ -140,7 +156,7 @@ namespace Game.Gameplay.Player
                 return;
             }
 
-            if (!_inventoryPanelOpen)
+            if (!_inventoryPanelOpen && !_sessionMenuOpen)
             {
                 UpdateLook();
             }
