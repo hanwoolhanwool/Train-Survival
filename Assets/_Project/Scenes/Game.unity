@@ -2352,6 +2352,8 @@ GameObject:
   - component: {fileID: 1367659751}
   - component: {fileID: 1367659753}
   - component: {fileID: 1367659754}
+  - component: {fileID: 1367659756}
+  - component: {fileID: 1367659755}
   m_Layer: 0
   m_Name: SliceHud
   m_TagString: Untagged
@@ -2410,6 +2412,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 809bca0b2ab797b409fe029f3b0507fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Game.UI.InventoryHud
+--- !u!114 &1367659755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1367659750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ea008fa39ecbc8409b7ada4729076c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Game.UI.SessionExitHud
+--- !u!114 &1367659756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1367659750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ea008fa39ecbc8409b7ada4729076c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Game.UI.SessionExitHud
 --- !u!1 &1371584329
 GameObject:
   m_ObjectHideFlags: 0
