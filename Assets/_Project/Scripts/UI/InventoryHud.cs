@@ -193,20 +193,18 @@ namespace Game.UI
                 ? "파괴 불가"
                 : $"{_hammerTarget.Health:F0} / {_hammerTarget.MaxHealth:F0}";
 
-            string action;
+            // 수리·설치 안내는 독립 조건이라 함께 보여준다 — 손상된 빈 칸에서도 부족 안내가 가려지지 않는다.
+            string action = string.Empty;
             if (_hammerTarget.CanRepair)
             {
-                action = " — 좌클릭 수리";
+                action += " — 좌클릭 수리";
             }
-            else if (_hammerTarget.CanBuildStructure)
+
+            if (_hammerTarget.CanBuildStructure)
             {
-                action = _hammerTarget.CanAffordStructure
+                action += _hammerTarget.CanAffordStructure
                     ? $" — 우클릭 온실 돔 설치 (자원 {_hammerTarget.StructureCost}개)"
-                    : $" — 돔 설치엔 자원 {_hammerTarget.StructureCost}개 필요";
-            }
-            else
-            {
-                action = string.Empty;
+                    : $" — <color=red>돔 설치 자원 부족 ({_hammerTarget.StructureCost}개 필요)</color>";
             }
 
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth

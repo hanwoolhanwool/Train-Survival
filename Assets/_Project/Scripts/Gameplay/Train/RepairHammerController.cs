@@ -73,10 +73,9 @@ namespace Game.Gameplay.Train
 
             ReadPartState(train, kind, index, out float health, out float maxHealth, out bool canRepair);
 
-            bool canBuild = kind == TrainPartKind.Car
-                && ServiceLocator.TryGet(out ITrainExpansion expansion)
-                && expansion.CanBuildStructure(index);
-            int structureCost = ServiceLocator.TryGet(out ITrainExpansion costSource) ? costSource.StructureBuildCost : 0;
+            bool hasExpansion = ServiceLocator.TryGet(out ITrainExpansion expansion);
+            bool canBuild = hasExpansion && kind == TrainPartKind.Car && expansion.CanBuildStructure(index);
+            int structureCost = hasExpansion ? expansion.StructureBuildCost : 0;
             IResourceInventory inventory = GetComponent<IResourceInventory>();
             bool afford = inventory != null && inventory.Count >= structureCost;
 
