@@ -25,7 +25,7 @@ namespace Game.Gameplay.Train
         [Tooltip("스크롤 속도에 더해 이탈 칸이 뒤로 밀려나는 기본 속도(m/s).")]
         [SerializeField, Min(0f)] private float _ejectExtraSpeed = 2f;
 
-        [Tooltip("분리된 칸이 관성을 잃는 감속도(m/s²). 낮을수록 분리 직후 열차를 따라가다 천천히 뒤처진다.")]
+        [Tooltip("이탈 칸 속도가 목표(밀림-저항)로 수렴하는 가속도(m/s²). 분리 직후 관성 상실과 손잡이 회수 반전 모두 이 기울기로 부드럽게 일어난다.")]
         [SerializeField, Min(0.1f)] private float _ejectDeceleration = 4f;
 
         [Tooltip("손잡이 1인당 상쇄 속도(m/s). 후퇴 속도의 약 0.6~0.8배로 잡으면 '1인=지연, 2인=회수'가 성립.")]

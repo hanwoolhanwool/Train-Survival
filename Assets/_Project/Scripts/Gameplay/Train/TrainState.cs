@@ -38,8 +38,17 @@ namespace Game.Gameplay.Train
         private int[] _grabberCounts;
         private bool[] _ejectSettled;
 
-        // 호스트 전용 — 칸별 현재 밀림 속도(m/s). 분리 순간 0(관성으로 열차를 따라감)에서 감속도만큼 서서히 오른다.
-        private float[] _ejectPushSpeeds;
+        // 호스트 전용 — 칸별 현재 순 속도(m/s). 분리 순간 0(관성)에서 목표(밀림-저항)로 가속도만큼 램프한다.
+        private float[] _ejectVelocities;
+
+        // 클라이언트 전용 — 복제 오프셋(네트워크 틱 단위 계단값)을 매 프레임 부드럽게 따라가는 표시값.
+        // 이걸 쓰지 않으면 이탈 칸(과 그 위 플레이어·카메라)이 30 Hz 계단으로 움직여, 매 프레임 연속으로
+        // 흐르는 지형·자원과의 상대 변위가 떨림으로 보인다.
+        private float[] _displayOffsets;
+
+        // 표시값의 지수 수렴률(1/s)과, 재건·재시작 같은 큰 불연속에서 애니메이션 없이 즉시 붙는 스냅 거리(m).
+        private const float OffsetSmoothingRate = 12f;
+        private const float OffsetSnapMeters = 3f;
 
         public int CarCount => _cars.Count;
 
@@ -133,6 +142,35 @@ namespace Game.Gameplay.Train
             {
                 ServerSimulateEjection();
             }
+            else
+            {
+                UpdateDisplayOffsets();
+            }
+        }
+
+        /// <summary>클라이언트: 복제 오프셋을 표시값으로 부드럽게 수렴시킨다(계단 이동 → 연속 이동).</summary>
+        private void UpdateDisplayOffsets()
+        {
+            int count = _ejectOffsets.Count;
+            if (_displayOffsets == null || _displayOffsets.Length != count)
+            {
+                _displayOffsets = new float[count];
+                for (int i = 0; i < count; i++)
+                {
+                    _displayOffsets[i] = _ejectOffsets[i];
+                }
+
+                return;
+            }
+
+            float blend = 1f - Mathf.Exp(-OffsetSmoothingRate * Time.deltaTime);
+            for (int i = 0; i < count; i++)
+            {
+                float target = _ejectOffsets[i];
+                _displayOffsets[i] = Mathf.Abs(target - _displayOffsets[i]) > OffsetSnapMeters
+                    ? target
+                    : Mathf.Lerp(_displayOffsets[i], target, blend);
+            }
         }
 
         // ── ITrainDamageSink — 리시버(CarView·CouplingPart)가 호출하는 호스트 전용 변이면 ──────────
@@ -190,7 +228,18 @@ namespace Game.Gameplay.Train
 
         public float GetEjectOffset(int index)
         {
-            return index >= 0 && index < _ejectOffsets.Count ? _ejectOffsets[index] : 0f;
+            if (index < 0 || index >= _ejectOffsets.Count)
+            {
+                return 0f;
+            }
+
+            // 클라이언트는 부드러운 표시값을 돌려준다 — CarView·손잡이·건축물이 모두 같은 값을 읽어 함께 움직인다.
+            if (!IsServer && _displayOffsets != null && index < _displayOffsets.Length)
+            {
+                return _displayOffsets[index];
+            }
+
+            return _ejectOffsets[index];
         }
 
         /// <summary>이탈 중(미부착·미파괴)이고 소실 거리 전인 칸만 손잡이를 잡을 수 있다(손잡이-이탈저항 스펙 §5).</summary>
@@ -480,7 +529,7 @@ namespace Game.Gameplay.Train
 
                 Array.Resize(ref _grabberCounts, _cars.Count);
                 Array.Resize(ref _ejectSettled, _cars.Count);
-                Array.Resize(ref _ejectPushSpeeds, _cars.Count);
+                Array.Resize(ref _ejectVelocities, _cars.Count);
             }
             else
             {
@@ -504,7 +553,7 @@ namespace Game.Gameplay.Train
                 {
                     _grabberCounts[slot] = 0;
                     _ejectSettled[slot] = false;
-                    _ejectPushSpeeds[slot] = 0f;
+                    _ejectVelocities[slot] = 0f;
                 }
             }
 
@@ -619,7 +668,7 @@ namespace Game.Gameplay.Train
 
             _grabberCounts = new int[count];
             _ejectSettled = new bool[count];
-            _ejectPushSpeeds = new float[count];
+            _ejectVelocities = new float[count];
         }
 
         /// <summary>이탈-멀쩡한 칸을 손잡이 저항을 반영해 매 프레임 이동시킨다(호스트, 손잡이-이탈저항 스펙 §4·§6).</summary>
@@ -642,7 +691,7 @@ namespace Game.Gameplay.Train
                 if (!ejecting)
                 {
                     // 다음 분리가 다시 관성(속도 0)부터 시작하도록 리셋해 둔다.
-                    _ejectPushSpeeds[i] = 0f;
+                    _ejectVelocities[i] = 0f;
                     continue;
                 }
 
@@ -651,14 +700,16 @@ namespace Game.Gameplay.Train
                     continue;
                 }
 
-                // 분리 직후엔 관성으로 열차를 따라가다 감속도만큼 서서히 뒤처진다(밀림 속도 0 → 목표 램프).
-                float pushSpeed = EjectMotionMath.StepPushSpeed(
-                    _ejectPushSpeeds[i], targetPushSpeed, _durabilitySettings.EjectDeceleration, dt);
-                _ejectPushSpeeds[i] = pushSpeed;
-
+                // 목표 = 밀림 - 손잡이 저항. 속도는 항상 목표로 램프하므로 분리 직후엔 관성으로 따라가고,
+                // 손잡이를 잡으면 감속 → 정지 → 회수로 부드럽게 반전한다(순간 점프 없음 — 회수 모션 개선).
                 int grabbers = _grabberCounts[i];
-                float netVelocity = EjectMotionMath.ComputeNetVelocity(pushSpeed, grabbers, _durabilitySettings.PullPerGrabber);
-                float next = EjectMotionMath.StepOffset(_ejectOffsets[i], netVelocity, dt);
+                float targetVelocity = EjectMotionMath.ComputeTargetVelocity(
+                    targetPushSpeed, grabbers, _durabilitySettings.PullPerGrabber);
+                float velocity = EjectMotionMath.StepVelocity(
+                    _ejectVelocities[i], targetVelocity, _durabilitySettings.EjectDeceleration, dt);
+                _ejectVelocities[i] = velocity;
+
+                float next = EjectMotionMath.StepOffset(_ejectOffsets[i], velocity, dt);
 
                 if (!Mathf.Approximately(next, _ejectOffsets[i]))
                 {
