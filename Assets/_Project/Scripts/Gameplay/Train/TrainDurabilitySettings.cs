@@ -34,9 +34,9 @@ namespace Game.Gameplay.Train
         [Tooltip("아무도 안 잡은 채 이 거리(m) 넘게 멀어지면 칸 영구 소실.")]
         [SerializeField, Min(5f)] private float _lostDistance = 45f;
 
-        [Tooltip("클라이언트 표시 보간 — 이탈 칸 표시 위치가 복제 값으로 수렴하는 지수 감쇠율(/s). " +
-            "높을수록 즉각 붙지만 네트워크 틱 계단(탑승 시 월드 떨림)이 다시 드러난다.")]
-        [SerializeField, Min(0f)] private float _ejectDisplayCorrectionRate = 8f;
+        [Tooltip("클라이언트 표시 — 재시뮬한 이탈 칸 표시 위치가 복제 값으로 수렴하는 드리프트 보정률(/s). " +
+            "높을수록 복제에 즉각 붙지만 네트워크 틱 계단(탑승 시 월드 떨림)이 다시 드러난다.")]
+        [SerializeField, Min(0f)] private float _ejectDisplayCorrectionRate = 3f;
 
         /// <summary>연결부 최대 체력.</summary>
         public float CouplingMaxHealth => _couplingMaxHealth;
@@ -56,7 +56,7 @@ namespace Game.Gameplay.Train
         /// <summary>영구 소실 거리(m).</summary>
         public float LostDistance => _lostDistance;
 
-        /// <summary>클라 이탈 칸 표시 보간의 오차 감쇠율(/s).</summary>
+        /// <summary>클라 이탈 칸 표시 재시뮬의 드리프트 보정률(/s).</summary>
         public float EjectDisplayCorrectionRate => _ejectDisplayCorrectionRate;
 
         /// <summary>칸 종류의 최대 체력. 기관차는 파괴 불가이므로 양의 무한대를 돌려준다.</summary>

@@ -65,15 +65,6 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void 복제_속도_추정은_수신_간격으로_나눈_변화량이다()
-        {
-            Assert.That(EjectMotionMath.EstimateReplicatedVelocity(10f, 10.4f, 0.05f), Is.EqualTo(8f).Within(0.001f));
-            Assert.That(EjectMotionMath.EstimateReplicatedVelocity(10f, 9.8f, 0.1f), Is.EqualTo(-2f).Within(0.001f),
-                "손잡이로 당겨지는 중(음수)도 추정된다");
-            Assert.That(EjectMotionMath.EstimateReplicatedVelocity(10f, 12f, 0f), Is.EqualTo(0f), "간격 0 방어");
-        }
-
-        [Test]
         public void 표시_오프셋은_정지_목표에_수렴하고_슬롯_앞으로는_못_간다()
         {
             float display = 10f;
@@ -90,7 +81,7 @@ namespace Game.Tests.EditMode
         [Test]
         public void 표시_오프셋은_계단_목표에도_매_프레임_고르게_전진한다()
         {
-            // 복제 목표는 30Hz(2프레임에 한 번) 계단, 표시는 60fps로 추정 속도 8m/s를 외삽한다.
+            // 복제 목표는 30Hz(2프레임에 한 번) 계단, 표시는 60fps로 재시뮬 속도 8m/s를 적분한다.
             // 원값을 그대로 쓰면 프레임 전진량이 0 ↔ 0.267m로 널뛰지만, 보간 후에는 이상치(8/60m) 근방에 머물러야 한다.
             const float Dt = 1f / 60f;
             const float Velocity = 8f;
@@ -118,6 +109,43 @@ namespace Game.Tests.EditMode
         {
             Assert.That(EjectMotionMath.StepDisplayOffset(0f, 20f, 0f, 1f / 60f, 8f, 10f), Is.EqualTo(20f),
                 "후발 접속 등 큰 오차는 보간 없이 워프");
+        }
+
+        [Test]
+        public void 표시_재시뮬은_같은_입력이면_계단_복제_아래서도_호스트_경로를_매끈하게_추종한다()
+        {
+            // 호스트: 60fps로 램프·저항 시뮬, 복제는 2프레임(≈30Hz)마다 발행. 클라: 같은 수식으로 재시뮬하고
+            // 복제 값은 드리프트 보정 목표로만 쓴다. 중간에 2인이 잡아 순 속도가 음수로 반전되는 구간 포함.
+            const float Dt = 1f / 60f;
+            const float Scroll = 6f, Extra = 2f, Decel = 4f, Pull = 6f;
+            float targetPush = EjectMotionMath.ComputeTargetPushSpeed(Scroll, Extra);
+
+            float hostPush = 0f, hostOffset = 0f, replicated = 0f;
+            float clientPush = 0f, display = 0f;
+
+            for (int frame = 1; frame <= 360; frame++)
+            {
+                int grabbers = frame >= 240 ? 2 : 0;
+
+                hostPush = EjectMotionMath.StepPushSpeed(hostPush, targetPush, Decel, Dt);
+                hostOffset = EjectMotionMath.StepOffset(
+                    hostOffset, EjectMotionMath.ComputeNetVelocity(hostPush, grabbers, Pull), Dt);
+                if (frame % 2 == 0)
+                {
+                    replicated = hostOffset;
+                }
+
+                clientPush = EjectMotionMath.StepPushSpeed(clientPush, targetPush, Decel, Dt);
+                float netVelocity = EjectMotionMath.ComputeNetVelocity(clientPush, grabbers, Pull);
+                float previous = display;
+                display = EjectMotionMath.StepDisplayOffset(display, replicated, netVelocity, Dt, 3f, 10f);
+
+                Assert.That(display - hostOffset, Is.InRange(-0.3f, 0.3f),
+                    $"{frame}번째 프레임에서 호스트 경로와의 드리프트가 허용치를 벗어났다");
+                float step = display - previous;
+                Assert.That(step - netVelocity * Dt, Is.InRange(-0.02f, 0.02f),
+                    $"{frame}번째 프레임 전진량이 재시뮬 속도에서 벗어났다(떨림)");
+            }
         }
     }
 }

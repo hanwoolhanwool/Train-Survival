@@ -34,6 +34,9 @@ namespace Game.Gameplay.Train
         // 이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m) — 호스트가 시뮬레이션해 복제한다(손잡이-이탈저항 스펙 §6).
         private readonly NetworkList<float> _ejectOffsets = new NetworkList<float>();
 
+        // 칸별 손잡이 잡은 인원 수 복제 — 클라 표시 재시뮬의 저항 입력(§M3 피드백 4). 판정 진실은 호스트 _grabberCounts.
+        private readonly NetworkList<int> _grabberCountsSync = new NetworkList<int>();
+
         // 표현이 완전히 사라지도록 소실 거리에서 더 물러난 뒤 시뮬을 멈추는 여유 거리(m).
         private const float EjectFreezeExtraMeters = 40f;
 
@@ -44,18 +47,13 @@ namespace Game.Gameplay.Train
         // 호스트 전용 — 칸별 현재 밀림 속도(m/s). 분리 순간 0(관성으로 열차를 따라감)에서 감속도만큼 서서히 오른다.
         private float[] _ejectPushSpeeds;
 
-        // 클라 전용 — 이탈 오프셋 표시 보간 상태. 복제(네트워크 틱) 계단으로 움직이는 오프셋을 추정 속도로
-        // 매 프레임 연속 전진시켜, 탑승 시점에서 월드가 떨려 보이지 않게 한다(§M3 피드백 4). 권위 값은 불변.
+        // 클라 전용 — 이탈 오프셋 표시 재시뮬 상태. 호스트와 같은 수식·입력(스크롤 속도 + 설정 + 복제 손잡이 인원)으로
+        // 매 프레임 연속 적분해 네트워크 틱 계단을 없애고, 복제 오프셋은 드리프트 보정 목표로만 쓴다(§M3 피드백 4).
         private float[] _displayOffsets;
-        private float[] _displayVelocities;
-        private float[] _displayTargets;
-        private float[] _displayTargetTimes;
+        private float[] _displayPushSpeeds;
 
         // 표시-복제 오차가 이 이상이면(후발 접속 등) 보간 없이 즉시 복제 값으로 붙는다.
         private const float EjectDisplaySnapMeters = 10f;
-
-        // 복제 갱신이 이만큼 멎으면 추정 속도를 버리고 목표 수렴만 한다 — 멈춘 칸을 오래된 속도로 계속 외삽하지 않게.
-        private const float EjectDisplayStaleSeconds = 0.3f;
 
         public int CarCount => _cars.Count;
 
@@ -271,6 +269,7 @@ namespace Game.Gameplay.Train
             if (IsServer && _grabberCounts != null && carIndex >= 0 && carIndex < _grabberCounts.Length)
             {
                 _grabberCounts[carIndex]++;
+                SyncGrabberCount(carIndex);
             }
         }
 
@@ -279,6 +278,16 @@ namespace Game.Gameplay.Train
             if (IsServer && _grabberCounts != null && carIndex >= 0 && carIndex < _grabberCounts.Length)
             {
                 _grabberCounts[carIndex] = Mathf.Max(0, _grabberCounts[carIndex] - 1);
+                SyncGrabberCount(carIndex);
+            }
+        }
+
+        /// <summary>호스트 저항 인원을 복제 목록에 반영한다 — 클라 표시 재시뮬이 같은 저항으로 적분하게.</summary>
+        private void SyncGrabberCount(int carIndex)
+        {
+            if (carIndex < _grabberCountsSync.Count && _grabberCountsSync[carIndex] != _grabberCounts[carIndex])
+            {
+                _grabberCountsSync[carIndex] = _grabberCounts[carIndex];
             }
         }
 
@@ -509,6 +518,7 @@ namespace Game.Gameplay.Train
                 });
                 _structures.Add(default);
                 _ejectOffsets.Add(0f);
+                _grabberCountsSync.Add(0);
 
                 Array.Resize(ref _grabberCounts, _cars.Count);
                 Array.Resize(ref _ejectSettled, _cars.Count);
@@ -537,6 +547,7 @@ namespace Game.Gameplay.Train
                     _grabberCounts[slot] = 0;
                     _ejectSettled[slot] = false;
                     _ejectPushSpeeds[slot] = 0f;
+                    SyncGrabberCount(slot);
                 }
             }
 
@@ -644,9 +655,11 @@ namespace Game.Gameplay.Train
             }
 
             _ejectOffsets.Clear();
+            _grabberCountsSync.Clear();
             for (int i = 0; i < count; i++)
             {
                 _ejectOffsets.Add(0f);
+                _grabberCountsSync.Add(0);
             }
 
             _grabberCounts = new int[count];
@@ -706,50 +719,48 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
-        /// 클라 표시 보간 — 네트워크 틱 계단으로 갱신되는 복제 오프셋을, 수신 간격으로 추정한 속도로 매 프레임
-        /// 연속 전진시키고 오차는 지수 감쇠로 수렴시킨다(<see cref="WorldScrollController"/>의 표시 거리와 같은 방식).
+        /// 클라 표시 재시뮬 — 호스트 <see cref="ServerSimulateEjection"/>과 같은 수식·입력(스크롤 속도, 설정,
+        /// 복제 손잡이 인원)으로 오프셋을 매 프레임 연속 적분해 네트워크 틱 계단을 없애고, 복제 오프셋과의
+        /// 드리프트만 저속 지수 감쇠로 보정한다. 수신 간격으로 속도를 추정하는 방식은 틱 도착의 프레임 양자화
+        /// 때문에 추정 속도가 진동해 잔여 떨림이 남는다 — 재시뮬은 호스트와 동일한 연속 이동을 만든다.
         /// <see cref="GetEjectOffset"/>이 이 값을 돌려주므로 칸·손잡이·건축물 표현이 함께 부드러워진다.
         /// </summary>
         private void ClientSmoothEjectionDisplay()
         {
             int count = _ejectOffsets.Count;
-            if (count == 0)
+            if (count == 0 || _durabilitySettings == null)
             {
                 return;
             }
 
             EnsureDisplayCapacity(count);
 
-            float now = Time.time;
-            float correctionRate = _durabilitySettings != null ? _durabilitySettings.EjectDisplayCorrectionRate : 8f;
+            float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
+            float targetPushSpeed = EjectMotionMath.ComputeTargetPushSpeed(scrollSpeed, _durabilitySettings.EjectExtraSpeed);
+            float dt = Time.deltaTime;
 
             for (int i = 0; i < count; i++)
             {
                 float target = _ejectOffsets[i];
 
-                // 이탈 중이 아닌 칸(정상·파괴·재건 직후)은 보간 없이 원값을 그대로 따른다 — 재건 시 잔상 없이 즉시 복귀.
+                // 이탈 중이 아닌 칸(정상·파괴·재건 직후)은 재시뮬 없이 원값을 그대로 따른다 — 재건 시 잔상 없이 즉시 복귀.
                 bool ejecting = i < _cars.Count && !_cars[i].Attached && _cars[i].Health > 0f;
                 if (!ejecting)
                 {
-                    ResetDisplaySlot(i, target, now);
+                    ResetDisplaySlot(i, target);
                     continue;
                 }
 
-                if (!Mathf.Approximately(target, _displayTargets[i]))
-                {
-                    _displayVelocities[i] = EjectMotionMath.EstimateReplicatedVelocity(
-                        _displayTargets[i], target, now - _displayTargetTimes[i]);
-                    _displayTargets[i] = target;
-                    _displayTargetTimes[i] = now;
-                }
-                else if (now - _displayTargetTimes[i] > EjectDisplayStaleSeconds)
-                {
-                    _displayVelocities[i] = 0f;
-                }
+                // 분리 관측 시점부터 호스트와 같은 관성 램프(0 → 목표)를 다시 밟는다.
+                _displayPushSpeeds[i] = EjectMotionMath.StepPushSpeed(
+                    _displayPushSpeeds[i], targetPushSpeed, _durabilitySettings.EjectDeceleration, dt);
+                int grabbers = i < _grabberCountsSync.Count ? _grabberCountsSync[i] : 0;
+                float netVelocity = EjectMotionMath.ComputeNetVelocity(
+                    _displayPushSpeeds[i], grabbers, _durabilitySettings.PullPerGrabber);
 
                 _displayOffsets[i] = EjectMotionMath.StepDisplayOffset(
-                    _displayOffsets[i], target, _displayVelocities[i], Time.deltaTime, correctionRate,
-                    EjectDisplaySnapMeters);
+                    _displayOffsets[i], target, netVelocity, dt,
+                    _durabilitySettings.EjectDisplayCorrectionRate, EjectDisplaySnapMeters);
             }
         }
 
@@ -762,24 +773,19 @@ namespace Game.Gameplay.Train
 
             int previous = _displayOffsets != null ? _displayOffsets.Length : 0;
             Array.Resize(ref _displayOffsets, count);
-            Array.Resize(ref _displayVelocities, count);
-            Array.Resize(ref _displayTargets, count);
-            Array.Resize(ref _displayTargetTimes, count);
+            Array.Resize(ref _displayPushSpeeds, count);
 
             // 새 슬롯(후발 접속·후미 증설)은 현재 복제 값에서 시작한다 — 첫 프레임 워프 방지.
-            float now = Time.time;
             for (int i = previous; i < count; i++)
             {
-                ResetDisplaySlot(i, _ejectOffsets[i], now);
+                ResetDisplaySlot(i, _ejectOffsets[i]);
             }
         }
 
-        private void ResetDisplaySlot(int index, float target, float now)
+        private void ResetDisplaySlot(int index, float target)
         {
             _displayOffsets[index] = target;
-            _displayVelocities[index] = 0f;
-            _displayTargets[index] = target;
-            _displayTargetTimes[index] = now;
+            _displayPushSpeeds[index] = 0f;
         }
 
         private float MaxHealthFor(CarType type)

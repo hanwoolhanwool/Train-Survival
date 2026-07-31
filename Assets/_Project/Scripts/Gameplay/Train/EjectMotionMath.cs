@@ -45,17 +45,11 @@ namespace Game.Gameplay.Train
             return grabberCount <= 0 && offset >= lostDistance;
         }
 
-        /// <summary>복제 수신 간격으로 이탈 오프셋의 진행 속도(m/s)를 추정한다 — 클라 표시 보간의 외삽 입력.
-        /// 당겨지는 중이면 음수. 간격이 0 이하이면 추정 불가로 0을 돌려준다.</summary>
-        public static float EstimateReplicatedVelocity(float previousTarget, float currentTarget, float elapsedSeconds)
-        {
-            return elapsedSeconds > 0f ? (currentTarget - previousTarget) / elapsedSeconds : 0f;
-        }
-
         /// <summary>
-        /// 클라 표시 오프셋 한 프레임 전진 — 추정 속도로 연속 이동을 유지하고 복제 목표와의 오차는 지수 감쇠로
-        /// 수렴시킨다(<see cref="WorldScrollMath.SmoothToward"/>와 같은 방식 — 네트워크 틱 계단을 숨긴다).
-        /// 오차가 스냅 거리 이상이면(후발 접속 등) 즉시 목표로 붙고, 결과는 슬롯(0) 앞으로 못 간다.
+        /// 클라 표시 오프셋 한 프레임 전진 — 호스트와 같은 수식으로 재시뮬한 순 속도로 연속 이동을 유지하고,
+        /// 복제 목표와의 드리프트는 지수 감쇠로 수렴시킨다(<see cref="WorldScrollMath.SmoothToward"/>와 같은 방식 —
+        /// 네트워크 틱 계단을 숨긴다). 오차가 스냅 거리 이상이면(후발 접속 등) 즉시 목표로 붙고,
+        /// 결과는 슬롯(0) 앞으로 못 간다.
         /// </summary>
         public static float StepDisplayOffset(
             float display, float target, float velocity, float deltaTime, float correctionRate, float snapDistance)
