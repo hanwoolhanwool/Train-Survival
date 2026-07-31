@@ -1,6 +1,8 @@
 using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Inventory;
+using Game.Gameplay.Monsters;
+using Game.Gameplay.Player;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,9 +11,10 @@ namespace Game.Gameplay.Train
 {
     /// <summary>
     /// 수리 망치 (기획서 §9 — 수리 망치로 수리. §M3). 좌클릭 홀드 = 겨눈 부위 수리,
-    /// 우클릭 = 겨눈 칸에 건축물(온실 돔) 설치(자원 소모).
+    /// 우클릭 = 겨눈 칸에 건축물(온실 돔) 설치(자원 소모),
+    /// 건설 지점(재건 슬롯·후미 연결부)을 겨누면 우클릭 = 칸 건설(M3 피드백 — 건설 포트의 망치 통합).
     /// 파이프라인은 리볼버와 동일 구조: 소유자 로컬 레이캐스트로 부위(칸·연결부·건축물)를 식별해
-    /// 호스트에 보고 → 호스트가 거리 재검증 후 수리·설치를 확정 → 상태 복제로 전 피어 반영.
+    /// 호스트에 보고 → 호스트가 거리 재검증 후 수리·설치·건설을 확정 → 상태 복제로 전 피어 반영.
     /// 겨눈 부위와 체력은 <see cref="HammerTargetLocalEvent"/>로 발행해 조준 HUD가 그린다(수리 과정 가시화).
     /// 열차 부위는 NetworkObject가 아니므로 (부위 종류, 인덱스)로 식별한다. Player 프리팹에 부착한다.
     /// </summary>
@@ -19,6 +22,13 @@ namespace Game.Gameplay.Train
     {
         [SerializeField] private RepairHammerSettings _settings;
         [SerializeField] private Transform _aimSource;
+        [SerializeField] private TrainLayoutSettings _layoutSettings;
+
+        [Tooltip("칸 건설 지점을 '겨눴다'고 볼 시선 정렬 하한 (조준 방향·건설 지점 방향 내적).")]
+        [SerializeField, Range(0f, 1f)] private float _buildLookDotThreshold = 0.85f;
+
+        [Tooltip("건설 지점 높이(Y) — 연결부 갑판 근처로 맞춘다.")]
+        [SerializeField] private float _buildAnchorHeight = 2.5f;
 
         private float _nextSwingTime;
 
@@ -30,6 +40,16 @@ namespace Game.Gameplay.Train
         private bool _sentCanRepair;
         private bool _sentCanBuild;
         private bool _sentAfford;
+
+        // 마지막으로 알린 칸 건설 조준 상태 — 바뀔 때만 다시 발행한다.
+        private bool _sentBuildAiming;
+        private int _sentBuildSlot = -1;
+        private bool _sentBuildAfford;
+        private bool _sentBuildOccupied;
+
+        // 자리 점유 판정용 재사용 버퍼 — 매 프레임 도는 조준 경로라 할당을 만들지 않는다.
+        // 넘치면 초과분이 조용히 버려져 사람을 놓칠 수 있으므로, 지형·자원까지 겹쳐도 남을 만큼 넉넉히 잡는다.
+        private readonly Collider[] _occupancyBuffer = new Collider[32];
 
         /// <summary>도구 슬롯 활성 여부 — <see cref="Game.Gameplay.Inventory.HotbarController"/>가 제어한다. 소유자 입력 게이트.</summary>
         public bool InputEnabled { get; set; }
@@ -44,6 +64,7 @@ namespace Game.Gameplay.Train
             if (!InputEnabled)
             {
                 PublishNoTarget();
+                PublishBuildAim(false, -1, 0, false, false);
                 return;
             }
 
@@ -57,7 +78,29 @@ namespace Game.Gameplay.Train
             Vector3 origin = _aimSource != null ? _aimSource.position : transform.position;
             Vector3 forward = _aimSource != null ? _aimSource.forward : transform.forward;
 
-            bool hasHit = TryRaycastHit(origin, forward, out RaycastHit hit);
+            bool hasRayHit = TryRaycastHit(origin, forward, out RaycastHit hit);
+            float blockingDistance = hasRayHit ? hit.distance : float.PositiveInfinity;
+
+            // 건설 조준이 성립하면 부위 조준을 덮는다 — 우클릭 의미(칸 건설 vs 돔 설치)가 겹치지 않게 한다.
+            if (TryGetBuildAim(origin, forward, blockingDistance,
+                out int buildSlot, out int buildCost, out bool buildAfford, out bool buildOccupied))
+            {
+                PublishBuildAim(true, buildSlot, buildCost, buildAfford, buildOccupied);
+                PublishNoTarget();
+
+                Mouse buildMouse = Mouse.current;
+                if (buildMouse != null && buildMouse.rightButton.wasPressedThisFrame
+                    && buildAfford && !buildOccupied)
+                {
+                    RequestBuildCarServerRpc();
+                }
+
+                return;
+            }
+
+            PublishBuildAim(false, -1, 0, false, false);
+
+            bool hasHit = hasRayHit;
             TrainPartKind kind = default;
             int index = -1;
             if (hasHit)
@@ -71,7 +114,13 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            ReadPartState(train, kind, index, out float health, out float maxHealth, out bool canRepair);
+            // 편성에 없는 부위(증설 예비 슬롯의 칸·연결부)는 표적이 아니다 — 짓기 전 부위의 체력이 뜨면 안 된다.
+            if (!ReadPartState(train, kind, index,
+                out float health, out float maxHealth, out bool canRepair))
+            {
+                PublishNoTarget();
+                return;
+            }
 
             bool hasExpansion = ServiceLocator.TryGet(out ITrainExpansion expansion);
             bool canBuild = hasExpansion && kind == TrainPartKind.Car && expansion.CanBuildStructure(index);
@@ -97,6 +146,74 @@ namespace Game.Gameplay.Train
             {
                 RequestBuildStructureServerRpc(index, hit.point);
             }
+        }
+
+        /// <summary>칸 건설 조준 판정 — 다음 건설 슬롯의 연결 지점을 사거리 안에서 겨누고 있는지.</summary>
+        private bool TryGetBuildAim(Vector3 origin, Vector3 forward, float blockingDistance,
+            out int slot, out int cost, out bool afford, out bool occupied)
+        {
+            slot = -1;
+            cost = 0;
+            afford = false;
+            occupied = false;
+
+            if (_layoutSettings == null || !ServiceLocator.TryGet(out ITrainExpansion expansion)
+                || !expansion.TryGetBuildSlot(out slot))
+            {
+                return false;
+            }
+
+            if (!CarBuildAimLogic.IsAiming(origin, forward, BuildAnchor(slot),
+                _settings.MaxRange, _buildLookDotThreshold, blockingDistance))
+            {
+                return false;
+            }
+
+            cost = expansion.CarBuildCost;
+            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            afford = inventory != null && inventory.Count >= cost;
+            occupied = IsBuildVolumeOccupied(slot);
+            return true;
+        }
+
+        /// <summary>슬롯의 건설 지점(앞 연결부 중앙) — 조준·거리 검증 공통 기준점.</summary>
+        private Vector3 BuildAnchor(int slot)
+        {
+            float z = CarBuildAimLogic.AnchorZ(
+                _layoutSettings.CarCenterZ(slot), _layoutSettings.CarLength, _layoutSettings.CouplingGap);
+            return new Vector3(0f, _buildAnchorHeight, z);
+        }
+
+        /// <summary>
+        /// 지어질 자리에 플레이어·몬스터가 들어와 있는지 — 새 칸이 사람·몬스터를 안에 가두지 않도록 막는다.
+        /// 판정 영역은 프리뷰 테두리와 같은 상자다(초록 테두리 안이 비어야 지어진다).
+        /// 소유자 조준(안내·프리뷰)과 호스트 확정이 같은 함수를 쓴다 — 판정이 갈리지 않는다.
+        /// </summary>
+        private bool IsBuildVolumeOccupied(int slot)
+        {
+            CarBuildAimLogic.BuildVolume(_layoutSettings.CarCenterZ(slot), _layoutSettings.CarWidth,
+                _layoutSettings.DeckHeight, _layoutSettings.CarLength,
+                out Vector3 center, out Vector3 size);
+
+            int count = Physics.OverlapBoxNonAlloc(center, size * 0.5f, _occupancyBuffer,
+                Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                Collider hit = _occupancyBuffer[i];
+                if (hit == null)
+                {
+                    continue;
+                }
+
+                // 플레이어는 CharacterController, 몬스터는 CapsuleCollider가 각자 루트에 붙어 있다.
+                if (hit.GetComponentInParent<NetworkPlayerController>() != null
+                    || hit.GetComponentInParent<MonsterAgent>() != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>맞은 콜라이더에서 열차 부위를 식별한다 — 건축물은 칸의 자식이라 먼저 검사한다.</summary>
@@ -131,8 +248,11 @@ namespace Game.Gameplay.Train
             return false;
         }
 
-        /// <summary>복제 상태에서 부위 체력·수리 가능 여부를 읽는다(전 피어 동일 판정 — HUD 표시용).</summary>
-        private static void ReadPartState(ITrainState train, TrainPartKind kind, int index,
+        /// <summary>
+        /// 복제 상태에서 부위 체력·수리 가능 여부를 읽는다(전 피어 동일 판정 — HUD 표시용).
+        /// 그 부위가 편성에 존재할 때만 true — 아직 짓지 않은 예비 슬롯의 칸·연결부는 false다.
+        /// </summary>
+        private static bool ReadPartState(ITrainState train, TrainPartKind kind, int index,
             out float health, out float maxHealth, out bool canRepair)
         {
             health = 0f;
@@ -149,9 +269,10 @@ namespace Game.Gameplay.Train
                         canRepair = TrainStateLogic.IsCarPresent(car)
                             && TrainStateLogic.IsDestructible(car.Type)
                             && car.Health < car.MaxHealth;
+                        return true;
                     }
 
-                    break;
+                    return false;
 
                 case TrainPartKind.Coupling:
                     if (train.TryGetCoupling(index, out CouplingState coupling))
@@ -161,9 +282,10 @@ namespace Game.Gameplay.Train
                         canRepair = !coupling.Broken && coupling.Health < coupling.MaxHealth
                             && train.TryGetCar(index, out CarState front) && TrainStateLogic.IsCarPresent(front)
                             && train.TryGetCar(index + 1, out CarState rear) && TrainStateLogic.IsCarPresent(rear);
+                        return true;
                     }
 
-                    break;
+                    return false;
 
                 case TrainPartKind.Structure:
                     if (train.TryGetStructure(index, out StructureState structure))
@@ -173,9 +295,13 @@ namespace Game.Gameplay.Train
                         canRepair = TrainStateLogic.IsStructureAlive(structure)
                             && structure.Health < structure.MaxHealth
                             && train.TryGetCar(index, out CarState owner) && TrainStateLogic.IsCarPresent(owner);
+                        return true;
                     }
 
-                    break;
+                    return false;
+
+                default:
+                    return false;
             }
         }
 
@@ -236,6 +362,31 @@ namespace Game.Gameplay.Train
                 true, kind, index, health, maxHealth, canRepair, canBuild, structureCost, afford));
         }
 
+        private void PublishBuildAim(bool aiming, int slot, int cost, bool afford, bool occupied)
+        {
+            if (_sentBuildAiming == aiming && _sentBuildSlot == slot
+                && _sentBuildAfford == afford && _sentBuildOccupied == occupied)
+            {
+                return;
+            }
+
+            _sentBuildAiming = aiming;
+            _sentBuildSlot = slot;
+            _sentBuildAfford = afford;
+            _sentBuildOccupied = occupied;
+
+            Vector3 ghostCenter = default;
+            Vector3 ghostSize = default;
+            if (aiming && _layoutSettings != null)
+            {
+                CarBuildAimLogic.BuildVolume(_layoutSettings.CarCenterZ(slot), _layoutSettings.CarWidth,
+                    _layoutSettings.DeckHeight, _layoutSettings.CarLength, out ghostCenter, out ghostSize);
+            }
+
+            EventBus<CarBuildAimLocalEvent>.Publish(new CarBuildAimLocalEvent(
+                aiming, slot, cost, afford, occupied, ghostCenter, ghostSize));
+        }
+
         // ── 호스트: 권위 계층 (거리 검증·수리·설치 확정) ──────────────────────
 
         [Rpc(SendTo.Server)]
@@ -274,6 +425,34 @@ namespace Game.Gameplay.Train
             if (!expansion.ServerTryBuildStructure(carIndex))
             {
                 inventory.ServerTryAdd(expansion.StructureBuildCost);
+            }
+        }
+
+        /// <summary>
+        /// 칸 건설 — 건설 슬롯·지점을 권위 상태로 재계산해 거리 검증 후
+        /// (자원 차감 + 건설)을 원자적으로 확정한다. 건설 실패 시 자원을 되돌린다.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        private void RequestBuildCarServerRpc(RpcParams rpcParams = default)
+        {
+            if (_settings == null || _layoutSettings == null
+                || !ServiceLocator.TryGet(out ITrainExpansion expansion)
+                || !expansion.TryGetBuildSlot(out int slot)
+                || !IsWithinRange(BuildAnchor(slot))
+                || IsBuildVolumeOccupied(slot))
+            {
+                return;
+            }
+
+            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            if (inventory == null || !inventory.ServerTryRemove(expansion.CarBuildCost))
+            {
+                return;
+            }
+
+            if (!expansion.ServerTryBuildCar())
+            {
+                inventory.ServerTryAdd(expansion.CarBuildCost);
             }
         }
 

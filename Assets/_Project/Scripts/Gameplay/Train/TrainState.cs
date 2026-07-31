@@ -474,9 +474,10 @@ namespace Game.Gameplay.Train
 
         public int StructureBuildCost => _expansionSettings != null ? _expansionSettings.StructureBuildCost : 0;
 
-        public bool CanBuildCar()
+        public bool TryGetBuildSlot(out int slotIndex)
         {
-            return FindBuildSlot() >= 0;
+            slotIndex = FindBuildSlot();
+            return slotIndex >= 0;
         }
 
         /// <summary>

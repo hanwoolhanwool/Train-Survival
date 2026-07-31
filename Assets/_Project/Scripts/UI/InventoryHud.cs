@@ -22,9 +22,7 @@ namespace Game.UI
         private float _health;
         private float _maxHealth;
         private bool _engineInRange;
-        private bool _expansionInRange;
-        private int _expansionCost;
-        private bool _expansionAffordable;
+        private CarBuildAimLocalEvent _carBuildAim;
         private HammerTargetLocalEvent _hammerTarget;
         private bool _panelOpen;
         private int _dragFromIndex = -1;
@@ -33,7 +31,7 @@ namespace Game.UI
         {
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Subscribe(OnEnginePrompt);
-            EventBus<ExpansionPromptLocalEvent>.Subscribe(OnExpansionPrompt);
+            EventBus<CarBuildAimLocalEvent>.Subscribe(OnCarBuildAim);
             EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
         }
 
@@ -41,7 +39,7 @@ namespace Game.UI
         {
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Unsubscribe(OnEnginePrompt);
-            EventBus<ExpansionPromptLocalEvent>.Unsubscribe(OnExpansionPrompt);
+            EventBus<CarBuildAimLocalEvent>.Unsubscribe(OnCarBuildAim);
             EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
         }
 
@@ -59,11 +57,9 @@ namespace Game.UI
             _engineInRange = evt.InRange;
         }
 
-        private void OnExpansionPrompt(ExpansionPromptLocalEvent evt)
+        private void OnCarBuildAim(CarBuildAimLocalEvent evt)
         {
-            _expansionInRange = evt.InRange;
-            _expansionCost = evt.Cost;
-            _expansionAffordable = evt.CanAfford;
+            _carBuildAim = evt;
         }
 
         private void OnHammerTarget(HammerTargetLocalEvent evt)
@@ -91,7 +87,7 @@ namespace Game.UI
 
             DrawHotbar(hotbar);
             DrawEnginePrompt(hotbar);
-            DrawExpansionPrompt();
+            DrawCarBuildPrompt();
             DrawHammerTarget();
 
             if (_panelOpen)
@@ -153,18 +149,29 @@ namespace Game.UI
                 $"<color=yellow>{prompt}</color>");
         }
 
-        private void DrawExpansionPrompt()
+        /// <summary>칸 건설 안내 — 망치로 건설 지점(초록 테두리 프리뷰)을 겨눈 동안 표시한다.</summary>
+        private void DrawCarBuildPrompt()
         {
-            if (!_expansionInRange || _panelOpen)
+            if (!_carBuildAim.Aiming || _panelOpen)
             {
                 return;
             }
 
-            string prompt = _expansionAffordable
-                ? $"E — 칸 건설 (자원 {_expansionCost}개)"
-                : $"칸 건설에 자원 {_expansionCost}개 필요";
-            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.58f, 300f, 24f),
-                $"<color=yellow>{prompt}</color>");
+            string prompt;
+            if (!_carBuildAim.CanAfford)
+            {
+                prompt = $"<color=red>칸 건설 자원 부족 ({_carBuildAim.Cost}개 필요)</color>";
+            }
+            else if (_carBuildAim.Occupied)
+            {
+                prompt = "<color=red>자리에 사람·몬스터가 있어 칸을 지을 수 없다</color>";
+            }
+            else
+            {
+                prompt = $"<color=yellow>우클릭 — 칸 건설 (자원 {_carBuildAim.Cost}개)</color>";
+            }
+
+            GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.58f, 360f, 24f), prompt);
         }
 
         /// <summary>망치 조준 라벨 — 겨눈 부위의 체력과 가능한 조작(수리/설치)을 조준점 아래에 보여준다(수리 과정 가시화).</summary>

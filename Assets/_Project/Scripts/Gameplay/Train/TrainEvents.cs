@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Game.Gameplay.Train
 {
     /// <summary>
@@ -194,22 +196,43 @@ namespace Game.Gameplay.Train
     }
 
     /// <summary>
-    /// 로컬 표현 이벤트 — 자기 플레이어의 증설 포트 상호작용 범위 진입/이탈. HUD 안내("E — 온실칸 증설")용.
-    /// 범위·비용 충족 상태가 바뀔 때마다 발행된다.
+    /// 로컬 표현 이벤트 — 망치로 칸 건설 지점(재건 슬롯·후미 연결부)을 겨눈 상태 (M3 피드백 — 건설 포트의 망치 통합).
+    /// HUD 안내("우클릭 — 칸 건설")와 초록 테두리 프리뷰(<see cref="CarBuildGhostView"/>)가 그린다.
+    /// 조준 성립·건설 슬롯·비용 충족이 바뀔 때마다 발행된다.
     /// </summary>
-    public readonly struct ExpansionPromptLocalEvent
+    public readonly struct CarBuildAimLocalEvent
     {
-        public readonly bool InRange;
+        public readonly bool Aiming;
+
+        /// <summary>지어질 슬롯 — 재건할 첫 빈 슬롯, 없으면 후미 증설 슬롯.</summary>
+        public readonly int SlotIndex;
 
         public readonly int Cost;
 
         public readonly bool CanAfford;
 
-        public ExpansionPromptLocalEvent(bool inRange, int cost, bool canAfford)
+        /// <summary>지어질 자리에 플레이어·몬스터가 들어와 있는지 — 있으면 그 안에 칸을 지을 수 없다.</summary>
+        public readonly bool Occupied;
+
+        /// <summary>지어질 칸의 월드 중심 — 프리뷰 박스용. 열차는 원점 고정이라 슬롯이 정해지면 상수다.</summary>
+        public readonly Vector3 GhostCenter;
+
+        /// <summary>지어질 칸의 크기(폭·높이·길이) — 프리뷰 박스용.</summary>
+        public readonly Vector3 GhostSize;
+
+        /// <summary>지금 우클릭으로 실제로 지어지는지 — 비용을 치를 수 있고 자리도 비어 있어야 한다.</summary>
+        public bool CanBuild => CanAfford && !Occupied;
+
+        public CarBuildAimLocalEvent(bool aiming, int slotIndex, int cost, bool canAfford, bool occupied,
+            Vector3 ghostCenter, Vector3 ghostSize)
         {
-            InRange = inRange;
+            Aiming = aiming;
+            SlotIndex = slotIndex;
             Cost = cost;
             CanAfford = canAfford;
+            Occupied = occupied;
+            GhostCenter = ghostCenter;
+            GhostSize = ghostSize;
         }
     }
 }

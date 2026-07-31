@@ -92,7 +92,7 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>칸 1칸을 무료 건설한다(빈 슬롯 재건 우선) — 비용 지불 경로는 건설 포트가 따로 검증한다.</summary>
+        /// <summary>칸 1칸을 무료 건설한다(빈 슬롯 재건 우선) — 비용 지불 경로는 망치 칸 건설이 따로 검증한다.</summary>
         [Rpc(SendTo.Server, RequireOwnership = false)]
         private void RequestBuildCarServerRpc()
         {

@@ -18,8 +18,11 @@ namespace Game.Gameplay.Train
         /// <summary>건축물 1개 설치에 드는 자원 수.</summary>
         int StructureBuildCost { get; }
 
-        /// <summary>지금 칸을 지을 수 있는지 — 재건할 빈 슬롯이 있거나 후미 증설 여유가 있어야 한다.</summary>
-        bool CanBuildCar();
+        /// <summary>
+        /// 다음 건설이 들어갈 슬롯 — 재건할 첫 빈 슬롯, 없으면 후미 증설 슬롯.
+        /// 복제 상태 기반이라 전 피어 동일 — 건설 조준·프리뷰가 위치를 계산하는 데 쓴다. 지을 수 없으면 false.
+        /// </summary>
+        bool TryGetBuildSlot(out int slotIndex);
 
         /// <summary>
         /// 칸 1개를 짓는다 — 첫 빈 슬롯이면 그 자리 재건(앞 연결부 복구 포함), 없으면 후미 증설.
