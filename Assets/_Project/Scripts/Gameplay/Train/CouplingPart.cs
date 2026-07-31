@@ -17,6 +17,7 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(0)] private int _couplingIndex;
 
         private Renderer[] _renderers;
+        private Collider[] _colliders;
         private bool _registeredAsTarget;
 
         /// <summary>연결부 인덱스 — 수리 망치 등 부위 식별이 필요한 도구가 읽는다.</summary>
@@ -38,6 +39,7 @@ namespace Game.Gameplay.Train
         private void Awake()
         {
             _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+            _colliders = GetComponentsInChildren<Collider>(includeInactive: true);
         }
 
         private void Start()
@@ -117,19 +119,30 @@ namespace Game.Gameplay.Train
             }
         }
 
+        /// <summary>
+        /// 표현·물리를 현재 상태에 맞춘다. 콜라이더도 함께 끈다 — 아직 짓지 않은 칸(증설 예비 슬롯)의
+        /// 연결부가 보이지 않으면서 단단하게 남으면, 조준 레이가 허깨비 연결부를 맞아
+        /// 존재하지 않는 부위의 체력이 뜨고 그 자리의 칸 건설 조준까지 가린다.
+        /// </summary>
         private void SyncFromState()
         {
             bool live = IsCouplingLive();
             UpdateTargetRegistration();
 
-            if (_renderers == null)
+            if (_renderers != null)
             {
-                return;
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    _renderers[i].enabled = live;
+                }
             }
 
-            for (int i = 0; i < _renderers.Length; i++)
+            if (_colliders != null)
             {
-                _renderers[i].enabled = live;
+                for (int i = 0; i < _colliders.Length; i++)
+                {
+                    _colliders[i].enabled = live;
+                }
             }
         }
 
