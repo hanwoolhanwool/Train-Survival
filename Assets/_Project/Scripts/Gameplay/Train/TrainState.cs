@@ -19,7 +19,8 @@ namespace Game.Gameplay.Train
     // 칸과 손잡이가 같은 프레임의 동일한 오프셋 값을 읽게 한다(어긋나면 손잡이가 칸에서 떠 보인다).
     [DefaultExecutionOrder(-150)]
     public sealed class TrainState : NetworkBehaviour,
-        ITrainState, ITrainDamageSink, ITrainGrabResistance, ITrainRepairSink, ITrainExpansion, IFuelLoadProvider
+        ITrainState, ITrainDamageSink, ITrainGrabResistance, ITrainRepairSink, ITrainExpansion, ITrainRecouple,
+        IFuelLoadProvider
     {
         [SerializeField] private TrainLayoutSettings _layoutSettings;
         [SerializeField] private TrainDurabilitySettings _durabilitySettings;
@@ -95,6 +96,11 @@ namespace Game.Gameplay.Train
                 ServiceLocator.Register<ITrainExpansion>(this);
             }
 
+            if (!ServiceLocator.IsRegistered<ITrainRecouple>())
+            {
+                ServiceLocator.Register<ITrainRecouple>(this);
+            }
+
             if (!ServiceLocator.IsRegistered<IFuelLoadProvider>())
             {
                 ServiceLocator.Register<IFuelLoadProvider>(this);
@@ -133,6 +139,11 @@ namespace Game.Gameplay.Train
             if (ServiceLocator.TryGet(out ITrainExpansion expansion) && ReferenceEquals(expansion, this))
             {
                 ServiceLocator.Unregister<ITrainExpansion>();
+            }
+
+            if (ServiceLocator.TryGet(out ITrainRecouple recouple) && ReferenceEquals(recouple, this))
+            {
+                ServiceLocator.Unregister<ITrainRecouple>();
             }
 
             if (ServiceLocator.TryGet(out IFuelLoadProvider load) && ReferenceEquals(load, this))
@@ -537,19 +548,7 @@ namespace Game.Gameplay.Train
                 WriteBackCouplings(couplings);
                 WriteBackStructures(structures);
 
-                // 이탈 시뮬 흔적을 지워 제자리에서 다시 시작하게 한다.
-                if (slot < _ejectOffsets.Count && _ejectOffsets[slot] != 0f)
-                {
-                    _ejectOffsets[slot] = 0f;
-                }
-
-                if (_grabberCounts != null && slot < _grabberCounts.Length)
-                {
-                    _grabberCounts[slot] = 0;
-                    _ejectSettled[slot] = false;
-                    _ejectPushSpeeds[slot] = 0f;
-                    SyncGrabberCount(slot);
-                }
+                ResetEjectSimulation(slot);
             }
 
             BroadcastCarBuiltRpc(slot, rebuilt);
@@ -580,6 +579,66 @@ namespace Game.Gameplay.Train
             WriteBackStructures(structures);
             BroadcastStructureBuiltRpc(carIndex);
             return true;
+        }
+
+        // ── ITrainRecouple — 이탈 칸 재결합 (손잡이-이탈저항 스펙 §4.1) ──────────
+
+        public int RecoupleCost => _expansionSettings != null ? _expansionSettings.RecoupleCost : 0;
+
+        public bool TryGetRecoupleTarget(out int carIndex)
+        {
+            float lostDistance = _durabilitySettings != null ? _durabilitySettings.LostDistance : float.MaxValue;
+            carIndex = CarRecoupleAimLogic.FindRecoupleTarget(SnapshotCars(), SnapshotEjectOffsets(), lostDistance);
+            return carIndex >= 0;
+        }
+
+        /// <summary>
+        /// 슬롯까지 끌어온 이탈 칸을 편성에 다시 붙인다 — 칸 체력·칸 위 건축물은 그대로 두고
+        /// 앞 연결부만 절반 체력으로 되살린다(스펙 §4.1). 슬롯 도달은 조준이 쓰는 표시 보간 값이 아니라
+        /// 권위 오프셋으로 다시 본다. 두 목록 변이가 같은 프레임에 커밋되므로 부분 편성이 보이지 않는다.
+        /// </summary>
+        public bool ServerTryRecouple(int carIndex)
+        {
+            if (!IsServer || carIndex < 0 || carIndex >= _ejectOffsets.Count
+                || _ejectOffsets[carIndex] > CarRecoupleAimLogic.SlotArrivalEpsilon)
+            {
+                return false;
+            }
+
+            CarState[] cars = SnapshotCars();
+            CouplingState[] couplings = SnapshotCouplings();
+            float couplingMax = _durabilitySettings != null ? _durabilitySettings.CouplingMaxHealth : 1f;
+            if (!TrainStateLogic.Recouple(cars, couplings, carIndex, couplingMax))
+            {
+                return false;
+            }
+
+            WriteBackCars(cars);
+            WriteBackCouplings(couplings);
+
+            // 다시 떨어져 나가더라도 관성(속도 0)부터 새로 시작하게 한다. 잡고 있던 손잡이는 붙는 즉시
+            // 잡기 조건(IsCarGrabbable)이 깨져 앵커 쪽에서 스스로 풀린다.
+            ResetEjectSimulation(carIndex);
+
+            BroadcastCarRecoupledRpc(carIndex);
+            return true;
+        }
+
+        /// <summary>이탈 시뮬 흔적(오프셋·저항 인원·밀림 속도·정지 플래그)을 지워 제자리에서 다시 시작하게 한다.</summary>
+        private void ResetEjectSimulation(int index)
+        {
+            if (index < _ejectOffsets.Count && _ejectOffsets[index] != 0f)
+            {
+                _ejectOffsets[index] = 0f;
+            }
+
+            if (_grabberCounts != null && index < _grabberCounts.Length)
+            {
+                _grabberCounts[index] = 0;
+                _ejectSettled[index] = false;
+                _ejectPushSpeeds[index] = 0f;
+                SyncGrabberCount(index);
+            }
         }
 
         /// <summary>지금 지을 슬롯 — 첫 빈 슬롯(파괴·소실) 우선, 없으면 후미 새 슬롯. 없으면 -1.</summary>
@@ -923,6 +982,12 @@ namespace Game.Gameplay.Train
         private void BroadcastCarBuiltRpc(int index, bool rebuilt)
         {
             EventBus<CarBuiltEvent>.Publish(new CarBuiltEvent(index, rebuilt));
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastCarRecoupledRpc(int index)
+        {
+            EventBus<CarRecoupledEvent>.Publish(new CarRecoupledEvent(index));
         }
     }
 }

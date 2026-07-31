@@ -316,9 +316,18 @@ namespace Game.Gameplay.Harpoon
             }
 
             // 앵커(손잡이): 릴 감지 않고 붙잡기만 한다 — 대상 이동·저항은 대상 측(호스트)이 담당하고, 여기서는
-            // 로프만 유지한다. 해제는 우클릭 취소(CancelGrab)나 대상 despawn(위 강제 해제)으로만 일어난다.
+            // 로프만 유지한다. 해제는 우클릭 취소(CancelGrab)나 대상 측의 점유 해제로 일어난다.
             if (_serverTowTarget.Kind == GrabKind.Anchor)
             {
+                // 손잡이 앵커는 despawn하지 않으므로(씬 정적 배치) 위 스폰 검사에 걸리지 않는다.
+                // 재결합·소실로 대상이 스스로 잡기를 끊었으면 로프도 함께 끊는다.
+                if (!_serverTowTarget.IsClaimed)
+                {
+                    _serverTowTarget = null;
+                    ForceReleaseOwnerRpc();
+                    ForceReleaseNotOwnerRpc();
+                }
+
                 return;
             }
 

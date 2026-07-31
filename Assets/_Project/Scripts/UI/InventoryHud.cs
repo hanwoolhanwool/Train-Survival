@@ -23,6 +23,7 @@ namespace Game.UI
         private float _maxHealth;
         private bool _engineInRange;
         private CarBuildAimLocalEvent _carBuildAim;
+        private CarRecoupleAimLocalEvent _carRecoupleAim;
         private HammerTargetLocalEvent _hammerTarget;
         private bool _panelOpen;
         private int _dragFromIndex = -1;
@@ -32,6 +33,7 @@ namespace Game.UI
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Subscribe(OnEnginePrompt);
             EventBus<CarBuildAimLocalEvent>.Subscribe(OnCarBuildAim);
+            EventBus<CarRecoupleAimLocalEvent>.Subscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
         }
 
@@ -40,6 +42,7 @@ namespace Game.UI
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<EnginePromptLocalEvent>.Unsubscribe(OnEnginePrompt);
             EventBus<CarBuildAimLocalEvent>.Unsubscribe(OnCarBuildAim);
+            EventBus<CarRecoupleAimLocalEvent>.Unsubscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
         }
 
@@ -60,6 +63,11 @@ namespace Game.UI
         private void OnCarBuildAim(CarBuildAimLocalEvent evt)
         {
             _carBuildAim = evt;
+        }
+
+        private void OnCarRecoupleAim(CarRecoupleAimLocalEvent evt)
+        {
+            _carRecoupleAim = evt;
         }
 
         private void OnHammerTarget(HammerTargetLocalEvent evt)
@@ -88,6 +96,7 @@ namespace Game.UI
             DrawHotbar(hotbar);
             DrawEnginePrompt(hotbar);
             DrawCarBuildPrompt();
+            DrawCarRecouplePrompt();
             DrawHammerTarget();
 
             if (_panelOpen)
@@ -169,6 +178,38 @@ namespace Game.UI
             else
             {
                 prompt = $"<color=yellow>우클릭 — 칸 건설 (자원 {_carBuildAim.Cost}개)</color>";
+            }
+
+            GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.58f, 360f, 24f), prompt);
+        }
+
+        /// <summary>
+        /// 재결합 안내 — 망치로 이탈 칸의 앞 연결 지점을 겨눈 동안 표시한다 (손잡이-이탈저항 스펙 §4.1).
+        /// 못 붙이는 이유는 먼저 걸리는 것 하나만 보여준다(구조적 순서 → 진행 → 비용).
+        /// 칸 건설 안내와는 상호 배타라 같은 자리에 그린다.
+        /// </summary>
+        private void DrawCarRecouplePrompt()
+        {
+            if (!_carRecoupleAim.Aiming || _panelOpen)
+            {
+                return;
+            }
+
+            string prompt;
+            switch (_carRecoupleAim.Prompt)
+            {
+                case RecouplePrompt.FrontCarMissing:
+                    prompt = "<color=red>앞 칸이 비어 있어 재결합할 수 없다</color>";
+                    break;
+                case RecouplePrompt.NotAtSlot:
+                    prompt = $"<color=red>칸을 슬롯까지 끌어와야 한다 ({_carRecoupleAim.RemainingMeters:F1} m 남음)</color>";
+                    break;
+                case RecouplePrompt.InsufficientResources:
+                    prompt = $"<color=red>재결합 자원 부족 ({_carRecoupleAim.Cost}개 필요)</color>";
+                    break;
+                default:
+                    prompt = $"<color=yellow>우클릭 — 재결합 (자원 {_carRecoupleAim.Cost}개)</color>";
+                    break;
             }
 
             GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.58f, 360f, 24f), prompt);

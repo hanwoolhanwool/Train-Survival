@@ -450,5 +450,64 @@ namespace Game.Gameplay.Train
                 structures[index] = default;
             }
         }
+
+        // ── 이탈 칸 재결합 (손잡이-이탈저항 스펙 §4.1 — 끌어온 칸을 편성에 다시 붙인다) ──────────────────
+
+        /// <summary>재결합으로 되살아난 연결부가 회복하는 체력 비율 — 급히 다시 이은 연결이라 절반만 돌아온다.</summary>
+        public const float RecoupledCouplingHealthRatio = 0.5f;
+
+        /// <summary>
+        /// 이탈 칸을 편성에 다시 붙일 수 있는 구조인지 — 기관차가 아니고, 이탈 중이며 살아 있고,
+        /// 앞 칸(index-1)이 편성에 살아 붙어 있어야 한다(앞에서부터 순차 재결합 — 편성 중간에 뜬 칸을 만들지 않는다).
+        /// 슬롯 도달(offset == 0)·자원·거리는 상태 밖의 조건이라 호출부(호스트)가 따로 검증한다.
+        /// </summary>
+        public static bool CanRecouple(CarState[] cars, int index)
+        {
+            if (cars == null || index < LocomotiveIndex + 1 || index >= cars.Length)
+            {
+                return false;
+            }
+
+            CarState car = cars[index];
+            if (car.Attached || car.Health <= 0f)
+            {
+                return false;
+            }
+
+            return IsCarPresent(cars[index - 1]);
+        }
+
+        /// <summary>
+        /// 이탈 칸을 편성에 다시 붙인다 — 칸 체력은 그대로 두고(이탈 중에는 손상되지 않는다)
+        /// 뚫렸던 앞 연결부만 절반 체력으로 되살린다. 칸 위 건축물은 이탈 중에도 데이터가 보존되므로 함께 복귀한다
+        /// (건축물을 없애는 <see cref="RebuildSlot"/>과 달리, 이것이 회수의 실질 이득이다).
+        /// </summary>
+        public static bool Recouple(CarState[] cars, CouplingState[] couplings, int index, float couplingMaxHealth)
+        {
+            if (!CanRecouple(cars, index))
+            {
+                return false;
+            }
+
+            CarState car = cars[index];
+            car.Attached = true;
+            cars[index] = car;
+
+            // 앞 연결부(index-1 = 칸 index-1 ↔ index) 중 '실제로 끊겼던' 자리만 절반 체력으로 다시 잇는다 —
+            // 이어서 좌클릭 수리로 마저 채우는 행동이 자연스럽게 이어지고, 다시 뚫릴 위험이 긴장감으로 남는다.
+            // 연쇄 이탈로 함께 떨어졌을 뿐 뚫리지 않은 연결부는 그동안 손상되지 않았으므로 체력을 그대로 둔다.
+            int front = index - 1;
+            if (couplings != null && front >= 0 && front < couplings.Length && couplings[front].Broken)
+            {
+                couplings[front] = new CouplingState
+                {
+                    Health = couplingMaxHealth * RecoupledCouplingHealthRatio,
+                    MaxHealth = couplingMaxHealth,
+                    Broken = false,
+                };
+            }
+
+            return true;
+        }
     }
 }

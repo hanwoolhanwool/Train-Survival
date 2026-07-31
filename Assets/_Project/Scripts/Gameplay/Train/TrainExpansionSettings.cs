@@ -20,10 +20,16 @@ namespace Game.Gameplay.Train
         [Tooltip("칸 위 건축물(온실 돔 등) 1개 설치에 드는 자원 수 — 수리 망치 우클릭으로 지불한다.")]
         [SerializeField, Min(0)] private int _structureBuildCost = 3;
 
+        [Tooltip("이탈 칸 1칸 재결합에 드는 자원 수 — 신규 건설보다 싸게 잡아 힘들여 끌어오는 선택에 " +
+            "경제적 유인을 준다(손잡이-이탈저항 스펙 §4.1).")]
+        [SerializeField, Min(0)] private int _recoupleCost = 2;
+
         public int MaxCarCount => _maxCarCount;
 
         public int CarBuildCost => _carBuildCost;
 
         public int StructureBuildCost => _structureBuildCost;
+
+        public int RecoupleCost => _recoupleCost;
     }
 }

@@ -141,6 +141,20 @@ namespace Game.Gameplay.Train
         }
     }
 
+    /// <summary>
+    /// 이탈 칸이 편성에 다시 붙음 — 손잡이로 슬롯까지 끌어온 칸의 재결합이 호스트에서 확정된 뒤
+    /// 전 피어에서 발행되는 authored 이벤트 (손잡이-이탈저항 스펙 §4.1). 재결합 연출·알림이 구독한다.
+    /// </summary>
+    public readonly struct CarRecoupledEvent
+    {
+        public readonly int Index;
+
+        public CarRecoupledEvent(int index)
+        {
+            Index = index;
+        }
+    }
+
     /// <summary>칸 위에 건축물이 설치됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3).</summary>
     public readonly struct StructureBuiltEvent
     {
@@ -231,6 +245,49 @@ namespace Game.Gameplay.Train
             Cost = cost;
             CanAfford = canAfford;
             Occupied = occupied;
+            GhostCenter = ghostCenter;
+            GhostSize = ghostSize;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 망치로 이탈 칸의 재결합 지점(앞 연결 지점)을 겨눈 상태 (손잡이-이탈저항 스펙 §4.1).
+    /// HUD 안내와 연결부 자리 테두리 프리뷰(<see cref="CarBuildGhostView"/>)가 그린다.
+    /// 칸 건설(<see cref="CarBuildAimLocalEvent"/>)과 필드 의미가 달라 한 타입에 섞지 않는다 —
+    /// 조준 성립·대상 칸·안내 상태·남은 거리가 바뀔 때마다 발행된다.
+    /// </summary>
+    public readonly struct CarRecoupleAimLocalEvent
+    {
+        public readonly bool Aiming;
+
+        /// <summary>되붙일 칸 — 선두부터 첫 이탈 중(미소실) 칸.</summary>
+        public readonly int CarIndex;
+
+        public readonly int Cost;
+
+        /// <summary>지금 무엇이 막고 있는지(또는 붙일 수 있는지) — 안내 문구·테두리 색이 이 하나로 갈린다.</summary>
+        public readonly RecouplePrompt Prompt;
+
+        /// <summary>슬롯까지 남은 거리(m) — "N m 남음" 안내용. 곧 이탈 오프셋이다.</summary>
+        public readonly float RemainingMeters;
+
+        /// <summary>이어질 연결부 자리의 월드 중심 — 프리뷰 박스용. 슬롯 기준 고정 좌표라 칸이 멀어도 그대로다.</summary>
+        public readonly Vector3 GhostCenter;
+
+        /// <summary>이어질 연결부 자리의 크기(폭·높이·연결 간격) — 프리뷰 박스용.</summary>
+        public readonly Vector3 GhostSize;
+
+        /// <summary>지금 우클릭으로 실제로 붙는지.</summary>
+        public bool CanRecouple => Prompt == RecouplePrompt.Ready;
+
+        public CarRecoupleAimLocalEvent(bool aiming, int carIndex, int cost, RecouplePrompt prompt,
+            float remainingMeters, Vector3 ghostCenter, Vector3 ghostSize)
+        {
+            Aiming = aiming;
+            CarIndex = carIndex;
+            Cost = cost;
+            Prompt = prompt;
+            RemainingMeters = remainingMeters;
             GhostCenter = ghostCenter;
             GhostSize = ghostSize;
         }

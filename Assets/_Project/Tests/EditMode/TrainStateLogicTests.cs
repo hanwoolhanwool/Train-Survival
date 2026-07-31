@@ -487,5 +487,89 @@ namespace Game.Tests.EditMode
             Assert.That(couplings[2].Broken, Is.True, "뒤 칸(3)이 아직 없으므로 뒤 연결부는 끊긴 채 유지");
             Assert.That(structures[2].Present, Is.False, "옛 건축물 잔해는 함께 사라진다");
         }
+
+        // ── 이탈 칸 재결합 (손잡이-이탈저항 스펙 §4.1) ──────────────────
+
+        [Test]
+        public void 재결합은_칸을_붙이고_앞_연결부를_절반_체력으로_되살린다()
+        {
+            CarState[] cars = BuildTrain(3);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(3, 60f);
+            TrainStateLogic.DetachFrom(cars, 2);
+            TrainStateLogic.BreakCoupling(couplings, 1);
+
+            Assert.That(TrainStateLogic.Recouple(cars, couplings, 2, 60f), Is.True);
+
+            Assert.That(cars[2].Attached, Is.True);
+            Assert.That(couplings[1].Broken, Is.False);
+            Assert.That(couplings[1].Health, Is.EqualTo(30f).Within(0.001f), "급히 다시 이은 연결 — 절반");
+            Assert.That(couplings[1].MaxHealth, Is.EqualTo(60f));
+        }
+
+        [Test]
+        public void 재결합은_칸_체력을_그대로_둔다()
+        {
+            CarState[] cars = BuildTrain(3);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(3, 60f);
+            TrainStateLogic.ApplyDamage(cars, 2, 40f);
+            TrainStateLogic.DetachFrom(cars, 2);
+            TrainStateLogic.BreakCoupling(couplings, 1);
+
+            Assert.That(TrainStateLogic.Recouple(cars, couplings, 2, 60f), Is.True);
+
+            // 이탈 중에는 손상되지 않으므로 떨어져 나갈 때의 체력 그대로 돌아온다(재건과 다른 점).
+            Assert.That(cars[2].Health, Is.EqualTo(60f).Within(0.001f));
+        }
+
+        [Test]
+        public void 앞_칸이_편성에_없으면_재결합할_수_없다()
+        {
+            CarState[] cars = BuildTrain(4);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(4, 60f);
+
+            // 칸2 파괴 → 칸3 연쇄 이탈. 칸3은 앞 자리가 비어 있어 아직 붙을 수 없다.
+            TrainStateLogic.DestroyAndDetach(cars, 2);
+            TrainStateLogic.BreakCoupling(couplings, 1);
+            TrainStateLogic.BreakCoupling(couplings, 2);
+
+            Assert.That(TrainStateLogic.CanRecouple(cars, 3), Is.False);
+            Assert.That(TrainStateLogic.Recouple(cars, couplings, 3, 60f), Is.False);
+            Assert.That(cars[3].Attached, Is.False);
+            Assert.That(couplings[2].Broken, Is.True);
+        }
+
+        [Test]
+        public void 앞_칸부터_순차로_재결합하면_뒤_칸도_붙는다()
+        {
+            CarState[] cars = BuildTrain(4);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(4, 60f);
+            TrainStateLogic.DetachFrom(cars, 2);
+            TrainStateLogic.BreakCoupling(couplings, 1);
+
+            Assert.That(TrainStateLogic.CanRecouple(cars, 3), Is.False, "칸2가 아직 이탈 중");
+            Assert.That(TrainStateLogic.Recouple(cars, couplings, 2, 60f), Is.True);
+            Assert.That(TrainStateLogic.Recouple(cars, couplings, 3, 60f), Is.True, "칸2가 붙은 뒤에는 칸3 차례");
+
+            // 절반 페널티는 '뚫렸던' 연결부에만 붙는다 — 연쇄 이탈로 함께 떨어졌을 뿐
+            // 끊기지 않은 칸2-칸3 연결부는 그동안 손상되지 않았으므로 체력을 그대로 되찾는다.
+            Assert.That(couplings[1].Health, Is.EqualTo(30f).Within(0.001f), "실제로 뚫린 자리");
+            Assert.That(couplings[2].Broken, Is.False);
+            Assert.That(couplings[2].Health, Is.EqualTo(60f).Within(0.001f), "끊기지 않았던 자리는 유지");
+        }
+
+        [Test]
+        public void 파괴된_칸과_붙어_있는_칸과_기관차는_재결합_대상이_아니다()
+        {
+            CarState[] cars = BuildTrain(3);
+            CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(3, 60f);
+
+            Assert.That(TrainStateLogic.CanRecouple(cars, 1), Is.False, "이미 붙어 있음");
+            Assert.That(TrainStateLogic.CanRecouple(cars, 0), Is.False, "기관차는 이탈하지 않는다");
+            Assert.That(TrainStateLogic.CanRecouple(cars, 3), Is.False, "범위 밖");
+
+            TrainStateLogic.DestroyAndDetach(cars, 2);
+            Assert.That(TrainStateLogic.CanRecouple(cars, 2), Is.False, "파괴된 칸은 회수 대상이 아니다");
+            Assert.That(TrainStateLogic.Recouple(cars, couplings, 2, 60f), Is.False);
+        }
     }
 }
