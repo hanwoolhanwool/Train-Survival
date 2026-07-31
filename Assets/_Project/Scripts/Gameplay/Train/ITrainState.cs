@@ -22,7 +22,9 @@ namespace Game.Gameplay.Train
         /// <summary>인덱스 칸 위 건축물 슬롯 상태를 읽는다(인덱스 = 칸 인덱스). 범위 밖이면 false.</summary>
         bool TryGetStructure(int index, out StructureState structure);
 
-        /// <summary>이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m). 붙어 있거나 범위 밖이면 0.</summary>
+        /// <summary>이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m). 붙어 있거나 범위 밖이면 0.
+        /// 서버는 권위 시뮬 값을, 클라이언트는 복제 계단을 숨긴 표시 보간 값을 돌려준다(표현·잡기 게이트 용도 —
+        /// 잡기 확정 등 권위 판정은 서버에서 다시 검증된다).</summary>
         float GetEjectOffset(int index);
 
         /// <summary>

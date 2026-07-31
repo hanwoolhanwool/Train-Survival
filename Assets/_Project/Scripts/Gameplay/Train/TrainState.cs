@@ -15,6 +15,9 @@ namespace Game.Gameplay.Train
     /// 기관차(인덱스 0)는 파괴 불가 — 불변식은 <see cref="TrainStateLogic"/>이 강제한다.
     /// Train 루트(씬 NetworkObject)에 1개 배치한다.
     /// </summary>
+    // 오프셋 소비자(CarView -100, HandrailAnchor 등)보다 먼저 서버 시뮬·클라 표시 보간을 갱신해,
+    // 칸과 손잡이가 같은 프레임의 동일한 오프셋 값을 읽게 한다(어긋나면 손잡이가 칸에서 떠 보인다).
+    [DefaultExecutionOrder(-150)]
     public sealed class TrainState : NetworkBehaviour,
         ITrainState, ITrainDamageSink, ITrainGrabResistance, ITrainRepairSink, ITrainExpansion, IFuelLoadProvider
     {
@@ -40,6 +43,19 @@ namespace Game.Gameplay.Train
 
         // 호스트 전용 — 칸별 현재 밀림 속도(m/s). 분리 순간 0(관성으로 열차를 따라감)에서 감속도만큼 서서히 오른다.
         private float[] _ejectPushSpeeds;
+
+        // 클라 전용 — 이탈 오프셋 표시 보간 상태. 복제(네트워크 틱) 계단으로 움직이는 오프셋을 추정 속도로
+        // 매 프레임 연속 전진시켜, 탑승 시점에서 월드가 떨려 보이지 않게 한다(§M3 피드백 4). 권위 값은 불변.
+        private float[] _displayOffsets;
+        private float[] _displayVelocities;
+        private float[] _displayTargets;
+        private float[] _displayTargetTimes;
+
+        // 표시-복제 오차가 이 이상이면(후발 접속 등) 보간 없이 즉시 복제 값으로 붙는다.
+        private const float EjectDisplaySnapMeters = 10f;
+
+        // 복제 갱신이 이만큼 멎으면 추정 속도를 버리고 목표 수렴만 한다 — 멈춘 칸을 오래된 속도로 계속 외삽하지 않게.
+        private const float EjectDisplayStaleSeconds = 0.3f;
 
         public int CarCount => _cars.Count;
 
@@ -133,6 +149,10 @@ namespace Game.Gameplay.Train
             {
                 ServerSimulateEjection();
             }
+            else
+            {
+                ClientSmoothEjectionDisplay();
+            }
         }
 
         // ── ITrainDamageSink — 리시버(CarView·CouplingPart)가 호출하는 호스트 전용 변이면 ──────────
@@ -190,7 +210,19 @@ namespace Game.Gameplay.Train
 
         public float GetEjectOffset(int index)
         {
-            return index >= 0 && index < _ejectOffsets.Count ? _ejectOffsets[index] : 0f;
+            if (index < 0 || index >= _ejectOffsets.Count)
+            {
+                return 0f;
+            }
+
+            // 클라이언트에는 표시 보간 값을 준다 — 복제 계단이 탑승 시점 월드 떨림으로 보이지 않게(§M3 피드백 4).
+            // 서버(권위 판정·시뮬)는 원값 그대로다.
+            if (!IsServer && _displayOffsets != null && index < _displayOffsets.Length)
+            {
+                return _displayOffsets[index];
+            }
+
+            return _ejectOffsets[index];
         }
 
         /// <summary>이탈 중(미부착·미파괴)이고 소실 거리 전인 칸만 손잡이를 잡을 수 있다(손잡이-이탈저항 스펙 §5).</summary>
@@ -671,6 +703,83 @@ namespace Game.Gameplay.Train
                     _ejectSettled[i] = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// 클라 표시 보간 — 네트워크 틱 계단으로 갱신되는 복제 오프셋을, 수신 간격으로 추정한 속도로 매 프레임
+        /// 연속 전진시키고 오차는 지수 감쇠로 수렴시킨다(<see cref="WorldScrollController"/>의 표시 거리와 같은 방식).
+        /// <see cref="GetEjectOffset"/>이 이 값을 돌려주므로 칸·손잡이·건축물 표현이 함께 부드러워진다.
+        /// </summary>
+        private void ClientSmoothEjectionDisplay()
+        {
+            int count = _ejectOffsets.Count;
+            if (count == 0)
+            {
+                return;
+            }
+
+            EnsureDisplayCapacity(count);
+
+            float now = Time.time;
+            float correctionRate = _durabilitySettings != null ? _durabilitySettings.EjectDisplayCorrectionRate : 8f;
+
+            for (int i = 0; i < count; i++)
+            {
+                float target = _ejectOffsets[i];
+
+                // 이탈 중이 아닌 칸(정상·파괴·재건 직후)은 보간 없이 원값을 그대로 따른다 — 재건 시 잔상 없이 즉시 복귀.
+                bool ejecting = i < _cars.Count && !_cars[i].Attached && _cars[i].Health > 0f;
+                if (!ejecting)
+                {
+                    ResetDisplaySlot(i, target, now);
+                    continue;
+                }
+
+                if (!Mathf.Approximately(target, _displayTargets[i]))
+                {
+                    _displayVelocities[i] = EjectMotionMath.EstimateReplicatedVelocity(
+                        _displayTargets[i], target, now - _displayTargetTimes[i]);
+                    _displayTargets[i] = target;
+                    _displayTargetTimes[i] = now;
+                }
+                else if (now - _displayTargetTimes[i] > EjectDisplayStaleSeconds)
+                {
+                    _displayVelocities[i] = 0f;
+                }
+
+                _displayOffsets[i] = EjectMotionMath.StepDisplayOffset(
+                    _displayOffsets[i], target, _displayVelocities[i], Time.deltaTime, correctionRate,
+                    EjectDisplaySnapMeters);
+            }
+        }
+
+        private void EnsureDisplayCapacity(int count)
+        {
+            if (_displayOffsets != null && _displayOffsets.Length >= count)
+            {
+                return;
+            }
+
+            int previous = _displayOffsets != null ? _displayOffsets.Length : 0;
+            Array.Resize(ref _displayOffsets, count);
+            Array.Resize(ref _displayVelocities, count);
+            Array.Resize(ref _displayTargets, count);
+            Array.Resize(ref _displayTargetTimes, count);
+
+            // 새 슬롯(후발 접속·후미 증설)은 현재 복제 값에서 시작한다 — 첫 프레임 워프 방지.
+            float now = Time.time;
+            for (int i = previous; i < count; i++)
+            {
+                ResetDisplaySlot(i, _ejectOffsets[i], now);
+            }
+        }
+
+        private void ResetDisplaySlot(int index, float target, float now)
+        {
+            _displayOffsets[index] = target;
+            _displayVelocities[index] = 0f;
+            _displayTargets[index] = target;
+            _displayTargetTimes[index] = now;
         }
 
         private float MaxHealthFor(CarType type)
