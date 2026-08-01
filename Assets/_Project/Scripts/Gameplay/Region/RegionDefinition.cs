@@ -31,6 +31,13 @@ namespace Game.Gameplay.Region
         [Tooltip("밤 국면의 환경 온도(℃).")]
         [SerializeField] private float _nightAmbientTemperature = 15f;
 
+        [Header("날씨 (기획서 §7.4 — 지역 정체성 강화 요소)")]
+        [Tooltip("이 지역에서 발생할 수 있는 날씨 목록. 비우면 항상 맑다.")]
+        [SerializeField] private WeatherDefinition[] _weathers;
+
+        [Tooltip("하루(낮 시작)마다 날씨가 발생할 확률 (0~1).")]
+        [SerializeField, Range(0f, 1f)] private float _weatherChancePerDay = 0f;
+
         [Header("지형·자원")]
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
@@ -52,6 +59,21 @@ namespace Game.Gameplay.Region
         public float DayAmbientTemperature => _dayAmbientTemperature;
 
         public float NightAmbientTemperature => _nightAmbientTemperature;
+
+        public int WeatherCount => _weathers == null ? 0 : _weathers.Length;
+
+        public float WeatherChancePerDay => _weatherChancePerDay;
+
+        /// <summary>인덱스의 날씨 정의. 범위 밖이거나 비어 있으면 null.</summary>
+        public WeatherDefinition GetWeather(int index)
+        {
+            if (_weathers == null || index < 0 || index >= _weathers.Length)
+            {
+                return null;
+            }
+
+            return _weathers[index];
+        }
 
         public GameObject TerrainTilePrefab => _terrainTilePrefab;
 
