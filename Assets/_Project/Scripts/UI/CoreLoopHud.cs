@@ -46,6 +46,7 @@ namespace Game.UI
         {
             EventBus<DayPhaseChangedEvent>.Subscribe(OnDayPhaseChanged);
             EventBus<RegionChangedEvent>.Subscribe(OnRegionChanged);
+            EventBus<WeatherChangedEvent>.Subscribe(OnWeatherChanged);
             EventBus<FuelChangedEvent>.Subscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Subscribe(OnPlayerTemperatureChanged);
@@ -65,6 +66,7 @@ namespace Game.UI
         {
             EventBus<DayPhaseChangedEvent>.Unsubscribe(OnDayPhaseChanged);
             EventBus<RegionChangedEvent>.Unsubscribe(OnRegionChanged);
+            EventBus<WeatherChangedEvent>.Unsubscribe(OnWeatherChanged);
             EventBus<FuelChangedEvent>.Unsubscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Unsubscribe(OnPlayerTemperatureChanged);
@@ -94,6 +96,17 @@ namespace Game.UI
             _regionBannerText = evt.CycleNumber > 0
                 ? $"<color=cyan>{name} 진입 — {evt.CycleNumber + 1}주기</color>"
                 : $"<color=cyan>{name} 진입</color>";
+            _regionBannerUntilTime = Time.unscaledTime + BannerHoldSeconds;
+        }
+
+        private void OnWeatherChanged(WeatherChangedEvent evt)
+        {
+            if (!evt.IsActive)
+            {
+                return;
+            }
+
+            _regionBannerText = $"<color=orange>{evt.Weather.DisplayName} 발생 — 시야 차단·감속</color>";
             _regionBannerUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -289,6 +302,11 @@ namespace Game.UI
             {
                 int daysLeft = Mathf.Max(0, region.RegionDayCount - region.DayInRegion);
                 GUILayout.Label($"<color=orange>다음 지역 예고: {region.NextRegion.DisplayName} ({daysLeft}일 뒤)</color>");
+            }
+
+            if (ServiceLocator.TryGet(out IWeatherService weather) && weather.IsActive)
+            {
+                GUILayout.Label($"<color=orange>날씨: {weather.ActiveWeather.DisplayName}</color>");
             }
         }
 
