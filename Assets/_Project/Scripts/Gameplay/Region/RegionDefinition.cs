@@ -24,6 +24,13 @@ namespace Game.Gameplay.Region
         [Tooltip("몬스터 최대 체력에 곱하는 배율.")]
         [SerializeField, Min(0.1f)] private float _monsterHealthMultiplier = 1f;
 
+        [Header("환경 온도 (기획서 §4.2 — 사막은 낮 고온·밤 급랭)")]
+        [Tooltip("낮 국면의 환경 온도(℃). 쾌적대를 벗어나면 플레이어 체온이 그 방향으로 끌려간다.")]
+        [SerializeField] private float _dayAmbientTemperature = 22f;
+
+        [Tooltip("밤 국면의 환경 온도(℃).")]
+        [SerializeField] private float _nightAmbientTemperature = 15f;
+
         [Header("지형·자원")]
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
@@ -41,6 +48,10 @@ namespace Game.Gameplay.Region
         public float WaveCountMultiplier => _waveCountMultiplier;
 
         public float MonsterHealthMultiplier => _monsterHealthMultiplier;
+
+        public float DayAmbientTemperature => _dayAmbientTemperature;
+
+        public float NightAmbientTemperature => _nightAmbientTemperature;
 
         public GameObject TerrainTilePrefab => _terrainTilePrefab;
 

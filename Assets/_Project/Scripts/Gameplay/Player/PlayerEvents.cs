@@ -82,4 +82,30 @@ namespace Game.Gameplay.Player
             MaxHealth = maxHealth;
         }
     }
+
+    /// <summary>
+    /// 권위 이벤트 — 플레이어 체온 변경 (기획서 §4.2, M4). 호스트가 계산한 값의 동기화 수신 시점에
+    /// 각 피어에서 발행된다. HUD 체온 표시·경고가 자기 플레이어로 걸러 구독한다.
+    /// </summary>
+    public readonly struct PlayerTemperatureChangedEvent
+    {
+        public readonly ulong ClientId;
+
+        /// <summary>이 피어에서 자기 플레이어의 체온인가 (HUD 필터용).</summary>
+        public readonly bool IsLocalPlayer;
+
+        /// <summary>현재 체온 (℃).</summary>
+        public readonly float Temperature;
+
+        /// <summary>경고 임계 기준 압박 단계.</summary>
+        public readonly TemperatureStress Stress;
+
+        public PlayerTemperatureChangedEvent(ulong clientId, bool isLocalPlayer, float temperature, TemperatureStress stress)
+        {
+            ClientId = clientId;
+            IsLocalPlayer = isLocalPlayer;
+            Temperature = temperature;
+            Stress = stress;
+        }
+    }
 }
