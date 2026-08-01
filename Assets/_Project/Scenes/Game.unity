@@ -2763,6 +2763,8 @@ GameObject:
   - component: {fileID: 1704432517}
   - component: {fileID: 1704432516}
   - component: {fileID: 1704432519}
+  - component: {fileID: 1704432520}
+  - component: {fileID: 1704432521}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2911,6 +2913,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionController
   _settings: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
+--- !u!114 &1704432520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18d49403f12400b4184447365f1a76c5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.WeatherController
+  _regionSettings: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
+--- !u!114 &1704432521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63f04369e17dbd54dbc822b05bb5f7cb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.WeatherVisualController
 --- !u!1 &1775290601
 GameObject:
   m_ObjectHideFlags: 0
