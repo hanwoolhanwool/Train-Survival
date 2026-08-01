@@ -6,7 +6,17 @@ namespace Game.Gameplay.World
     /// </summary>
     public interface IWorldScrollSpeedControl
     {
-        /// <summary>스크롤 속도를 변경한다 (m/s). 호스트 전용 — 클라이언트 호출은 무시된다.</summary>
+        /// <summary>
+        /// 기본 스크롤 속도를 변경한다 (m/s). 호스트 전용 — 클라이언트 호출은 무시된다.
+        /// 연료 상태가 매 프레임 수렴시키는 값이므로, 일시적인 환경 개입은
+        /// <see cref="SetEnvironmentSpeedMultiplier"/>를 써야 덮어써지지 않는다.
+        /// </summary>
         void SetScrollSpeed(float speed);
+
+        /// <summary>
+        /// 기본 속도에 곱해지는 환경 배율을 설정한다 (날씨 감속·부스트 등). 호스트 전용.
+        /// 기본 속도와 별개 레이어라 연료 감속과 서로 덮어쓰지 않는다.
+        /// </summary>
+        void SetEnvironmentSpeedMultiplier(float multiplier);
     }
 }

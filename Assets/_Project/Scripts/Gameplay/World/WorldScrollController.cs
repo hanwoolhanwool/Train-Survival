@@ -18,6 +18,12 @@ namespace Game.Gameplay.World
 
         private float _displayDistance;
 
+        /// <summary>연료 상태가 정하는 기본 속도 — 환경 배율과 별개 레이어로 보관한다.</summary>
+        private float _baseSpeed;
+
+        /// <summary>날씨 등 일시적 환경 개입의 배율.</summary>
+        private float _environmentMultiplier = 1f;
+
         public float ScrollSpeed => _scrollSpeed.Value;
 
         public float TraveledDistance => IsServer ? _traveledDistance.Value : _displayDistance;
@@ -26,7 +32,9 @@ namespace Game.Gameplay.World
         {
             if (IsServer && _settings != null)
             {
-                _scrollSpeed.Value = _settings.BaseScrollSpeed;
+                _baseSpeed = _settings.BaseScrollSpeed;
+                _environmentMultiplier = 1f;
+                _scrollSpeed.Value = _baseSpeed;
             }
 
             _displayDistance = _traveledDistance.Value;
@@ -55,13 +63,33 @@ namespace Game.Gameplay.World
             }
         }
 
-        /// <summary>스크롤 속도를 변경한다 (연료 감속·초가속 연출의 유일한 제어점). 호스트 전용.</summary>
+        /// <summary>기본 스크롤 속도를 변경한다 (연료 감속·초가속 연출). 호스트 전용.</summary>
         public void SetScrollSpeed(float speed)
         {
-            if (IsServer)
+            if (!IsServer)
             {
-                _scrollSpeed.Value = Mathf.Max(0f, speed);
+                return;
             }
+
+            _baseSpeed = Mathf.Max(0f, speed);
+            ApplyEffectiveSpeed();
+        }
+
+        /// <summary>환경 배율을 변경한다 (날씨 감속 등). 호스트 전용.</summary>
+        public void SetEnvironmentSpeedMultiplier(float multiplier)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            _environmentMultiplier = Mathf.Max(0f, multiplier);
+            ApplyEffectiveSpeed();
+        }
+
+        private void ApplyEffectiveSpeed()
+        {
+            _scrollSpeed.Value = Mathf.Max(0f, _baseSpeed * _environmentMultiplier);
         }
 
         private void Update()
