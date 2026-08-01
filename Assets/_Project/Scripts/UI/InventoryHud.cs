@@ -21,6 +21,8 @@ namespace Game.UI
 
         private float _health;
         private float _maxHealth;
+        private float _temperature;
+        private TemperatureStress _temperatureStress;
         private bool _engineInRange;
         private CarBuildAimLocalEvent _carBuildAim;
         private CarRecoupleAimLocalEvent _carRecoupleAim;
@@ -31,6 +33,7 @@ namespace Game.UI
         private void OnEnable()
         {
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
+            EventBus<PlayerTemperatureChangedEvent>.Subscribe(OnPlayerTemperatureChanged);
             EventBus<EnginePromptLocalEvent>.Subscribe(OnEnginePrompt);
             EventBus<CarBuildAimLocalEvent>.Subscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Subscribe(OnCarRecoupleAim);
@@ -40,6 +43,7 @@ namespace Game.UI
         private void OnDisable()
         {
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
+            EventBus<PlayerTemperatureChangedEvent>.Unsubscribe(OnPlayerTemperatureChanged);
             EventBus<EnginePromptLocalEvent>.Unsubscribe(OnEnginePrompt);
             EventBus<CarBuildAimLocalEvent>.Unsubscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Unsubscribe(OnCarRecoupleAim);
@@ -52,6 +56,31 @@ namespace Game.UI
             {
                 _health = evt.Health;
                 _maxHealth = evt.MaxHealth;
+            }
+        }
+
+        private void OnPlayerTemperatureChanged(PlayerTemperatureChangedEvent evt)
+        {
+            if (evt.IsLocalPlayer)
+            {
+                _temperature = evt.Temperature;
+                _temperatureStress = evt.Stress;
+            }
+        }
+
+        /// <summary>상태 창 체온 줄에 붙일 압박 표시 — 색 태그 없이 텍스트로만 알린다.</summary>
+        private string GetStressSuffix()
+        {
+            switch (_temperatureStress)
+            {
+                case TemperatureStress.Heat:
+                    return " (더위)";
+
+                case TemperatureStress.Cold:
+                    return " (추위)";
+
+                default:
+                    return string.Empty;
             }
         }
 
@@ -333,7 +362,8 @@ namespace Game.UI
             GUILayout.BeginArea(new Rect(rect.x + 16f, cursorY, rect.width - 32f, 84f));
             GUILayout.Label("— 캐릭터 상태 —");
             GUILayout.Label(_maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
-            GUILayout.Label("체온·허기: 이후 지역 시스템(M4)에서 추가");
+            GUILayout.Label(_temperature > 0f ? $"체온: {_temperature:F1}℃{GetStressSuffix()}" : "체온: -");
+            GUILayout.Label("허기: 이후 요리 시스템(M5)에서 추가");
             GUILayout.EndArea();
         }
 

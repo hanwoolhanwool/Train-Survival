@@ -26,6 +26,8 @@ namespace Game.UI
         private float _fuelConsumptionPerSecond;
         private float _health;
         private float _maxHealth;
+        private float _temperature;
+        private TemperatureStress _temperatureStress;
         private HotbarItemType _selectedItem;
         private int _rounds;
         private int _capacity;
@@ -46,6 +48,7 @@ namespace Game.UI
             EventBus<RegionChangedEvent>.Subscribe(OnRegionChanged);
             EventBus<FuelChangedEvent>.Subscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
+            EventBus<PlayerTemperatureChangedEvent>.Subscribe(OnPlayerTemperatureChanged);
             EventBus<PlayerDiedEvent>.Subscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Subscribe(OnHotbarSelectionChanged);
             EventBus<RevolverAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
@@ -64,6 +67,7 @@ namespace Game.UI
             EventBus<RegionChangedEvent>.Unsubscribe(OnRegionChanged);
             EventBus<FuelChangedEvent>.Unsubscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
+            EventBus<PlayerTemperatureChangedEvent>.Unsubscribe(OnPlayerTemperatureChanged);
             EventBus<PlayerDiedEvent>.Unsubscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Unsubscribe(OnHotbarSelectionChanged);
             EventBus<RevolverAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
@@ -106,6 +110,15 @@ namespace Game.UI
             {
                 _health = evt.Health;
                 _maxHealth = evt.MaxHealth;
+            }
+        }
+
+        private void OnPlayerTemperatureChanged(PlayerTemperatureChangedEvent evt)
+        {
+            if (evt.IsLocalPlayer)
+            {
+                _temperature = evt.Temperature;
+                _temperatureStress = evt.Stress;
             }
         }
 
@@ -206,6 +219,8 @@ namespace Game.UI
                 GUILayout.Label(_health <= _maxHealth * 0.3f ? $"<color=red>{healthText}</color>" : healthText);
             }
 
+            DrawTemperatureLine();
+
             if (_selectedItem == HotbarItemType.Revolver)
             {
                 GUILayout.Label(_reloading ? "리볼버: 재장전 중…" : $"리볼버: {_rounds} / {_capacity}");
@@ -222,6 +237,32 @@ namespace Game.UI
             }
 
             GUILayout.EndArea();
+        }
+
+        /// <summary>체온과 더위·추위 경고 (기획서 §4.2 — 사막 낮 열사병 / 밤 급랭).</summary>
+        private void DrawTemperatureLine()
+        {
+            if (_temperature <= 0f)
+            {
+                return;
+            }
+
+            string text = $"체온: {_temperature:F1}℃";
+
+            switch (_temperatureStress)
+            {
+                case TemperatureStress.Heat:
+                    GUILayout.Label($"<color=orange>{text} — 더위! 건축물 그늘로</color>");
+                    break;
+
+                case TemperatureStress.Cold:
+                    GUILayout.Label($"<color=aqua>{text} — 추위! 건축물 안으로</color>");
+                    break;
+
+                default:
+                    GUILayout.Label(text);
+                    break;
+            }
         }
 
         /// <summary>현재 지역·지역 내 일차와 다음 지역 예고 (기획서 §2 — 마지막 1~2일 예고 연출).</summary>
