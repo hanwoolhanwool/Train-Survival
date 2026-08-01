@@ -25,6 +25,20 @@ namespace Game.Gameplay.Monsters
         [SerializeField, Min(0)] private int _maxAliveGrowthPerDay = 1;
         [SerializeField, Min(1)] private int _maxAliveCap = 12;
 
+        [Header("몬스터 체력 (Day 비례 증가 — 기획서 §5 '수 → 체력' 중 2단계)")]
+        [Tooltip("Day 1일당 최대 체력에 가산되는 배율 (0.08 = 하루에 8 % 증가).")]
+        [SerializeField, Min(0f)] private float _healthGrowthPerDay = 0.08f;
+
+        [Tooltip("Day 성장분 체력 배율의 상한. 지역 배율은 이 상한과 별개로 곱해진다.")]
+        [SerializeField, Min(1f)] private float _healthMultiplierCap = 3f;
+
+        [Header("지역 마지막 밤 대형 웨이브 (기획서 §5 — '지역 졸업 시험')")]
+        [Tooltip("마지막 밤의 총량·동시 상한 배율. 유입 간격도 이 배율만큼 짧아진다.")]
+        [SerializeField, Min(1f)] private float _finalNightCountMultiplier = 2f;
+
+        [Tooltip("마지막 밤의 몬스터 체력 배율.")]
+        [SerializeField, Min(1f)] private float _finalNightHealthMultiplier = 1.5f;
+
         [Header("스폰 배치 (지상 선로변)")]
         [SerializeField, Min(1f)] private float _minLateralOffset = 14f;
         [SerializeField, Min(1f)] private float _maxLateralOffset = 24f;
@@ -56,5 +70,24 @@ namespace Game.Gameplay.Monsters
         public float SpawnZMin => _spawnZMin;
 
         public float SpawnZMax => _spawnZMax;
+
+        public float HealthGrowthPerDay => _healthGrowthPerDay;
+
+        public float HealthMultiplierCap => _healthMultiplierCap;
+
+        public float FinalNightCountMultiplier => _finalNightCountMultiplier;
+
+        public float FinalNightHealthMultiplier => _finalNightHealthMultiplier;
+
+        /// <summary>순수 로직(<see cref="WaveMath"/>)에 넘길 밸런스 곡선으로 변환한다.</summary>
+        public WaveCurve ToCurve()
+        {
+            return new WaveCurve(
+                _baseCountPerNight, _countGrowthPerDay, _totalCountCap,
+                _baseSpawnInterval, _intervalReductionPerDay, _minSpawnInterval,
+                _baseMaxAlive, _maxAliveGrowthPerDay, _maxAliveCap,
+                _healthGrowthPerDay, _healthMultiplierCap,
+                _finalNightCountMultiplier, _finalNightHealthMultiplier);
+        }
     }
 }

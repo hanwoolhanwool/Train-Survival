@@ -15,13 +15,27 @@ namespace Game.Gameplay.Monsters
 
         private readonly NetworkVariable<float> _health = new NetworkVariable<float>();
 
+        private float _pendingHealthMultiplier = 1f;
+
         public bool IsAlive => IsSpawned && _health.Value > 0f;
+
+        /// <summary>
+        /// 이 개체에 적용할 체력 배율을 스폰 직전에 주입한다 (호스트 전용 — Day·지역 난이도, 기획서 §5).
+        /// <see cref="NetworkObject"/>.Spawn() 호출 전에 설정해야 <see cref="OnNetworkSpawn"/>이 반영한다.
+        /// </summary>
+        public void ServerSetHealthMultiplier(float multiplier)
+        {
+            _pendingHealthMultiplier = Mathf.Max(0.01f, multiplier);
+        }
 
         public override void OnNetworkSpawn()
         {
             if (IsServer && _settings != null)
             {
-                _health.Value = _settings.MaxHealth;
+                _health.Value = _settings.MaxHealth * _pendingHealthMultiplier;
+
+                // 풀에서 재사용될 때 이전 밤의 배율이 새지 않도록 즉시 되돌린다.
+                _pendingHealthMultiplier = 1f;
             }
         }
 

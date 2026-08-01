@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Pooling;
+using Game.Core.Services;
 using Game.Gameplay.Cycle;
+using Game.Gameplay.Region;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -45,16 +47,26 @@ namespace Game.Gameplay.Monsters
 
             if (evt.Phase == DayPhase.Night)
             {
+                // 지역은 Day 번호의 순수 함수이므로 Day를 직접 넘겨 조회한다 —
+                // RegionController와 이 스포너의 이벤트 처리 순서에 결과가 좌우되지 않게 한다.
+                RegionDifficulty difficulty = ServiceLocator.TryGet(out IRegionService region)
+                    ? region.GetDifficultyForDay(evt.DayNumber)
+                    : RegionDifficulty.Neutral;
+
                 _plan = WaveMath.Plan(
-                    evt.DayNumber,
-                    _settings.BaseCountPerNight, _settings.CountGrowthPerDay, _settings.TotalCountCap,
-                    _settings.BaseSpawnInterval, _settings.IntervalReductionPerDay, _settings.MinSpawnInterval,
-                    _settings.BaseMaxAlive, _settings.MaxAliveGrowthPerDay, _settings.MaxAliveCap);
+                    evt.DayNumber, _settings.ToCurve(),
+                    difficulty.WaveCountMultiplier, difficulty.MonsterHealthMultiplier,
+                    difficulty.IsFinalNightOfRegion);
+
                 _waveActive = true;
                 _spawnedCount = 0;
                 _spawnTimer = 0f;
-                Debug.Log($"[MonsterWaveSpawner] 밤 웨이브 시작: Day {evt.DayNumber}, " +
-                    $"총 {_plan.TotalCount}마리, 간격 {_plan.SpawnInterval:F1}s, 동시 상한 {_plan.MaxAlive}");
+
+                string regionLabel = region?.CurrentRegion == null ? "지역 없음" : region.CurrentRegion.DisplayName;
+                Debug.Log($"[MonsterWaveSpawner] 밤 웨이브 시작: Day {evt.DayNumber} ({regionLabel}" +
+                    $"{(_plan.IsFinalNight ? ", 지역 마지막 밤" : string.Empty)}), " +
+                    $"총 {_plan.TotalCount}마리, 간격 {_plan.SpawnInterval:F1}s, 동시 상한 {_plan.MaxAlive}, " +
+                    $"체력 ×{_plan.HealthMultiplier:F2}");
             }
             else
             {
@@ -103,6 +115,9 @@ namespace Game.Gameplay.Monsters
                 PoolManager.Despawn(instance);
                 return;
             }
+
+            // 체력 배율은 반드시 NGO 스폰 전에 주입한다 — OnNetworkSpawn이 최대 체력을 확정한다.
+            health.ServerSetHealthMultiplier(_plan.HealthMultiplier);
 
             health.NetworkObject.Spawn();
             _activeMonsters.Add(health);
