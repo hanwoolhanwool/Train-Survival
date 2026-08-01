@@ -18,7 +18,12 @@ namespace Game.Gameplay.Monsters
     /// </summary>
     public sealed class MonsterAgent : NetworkBehaviour, IPoolable
     {
+        [Tooltip("변종이 지정되지 않았을 때 쓰는 기본 설정.")]
         [SerializeField] private MonsterSettings _settings;
+
+        [Tooltip("변종 목록 — 복제된 인덱스를 각 피어가 여기서 조회한다.")]
+        [SerializeField] private MonsterVariantCatalog _variantCatalog;
+
         [SerializeField] private TrainLayoutSettings _trainLayout;
 
         private const float Gravity = 25f;
@@ -26,12 +31,46 @@ namespace Game.Gameplay.Monsters
         private readonly NetworkVariable<Vector3> _syncedPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<float> _syncedYaw = new NetworkVariable<float>();
 
+        /// <summary>이 개체의 변종 인덱스 (−1 = 기본 설정). 스폰 시 1회 확정되고 이후 바뀌지 않는다.</summary>
+        private readonly NetworkVariable<int> _variantIndex = new NetworkVariable<int>(-1);
+
         private readonly MotionSnapshotBuffer _snapshotBuffer = new MotionSnapshotBuffer();
 
         private float _verticalSpeed;
         private float _syncTimer;
         private float _attackCooldown;
         private Vector3 _lastHorizontalVelocity;
+        private int _pendingVariantIndex = -1;
+
+        /// <summary>
+        /// 이 개체에 실제로 적용되는 설정 — 변종이 지정됐으면 카탈로그에서, 아니면 기본값.
+        /// 클라이언트도 보간 지연·이동 파라미터가 필요하므로 인덱스를 복제해 같은 값을 조회한다.
+        /// </summary>
+        private MonsterSettings Settings
+        {
+            get
+            {
+                if (_variantCatalog != null)
+                {
+                    MonsterSettings variant = _variantCatalog.GetVariant(_variantIndex.Value);
+                    if (variant != null)
+                    {
+                        return variant;
+                    }
+                }
+
+                return _settings;
+            }
+        }
+
+        /// <summary>
+        /// 스폰할 변종을 지정한다 (호스트 전용). <see cref="NetworkVariable{T}"/>는 스폰 전에 쓸 수 없으므로
+        /// 대기 값으로 받아 <see cref="OnNetworkSpawn"/>에서 확정한다.
+        /// </summary>
+        public void ServerSetVariant(int variantIndex)
+        {
+            _pendingVariantIndex = variantIndex;
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -42,6 +81,11 @@ namespace Game.Gameplay.Monsters
 
             if (IsServer)
             {
+                _variantIndex.Value = _pendingVariantIndex;
+
+                // 풀에서 재사용될 때 이전 변종이 새지 않도록 즉시 되돌린다.
+                _pendingVariantIndex = -1;
+
                 _syncedPosition.Value = transform.position;
             }
             else
@@ -61,7 +105,7 @@ namespace Game.Gameplay.Monsters
 
         private void Update()
         {
-            if (!IsSpawned || _settings == null)
+            if (!IsSpawned || Settings == null)
             {
                 return;
             }
@@ -90,12 +134,12 @@ namespace Game.Gameplay.Monsters
             if (target != null && grounded)
             {
                 float chaseSpeed = MonsterSteering.EnforceChaseSpeed(
-                    _settings.MoveSpeed, scrollSpeed, _settings.ChaseSpeedMargin);
+                    Settings.MoveSpeed, scrollSpeed, Settings.ChaseSpeedMargin);
 
                 if (onDeck)
                 {
                     horizontalVelocity = MonsterSteering.ComputeDeckVelocity(
-                        transform.position, target.position, _settings.MoveSpeed);
+                        transform.position, target.position, Settings.MoveSpeed);
                 }
                 else
                 {
@@ -186,7 +230,7 @@ namespace Game.Gameplay.Monsters
 
             Vector3 origin = transform.position + Vector3.up * 0.5f;
             if (Physics.Raycast(origin, _lastHorizontalVelocity.normalized, out RaycastHit hit,
-                    _settings.AvoidProbeDistance, ~0, QueryTriggerInteraction.Ignore) &&
+                    Settings.AvoidProbeDistance, ~0, QueryTriggerInteraction.Ignore) &&
                 hit.transform.root != transform.root)
             {
                 obstacleNormal = hit.normal;
@@ -212,7 +256,7 @@ namespace Game.Gameplay.Monsters
             bool alongTrain = transform.position.z > _trainLayout.RearZ - 2f &&
                 transform.position.z < _trainLayout.FrontZ + 2f;
 
-            if (targetOnDeck && alongTrain && sideDistance <= _settings.LeapHorizontalRange)
+            if (targetOnDeck && alongTrain && sideDistance <= Settings.LeapHorizontalRange)
             {
                 // 갑판 높이 + 여유를 넘는 포물선 도약 초기 속도.
                 _verticalSpeed = Mathf.Sqrt(2f * Gravity * (_trainLayout.DeckHeight + 1f));
@@ -286,13 +330,13 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
-            if ((target.position - transform.position).sqrMagnitude <= _settings.AttackRange * _settings.AttackRange)
+            if ((target.position - transform.position).sqrMagnitude <= Settings.AttackRange * Settings.AttackRange)
             {
                 IDamageable damageable = target.GetComponent<IDamageable>();
                 if (damageable != null && damageable.IsAlive)
                 {
-                    damageable.ApplyDamage(_settings.AttackDamage, NetworkManager.ServerClientId);
-                    _attackCooldown = _settings.AttackInterval;
+                    damageable.ApplyDamage(Settings.AttackDamage, NetworkManager.ServerClientId);
+                    _attackCooldown = Settings.AttackInterval;
                 }
             }
         }
@@ -300,7 +344,7 @@ namespace Game.Gameplay.Monsters
         private void ServerCheckFellBehind()
         {
             if (_trainLayout != null &&
-                transform.position.z < _trainLayout.RearZ - _settings.DespawnBehindMeters)
+                transform.position.z < _trainLayout.RearZ - Settings.DespawnBehindMeters)
             {
                 // 추격 실패 — 도주 처리 (사망 아님, 이벤트 없음). 풀로 회수한다.
                 NetworkObject.Despawn(true);
@@ -310,7 +354,7 @@ namespace Game.Gameplay.Monsters
         private void ServerSync()
         {
             _syncTimer += Time.deltaTime;
-            if (_syncTimer < 1f / _settings.SyncHz)
+            if (_syncTimer < 1f / Settings.SyncHz)
             {
                 return;
             }
@@ -330,7 +374,7 @@ namespace Game.Gameplay.Monsters
 
         private void ClientInterpolate()
         {
-            double renderTime = Time.timeAsDouble - _settings.InterpolationDelaySeconds;
+            double renderTime = Time.timeAsDouble - Settings.InterpolationDelaySeconds;
             if (_snapshotBuffer.TrySample(renderTime, out Vector3 position, out float yaw))
             {
                 transform.position = position;

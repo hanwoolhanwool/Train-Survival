@@ -19,6 +19,9 @@ namespace Game.Gameplay.Monsters
         [SerializeField] private WaveSettings _settings;
         [SerializeField] private GameObject _monsterPrefab;
 
+        [Tooltip("Day에 따라 섞여 등장하는 변종 목록 (기획서 §5 — 난이도의 '패턴' 축). 비우면 프리팹 기본 설정만 쓴다.")]
+        [SerializeField] private MonsterVariantCatalog _variantCatalog;
+
         private static readonly List<MonsterHealth> RemovalBuffer = new List<MonsterHealth>(8);
 
         private readonly List<MonsterHealth> _activeMonsters = new List<MonsterHealth>(16);
@@ -27,6 +30,7 @@ namespace Game.Gameplay.Monsters
         private bool _waveActive;
         private int _spawnedCount;
         private float _spawnTimer;
+        private int _waveDayNumber = 1;
 
         public override void OnNetworkSpawn()
         {
@@ -61,6 +65,7 @@ namespace Game.Gameplay.Monsters
                 _waveActive = true;
                 _spawnedCount = 0;
                 _spawnTimer = 0f;
+                _waveDayNumber = evt.DayNumber;
 
                 string regionLabel = region?.CurrentRegion == null ? "지역 없음" : region.CurrentRegion.DisplayName;
                 Debug.Log($"[MonsterWaveSpawner] 밤 웨이브 시작: Day {evt.DayNumber} ({regionLabel}" +
@@ -116,12 +121,32 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
-            // 체력 배율은 반드시 NGO 스폰 전에 주입한다 — OnNetworkSpawn이 최대 체력을 확정한다.
+            // 변종·체력 배율은 반드시 NGO 스폰 전에 주입한다 — OnNetworkSpawn이 둘 다 확정한다.
+            int variantIndex = PickVariantIndex();
+            health.ServerSetVariant(_variantCatalog == null ? null : _variantCatalog.GetVariant(variantIndex));
             health.ServerSetHealthMultiplier(_plan.HealthMultiplier);
+
+            var agent = instance.GetComponent<MonsterAgent>();
+            if (agent != null)
+            {
+                agent.ServerSetVariant(variantIndex);
+            }
 
             health.NetworkObject.Spawn();
             _activeMonsters.Add(health);
             _spawnedCount += 1;
+        }
+
+        /// <summary>이 밤의 Day 기준으로 등장 가능한 변종을 가중치 추첨한다. 카탈로그가 없으면 −1(기본 설정).</summary>
+        private int PickVariantIndex()
+        {
+            if (_variantCatalog == null || _variantCatalog.Count == 0)
+            {
+                return -1;
+            }
+
+            return MonsterVariantPicker.Pick(
+                _waveDayNumber, _variantCatalog.GetMinDays(), _variantCatalog.GetWeights(), Random.value);
         }
 
         private void PruneInactive()

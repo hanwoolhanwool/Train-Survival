@@ -16,8 +16,18 @@ namespace Game.Gameplay.Monsters
         private readonly NetworkVariable<float> _health = new NetworkVariable<float>();
 
         private float _pendingHealthMultiplier = 1f;
+        private MonsterSettings _pendingVariant;
 
         public bool IsAlive => IsSpawned && _health.Value > 0f;
+
+        /// <summary>
+        /// 이 개체의 변종 설정을 스폰 직전에 주입한다 (호스트 전용). 체력은 서버만 확정하므로
+        /// 인덱스 복제 없이 참조를 직접 받는다 — 클라이언트는 복제된 체력 값만 쓴다.
+        /// </summary>
+        public void ServerSetVariant(MonsterSettings variant)
+        {
+            _pendingVariant = variant;
+        }
 
         /// <summary>
         /// 이 개체에 적용할 체력 배율을 스폰 직전에 주입한다 (호스트 전용 — Day·지역 난이도, 기획서 §5).
@@ -30,13 +40,20 @@ namespace Game.Gameplay.Monsters
 
         public override void OnNetworkSpawn()
         {
-            if (IsServer && _settings != null)
+            if (!IsServer)
             {
-                _health.Value = _settings.MaxHealth * _pendingHealthMultiplier;
-
-                // 풀에서 재사용될 때 이전 밤의 배율이 새지 않도록 즉시 되돌린다.
-                _pendingHealthMultiplier = 1f;
+                return;
             }
+
+            MonsterSettings effective = _pendingVariant != null ? _pendingVariant : _settings;
+            if (effective != null)
+            {
+                _health.Value = effective.MaxHealth * _pendingHealthMultiplier;
+            }
+
+            // 풀에서 재사용될 때 이전 밤의 배율·변종이 새지 않도록 즉시 되돌린다.
+            _pendingHealthMultiplier = 1f;
+            _pendingVariant = null;
         }
 
         public void ApplyDamage(float amount, ulong instigatorClientId)

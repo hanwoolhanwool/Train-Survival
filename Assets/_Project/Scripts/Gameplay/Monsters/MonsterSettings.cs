@@ -9,6 +9,16 @@ namespace Game.Gameplay.Monsters
     [CreateAssetMenu(fileName = "MonsterSettings", menuName = "Game/Monster Settings")]
     public sealed class MonsterSettings : ScriptableObject
     {
+        [Header("변종 (기획서 §5 — Day 비례 '패턴' 축)")]
+        [Tooltip("디버그 로그·HUD에 쓰는 이름.")]
+        [SerializeField] private string _displayName = "일반형";
+
+        [Tooltip("이 Day부터 웨이브에 섞여 등장한다 — 새 행동은 Day가 지나며 추가된다.")]
+        [SerializeField, Min(1)] private int _minDayToAppear = 1;
+
+        [Tooltip("등장 가능한 변종 사이의 추첨 가중치. 클수록 자주 나온다.")]
+        [SerializeField, Min(0f)] private float _spawnWeight = 1f;
+
         [Header("이동 (커스텀 조향 — NavMesh 불사용)")]
         [SerializeField, Min(0.5f)] private float _moveSpeed = 6.5f;
         [SerializeField, Min(0f)] private float _chaseSpeedMargin = 0.7f;
@@ -27,6 +37,13 @@ namespace Game.Gameplay.Monsters
 
         [Header("회수")]
         [SerializeField, Min(10f)] private float _despawnBehindMeters = 60f;
+
+        public string DisplayName => _displayName;
+
+        /// <summary>이 Day부터 등장 — 기획서 §5의 "Day가 지날수록 새로운 행동 추가".</summary>
+        public int MinDayToAppear => _minDayToAppear;
+
+        public float SpawnWeight => _spawnWeight;
 
         public float MoveSpeed => _moveSpeed;
 
