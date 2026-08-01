@@ -8,6 +8,9 @@
 > 개정(2026-08-01, 2차): §4.1에 **조준·HUD 표시 사양** 추가 — 칸 건설의 안내·테두리 프리뷰 틀을 따른다.
 > 개정(2026-08-01, 3차): **§4.1 구현 완료** — 절반 페널티를 '뚫렸던 연결부만'으로 좁히고, 잡기 불가 전환 시
 > 손잡이 그랩 자동 해제를 추가. §2·§4.1·§5·§11·§12 갱신.
+> 개정(2026-08-01, 4차): **문서 점검으로 발견한 as-built 격차 반영** — 이미 배포됐으나 스펙에 없던
+> ① 밀림 속도 관성 램프(`979927e`, 2026-07-28) ② 클라 결정적 재시뮬·손잡이 인원 복제(`24b8cf8`, 2026-07-31)를
+> §4·§6·§8·§9에 등재. 설계 변경이 아니라 **문서를 구현에 맞춘 정정**이다.
 
 ## 1. 목적
 
@@ -42,9 +45,10 @@
 이탈한 칸 `c`의 이동을 호스트가 매 프레임 시뮬레이션한다. 상태량은 **이탈 오프셋** `offset_c`(슬롯 기준 후방 이동 거리, m).
 
 ```
-pushSpeed   = scrollSpeed + ejectExtraSpeed        // 뒤로 밀려나는 기본 속도(데이터)
+targetPush  = scrollSpeed + ejectExtraSpeed         // 관성을 다 잃었을 때 도달할 목표 후퇴 속도(데이터)
+pushSpeed_c = moveTowards(pushSpeed_c, targetPush, ejectDeceleration * dt)   // 관성 램프 (아래)
 resistance  = grabberCount_c * pullPerGrabber       // 손잡이 잡은 인원 × 1인 견인력(데이터)
-netVelocity = pushSpeed - resistance                // +면 후퇴, -면 슬롯으로 전진
+netVelocity = pushSpeed_c - resistance              // +면 후퇴, -면 슬롯으로 전진
 offset_c    = clamp(offset_c + netVelocity * dt, 0, ∞)
 ```
 
@@ -53,17 +57,31 @@ offset_c    = clamp(offset_c + netVelocity * dt, 0, ∞)
   (슬롯 도달 = **붙잡힌 채 정지** — 손을 놓으면 다시 밀려난다. 여기서 §4.1 재결합으로 확정한다).
 - `offset_c > lostDistance` 이고 `grabberCount_c == 0`: 칸 **영구 소실**(회수 불가, 기획서 §9.1). 손잡이 앵커 despawn.
 
-인원 비례 난이도는 전부 데이터에서 나온다:
+**관성 램프** (2026-07-28 도입, `979927e`): 분리된 칸은 즉시 최고 후퇴 속도로 밀리지 않는다.
+분리 순간 `pushSpeed_c = 0`(= 열차와 같은 속도)에서 시작해, 감속도 `ejectDeceleration`(m/s²)만큼
+매 프레임 목표 `targetPush`로 다가간다. 스크롤이 느려져 목표가 낮아지면 같은 비율로 따라 내려온다.
+
+- 분리 연출에서 속도 점프가 사라지고, **분리 직후일수록 저항으로 되돌리기 쉬워진다**(밀림이 아직 약하므로).
+- 이는 **밀림 측 램프**다. 잡기/놓기 순간의 **저항 측** 속도 점프는 아직 남아 있으며
+  [개선 계획 §5](../plans/M3-테스트-피드백-개선-계획.md)에 TBD로 걸려 있다 — 그쪽이 적용되면
+  `resistance`도 같은 형태의 램프를 타게 되어 위 수식이 한 번 더 바뀐다.
+
+인원 비례 난이도는 전부 데이터에서 나온다. 아래는 램프가 목표에 도달한 **정상 상태** 기준이며,
+램프 도중에는 `pushSpeed_c < targetPush`라 같은 인원으로도 더 유리하다:
+
 | 상황(4인 예시) | grabberCount | netVelocity | 결과 |
 |---|---|---|---|
-| 아무도 안 잡음 | 0 | +pushSpeed | 후퇴 → 소실 |
-| 1인 잡음 | 1 | pushSpeed - 1×pull | 감속(약간 벌어짐) |
-| 2인 잡음 | 2 | pushSpeed - 2×pull < 0 | 끌어당김(슬롯 복귀) + 남은 2인은 엄호/재결합 |
+| 아무도 안 잡음 | 0 | +targetPush | 후퇴 → 소실 |
+| 1인 잡음 | 1 | targetPush - 1×pull | 감속(약간 벌어짐) |
+| 2인 잡음 | 2 | targetPush - 2×pull < 0 | 끌어당김(슬롯 복귀) + 남은 2인은 엄호/재결합 |
 
-→ `pullPerGrabber`를 `pushSpeed`의 약 0.6~0.8배로 잡으면 "1인=지연, 2인=회수"가 성립. 값은 SO로 분리해 밸런싱한다.
+→ `pullPerGrabber`를 `targetPush`의 약 0.6~0.8배로 잡으면 "1인=지연, 2인=회수"가 성립. 값은 SO로 분리해 밸런싱한다.
 
-현재 데이터(2026-08-01): `scrollSpeed 6 + ejectExtraSpeed 2 = pushSpeed 8`, `pullPerGrabber 6`
-→ 0인 +8(후퇴) · 1인 +2(지연) · 2인 −4(끌어당김). 의도대로 **끌어오기에 2인이 필요**하다.
+현재 데이터(2026-08-01): `scrollSpeed 6 + ejectExtraSpeed 2 = targetPush 8`, `pullPerGrabber 6`,
+`ejectDeceleration 4` → 정상 상태에서 0인 +8(후퇴) · 1인 +2(지연) · 2인 −4(끌어당김).
+정상 상태에서는 의도대로 **끌어오기에 2인이 필요**하다. 다만 램프(0 → 8 m/s, 4 m/s²)를 타는 동안
+`pushSpeed_c`가 `pullPerGrabber`(6)보다 작은 **분리 후 1.5 s 구간에서는 1인만으로도 칸이 되돌아온다** —
+목표 도달은 2 s. "빨리 붙잡을수록 적은 인원으로 된다"가 데이터에서 나오는 셈이다.
 
 ### 4.1 재결합 (설계 확정 2026-08-01 · **구현 완료 2026-08-01**)
 
@@ -175,14 +193,36 @@ NGO 중첩 NetworkObject 제약을 피하고 기존 집게 파이프라인을 �
 B에서 CarView가 로컬로 뒤로 흘려보내던 연출을 폐기하고, `offset_c`를 **호스트가 계산 + 복제**한다.
 
 - 저장: `TrainState`에 `NetworkList<float> _ejectOffsets`(칸 수 길이, 기본 0). 호스트만 갱신. 이동 중인 칸만 매 프레임 델타 전송(소수라 부담 작음).
-- 표현: CarView는 자신의 오프셋을 읽어 `localPos = 원위치 + back * offset`으로 배치. 파괴(체력0)는 즉시 소멸(오프셋 무관).
-- 속도(velocity)는 호스트 로컬 배열로만 유지(복제 불필요, 오프셋만 복제).
+- 표현: CarView는 `ITrainState.GetEjectOffset`을 읽어 `localPos = 원위치 + back * offset`으로 배치. 파괴(체력0)는 즉시 소멸(오프셋 무관).
+- 밀림 속도(`pushSpeed_c`)의 **판정 진실은 호스트 로컬 배열**이다 — 복제하지 않는다.
+
+### 6.1 클라 표시 = 결정적 재시뮬 (2026-07-31 도입, `24b8cf8`)
+
+원안은 "복제 오프셋을 그대로 표시"였으나, 그러면 30 Hz 틱 계단으로 칸이 움직여
+**탑승한 클라이언트에게 월드가 떨려 보였다**. 클라이언트도 호스트와 **같은 수식을 같은 입력으로 매 프레임
+적분**하는 방식으로 바꿨다(연료 소모율과 같은 "같은 입력으로 재계산" 패턴).
+해결 과정 전체는 [트러블슈팅 로그](../plans/M3-이탈칸-탑승-월드떨림-해결.md)에 있다.
+
+- **재시뮬 입력 3가지**: 스크롤 속도(`NetworkVariable`) · 설정 SO(공유) · **손잡이 잡은 인원**.
+  앞의 둘은 이미 있었고, 빠져 있던 인원을 **`NetworkList<int>`로 복제**하는 것이 이번에 추가됐다
+  (판정 진실은 여전히 호스트 배열 — 복제본은 클라 표시 재시뮬의 입력일 뿐이다).
+- **관성 램프(§4)는 클라가 분리 관측 시점부터 로컬로 다시 밟는다** — 시작 시차 오차는 수 cm 수준.
+- **복제 오프셋은 드리프트 보정 목표로만 쓴다**: 저속 지수 감쇠(`EjectDisplayCorrectionRate`, 기본 3/s)로
+  수렴시키고, 오차가 스냅 거리(10 m, 후발 접속 등) 이상이면 즉시 목표로 붙는다
+  (`EjectMotionMath.StepDisplayOffset`).
+- **효과**: 표시 이동이 복제 도착 타이밍과 무관해져, 프레임당 전진량이 항상 매끈하고 호스트와 같은 경로를 그린다.
+- **알려진 트레이드오프**: ① 잡기/놓기 순간 저항 반영이 복제 지연만큼 늦어 수십 cm 드리프트가 생겼다가
+  ~1 s에 걸쳐 흡수된다(떨림이 아닌 완만한 수렴) ② 후발 접속으로 이탈 중인 칸을 처음 보면 램프를 0부터
+  밟아 최대 ~3 m 드리프트가 생기며 같은 방식으로 수렴한다.
+- 손잡이 앵커(§5)·건축물도 같은 `GetEjectOffset`을 소비하므로 **한 소스로 함께 부드러워진다.**
 
 ## 7. 권위 분담 (네트워크 §4)
 
 | 요소 | 권위 | 비고 |
 |---|---|---|
-| 이탈 칸 이동(offset) | 호스트 | `NetworkList<float>` 복제, 클라 표현만 |
+| 이탈 칸 이동(offset) | 호스트 | `NetworkList<float>` 복제. 클라는 이를 **드리프트 보정 목표**로만 쓰고 표시는 재시뮬(§6.1) |
+| 밀림 속도(pushSpeed) | 호스트 | 복제 없음(호스트 로컬 배열). 클라는 같은 수식·같은 입력으로 재계산 |
+| 손잡이 잡은 인원(grabberCount) | 호스트 | 판정은 호스트 배열, **표시 재시뮬 입력용으로 `NetworkList<int>` 복제** (§6.1) |
 | 손잡이 앵커 존재 | 씬 정적 배치 | InScenePlaced NetworkObject — 스폰/despawn 없음 |
 | 손잡이 앵커 위치 | 각 피어 로컬 계산 | 복제 오프셋 기반(CarView와 동일 소스), 위치 복제 없음 |
 | 그랩 점유/해제 → grabberCount | 호스트 | 집게 승인 파이프라인 재사용 |
@@ -190,18 +230,36 @@ B에서 CarView가 로컬로 뒤로 흘려보내던 연출을 폐기하고, `off
 
 ## 8. 데이터 스키마 (SO)
 
-`TrainDurabilitySettings`(또는 신설 `HandrailSettings`)에 추가:
-- `EjectExtraSpeed`(m/s) — 스크롤 위에 더해지는 기본 후퇴 속도.
-- `PullPerGrabber`(m/s) — 손잡이 1인당 상쇄 속도.
-- `LostDistance`(m) — 이 거리 넘고 아무도 안 잡으면 영구 소실.
+전부 `TrainDurabilitySettings`에 들어갔다(별도 `HandrailSettings`는 만들지 않았다). 괄호 안은 현재 값.
+
+| 필드 | 값 | 의미 |
+|---|---|---|
+| `EjectExtraSpeed` (m/s) | 2 | 스크롤 위에 더해지는 후퇴 속도 — §4의 `targetPush` 구성분. |
+| `EjectDeceleration` (m/s²) | 4 | **관성 램프의 감속도** — 분리 직후 0에서 `targetPush`까지 다가가는 비율 (§4). |
+| `PullPerGrabber` (m/s) | 6 | 손잡이 1인당 상쇄 속도. |
+| `LostDistance` (m) | 45 | 이 거리 넘고 아무도 안 잡으면 영구 소실. |
+| `EjectDisplayCorrectionRate` (1/s) | 3 | **클라 표시 드리프트 보정률** — 재시뮬 값을 복제 목표로 수렴시키는 지수 감쇠 계수 (§6.1). 표현 전용이라 게임플레이 판정에 영향 없음. |
+
+`EjectDisplayCorrectionRate`는 에셋에 직렬화되어 있지 않아 현재 코드 기본값 3으로 동작한다 —
+튜닝하려면 인스펙터에서 한 번 값을 만져 에셋에 기록시켜야 한다.
 
 ## 9. 순수 로직 (EditMode 대상)
 
-`TrainStateLogic`(또는 신설 `EjectMotionMath`):
-- `ComputeNetEjectVelocity(scrollSpeed, extra, grabberCount, pullPerGrabber)` → float.
-- `StepEjectOffset(offset, netVelocity, dt)` → clamp≥0.
-- `IsCarLost(offset, lostDistance, grabberCount)` → bool.
-경계: 0인=후퇴, 임계 인원에서 부호 전환, 슬롯(0) 고정, 소실 조건.
+`EjectMotionMath`로 분리됐다(`TrainStateLogic`이 아니다). 아래가 실제 API — 원안의
+`ComputeNetEjectVelocity`는 램프 도입으로 **속도 계산이 2단계로 쪼개지면서** 이름·시그니처가 바뀌었다.
+
+| 함수 | 역할 |
+|---|---|
+| `ComputeTargetPushSpeed(scrollSpeed, ejectExtraSpeed)` | 관성을 다 잃었을 때의 목표 밀림 속도 (§4). |
+| `StepPushSpeed(pushSpeed, target, deceleration, dt)` | 목표를 향한 관성 램프 한 스텝 (`MoveTowards`). |
+| `ComputeNetVelocity(pushSpeed, grabberCount, pullPerGrabber)` | 순 속도 — **램프 후 속도를 받는다**(원안은 scrollSpeed를 직접 받았다). |
+| `StepOffset(offset, netVelocity, dt)` | 오프셋 적분, clamp ≥ 0. |
+| `IsCarLost(offset, lostDistance, grabberCount)` | 영구 소실 판정. |
+| `StepDisplayOffset(display, target, velocity, dt, correctionRate, snapDistance)` | **클라 표시 전용** — 재시뮬 + 드리프트 수렴 + 스냅 (§6.1). |
+
+경계 검증: 0인=후퇴, 임계 인원에서 부호 전환, 슬롯(0) 고정, 소실 조건, 램프의 목표 수렴(상승·하강 양방향),
+30 Hz 계단 복제 아래 호스트 경로 추종(드리프트 ±0.3 m)과 프레임 전진량 매끈함(±0.02 m).
+현재 `EjectMotionMathTests` 11개.
 
 ## 10. 구현 단계
 
@@ -233,6 +291,12 @@ B에서 CarView가 로컬로 뒤로 흘려보내던 연출을 폐기하고, `off
 - 완료(2026-07-28 개정): 앵커 **씬 정적 배치 전환** — 동적 스폰/풀링/위치 복제 제거,
   `Train_Handrails` 홀더에 4개(Car_1·Car_2 앞뒤) 저작, `ITrainState.IsCarGrabbable` 게이트.
   호스트 세션에서 스폰→이탈 시 잡기 가능→오프셋 동행→소실 시 잡기 차단까지 런타임 확인.
+- 완료(2026-07-28 `979927e`): **밀림 속도 관성 램프**(§4) — `ComputeTargetPushSpeed`/`StepPushSpeed`,
+  `EjectDeceleration` SO 필드. 분리 순간의 속도 점프 제거.
+- 완료(2026-07-31 `24b8cf8`): **클라 표시 결정적 재시뮬**(§6.1) — 손잡이 인원 `NetworkList<int>` 복제,
+  `StepDisplayOffset`(드리프트 지수 감쇠 + 스냅), `EjectDisplayCorrectionRate` SO 필드.
+  탑승 클라이언트의 월드 떨림 해소 — 2인 정식 테스트 통과
+  ([트러블슈팅 로그](../plans/M3-이탈칸-탑승-월드떨림-해결.md)).
 - 완료(2026-08-01 재결합 §4.1): 순수 로직(`TrainStateLogic.CanRecouple`/`Recouple`,
   `CarRecoupleAimLogic`)과 호스트 확정(`ITrainRecouple` — `TrainState.ServerTryRecouple`),
   망치 조준·우클릭 경로(`RepairHammerController.TryGetRecoupleAim`/`RequestRecoupleServerRpc`),
