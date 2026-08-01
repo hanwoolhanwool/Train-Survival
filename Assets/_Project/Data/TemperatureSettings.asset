@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3be931b9511e2d042870a11771947625, type: 3}
+  m_Name: TemperatureSettings
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.TemperatureSettings
+  _normalBodyTemperature: 36.5
+  _minBodyTemperature: 30
+  _maxBodyTemperature: 42
+  _comfortMin: 10
+  _comfortMax: 32
+  _driftRatePerDegree: 0.012
+  _recoveryRate: 0.35
+  _heatWarnThreshold: 38
+  _heatDamageThreshold: 39
+  _coldWarnThreshold: 35
+  _coldDamageThreshold: 34
+  _damagePerDegreePerSecond: 3
+  _shelterFactor: 0.8
