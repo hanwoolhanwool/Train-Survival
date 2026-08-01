@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c62cc1abd5df86449ab456a721bce61, type: 3}
-  m_Name: MonsterSettings
+  m_Name: MonsterSettings_Brute
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.MonsterSettings
-  _displayName: "\uC77C\uBC18\uD615"
-  _minDayToAppear: 1
-  _spawnWeight: 3
-  _moveSpeed: 6.5
-  _chaseSpeedMargin: 0.7
+  _displayName: "\uB3CC\uACA9\uD615"
+  _minDayToAppear: 6
+  _spawnWeight: 1
+  _moveSpeed: 5
+  _chaseSpeedMargin: 0.5
   _avoidProbeDistance: 3
-  _leapHorizontalRange: 3
-  _maxHealth: 100
-  _attackDamage: 15
-  _attackRange: 2.2
-  _attackInterval: 1.4
+  _leapHorizontalRange: 2
+  _maxHealth: 220
+  _attackDamage: 28
+  _attackRange: 2.6
+  _attackInterval: 2
   _syncHz: 12
   _interpolationDelaySeconds: 0.18
   _despawnBehindMeters: 60
