@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using Game.Core.Events;
 using Game.Core.Pooling;
 using Game.Core.Services;
+using Game.Gameplay.Region;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -10,10 +12,13 @@ namespace Game.Gameplay.World
     /// 지상 자원 주기 스폰 — 호스트 전용 (권위 분담표: 자원 스폰 = 호스트).
     /// 누적 주행 거리 기준으로 전방 선로변에 자원을 심고, 뒤로 밀려난 자원을 회수한다.
     /// 스폰/소멸은 PoolManager + NGO 스폰(등록된 PooledNetworkPrefabHandler 경유)로 처리한다.
+    /// 지역이 바뀌면 이후 심는 자원의 종류·밀도가 지역 데이터를 따른다 (M4, 기획서 §4).
     /// </summary>
     public sealed class GroundResourceSpawner : NetworkBehaviour
     {
         [SerializeField] private ResourceSpawnSettings _settings;
+
+        [Tooltip("지역 데이터에 자원 프리팹이 없을 때 쓰는 기본 자원.")]
         [SerializeField] private GameObject _resourcePrefab;
 
         private static readonly List<ResourceNode> RemovalBuffer = new List<ResourceNode>(8);
@@ -21,17 +26,48 @@ namespace Game.Gameplay.World
         private readonly List<ResourceNode> _activeNodes = new List<ResourceNode>(64);
         private float _nextSpawnDistance;
 
+        private GameObject _activeResourcePrefab;
+        private float _activeIntervalMultiplier = 1f;
+
         public override void OnNetworkSpawn()
         {
+            EventBus<RegionChangedEvent>.Subscribe(OnRegionChanged);
+
+            _activeResourcePrefab = _resourcePrefab;
+            _activeIntervalMultiplier = 1f;
+            if (ServiceLocator.TryGet(out IRegionService region))
+            {
+                ApplyRegion(region.CurrentRegion);
+            }
+
             if (IsServer)
             {
                 _nextSpawnDistance = 0f;
             }
         }
 
+        public override void OnNetworkDespawn()
+        {
+            EventBus<RegionChangedEvent>.Unsubscribe(OnRegionChanged);
+        }
+
+        private void OnRegionChanged(RegionChangedEvent evt)
+        {
+            ApplyRegion(evt.Region);
+        }
+
+        private void ApplyRegion(RegionDefinition region)
+        {
+            _activeResourcePrefab = region == null || region.ResourcePrefab == null
+                ? _resourcePrefab
+                : region.ResourcePrefab;
+
+            _activeIntervalMultiplier = region == null ? 1f : Mathf.Max(0.1f, region.ResourceSpawnIntervalMultiplier);
+        }
+
         private void Update()
         {
-            if (!IsSpawned || !IsServer || _settings == null || _resourcePrefab == null)
+            if (!IsSpawned || !IsServer || _settings == null || _activeResourcePrefab == null)
             {
                 return;
             }
@@ -57,11 +93,11 @@ namespace Game.Gameplay.World
                 // 스폰 위치 z = (심는 거리 마커 − 현재 누적 거리): 누적 거리와 함께 -Z로 흘러간다.
                 var spawnPosition = new Vector3(side * lateral, _settings.SpawnHeight, _nextSpawnDistance - distance);
 
-                GameObject instance = PoolManager.Spawn(_resourcePrefab, spawnPosition, Quaternion.identity);
+                GameObject instance = PoolManager.Spawn(_activeResourcePrefab, spawnPosition, Quaternion.identity);
                 var node = instance.GetComponent<ResourceNode>();
                 if (node == null)
                 {
-                    Debug.LogError("[GroundResourceSpawner] 자원 프리팹에 ResourceNode가 없습니다.", _resourcePrefab);
+                    Debug.LogError("[GroundResourceSpawner] 자원 프리팹에 ResourceNode가 없습니다.", _activeResourcePrefab);
                     PoolManager.Despawn(instance);
                     return;
                 }
@@ -70,7 +106,8 @@ namespace Game.Gameplay.World
                 node.NetworkObject.Spawn();
                 _activeNodes.Add(node);
 
-                _nextSpawnDistance += _settings.SpawnIntervalMeters;
+                // 지역별 자원 밀도 — 배율이 클수록 간격이 벌어져 희소해진다 (기획서 §4 자원 등급).
+                _nextSpawnDistance += _settings.SpawnIntervalMeters * _activeIntervalMultiplier;
             }
         }
 
