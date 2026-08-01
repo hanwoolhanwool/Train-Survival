@@ -2762,6 +2762,7 @@ GameObject:
   - component: {fileID: 1704432518}
   - component: {fileID: 1704432517}
   - component: {fileID: 1704432516}
+  - component: {fileID: 1704432519}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2897,6 +2898,19 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: cebd7edcc6ad52647b7d72614016e1d6, type: 2}
   _enableDebugPhaseKeys: 1
+--- !u!114 &1704432519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25bbd59f566c5ad4497af17de2d62197, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionController
+  _settings: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
 --- !u!1 &1775290601
 GameObject:
   m_ObjectHideFlags: 0
@@ -3215,7 +3229,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.CarBuildGhostView
   _buildableColor: {r: 0.25, g: 1, b: 0.35, a: 0.9}
-  _lackColor: {r: 1, g: 0.35, b: 0.25, a: 0.9}
+  _blockedColor: {r: 1, g: 0.35, b: 0.25, a: 0.9}
   _lineWidth: 0.08
 --- !u!120 &2017756349
 LineRenderer:
