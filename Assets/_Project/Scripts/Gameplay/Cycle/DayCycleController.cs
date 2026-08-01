@@ -16,7 +16,7 @@ namespace Game.Gameplay.Cycle
         [SerializeField] private DayTimelineSettings _settings;
 
         [Header("디버그 (테스트용)")]
-        [Tooltip("켜면 숫자패드 1 = 아침(낮 시작), 숫자패드 2 = 저녁(밤 시작)으로 즉시 전환. 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 1 = 아침(낮 시작), 2 = 저녁(밤 시작), 3 = 다음 Day 아침으로 즉시 전환. 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableDebugPhaseKeys = true;
 
         private readonly NetworkVariable<float> _totalSeconds = new NetworkVariable<float>();
@@ -92,6 +92,30 @@ namespace Game.Gameplay.Cycle
             {
                 RequestJumpToPhaseServerRpc(DayPhase.Night);
             }
+            else if (keyboard.numpad3Key.wasPressedThisFrame)
+            {
+                // 지역 전환(M4)은 Day 단위로 일어나므로 Day를 건너뛸 수단이 필요하다.
+                RequestAdvanceDayServerRpc();
+            }
+        }
+
+        /// <summary>다음 Day의 아침으로 누적 시간을 점프시킨다(호스트 권위, 디버그 전용).</summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestAdvanceDayServerRpc()
+        {
+            if (_settings == null)
+            {
+                return;
+            }
+
+            float cycleDuration = _settings.DayDurationSeconds + _settings.NightDurationSeconds;
+            if (cycleDuration <= 0f)
+            {
+                return;
+            }
+
+            int cycleIndex = Mathf.FloorToInt(Mathf.Max(0f, _totalSeconds.Value) / cycleDuration);
+            _totalSeconds.Value = (cycleIndex + 1) * cycleDuration;
         }
 
         /// <summary>현재 Day를 유지한 채 해당 국면의 시작으로 누적 시간을 점프시킨다(호스트 권위).</summary>
