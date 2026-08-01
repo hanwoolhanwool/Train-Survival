@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9a26c2c5e295b44eade7e7c43f245a6, type: 3}
+  m_Name: RegionTimelineSettings
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionTimelineSettings
+  _regions:
+  - {fileID: 11400000, guid: b7cec3f44c8d1c242b8f2bec08c454f8, type: 2}
+  - {fileID: 11400000, guid: 0519e4121e1f0714b89cd0122b1c41da, type: 2}
+  _forecastLeadDays: 2
+  _loopAfterLastRegion: 1
+  _cycleDifficultyBonus: 0.5
