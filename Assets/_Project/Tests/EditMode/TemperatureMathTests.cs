@@ -65,17 +65,45 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void 차폐는_환경_온도를_쾌적대로_당긴다()
+        public void 차폐는_더위를_쾌적대로_당긴다()
         {
             TemperatureCurve curve = Curve();
 
             // 쾌적 중심 21℃, 차폐 계수 0.8 → 45 → 45 + (21−45)×0.8 = 25.8
             float shelteredHot = TemperatureMath.ResolveAmbient(45f, true, curve);
-            float shelteredCold = TemperatureMath.ResolveAmbient(2f, true, curve);
 
             Assert.That(shelteredHot, Is.EqualTo(25.8f).Within(0.001f));
             Assert.That(shelteredHot, Is.LessThan(curve.ComfortMax), "차폐 안에서는 쾌적대에 들어온다");
-            Assert.That(shelteredCold, Is.GreaterThan(curve.ComfortMin), "밤 급랭도 차폐로 막힌다");
+        }
+
+        [Test]
+        public void 차폐는_추위를_막지_못한다()
+        {
+            // 건축물 아래는 '그늘'이다 — 지붕이 햇빛은 가려도 난방은 되지 않는다.
+            // 추위 대응은 난방 건축물·방한 장비(M5)의 몫이다.
+            TemperatureCurve curve = Curve();
+
+            Assert.That(TemperatureMath.ResolveAmbient(2f, true, curve), Is.EqualTo(2f), "밤 급랭은 그대로");
+            Assert.That(TemperatureMath.ResolveAmbient(-20f, true, curve), Is.EqualTo(-20f), "혹한도 그대로");
+        }
+
+        [Test]
+        public void 쾌적대_안에서는_차폐가_아무것도_바꾸지_않는다()
+        {
+            TemperatureCurve curve = Curve();
+
+            Assert.That(TemperatureMath.ResolveAmbient(22f, true, curve), Is.EqualTo(22f));
+            Assert.That(TemperatureMath.ResolveAmbient(32f, true, curve), Is.EqualTo(32f), "쾌적 상한 경계");
+        }
+
+        [Test]
+        public void 사막_밤에는_그늘에_있어도_체온이_계속_내려간다()
+        {
+            TemperatureCurve curve = Curve();
+
+            float sheltered = TemperatureMath.Step(Normal, TemperatureMath.ResolveAmbient(2f, true, curve), curve, 1f);
+
+            Assert.That(sheltered, Is.LessThan(Normal), "그늘 안에서도 추위는 진행된다");
         }
 
         [Test]
