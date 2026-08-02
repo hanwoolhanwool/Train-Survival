@@ -269,7 +269,8 @@ namespace Game.UI
                     break;
 
                 case TemperatureStress.Cold:
-                    GUILayout.Label($"<color=aqua>{text} — 추위! 건축물 안으로</color>");
+                    // 그늘은 추위를 막지 못한다 — 난방 수단(M5)이 생기기 전까지 행동 지시가 없다.
+                    GUILayout.Label($"<color=aqua>{text} — 추위!</color>");
                     break;
 
                 default:

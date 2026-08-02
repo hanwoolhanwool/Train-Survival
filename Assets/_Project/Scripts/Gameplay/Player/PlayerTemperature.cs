@@ -101,7 +101,11 @@ namespace Game.Gameplay.Player
                 : region.CurrentRegion.DayAmbientTemperature;
         }
 
-        /// <summary>건축물이 있는 칸 위에 서 있는가 — 그늘·실내로 취급해 환경 온도를 완화한다.</summary>
+        /// <summary>
+        /// 살아 있는 건축물이 있는 칸 위에 서 있는가 — 그늘로 취급해 더위를 완화한다.
+        /// 판단 기준은 <b>지붕의 존재</b>이므로 칸이 편성에서 이탈했는지는 보지 않는다
+        /// (이탈 칸에 고립된 플레이어가 체온으로 이중 처벌받지 않게 한다). 파괴된 건축물은 제외.
+        /// </summary>
         private bool IsSheltered()
         {
             if (_trainLayout == null || !ServiceLocator.TryGet(out ITrainState train))
@@ -127,13 +131,9 @@ namespace Game.Gameplay.Player
                 return false;
             }
 
-            // 파괴·이탈한 칸의 건축물은 차폐가 되지 않는다.
-            if (!train.TryGetCar(carIndex, out CarState car) || !car.Attached || car.Health <= 0f)
-            {
-                return false;
-            }
-
-            return train.TryGetStructure(carIndex, out StructureState structure) && structure.Present;
+            // 부서진 건축물은 지붕 역할을 못 한다 — Present만으로는 파괴된 자리도 통과하므로 체력까지 본다.
+            return train.TryGetStructure(carIndex, out StructureState structure)
+                && structure.Present && structure.Health > 0f;
         }
 
         /// <summary>

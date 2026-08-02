@@ -73,12 +73,13 @@ namespace Game.Gameplay.Player
     public static class TemperatureMath
     {
         /// <summary>
-        /// 차폐를 반영한 실효 환경 온도 — 건축물 아래(그늘·실내)에서는 환경 온도가 쾌적대 중심으로 당겨진다.
-        /// M4의 유일한 완화 수단이며, M3 건축물 시스템을 그대로 재사용한다.
+        /// 차폐를 반영한 실효 환경 온도 — 건축물 아래는 <b>그늘</b>이므로 <b>더위만 막는다</b>.
+        /// 환경 온도가 쾌적 상한을 넘을 때만 쾌적대 중심으로 당겨지며, 밤 급랭·혹한은 완화하지 못한다
+        /// (지붕이 햇빛은 가려도 난방은 되지 않는다 — 추위 대응은 난방 건축물·방한 장비의 몫, M5).
         /// </summary>
         public static float ResolveAmbient(float regionAmbient, bool sheltered, in TemperatureCurve curve)
         {
-            if (!sheltered)
+            if (!sheltered || regionAmbient <= curve.ComfortMax)
             {
                 return regionAmbient;
             }
