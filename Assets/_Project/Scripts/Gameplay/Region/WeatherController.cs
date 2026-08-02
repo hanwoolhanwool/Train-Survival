@@ -117,7 +117,7 @@ namespace Game.Gameplay.Region
                 return;
             }
 
-            ServerTryStartWeather();
+            ServerTryStartWeather(evt.DayNumber);
         }
 
         private void OnRegionChanged(RegionChangedEvent evt)
@@ -129,15 +129,31 @@ namespace Game.Gameplay.Region
             }
         }
 
-        private void ServerTryStartWeather()
+        private void ServerTryStartWeather(int dayNumber)
         {
-            if (!ServiceLocator.TryGet(out IRegionService region) || region.CurrentRegion == null)
+            if (_regionSettings == null || !ServiceLocator.TryGet(out IRegionService region))
             {
                 return;
             }
 
-            RegionDefinition definition = region.CurrentRegion;
-            if (definition.WeatherCount <= 0 || UnityEngine.Random.value > definition.WeatherChancePerDay)
+            // 지역 판정은 Day 기준으로 한다 — 지역 전환 당일에 "현재 지역"을 읽으면
+            // RegionController와의 이벤트 처리 순서에 따라 이전/새 지역이 갈린다.
+            RegionTimelineState state = region.EvaluateForDay(dayNumber);
+            if (!state.IsValid)
+            {
+                return;
+            }
+
+            // 지역 진입 첫날은 날씨를 걸지 않는다 — 지형조차 아직 도착하지 않은 시점이라
+            // 전환 연출과 폭풍이 겹쳐 읽힌다 (2026-08-03 검증 피드백).
+            if (state.DayInRegion <= 1)
+            {
+                return;
+            }
+
+            RegionDefinition definition = _regionSettings.GetRegion(state.RegionIndex);
+            if (definition == null || definition.WeatherCount <= 0
+                || UnityEngine.Random.value > definition.WeatherChancePerDay)
             {
                 return;
             }
@@ -152,7 +168,7 @@ namespace Game.Gameplay.Region
             _serverRemainingSeconds = weather.RollDurationSeconds();
             _state.Value = new WeatherSyncState
             {
-                RegionIndex = region.RegionIndex,
+                RegionIndex = state.RegionIndex,
                 WeatherIndex = weatherIndex,
             };
 

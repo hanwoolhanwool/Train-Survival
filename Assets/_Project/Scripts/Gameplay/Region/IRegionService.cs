@@ -60,5 +60,12 @@ namespace Game.Gameplay.Region
         /// <see cref="Cycle.DayPhaseChangedEvent"/> 구독자 간 처리 순서에 의존하지 않게 한다.
         /// </summary>
         RegionDifficulty GetDifficultyForDay(int dayNumber);
+
+        /// <summary>
+        /// 지정 Day의 지역 타임라인 상태를 즉시 평가한다 (지역 인덱스·지역 내 일차 등).
+        /// <see cref="GetDifficultyForDay"/>와 같은 이유로 처리 순서에 의존하지 않는 조회 경로다 —
+        /// 지역 전환 당일에 "현재 지역"을 읽으면 갱신 순서에 따라 이전/새 지역이 갈린다.
+        /// </summary>
+        RegionTimelineState EvaluateForDay(int dayNumber);
     }
 }

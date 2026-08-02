@@ -36,6 +36,11 @@ namespace Game.Gameplay.Region
 
         public bool IsForecastWindow => _state.IsForecastWindow;
 
+        public RegionTimelineState EvaluateForDay(int dayNumber)
+        {
+            return _settings == null ? default : Evaluate(dayNumber);
+        }
+
         public RegionDifficulty GetDifficultyForDay(int dayNumber)
         {
             if (_settings == null)
