@@ -29,6 +29,10 @@ namespace Game.Gameplay.World
         private GameObject _activeResourcePrefab;
         private float _activeIntervalMultiplier = 1f;
 
+        // 지역의 자원 종류 후보 (종류 + 가중치) — 비어 있으면 노드 프리팹 기본 종류로 심는다.
+        private Inventory.ResourceType[] _activeTypePool;
+        private float[] _activeWeights;
+
         public override void OnNetworkSpawn()
         {
             EventBus<RegionChangedEvent>.Subscribe(OnRegionChanged);
@@ -63,6 +67,24 @@ namespace Game.Gameplay.World
                 : region.ResourcePrefab;
 
             _activeIntervalMultiplier = region == null ? 1f : Mathf.Max(0.1f, region.ResourceSpawnIntervalMultiplier);
+
+            // 종류 후보 목록 캐시 — 스폰마다 배열을 새로 만들지 않는다.
+            int count = region == null ? 0 : region.ResourceSpawnCount;
+            if (count <= 0)
+            {
+                _activeTypePool = null;
+                _activeWeights = null;
+                return;
+            }
+
+            _activeTypePool = new Inventory.ResourceType[count];
+            _activeWeights = new float[count];
+            for (int i = 0; i < count; i++)
+            {
+                RegionDefinition.ResourceSpawnEntry entry = region.GetResourceSpawn(i);
+                _activeTypePool[i] = entry == null ? Inventory.ResourceType.None : entry.Type;
+                _activeWeights[i] = entry == null ? 0f : entry.Weight;
+            }
         }
 
         private void Update()
@@ -103,6 +125,17 @@ namespace Game.Gameplay.World
                 }
 
                 node.ServerSetSpawnBinding(spawnPosition, distance);
+
+                // 지역 후보에서 종류를 가중 추첨해 주입한다 — 후보가 없으면 노드 기본 종류.
+                if (_activeWeights != null)
+                {
+                    int picked = ResourceSpawnPicker.Pick(_activeWeights, Random.value);
+                    if (picked >= 0)
+                    {
+                        node.ServerSetResourceType(_activeTypePool[picked]);
+                    }
+                }
+
                 node.NetworkObject.Spawn();
                 _activeNodes.Add(node);
 

@@ -25,6 +25,9 @@ namespace Game.Gameplay.Inventory
             [Tooltip("건설·수리 비용(\"건자재 아무거나 N개\")으로 소모될 수 있는지.")]
             [SerializeField] private bool _isBuildMaterial;
 
+            [Tooltip("지상 노드·아이콘에 쓰는 종류 식별 색 (전 종류가 한 프리팹을 공유하므로 색이 곧 외형 구분이다).")]
+            [SerializeField] private Color _color = Color.white;
+
             public ResourceType Type => _type;
 
             public string DisplayName => _displayName;
@@ -34,6 +37,8 @@ namespace Game.Gameplay.Inventory
             public float FuelValue => _fuelValue;
 
             public bool IsBuildMaterial => _isBuildMaterial;
+
+            public Color Color => _color;
         }
 
         [SerializeField] private Entry[] _entries;
@@ -66,6 +71,13 @@ namespace Game.Gameplay.Inventory
         {
             Entry entry = Find(type);
             return entry != null && entry.IsBuildMaterial;
+        }
+
+        /// <summary>종류 식별 색. 미등재면 fallback.</summary>
+        public Color GetColor(ResourceType type, Color fallback)
+        {
+            Entry entry = Find(type);
+            return entry == null ? fallback : entry.Color;
         }
 
         private Entry Find(ResourceType type)

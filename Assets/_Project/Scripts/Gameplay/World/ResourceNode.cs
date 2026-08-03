@@ -19,8 +19,14 @@ namespace Game.Gameplay.World
 
         [SerializeField, Min(1f)] private float _towInterpolationRate = 20f;
 
-        [Tooltip("이 노드가 주는 자원 종류 — 프리팹 정체성이 곧 종류이므로 별도 동기화 없음 (종류별 프리팹).")]
-        [SerializeField] private Inventory.ResourceType _resourceType = Inventory.ResourceType.Wood;
+        [Tooltip("서버가 종류를 주입하지 않았을 때의 기본 자원 종류.")]
+        [SerializeField] private Inventory.ResourceType _defaultResourceType = Inventory.ResourceType.Wood;
+
+        [Tooltip("종류 식별 색·표시명 조회용 카탈로그 — 전 종류가 한 프리팹을 공유하므로 색이 외형 구분이다.")]
+        [SerializeField] private Inventory.ResourceCatalog _catalog;
+
+        [Tooltip("종류 색을 칠할 렌더러 (Visual).")]
+        [SerializeField] private Renderer[] _tintRenderers;
 
         private readonly NetworkVariable<Vector3> _spawnPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<float> _spawnDistance = new NetworkVariable<float>();
@@ -28,9 +34,16 @@ namespace Game.Gameplay.World
         private readonly NetworkVariable<Vector3> _towPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<ulong> _grabberClientId = new NetworkVariable<ulong>(NoGrabber);
 
+        // 자원 종류 — 몬스터 변종과 같은 규약: 프리팹을 늘리지 않고 인덱스(byte)를 복제해 각 피어가 카탈로그를 조회한다.
+        private readonly NetworkVariable<byte> _syncedResourceType = new NetworkVariable<byte>();
+
+        private static MaterialPropertyBlock _tintBlock;
+
         private Vector3 _pendingSpawnPosition;
         private float _pendingSpawnDistance;
         private bool _hasPendingBinding;
+        private Inventory.ResourceType _pendingResourceType;
+        private bool _hasPendingResourceType;
         private bool _acquired;
 
         // 클라이언트 로컬 — 쏜 클라이언트의 예측 고정 상태 (동기화되지 않는다).
@@ -38,8 +51,17 @@ namespace Game.Gameplay.World
 
         public GrabKind Kind => GrabKind.Reel;
 
-        /// <summary>채집 시 수납되는 자원 종류.</summary>
-        public Inventory.ResourceType ResourceType => _resourceType;
+        /// <summary>채집 시 수납되는 자원 종류 — 스폰 동기화 후에는 복제 값, 그 외에는 프리팹 기본값.</summary>
+        public Inventory.ResourceType ResourceType => IsSpawned
+            ? (Inventory.ResourceType)_syncedResourceType.Value
+            : _defaultResourceType;
+
+        /// <summary>서버 전용 — 스폰 직전에 자원 종류를 예약한다. OnNetworkSpawn에서 동기화된다.</summary>
+        public void ServerSetResourceType(Inventory.ResourceType type)
+        {
+            _pendingResourceType = type;
+            _hasPendingResourceType = true;
+        }
 
         public bool IsAvailableForGrab => IsSpawned && !_acquired && !_isTowed.Value;
 
@@ -70,9 +92,47 @@ namespace Game.Gameplay.World
                 _hasPendingBinding = false;
             }
 
+            if (IsServer)
+            {
+                _syncedResourceType.Value = (byte)(_hasPendingResourceType ? _pendingResourceType : _defaultResourceType);
+                _hasPendingResourceType = false;
+            }
+
             _acquired = false;
             _predictedTow = false;
+            _syncedResourceType.OnValueChanged += OnResourceTypeChanged;
+            ApplyTint();
             ApplyScrolledPosition();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            _syncedResourceType.OnValueChanged -= OnResourceTypeChanged;
+        }
+
+        private void OnResourceTypeChanged(byte previous, byte current)
+        {
+            ApplyTint();
+        }
+
+        /// <summary>종류 색을 렌더러에 칠한다 — 전 종류 공유 프리팹의 외형 구분 (URP Lit _BaseColor).</summary>
+        private void ApplyTint()
+        {
+            if (_catalog == null || _tintRenderers == null)
+            {
+                return;
+            }
+
+            Color color = _catalog.GetColor(ResourceType, Color.white);
+            _tintBlock ??= new MaterialPropertyBlock();
+            _tintBlock.SetColor("_BaseColor", color);
+            for (int i = 0; i < _tintRenderers.Length; i++)
+            {
+                if (_tintRenderers[i] != null)
+                {
+                    _tintRenderers[i].SetPropertyBlock(_tintBlock);
+                }
+            }
         }
 
         /// <summary>
@@ -196,6 +256,7 @@ namespace Game.Gameplay.World
         public void OnDespawned()
         {
             _hasPendingBinding = false;
+            _hasPendingResourceType = false;
             _acquired = false;
             _predictedTow = false;
         }

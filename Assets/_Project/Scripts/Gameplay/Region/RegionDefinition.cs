@@ -10,6 +10,23 @@ namespace Game.Gameplay.Region
     [CreateAssetMenu(fileName = "RegionDefinition", menuName = "Game/Region Definition")]
     public sealed class RegionDefinition : ScriptableObject
     {
+        /// <summary>
+        /// 지역의 자원 스폰 후보 1종 — 자원 종류와 추첨 가중치.
+        /// 프리팹은 전 종류가 공유한다 (몬스터 변종과 같은 규약 — 네트워크 프리팹 목록을 늘리지 않는다).
+        /// </summary>
+        [System.Serializable]
+        public sealed class ResourceSpawnEntry
+        {
+            [SerializeField] private Inventory.ResourceType _type = Inventory.ResourceType.Wood;
+
+            [Tooltip("스폰 1회당 이 종류가 뽑힐 상대 가중치.")]
+            [SerializeField, Min(0f)] private float _weight = 1f;
+
+            public Inventory.ResourceType Type => _type;
+
+            public float Weight => _weight;
+        }
+
         [Header("표시")]
         [Tooltip("HUD에 표시할 지역 이름 (예: 숲, 사막).")]
         [SerializeField] private string _displayName = "숲";
@@ -41,6 +58,9 @@ namespace Game.Gameplay.Region
         [Header("지형·자원")]
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
+
+        [Tooltip("이 지역의 자원 스폰 후보(종류 + 가중치). 비우면 스포너가 기본 종류로 심는다.")]
+        [SerializeField] private ResourceSpawnEntry[] _resourceSpawns;
 
         [Tooltip("이 지역의 지상 자원 프리팹. 비우면 스포너 기본 프리팹을 쓴다.")]
         [SerializeField] private GameObject _resourcePrefab;
@@ -78,6 +98,19 @@ namespace Game.Gameplay.Region
         public GameObject TerrainTilePrefab => _terrainTilePrefab;
 
         public GameObject ResourcePrefab => _resourcePrefab;
+
+        public int ResourceSpawnCount => _resourceSpawns == null ? 0 : _resourceSpawns.Length;
+
+        /// <summary>인덱스의 자원 스폰 후보. 범위 밖이면 null.</summary>
+        public ResourceSpawnEntry GetResourceSpawn(int index)
+        {
+            if (_resourceSpawns == null || index < 0 || index >= _resourceSpawns.Length)
+            {
+                return null;
+            }
+
+            return _resourceSpawns[index];
+        }
 
         public float ResourceSpawnIntervalMultiplier => _resourceSpawnIntervalMultiplier;
     }
