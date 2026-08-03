@@ -22,10 +22,19 @@ namespace Game.Gameplay.Inventory
 
         public readonly int Count;
 
+        /// <summary>ItemType이 <see cref="HotbarItemType.Resource"/>일 때의 자원 종류. 그 외에는 None.</summary>
+        public readonly ResourceType Resource;
+
         public HotbarSlotView(HotbarItemType itemType, int count)
+            : this(itemType, count, ResourceType.None)
+        {
+        }
+
+        public HotbarSlotView(HotbarItemType itemType, int count, ResourceType resource)
         {
             ItemType = itemType;
             Count = count;
+            Resource = resource;
         }
 
         public bool IsEmpty => ItemType == HotbarItemType.None ||

@@ -7,16 +7,17 @@ namespace Game.Gameplay.Inventory
     public static class HotbarLogic
     {
         /// <summary>
-        /// 자원 1개를 적재한다 — 여유 있는 기존 자원 스택(앞에서부터)을 먼저 채우고, 없으면 첫 빈 칸에 새 스택.
-        /// 전부 차 있으면 실패 (획득 불가·낙하 규칙).
+        /// 자원 1개를 적재한다 — 같은 종류의 여유 있는 스택(앞에서부터)을 먼저 채우고, 없으면 첫 빈 칸에 새 스택.
+        /// 전부 차 있으면 실패 (획득 불가·낙하 규칙). stackSize는 해당 종류의 스택 상한 — 호출자가 카탈로그에서 푼다.
         /// </summary>
-        public static bool TryAddResource(HotbarSlotView[] slots, int stackSize)
+        public static bool TryAddResource(HotbarSlotView[] slots, ResourceType type, int stackSize)
         {
             for (int i = 0; i < slots.Length; i++)
             {
-                if (slots[i].ItemType == HotbarItemType.Resource && slots[i].Count < stackSize)
+                if (slots[i].ItemType == HotbarItemType.Resource &&
+                    slots[i].Resource == type && slots[i].Count < stackSize)
                 {
-                    slots[i] = new HotbarSlotView(HotbarItemType.Resource, slots[i].Count + 1);
+                    slots[i] = new HotbarSlotView(HotbarItemType.Resource, slots[i].Count + 1, type);
                     return true;
                 }
             }
@@ -25,7 +26,7 @@ namespace Game.Gameplay.Inventory
             {
                 if (slots[i].IsEmpty)
                 {
-                    slots[i] = new HotbarSlotView(HotbarItemType.Resource, 1);
+                    slots[i] = new HotbarSlotView(HotbarItemType.Resource, 1, type);
                     return true;
                 }
             }
@@ -34,18 +35,35 @@ namespace Game.Gameplay.Inventory
         }
 
         /// <summary>
-        /// 자원 1개를 차감한다 — 뒤에서부터(부분 스택이 먼저 비도록) 찾는다. 스택이 비면 빈 칸이 된다.
+        /// 지정한 종류의 자원 1개를 차감한다 — 뒤에서부터(부분 스택이 먼저 비도록) 찾는다. 스택이 비면 빈 칸이 된다.
         /// </summary>
-        public static bool TryRemoveResource(HotbarSlotView[] slots)
+        public static bool TryRemoveResource(HotbarSlotView[] slots, ResourceType type)
         {
             for (int i = slots.Length - 1; i >= 0; i--)
             {
-                if (slots[i].ItemType == HotbarItemType.Resource && slots[i].Count > 0)
+                if (slots[i].ItemType == HotbarItemType.Resource &&
+                    slots[i].Resource == type && slots[i].Count > 0)
                 {
-                    int remaining = slots[i].Count - 1;
-                    slots[i] = remaining > 0
-                        ? new HotbarSlotView(HotbarItemType.Resource, remaining)
-                        : new HotbarSlotView(HotbarItemType.None, 0);
+                    RemoveOneAt(slots, i);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 조건을 만족하는 종류의 자원 1개를 차감한다 (건설 비용 = "건자재 아무거나 N개" 지불용).
+        /// 뒤에서부터 찾아 부분 스택이 먼저 빈다.
+        /// </summary>
+        public static bool TryRemoveAnyResource(HotbarSlotView[] slots, System.Func<ResourceType, bool> filter)
+        {
+            for (int i = slots.Length - 1; i >= 0; i--)
+            {
+                if (slots[i].ItemType == HotbarItemType.Resource &&
+                    slots[i].Count > 0 && filter(slots[i].Resource))
+                {
+                    RemoveOneAt(slots, i);
                     return true;
                 }
             }
@@ -56,6 +74,7 @@ namespace Game.Gameplay.Inventory
         /// <summary>
         /// 지정한 칸에서 자원 1개를 차감한다 (엔진 투입 = 든 칸의 자원 소모, 기획서 §3.4).
         /// 그 칸이 자원 스택이 아니거나 범위 밖이면 실패한다 — 어떤 칸이 소모될지 모호하지 않다.
+        /// 어느 종류가 소모되는지는 칸이 정하므로 종류 인자가 없다.
         /// </summary>
         public static bool TryRemoveResourceAt(HotbarSlotView[] slots, int index)
         {
@@ -65,26 +84,66 @@ namespace Game.Gameplay.Inventory
                 return false;
             }
 
-            int remaining = slots[index].Count - 1;
-            slots[index] = remaining > 0
-                ? new HotbarSlotView(HotbarItemType.Resource, remaining)
-                : new HotbarSlotView(HotbarItemType.None, 0);
+            RemoveOneAt(slots, index);
             return true;
         }
 
-        /// <summary>현재 소지한 자원 총량.</summary>
-        public static int CountResource(HotbarSlotView[] slots)
+        /// <summary>지정한 종류의 자원 소지 총량.</summary>
+        public static int CountResource(HotbarSlotView[] slots, ResourceType type)
         {
             int total = 0;
             for (int i = 0; i < slots.Length; i++)
             {
-                if (slots[i].ItemType == HotbarItemType.Resource)
+                if (slots[i].ItemType == HotbarItemType.Resource && slots[i].Resource == type)
                 {
                     total += slots[i].Count;
                 }
             }
 
             return total;
+        }
+
+        /// <summary>조건을 만족하는 종류의 자원 소지 총량 (건자재 잔량 표시·비용 검증용).</summary>
+        public static int CountResource(HotbarSlotView[] slots, System.Func<ResourceType, bool> filter)
+        {
+            int total = 0;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].ItemType == HotbarItemType.Resource && filter(slots[i].Resource))
+                {
+                    total += slots[i].Count;
+                }
+            }
+
+            return total;
+        }
+
+        // ── 무종류 구 API — 종류 도입 과도기용 위임. 소비 경로 종류화(다음 커밋)에서 삭제한다. ──
+
+        /// <summary>구 API — 종류 없는 적재. <see cref="ResourceType.None"/> 스택으로 위임.</summary>
+        public static bool TryAddResource(HotbarSlotView[] slots, int stackSize)
+        {
+            return TryAddResource(slots, ResourceType.None, stackSize);
+        }
+
+        /// <summary>구 API — 종류 무관 차감.</summary>
+        public static bool TryRemoveResource(HotbarSlotView[] slots)
+        {
+            return TryRemoveAnyResource(slots, _ => true);
+        }
+
+        /// <summary>구 API — 종류 무관 총량.</summary>
+        public static int CountResource(HotbarSlotView[] slots)
+        {
+            return CountResource(slots, _ => true);
+        }
+
+        private static void RemoveOneAt(HotbarSlotView[] slots, int index)
+        {
+            int remaining = slots[index].Count - 1;
+            slots[index] = remaining > 0
+                ? new HotbarSlotView(HotbarItemType.Resource, remaining, slots[index].Resource)
+                : new HotbarSlotView(HotbarItemType.None, 0);
         }
 
         /// <summary>현재 배치 기준 자원 소지 상한 — 자원 스택 칸 + 빈 칸이 전부 만탄일 때의 총량.</summary>

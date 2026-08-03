@@ -1,0 +1,30 @@
+namespace Game.Gameplay.Inventory
+{
+    /// <summary>
+    /// 자원의 종류 — 네트워크 식별자 (기획서 §4 지역별 자원, §6.1 탄약 제작).
+    /// 값은 <see cref="Game.Gameplay.Inventory"/>의 NetworkSlot에 byte로 직렬화되므로 한 번 배정한 값은 바꾸지 않는다.
+    /// 표시명·스택 상한·발열량 등 데이터는 <see cref="ResourceCatalog"/>가 담당한다.
+    /// 0~15 = 원자재(채집), 16~ = 제작품 대역.
+    /// </summary>
+    public enum ResourceType : byte
+    {
+        None = 0,
+
+        /// <summary>목재 — 숲. 고발열 연료 겸 건자재.</summary>
+        Wood = 1,
+
+        /// <summary>돌 — 숲. 저발열, 건자재.</summary>
+        Stone = 2,
+
+        /// <summary>고철 — 사막 (모래에 묻힌 난파 열차). 탄약·무기 제작 재료.</summary>
+        Scrap = 3,
+
+        /// <summary>화약 원료 — 사막 (초석·유황 통합). 연료 투입 불가, 탄약 전용.</summary>
+        Niter = 4,
+
+        /// <summary>권총탄 — 제작품 (고철 + 화약 원료).</summary>
+        RevolverAmmo = 16,
+
+        // ShotgunAmmo = 17, RifleAmmo = 18 — 무기 확장 차수(M5 2차)에서 사용할 값 예약.
+    }
+}
