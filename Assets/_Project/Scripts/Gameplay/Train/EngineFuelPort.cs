@@ -18,6 +18,7 @@ namespace Game.Gameplay.Train
     public sealed class EngineFuelPort : NetworkBehaviour
     {
         [SerializeField] private FuelSettings _fuelSettings;
+        [SerializeField] private ResourceCatalog _catalog;
         [SerializeField, Min(0.5f)] private float _interactRadius = 3f;
 
         [Tooltip("투입구를 '쳐다봤다'고 볼 시선 정렬 하한 (카메라 전방·투입구 방향 내적). 1에 가까울수록 정면만 인정.")]
@@ -51,9 +52,11 @@ namespace Game.Gameplay.Train
             }
 
             // 자원 슬롯을 든 상태에서만 투입한다 — 무기 슬롯이면 발사·조작과 겹치지 않고, 어떤 칸이 소모될지 명확하다.
+            // 발열량 0 이하(화약 원료·탄약)는 연료가 아니므로 로컬에서 먼저 거른다 (서버도 재검증).
             HotbarController hotbar = localPlayer.GetComponent<HotbarController>();
             if (hotbar == null || hotbar.IsPanelOpen ||
-                hotbar.SelectedItemType != HotbarItemType.Resource)
+                hotbar.SelectedItemType != HotbarItemType.Resource ||
+                GetFuelValue(hotbar.SelectedResourceType) <= 0f)
             {
                 return;
             }
@@ -135,16 +138,34 @@ namespace Game.Gameplay.Train
             }
 
             // 든 칸의 자원만 소모한다 — 그 칸이 자원이 아니면 ServerTryRemoveAt이 실패한다 (호스트 검증).
+            // 발열량은 차감 전에 종류로 확정한다 — 발열 0 이하(비연료)는 투입 자체를 기각한다.
             IResourceInventory inventory = client.PlayerObject.GetComponent<IResourceInventory>();
-            if (inventory == null || !inventory.ServerTryRemoveAt(slotIndex, 1))
+            if (inventory == null)
+            {
+                return;
+            }
+
+            float fuelValue = GetFuelValue(inventory.GetResourceTypeAt(slotIndex));
+            if (fuelValue <= 0f || !inventory.ServerTryRemoveAt(slotIndex, 1))
             {
                 return;
             }
 
             if (ServiceLocator.TryGet(out IFuelService fuel))
             {
-                fuel.AddFuel(_fuelSettings.FuelPerResource);
+                fuel.AddFuel(fuelValue);
             }
+        }
+
+        /// <summary>종류의 발열량 — 카탈로그 미배선 시 기존 고정값(FuelPerResource)으로 폴백한다.</summary>
+        private float GetFuelValue(ResourceType type)
+        {
+            if (_catalog == null)
+            {
+                return type == ResourceType.None ? 0f : _fuelSettings.FuelPerResource;
+            }
+
+            return _catalog.GetFuelValue(type);
         }
     }
 }

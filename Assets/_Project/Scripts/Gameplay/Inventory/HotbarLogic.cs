@@ -118,26 +118,6 @@ namespace Game.Gameplay.Inventory
             return total;
         }
 
-        // ── 무종류 구 API — 종류 도입 과도기용 위임. 소비 경로 종류화(다음 커밋)에서 삭제한다. ──
-
-        /// <summary>구 API — 종류 없는 적재. <see cref="ResourceType.None"/> 스택으로 위임.</summary>
-        public static bool TryAddResource(HotbarSlotView[] slots, int stackSize)
-        {
-            return TryAddResource(slots, ResourceType.None, stackSize);
-        }
-
-        /// <summary>구 API — 종류 무관 차감.</summary>
-        public static bool TryRemoveResource(HotbarSlotView[] slots)
-        {
-            return TryRemoveAnyResource(slots, _ => true);
-        }
-
-        /// <summary>구 API — 종류 무관 총량.</summary>
-        public static int CountResource(HotbarSlotView[] slots)
-        {
-            return CountResource(slots, _ => true);
-        }
-
         private static void RemoveOneAt(HotbarSlotView[] slots, int index)
         {
             int remaining = slots[index].Count - 1;

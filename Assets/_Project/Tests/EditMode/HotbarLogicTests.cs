@@ -26,8 +26,9 @@ namespace Game.Tests.EditMode
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
 
-            Assert.That(HotbarLogic.TryAddResource(slots, StackSize), Is.True);
+            Assert.That(HotbarLogic.TryAddResource(slots, ResourceType.Wood, StackSize), Is.True);
             Assert.That(slots[2].ItemType, Is.EqualTo(HotbarItemType.Resource));
+            Assert.That(slots[2].Resource, Is.EqualTo(ResourceType.Wood));
             Assert.That(slots[2].Count, Is.EqualTo(1));
         }
 
@@ -35,9 +36,9 @@ namespace Game.Tests.EditMode
         public void 여유_있는_기존_스택을_빈_칸보다_먼저_채운다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
-            slots[3] = new HotbarSlotView(HotbarItemType.Resource, 2);
+            slots[3] = new HotbarSlotView(HotbarItemType.Resource, 2, ResourceType.Wood);
 
-            HotbarLogic.TryAddResource(slots, StackSize);
+            HotbarLogic.TryAddResource(slots, ResourceType.Wood, StackSize);
 
             Assert.That(slots[3].Count, Is.EqualTo(3), "기존 스택 우선");
             Assert.That(slots[2].IsEmpty, Is.True, "빈 칸은 그대로");
@@ -49,20 +50,21 @@ namespace Game.Tests.EditMode
             HotbarSlotView[] slots = CreateDefaultSlots();
             for (int i = 2; i < 5; i++)
             {
-                slots[i] = new HotbarSlotView(HotbarItemType.Resource, StackSize);
+                slots[i] = new HotbarSlotView(HotbarItemType.Resource, StackSize, ResourceType.Wood);
             }
 
-            Assert.That(HotbarLogic.TryAddResource(slots, StackSize), Is.False, "가득 → 획득 불가·낙하 규칙");
+            Assert.That(HotbarLogic.TryAddResource(slots, ResourceType.Wood, StackSize), Is.False,
+                "가득 → 획득 불가·낙하 규칙");
         }
 
         [Test]
         public void 차감은_뒤에서부터_스택을_비우고_빈_칸으로_되돌린다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
-            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 3);
-            slots[4] = new HotbarSlotView(HotbarItemType.Resource, 1);
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 3, ResourceType.Wood);
+            slots[4] = new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Wood);
 
-            Assert.That(HotbarLogic.TryRemoveResource(slots), Is.True);
+            Assert.That(HotbarLogic.TryRemoveResource(slots, ResourceType.Wood), Is.True);
             Assert.That(slots[4].IsEmpty, Is.True, "뒤쪽 스택(1개)이 먼저 비워진다");
             Assert.That(slots[2].Count, Is.EqualTo(3));
         }
@@ -72,7 +74,7 @@ namespace Game.Tests.EditMode
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
 
-            Assert.That(HotbarLogic.TryRemoveResource(slots), Is.False);
+            Assert.That(HotbarLogic.TryRemoveResource(slots, ResourceType.Wood), Is.False);
         }
 
         [Test]
@@ -101,9 +103,9 @@ namespace Game.Tests.EditMode
         public void 총량과_상한은_현재_배치를_따른다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
-            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 4);
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 4, ResourceType.Wood);
 
-            Assert.That(HotbarLogic.CountResource(slots), Is.EqualTo(4));
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.Wood), Is.EqualTo(4));
             Assert.That(HotbarLogic.ResourceCapacity(slots, StackSize), Is.EqualTo(15), "무기 2칸 제외 3칸 × 5");
         }
 

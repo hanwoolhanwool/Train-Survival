@@ -16,20 +16,23 @@ namespace Game.Gameplay.Inventory
         {
             public HotbarItemType ItemType;
             public byte Count;
+            public ResourceType Resource;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref ItemType);
                 serializer.SerializeValue(ref Count);
+                serializer.SerializeValue(ref Resource);
             }
 
             public bool Equals(NetworkSlot other)
             {
-                return ItemType == other.ItemType && Count == other.Count;
+                return ItemType == other.ItemType && Count == other.Count && Resource == other.Resource;
             }
         }
 
         [SerializeField] private InventorySettings _settings;
+        [SerializeField] private ResourceCatalog _catalog;
 
         private readonly NetworkList<NetworkSlot> _slots = new NetworkList<NetworkSlot>();
 
@@ -40,6 +43,7 @@ namespace Game.Gameplay.Inventory
 
         public int StackSize => _settings != null ? _settings.StackSize : 1;
 
+        /// <summary>건자재 소지 총량 — 건설 비용 검증·HUD 표시용. 탄약 등 비건자재는 세지 않는다.</summary>
         public int Count
         {
             get
@@ -47,7 +51,7 @@ namespace Game.Gameplay.Inventory
                 int total = 0;
                 for (int i = 0; i < _slots.Count; i++)
                 {
-                    if (_slots[i].ItemType == HotbarItemType.Resource)
+                    if (_slots[i].ItemType == HotbarItemType.Resource && IsBuildMaterial(_slots[i].Resource))
                     {
                         total += _slots[i].Count;
                     }
@@ -60,6 +64,22 @@ namespace Game.Gameplay.Inventory
         public int Capacity => HotbarLogic.ResourceCapacity(CopySlots(), StackSize);
 
         public bool IsFull => Count >= Capacity;
+
+        public int CountOf(ResourceType type)
+        {
+            return HotbarLogic.CountResource(CopySlots(), type);
+        }
+
+        public ResourceType GetResourceTypeAt(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= _slots.Count ||
+                _slots[slotIndex].ItemType != HotbarItemType.Resource)
+            {
+                return ResourceType.None;
+            }
+
+            return _slots[slotIndex].Resource;
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -77,22 +97,23 @@ namespace Game.Gameplay.Inventory
             }
 
             NetworkSlot slot = _slots[index];
-            return new HotbarSlotView(slot.ItemType, slot.Count);
+            return new HotbarSlotView(slot.ItemType, slot.Count, slot.Resource);
         }
 
         // ── 호스트 권위: 증감·슬롯 이동 확정 ───────────────────────────────
 
-        public bool ServerTryAdd(int amount)
+        public bool ServerTryAdd(ResourceType type, int amount)
         {
-            if (!IsServer || amount <= 0 || _settings == null)
+            if (!IsServer || amount <= 0 || type == ResourceType.None || _settings == null)
             {
                 return false;
             }
 
+            int stackSize = _catalog != null ? _catalog.GetMaxStack(type, StackSize) : StackSize;
             HotbarSlotView[] slots = CopySlots();
             for (int i = 0; i < amount; i++)
             {
-                if (!HotbarLogic.TryAddResource(slots, StackSize))
+                if (!HotbarLogic.TryAddResource(slots, type, stackSize))
                 {
                     return false;
                 }
@@ -102,7 +123,7 @@ namespace Game.Gameplay.Inventory
             return true;
         }
 
-        public bool ServerTryRemove(int amount)
+        public bool ServerTryRemove(ResourceType type, int amount)
         {
             if (!IsServer || amount <= 0)
             {
@@ -112,10 +133,36 @@ namespace Game.Gameplay.Inventory
             HotbarSlotView[] slots = CopySlots();
             for (int i = 0; i < amount; i++)
             {
-                if (!HotbarLogic.TryRemoveResource(slots))
+                if (!HotbarLogic.TryRemoveResource(slots, type))
                 {
                     return false;
                 }
+            }
+
+            ApplySlots(slots);
+            return true;
+        }
+
+        public bool ServerTrySpend(int amount, System.Func<bool> confirm)
+        {
+            if (!IsServer || amount < 0 || confirm == null)
+            {
+                return false;
+            }
+
+            // 복사본에서 건자재를 차감해 보고, 소비처(confirm)까지 성공했을 때만 반영한다 — 수동 롤백 불요.
+            HotbarSlotView[] slots = CopySlots();
+            for (int i = 0; i < amount; i++)
+            {
+                if (!HotbarLogic.TryRemoveAnyResource(slots, IsBuildMaterial))
+                {
+                    return false;
+                }
+            }
+
+            if (!confirm())
+            {
+                return false;
             }
 
             ApplySlots(slots);
@@ -190,12 +237,17 @@ namespace Game.Gameplay.Inventory
             }
         }
 
+        private bool IsBuildMaterial(ResourceType type)
+        {
+            return _catalog != null && _catalog.IsBuildMaterial(type);
+        }
+
         private HotbarSlotView[] CopySlots()
         {
             var copy = new HotbarSlotView[_slots.Count];
             for (int i = 0; i < _slots.Count; i++)
             {
-                copy[i] = new HotbarSlotView(_slots[i].ItemType, _slots[i].Count);
+                copy[i] = new HotbarSlotView(_slots[i].ItemType, _slots[i].Count, _slots[i].Resource);
             }
 
             return copy;
@@ -205,7 +257,12 @@ namespace Game.Gameplay.Inventory
         {
             for (int i = 0; i < slots.Length && i < _slots.Count; i++)
             {
-                var next = new NetworkSlot { ItemType = slots[i].ItemType, Count = (byte)slots[i].Count };
+                var next = new NetworkSlot
+                {
+                    ItemType = slots[i].ItemType,
+                    Count = (byte)slots[i].Count,
+                    Resource = slots[i].Resource,
+                };
                 if (!_slots[i].Equals(next))
                 {
                     _slots[i] = next;

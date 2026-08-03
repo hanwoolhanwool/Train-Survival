@@ -1878,6 +1878,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.EngineFuelPort
   ShowTopMostFoldoutHeaderGroup: 1
   _fuelSettings: {fileID: 11400000, guid: 43fe61d2e463e114b868eb187f9025cc, type: 2}
+  _catalog: {fileID: 11400000, guid: 9747de51e37a616479a984ac3e8d4116, type: 2}
   _interactRadius: 3
   _lookDotThreshold: 0.8
 --- !u!1001 &1147455315
@@ -2280,6 +2281,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 809bca0b2ab797b409fe029f3b0507fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Game.UI.InventoryHud
+  _catalog: {fileID: 11400000, guid: 9747de51e37a616479a984ac3e8d4116, type: 2}
 --- !u!114 &1367659756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2924,8 +2926,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18d49403f12400b4184447365f1a76c5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.WeatherController
+  ShowTopMostFoldoutHeaderGroup: 1
   _regionSettings: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
 --- !u!114 &1704432521
 MonoBehaviour:
@@ -2937,7 +2940,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63f04369e17dbd54dbc822b05bb5f7cb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.WeatherVisualController
 --- !u!1 &1775290601
 GameObject:

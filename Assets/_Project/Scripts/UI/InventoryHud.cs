@@ -19,6 +19,8 @@ namespace Game.UI
         private const float SlotSize = 52f;
         private const float SlotGap = 6f;
 
+        [SerializeField] private ResourceCatalog _catalog;
+
         private float _health;
         private float _maxHealth;
         private float _temperature;
@@ -134,7 +136,7 @@ namespace Game.UI
             }
         }
 
-        private static string GetSlotLabel(HotbarSlotView slot, int stackSize)
+        private string GetSlotLabel(HotbarSlotView slot, int stackSize)
         {
             switch (slot.ItemType)
             {
@@ -143,7 +145,9 @@ namespace Game.UI
                 case HotbarItemType.Revolver:
                     return "리볼버";
                 case HotbarItemType.Resource:
-                    return $"자원\n{slot.Count}/{stackSize}";
+                    string name = _catalog != null ? _catalog.GetDisplayName(slot.Resource) : "자원";
+                    int maxStack = _catalog != null ? _catalog.GetMaxStack(slot.Resource, stackSize) : stackSize;
+                    return $"{name}\n{slot.Count}/{maxStack}";
                 case HotbarItemType.Hammer:
                     return "망치";
                 default:

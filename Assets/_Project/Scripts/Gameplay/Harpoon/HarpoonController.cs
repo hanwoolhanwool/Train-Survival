@@ -339,8 +339,10 @@ namespace Game.Gameplay.Harpoon
             if ((next - anchor).sqrMagnitude <= _settings.ArriveRadius * _settings.ArriveRadius)
             {
                 // 획득 확정 — 개인 인벤토리 수납 (기획서 §3.4). 가득 차면 획득 대신 그 자리 낙하.
+                // 종류는 노드(프리팹)가 정한다. Reel 대상이 자원 노드가 아니면 획득 없이 해제한다.
+                var node = _serverTowTarget as ResourceNode;
                 IResourceInventory inventory = GetComponent<IResourceInventory>();
-                if (inventory == null || !inventory.ServerTryAdd(1))
+                if (node == null || inventory == null || !inventory.ServerTryAdd(node.ResourceType, 1))
                 {
                     ServerReleaseTow();
                     ForceReleaseOwnerRpc();

@@ -520,16 +520,10 @@ namespace Game.Gameplay.Train
                 return;
             }
 
+            // 건자재 차감과 건설을 원자적으로 확정한다 — 건설 실패 시 차감도 반영되지 않는다.
             IResourceInventory inventory = GetComponent<IResourceInventory>();
-            if (inventory == null || !inventory.ServerTryRemove(expansion.StructureBuildCost))
-            {
-                return;
-            }
-
-            if (!expansion.ServerTryBuildStructure(carIndex))
-            {
-                inventory.ServerTryAdd(expansion.StructureBuildCost);
-            }
+            inventory?.ServerTrySpend(expansion.StructureBuildCost,
+                () => expansion.ServerTryBuildStructure(carIndex));
         }
 
         /// <summary>
@@ -549,15 +543,7 @@ namespace Game.Gameplay.Train
             }
 
             IResourceInventory inventory = GetComponent<IResourceInventory>();
-            if (inventory == null || !inventory.ServerTryRemove(expansion.CarBuildCost))
-            {
-                return;
-            }
-
-            if (!expansion.ServerTryBuildCar())
-            {
-                inventory.ServerTryAdd(expansion.CarBuildCost);
-            }
+            inventory?.ServerTrySpend(expansion.CarBuildCost, () => expansion.ServerTryBuildCar());
         }
 
         /// <summary>
@@ -576,15 +562,7 @@ namespace Game.Gameplay.Train
             }
 
             IResourceInventory inventory = GetComponent<IResourceInventory>();
-            if (inventory == null || !inventory.ServerTryRemove(recouple.RecoupleCost))
-            {
-                return;
-            }
-
-            if (!recouple.ServerTryRecouple(target))
-            {
-                inventory.ServerTryAdd(recouple.RecoupleCost);
-            }
+            inventory?.ServerTrySpend(recouple.RecoupleCost, () => recouple.ServerTryRecouple(target));
         }
 
         /// <summary>거리 검증 — 요청자(이 오브젝트는 소유자의 플레이어) 위치 기준 사거리 초과 보고는 기각한다.</summary>

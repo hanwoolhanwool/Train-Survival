@@ -19,6 +19,9 @@ namespace Game.Gameplay.World
 
         [SerializeField, Min(1f)] private float _towInterpolationRate = 20f;
 
+        [Tooltip("이 노드가 주는 자원 종류 — 프리팹 정체성이 곧 종류이므로 별도 동기화 없음 (종류별 프리팹).")]
+        [SerializeField] private Inventory.ResourceType _resourceType = Inventory.ResourceType.Wood;
+
         private readonly NetworkVariable<Vector3> _spawnPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<float> _spawnDistance = new NetworkVariable<float>();
         private readonly NetworkVariable<bool> _isTowed = new NetworkVariable<bool>();
@@ -34,6 +37,9 @@ namespace Game.Gameplay.World
         private bool _predictedTow;
 
         public GrabKind Kind => GrabKind.Reel;
+
+        /// <summary>채집 시 수납되는 자원 종류.</summary>
+        public Inventory.ResourceType ResourceType => _resourceType;
 
         public bool IsAvailableForGrab => IsSpawned && !_acquired && !_isTowed.Value;
 

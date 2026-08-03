@@ -115,7 +115,14 @@ namespace Game.Gameplay.Train
             }
 
             IResourceInventory inventory = client.PlayerObject.GetComponent<IResourceInventory>();
-            inventory?.ServerTryAdd(10);
+            if (inventory != null)
+            {
+                // 검증 편의 — 건자재 2종 + 제작 재료 2종을 함께 지급해 건설·제작 경로를 모두 시험할 수 있게 한다.
+                inventory.ServerTryAdd(ResourceType.Wood, 4);
+                inventory.ServerTryAdd(ResourceType.Stone, 2);
+                inventory.ServerTryAdd(ResourceType.Scrap, 2);
+                inventory.ServerTryAdd(ResourceType.Niter, 2);
+            }
         }
 
         /// <summary>수리 대상을 만들기 위해 표적 연결부·최후미 칸·살아 있는 건축물에 샘플 데미지를 넣는다.</summary>

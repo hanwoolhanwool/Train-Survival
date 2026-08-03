@@ -40,6 +40,11 @@ namespace Game.Gameplay.Inventory
             ? _inventory.GetSlot(_selectedIndex).ItemType
             : HotbarItemType.None;
 
+        /// <summary>현재 든 슬롯의 자원 종류 — 엔진 투입 가능(발열량) 판정에 쓰인다. 자원 칸이 아니면 None.</summary>
+        public ResourceType SelectedResourceType => _inventory != null
+            ? _inventory.GetSlot(_selectedIndex).Resource
+            : ResourceType.None;
+
         /// <summary>UI(I 창·세션 메뉴)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
         public bool IsPanelOpen => _panelOpen || _sessionMenuOpen;
 

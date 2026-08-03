@@ -210,21 +210,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: 7bdc58d4205f619428eb217f5ecb7af9, type: 2}
   _trainLayout: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
---- !u!114 &4471223956018827741
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604351592624257845}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2eb0cc2020c9be047a6e6c9e44f71be1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerTemperature
-  ShowTopMostFoldoutHeaderGroup: 1
-  _settings: {fileID: 11400000, guid: 385df4eaf3bf3ad4f9f8d9a6a91a8ae6, type: 2}
-  _trainLayout: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
 --- !u!114 &5117626470427924656
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,6 +224,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.PlayerInventory
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: 40ce8f47ffc032f4395cf30dca7d5108, type: 2}
+  _catalog: {fileID: 11400000, guid: 9747de51e37a616479a984ac3e8d4116, type: 2}
 --- !u!114 &1201866139057853754
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -273,6 +259,21 @@ MonoBehaviour:
   _layoutSettings: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
   _buildLookDotThreshold: 0.85
   _buildAnchorHeight: 2.5
+--- !u!114 &4471223956018827741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2eb0cc2020c9be047a6e6c9e44f71be1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerTemperature
+  ShowTopMostFoldoutHeaderGroup: 1
+  _settings: {fileID: 11400000, guid: 385df4eaf3bf3ad4f9f8d9a6a91a8ae6, type: 2}
+  _trainLayout: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
 --- !u!1 &2635673702125266619
 GameObject:
   m_ObjectHideFlags: 0

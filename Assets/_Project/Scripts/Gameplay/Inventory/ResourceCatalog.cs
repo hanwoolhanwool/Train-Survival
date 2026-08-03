@@ -1,0 +1,116 @@
+using UnityEngine;
+
+namespace Game.Gameplay.Inventory
+{
+    /// <summary>
+    /// 자원 종류별 데이터 카탈로그 (기획서 §4 지역별 자원) — 표시명·스택 상한·엔진 발열량·건자재 여부.
+    /// <see cref="ResourceType"/>은 네트워크 식별자만 담당하고, 밸런스·표시는 전부 이 에셋이 담당한다
+    /// (수치 하드코딩 금지 — 개발 가이드 §3). 미등재 종류는 폴백 값으로 동작한다.
+    /// </summary>
+    [CreateAssetMenu(fileName = "ResourceCatalog", menuName = "Game/Resource Catalog")]
+    public sealed class ResourceCatalog : ScriptableObject
+    {
+        [System.Serializable]
+        public sealed class Entry
+        {
+            [SerializeField] private ResourceType _type;
+            [SerializeField] private string _displayName;
+
+            [Tooltip("이 종류의 슬롯당 스택 상한. 0 이하면 InventorySettings의 기본 스택을 쓴다.")]
+            [SerializeField, Min(0)] private int _maxStack;
+
+            [Tooltip("엔진 투입 1개당 연료 충전량. 0 이하면 투입 불가 (화약 원료·탄약).")]
+            [SerializeField, Min(0f)] private float _fuelValue;
+
+            [Tooltip("건설·수리 비용(\"건자재 아무거나 N개\")으로 소모될 수 있는지.")]
+            [SerializeField] private bool _isBuildMaterial;
+
+            public ResourceType Type => _type;
+
+            public string DisplayName => _displayName;
+
+            public int MaxStack => _maxStack;
+
+            public float FuelValue => _fuelValue;
+
+            public bool IsBuildMaterial => _isBuildMaterial;
+        }
+
+        [SerializeField] private Entry[] _entries;
+
+        private Entry[] _lookup;
+
+        /// <summary>종류의 표시명. 미등재면 종류 이름 그대로.</summary>
+        public string GetDisplayName(ResourceType type)
+        {
+            Entry entry = Find(type);
+            return entry == null || string.IsNullOrEmpty(entry.DisplayName) ? type.ToString() : entry.DisplayName;
+        }
+
+        /// <summary>종류의 슬롯당 스택 상한. 미등재이거나 0 이하면 fallback.</summary>
+        public int GetMaxStack(ResourceType type, int fallback)
+        {
+            Entry entry = Find(type);
+            return entry == null || entry.MaxStack <= 0 ? fallback : entry.MaxStack;
+        }
+
+        /// <summary>종류의 엔진 발열량. 0 이하 = 투입 불가.</summary>
+        public float GetFuelValue(ResourceType type)
+        {
+            Entry entry = Find(type);
+            return entry == null ? 0f : entry.FuelValue;
+        }
+
+        /// <summary>건설 비용으로 소모될 수 있는 종류인지.</summary>
+        public bool IsBuildMaterial(ResourceType type)
+        {
+            Entry entry = Find(type);
+            return entry != null && entry.IsBuildMaterial;
+        }
+
+        private Entry Find(ResourceType type)
+        {
+            EnsureLookup();
+
+            int index = (int)type;
+            return index < 0 || index >= _lookup.Length ? null : _lookup[index];
+        }
+
+        private void EnsureLookup()
+        {
+            if (_lookup != null)
+            {
+                return;
+            }
+
+            int maxValue = 0;
+            if (_entries != null)
+            {
+                for (int i = 0; i < _entries.Length; i++)
+                {
+                    if (_entries[i] != null && (int)_entries[i].Type > maxValue)
+                    {
+                        maxValue = (int)_entries[i].Type;
+                    }
+                }
+            }
+
+            _lookup = new Entry[maxValue + 1];
+            if (_entries != null)
+            {
+                for (int i = 0; i < _entries.Length; i++)
+                {
+                    if (_entries[i] != null)
+                    {
+                        _lookup[(int)_entries[i].Type] = _entries[i];
+                    }
+                }
+            }
+        }
+
+        private void OnValidate()
+        {
+            _lookup = null;
+        }
+    }
+}
