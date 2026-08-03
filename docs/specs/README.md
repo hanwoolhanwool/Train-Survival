@@ -17,6 +17,8 @@
 | `combat/` (M2) | [revolver-fire.md](combat/revolver-fire.md) | 리볼버 사격 — 로컬 판정 → 호스트 거리 재검증·데미지 확정 |
 | `inventory/` (M2) | [hotbar.md](inventory/hotbar.md) | 통합 핫바 5칸 + 가방 15칸, `NetworkList` 호스트 권위 개인 인벤토리 |
 | `world/` (M2) | [fuel-loop.md](world/fuel-loop.md) | 엔진 투입→충전→소모→감속 연료 루프, 속도 제어면 분리 |
+| `region/` (M4) | [region-timeline.md](region/region-timeline.md) | Day 번호 → 지역·일차·마지막 밤·예고 순수 파생, 복제 0의 지역 전환 |
+| `region/` (M4) | [weather-events.md](region/weather-events.md) | 호스트 권위 무작위 날씨(모래폭풍), 환경 배율 감속 + 로컬 안개 |
 
 ## 대표 명세 추천 순서 (심사자용)
 
