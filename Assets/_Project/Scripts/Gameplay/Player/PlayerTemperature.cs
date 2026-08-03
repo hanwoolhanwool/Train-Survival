@@ -126,7 +126,8 @@ namespace Game.Gameplay.Player
                 return false;
             }
 
-            if (!_trainLayout.TryGetCarIndexAtZ(position.z, train.CarCount, out int carIndex))
+            int carIndex = ResolveCarIndexAt(position.z, train);
+            if (carIndex < 0)
             {
                 return false;
             }
@@ -134,6 +135,36 @@ namespace Game.Gameplay.Player
             // 부서진 건축물은 지붕 역할을 못 한다 — Present만으로는 파괴된 자리도 통과하므로 체력까지 본다.
             return train.TryGetStructure(carIndex, out StructureState structure)
                 && structure.Present && structure.Health > 0f;
+        }
+
+        /// <summary>
+        /// Z 위에 있는 칸 — 이탈 칸은 슬롯에서 뒤로 밀려나 있어 슬롯 기준 역산이 성립하지 않는다.
+        /// 칸 수가 적으므로(기본 3) 실제 중심이 가장 가까운 칸을 순회로 고른다. 없으면 -1.
+        /// </summary>
+        private int ResolveCarIndexAt(float z, ITrainState train)
+        {
+            int best = -1;
+            float bestDistance = float.PositiveInfinity;
+
+            for (int i = 0; i < train.CarCount; i++)
+            {
+                float offset = train.GetEjectOffset(i);
+                if (!_trainLayout.IsZOnCar(z, i, offset))
+                {
+                    continue;
+                }
+
+                // 앞 칸이 pitch 가까이 밀리면 뒤 칸 슬롯과 겹칠 수 있다 — 첫 매치는 편성 순서에
+                // 좌우되므로 최근접으로 고른다 (연쇄 이탈 규칙상 실제로는 겹치지 않지만 규칙 의존을 없앤다).
+                float distance = Mathf.Abs(z - _trainLayout.CarCenterZ(i, offset));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = i;
+                }
+            }
+
+            return best;
         }
 
         /// <summary>

@@ -44,13 +44,16 @@ namespace Game.Gameplay.Train
             return TrainLayoutMath.GetCarCenterZ(index, FrontZ, _carLength, _couplingGap);
         }
 
-        /// <summary>
-        /// Z 좌표 위에 있는 칸의 편성 인덱스를 역산한다 (연결부 간격 위·범위 밖이면 false).
-        /// 편성 칸 수는 런타임에 증설되므로 <see cref="ITrainState.CarCount"/>를 넘겨받는다.
-        /// </summary>
-        public bool TryGetCarIndexAtZ(float z, int carCount, out int index)
+        /// <summary>이탈 오프셋만큼 뒤로 밀린 칸의 실제 중심 Z — 오프셋 0이면 슬롯 중심과 같다.</summary>
+        public float CarCenterZ(int index, float ejectOffset)
         {
-            return TrainLayoutMath.TryGetCarIndexAtZ(z, FrontZ, _carLength, _couplingGap, carCount, out index);
+            return TrainLayoutMath.GetCarCenterZ(index, FrontZ, _carLength, _couplingGap, ejectOffset);
+        }
+
+        /// <summary>Z가 해당 칸의 갑판 범위 안인가 — 이탈 오프셋을 반영한다.</summary>
+        public bool IsZOnCar(float z, int index, float ejectOffset)
+        {
+            return TrainLayoutMath.IsZOnCar(z, index, FrontZ, _carLength, _couplingGap, ejectOffset);
         }
 
         public float RearZ => -TotalLength * 0.5f;
