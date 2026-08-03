@@ -26,6 +26,7 @@ namespace Game.Gameplay.Inventory
         private int _selectedIndex;
         private bool _panelOpen;
         private bool _sessionMenuOpen;
+        private bool _craftingOpen;
 
         public int SlotCount => _inventory != null ? _inventory.SlotCount : 0;
 
@@ -45,8 +46,8 @@ namespace Game.Gameplay.Inventory
             ? _inventory.GetSlot(_selectedIndex).Resource
             : ResourceType.None;
 
-        /// <summary>UI(I 창·세션 메뉴)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
-        public bool IsPanelOpen => _panelOpen || _sessionMenuOpen;
+        /// <summary>UI(I 창·세션 메뉴·제작 창)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
+        public bool IsPanelOpen => _panelOpen || _sessionMenuOpen || _craftingOpen;
 
         private void Awake()
         {
@@ -62,6 +63,7 @@ namespace Game.Gameplay.Inventory
 
             EventBus<InventoryPanelToggledLocalEvent>.Subscribe(OnPanelToggled);
             EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
+            EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
 
             if (!ServiceLocator.IsRegistered<ILocalHotbar>())
             {
@@ -80,6 +82,7 @@ namespace Game.Gameplay.Inventory
 
             EventBus<InventoryPanelToggledLocalEvent>.Unsubscribe(OnPanelToggled);
             EventBus<SessionMenuToggledLocalEvent>.Unsubscribe(OnSessionMenuToggled);
+            EventBus<Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
 
             if (ServiceLocator.TryGet(out ILocalHotbar hotbar) && ReferenceEquals(hotbar, this))
             {
@@ -181,6 +184,11 @@ namespace Game.Gameplay.Inventory
         private void OnSessionMenuToggled(SessionMenuToggledLocalEvent evt)
         {
             _sessionMenuOpen = evt.IsOpen;
+        }
+
+        private void OnCraftingPanelToggled(Crafting.CraftingPanelToggledLocalEvent evt)
+        {
+            _craftingOpen = evt.IsOpen;
         }
     }
 }

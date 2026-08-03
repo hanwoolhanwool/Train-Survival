@@ -47,6 +47,7 @@ namespace Game.Gameplay.Player
         private bool _needsInitialPlacement;
         private bool _inventoryPanelOpen;
         private bool _sessionMenuOpen;
+        private bool _craftingPanelOpen;
         private bool _standingOnWorldFrame;
         private CarView _ridingCar;
         private Vector3 _ridingCarLastPos;
@@ -83,6 +84,7 @@ namespace Game.Gameplay.Player
                 Cursor.visible = false;
                 EventBus<InventoryPanelToggledLocalEvent>.Subscribe(OnInventoryPanelToggled);
                 EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
+                EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
             }
         }
 
@@ -92,6 +94,7 @@ namespace Game.Gameplay.Player
             {
                 EventBus<InventoryPanelToggledLocalEvent>.Unsubscribe(OnInventoryPanelToggled);
                 EventBus<SessionMenuToggledLocalEvent>.Unsubscribe(OnSessionMenuToggled);
+                EventBus<Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
@@ -111,9 +114,16 @@ namespace Game.Gameplay.Player
             ApplyCursorState();
         }
 
+        /// <summary>제작 창 토글 — I 창과 동일 규약 (시점 정지 + 커서 표시).</summary>
+        private void OnCraftingPanelToggled(Crafting.CraftingPanelToggledLocalEvent evt)
+        {
+            _craftingPanelOpen = evt.IsOpen;
+            ApplyCursorState();
+        }
+
         private void ApplyCursorState()
         {
-            bool uiOpen = _inventoryPanelOpen || _sessionMenuOpen;
+            bool uiOpen = _inventoryPanelOpen || _sessionMenuOpen || _craftingPanelOpen;
             Cursor.lockState = uiOpen ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = uiOpen;
         }
@@ -156,7 +166,7 @@ namespace Game.Gameplay.Player
                 return;
             }
 
-            if (!_inventoryPanelOpen && !_sessionMenuOpen)
+            if (!_inventoryPanelOpen && !_sessionMenuOpen && !_craftingPanelOpen)
             {
                 UpdateLook();
             }

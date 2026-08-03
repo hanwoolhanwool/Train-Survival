@@ -189,6 +189,29 @@ namespace Game.Gameplay.Inventory
             return true;
         }
 
+        /// <summary>
+        /// 제작 확정 — 레시피의 재료 차감 + 산출 지급을 복사본 위에서 수행하고 성공 시에만 반영한다 (원자).
+        /// 서버 전용 — 요청 검증(거리·레시피 유효성)은 호출부(CraftingStation)가 마친 상태다.
+        /// </summary>
+        public bool ServerTryCraft(Crafting.CraftingRecipe recipe)
+        {
+            if (!IsServer || recipe == null || _settings == null)
+            {
+                return false;
+            }
+
+            int outputStack = _catalog != null ? _catalog.GetMaxStack(recipe.Output, StackSize) : StackSize;
+            HotbarSlotView[] slots = CopySlots();
+            if (!Crafting.CraftingLogic.TryCraft(slots, recipe.ToIngredientViews(),
+                recipe.Output, recipe.OutputCount, outputStack))
+            {
+                return false;
+            }
+
+            ApplySlots(slots);
+            return true;
+        }
+
         /// <summary>슬롯 교환 요청 (자유 배치, I 창 드래그) — 소유자에서 호출한다.</summary>
         public void RequestSwap(int a, int b)
         {
