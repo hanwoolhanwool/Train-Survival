@@ -14,6 +14,9 @@ namespace Game.Gameplay.Inventory
         [SerializeField, Min(0)] private int _bagSize = 15;
         [SerializeField, Min(1)] private int _stackSize = 5;
 
+        [Tooltip("시작 시 지급하는 권총탄 수 (M5 — 시작 직후 전투 가능 보장). 0이면 지급 없음.")]
+        [SerializeField, Min(0)] private int _initialRevolverAmmo = 8;
+
         /// <summary>화면 하단 핫바 칸 수 — 숫자 키 1~5로 드는 칸.</summary>
         public int HotbarSize => _hotbarSize;
 
@@ -27,5 +30,8 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>총 소지 상한 = 전체 칸 수 × 스택.</summary>
         public int Capacity => SlotCount * _stackSize;
+
+        /// <summary>시작 지급 권총탄 수.</summary>
+        public int InitialRevolverAmmo => _initialRevolverAmmo;
     }
 }

@@ -1,10 +1,11 @@
+using Game.Gameplay.Inventory;
 using UnityEngine;
 
 namespace Game.Gameplay.Combat
 {
     /// <summary>
     /// 리볼버 밸런스 데이터 (기획서 §6.2 — 기본 지급 개인 화기).
-    /// M2에서는 탄약 제작(M5) 이전이므로 예비 탄약은 무한, 실린더 재장전만 압박 요소로 둔다.
+    /// 예비 탄약은 인벤토리의 탄약 스택(M5 제작품) — 재장전이 호스트 확정으로 차감한다.
     /// </summary>
     [CreateAssetMenu(fileName = "RevolverSettings", menuName = "Game/Revolver Settings")]
     public sealed class RevolverSettings : ScriptableObject
@@ -19,6 +20,10 @@ namespace Game.Gameplay.Combat
         [SerializeField, Min(0.05f)] private float _fireInterval = 0.4f;
         [SerializeField, Min(0.1f)] private float _reloadDuration = 2.2f;
 
+        [Header("탄약 (기획서 §6.2 — 탄약 3종 이내)")]
+        [Tooltip("재장전이 소모하는 예비 탄약 종류 — 무기 확장 차수의 샷건·라이플도 이 필드로 같은 파이프라인을 탄다.")]
+        [SerializeField] private ResourceType _ammoType = ResourceType.RevolverAmmo;
+
         public float Damage => _damage;
 
         public float MaxRange => _maxRange;
@@ -31,5 +36,7 @@ namespace Game.Gameplay.Combat
         public float FireInterval => _fireInterval;
 
         public float ReloadDuration => _reloadDuration;
+
+        public ResourceType AmmoType => _ammoType;
     }
 }

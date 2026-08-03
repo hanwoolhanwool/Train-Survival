@@ -1,4 +1,5 @@
 using Game.Core.Events;
+using Game.Gameplay.Inventory;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,6 +11,8 @@ namespace Game.Gameplay.Combat
     /// 소유자 로컬 레이캐스트 판정(지연 0) → 호스트 보고 → 호스트가 데미지·사망 확정 → 권위 이벤트.
     /// 발사음·트레이서는 입력 즉시 로컬 재생, 다른 클라이언트에는 연출 전용 브로드캐스트.
     /// 실린더 상태는 <see cref="RevolverCylinder"/>가 담당한다.
+    /// 재장전(M5)은 인벤토리 예비 탄약을 소모한다 — 로컬 선반영 시작 후 호스트가 차감을 확정한다
+    /// (재장전 시간 &gt; RTT라 확정 대기가 체감되지 않는다).
     /// </summary>
     public sealed class RevolverController : NetworkBehaviour
     {
@@ -21,9 +24,11 @@ namespace Game.Gameplay.Combat
         [SerializeField] private LineRenderer _tracer;
 
         private RevolverCylinder _cylinder;
+        private IResourceInventory _inventory;
         private float _tracerHideTime;
         private int _lastPublishedRounds = -1;
         private bool _lastPublishedReloading;
+        private int _lastPublishedReserve = -1;
 
         /// <summary>무기 슬롯 활성 여부 — <see cref="PlayerWeaponLoadout"/>이 제어한다. 소유자 입력 게이트.</summary>
         public bool InputEnabled { get; set; }
@@ -36,7 +41,9 @@ namespace Game.Gameplay.Combat
                     _settings.CylinderCapacity, _settings.FireInterval, _settings.ReloadDuration);
             }
 
+            _inventory = GetComponent<IResourceInventory>();
             _lastPublishedRounds = -1;
+            _lastPublishedReserve = -1;
         }
 
         private void Update()
@@ -83,14 +90,32 @@ namespace Game.Gameplay.Combat
                 else if (_cylinder.RoundsLoaded <= 0)
                 {
                     // 빈 실린더 격발 → 자동 재장전 (기본 화기의 조작 단순화).
-                    _cylinder.TryStartReload();
+                    TryReload();
                 }
             }
 
             if (keyboard.rKey.wasPressedThisFrame)
             {
-                _cylinder.TryStartReload();
+                TryReload();
             }
+        }
+
+        /// <summary>
+        /// 재장전 — 예비 탄약(복제된 인벤토리 값)을 로컬에서 읽어 즉시 선반영으로 시작하고,
+        /// 호스트에 차감을 요청한다. 확정 발수는 <see cref="ConfirmReloadOwnerRpc"/>로 돌아온다.
+        /// </summary>
+        private void TryReload()
+        {
+            int reserve = GetReserveRounds();
+            if (_cylinder.TryStartReload(reserve))
+            {
+                RequestReloadServerRpc(_cylinder.PendingLoad);
+            }
+        }
+
+        private int GetReserveRounds()
+        {
+            return _inventory != null && _settings != null ? _inventory.CountOf(_settings.AmmoType) : 0;
         }
 
         private void Fire()
@@ -153,15 +178,49 @@ namespace Game.Gameplay.Combat
 
         private void PublishAmmoIfChanged()
         {
-            if (_cylinder.RoundsLoaded == _lastPublishedRounds && _cylinder.IsReloading == _lastPublishedReloading)
+            int reserve = GetReserveRounds();
+            if (_cylinder.RoundsLoaded == _lastPublishedRounds &&
+                _cylinder.IsReloading == _lastPublishedReloading &&
+                reserve == _lastPublishedReserve)
             {
                 return;
             }
 
             _lastPublishedRounds = _cylinder.RoundsLoaded;
             _lastPublishedReloading = _cylinder.IsReloading;
+            _lastPublishedReserve = reserve;
             EventBus<RevolverAmmoChangedLocalEvent>.Publish(new RevolverAmmoChangedLocalEvent(
-                _cylinder.RoundsLoaded, _cylinder.Capacity, _cylinder.IsReloading));
+                _cylinder.RoundsLoaded, _cylinder.Capacity, _cylinder.IsReloading, reserve));
+        }
+
+        // ── 호스트: 재장전 차감 확정 ───────────────────────────────────────
+
+        [Rpc(SendTo.Server)]
+        private void RequestReloadServerRpc(int requestedRounds, RpcParams rpcParams = default)
+        {
+            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            if (_settings == null || inventory == null || requestedRounds <= 0)
+            {
+                ConfirmReloadOwnerRpc(0);
+                return;
+            }
+
+            // 실보유 기준으로 요청을 깎아 차감한다 — 소유자 선반영과 서버 상태가 어긋나도 초과 지급이 없다.
+            int granted = Mathf.Min(Mathf.Min(requestedRounds, _settings.CylinderCapacity),
+                inventory.CountOf(_settings.AmmoType));
+            if (granted <= 0 || !inventory.ServerTryRemove(_settings.AmmoType, granted))
+            {
+                ConfirmReloadOwnerRpc(0);
+                return;
+            }
+
+            ConfirmReloadOwnerRpc(granted);
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void ConfirmReloadOwnerRpc(int grantedRounds)
+        {
+            _cylinder?.ConfirmPendingLoad(grantedRounds);
         }
 
         // ── 호스트: 권위 계층 (명중 검증·데미지 확정) ──────────────────────

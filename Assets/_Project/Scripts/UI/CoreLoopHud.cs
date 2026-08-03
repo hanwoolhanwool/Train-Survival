@@ -32,6 +32,7 @@ namespace Game.UI
         private int _rounds;
         private int _capacity;
         private bool _reloading;
+        private int _reserveRounds;
         private int _killCount;
         private string _bannerText;
         private float _bannerUntilTime;
@@ -153,6 +154,7 @@ namespace Game.UI
             _rounds = evt.RoundsLoaded;
             _capacity = evt.Capacity;
             _reloading = evt.IsReloading;
+            _reserveRounds = evt.ReserveRounds;
         }
 
         private void OnMonsterDied(MonsterDiedEvent evt)
@@ -236,7 +238,8 @@ namespace Game.UI
 
             if (_selectedItem == HotbarItemType.Revolver)
             {
-                GUILayout.Label(_reloading ? "리볼버: 재장전 중…" : $"리볼버: {_rounds} / {_capacity}");
+                string state = _reloading ? "재장전 중…" : $"{_rounds} / {_capacity}";
+                GUILayout.Label($"리볼버: {state}  |  예비 {_reserveRounds}");
             }
 
             if (_killCount > 0)

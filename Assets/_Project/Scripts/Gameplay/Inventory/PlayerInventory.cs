@@ -255,6 +255,13 @@ namespace Game.Gameplay.Inventory
                     slot.ItemType = HotbarItemType.Hammer;
                     slot.Count = 1;
                 }
+                else if (i == 3 && _settings.InitialRevolverAmmo > 0)
+                {
+                    // 시작 지급 권총탄 (M5) — 시작 직후 전투가 가능해야 탄약 루프가 압박이 아니라 관리가 된다.
+                    slot.ItemType = HotbarItemType.Resource;
+                    slot.Resource = ResourceType.RevolverAmmo;
+                    slot.Count = (byte)Mathf.Min(byte.MaxValue, _settings.InitialRevolverAmmo);
+                }
 
                 _slots.Add(slot);
             }

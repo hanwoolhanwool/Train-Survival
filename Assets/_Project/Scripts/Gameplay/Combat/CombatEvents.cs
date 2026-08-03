@@ -21,11 +21,15 @@ namespace Game.Gameplay.Combat
 
         public readonly bool IsReloading;
 
-        public RevolverAmmoChangedLocalEvent(int roundsLoaded, int capacity, bool isReloading)
+        /// <summary>인벤토리의 예비 탄약 수 (M5 — 탄약 스택).</summary>
+        public readonly int ReserveRounds;
+
+        public RevolverAmmoChangedLocalEvent(int roundsLoaded, int capacity, bool isReloading, int reserveRounds)
         {
             RoundsLoaded = roundsLoaded;
             Capacity = capacity;
             IsReloading = isReloading;
+            ReserveRounds = reserveRounds;
         }
     }
 }
