@@ -126,9 +126,9 @@ namespace Game.UI
 
             DrawHotbar(hotbar);
             DrawEnginePrompt(hotbar);
-            DrawCarBuildPrompt();
-            DrawCarRecouplePrompt();
-            DrawHammerTarget();
+            DrawCarBuildPrompt(hotbar);
+            DrawCarRecouplePrompt(hotbar);
+            DrawHammerTarget(hotbar);
 
             if (_panelOpen)
             {
@@ -183,16 +183,32 @@ namespace Game.UI
                 return;
             }
 
-            bool holdingResource = hotbar.GetSlot(hotbar.SelectedIndex).ItemType == HotbarItemType.Resource;
-            string prompt = holdingResource
-                ? "E 또는 좌클릭 — 연료 투입 (자원 1개)"
-                : "자원 슬롯(숫자 키 1~5)을 든 채 E — 연료 투입";
-            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f),
-                $"<color=yellow>{prompt}</color>");
+            // 발열량 0 이하(화약 원료·탄약)는 투입되지 않는 자원 — 투입 안내 대신 불가 사유를 보여준다 (M5 검증 D3·D4).
+            HotbarSlotView held = hotbar.GetSlot(hotbar.SelectedIndex);
+            bool holdingResource = held.ItemType == HotbarItemType.Resource;
+            float fuelValue = _catalog != null ? _catalog.GetFuelValue(held.Resource) : 1f;
+
+            string prompt;
+            if (holdingResource && fuelValue > 0f)
+            {
+                string name = _catalog != null ? _catalog.GetDisplayName(held.Resource) : "자원";
+                prompt = $"<color=yellow>E 또는 좌클릭 — 연료 투입 ({name} 1개 = +{fuelValue:0.#})</color>";
+            }
+            else if (holdingResource)
+            {
+                string name = _catalog != null ? _catalog.GetDisplayName(held.Resource) : "이 자원";
+                prompt = $"<color=red>{name} — 연료로 쓸 수 없는 자원이다</color>";
+            }
+            else
+            {
+                prompt = "<color=yellow>자원 슬롯(숫자 키 1~5)을 든 채 E — 연료 투입</color>";
+            }
+
+            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f), prompt);
         }
 
         /// <summary>칸 건설 안내 — 망치로 건설 지점(초록 테두리 프리뷰)을 겨눈 동안 표시한다.</summary>
-        private void DrawCarBuildPrompt()
+        private void DrawCarBuildPrompt(ILocalHotbar hotbar)
         {
             if (!_carBuildAim.Aiming || _panelOpen)
             {
@@ -202,7 +218,7 @@ namespace Game.UI
             string prompt;
             if (!_carBuildAim.CanAfford)
             {
-                prompt = $"<color=red>칸 건설 자원 부족 ({_carBuildAim.Cost}개 필요)</color>";
+                prompt = $"<color=red>칸 건설 자원 부족 (건자재 {_carBuildAim.Cost}개 필요)</color>";
             }
             else if (_carBuildAim.Occupied)
             {
@@ -210,7 +226,7 @@ namespace Game.UI
             }
             else
             {
-                prompt = $"<color=yellow>우클릭 — 칸 건설 (자원 {_carBuildAim.Cost}개)</color>";
+                prompt = $"<color=yellow>우클릭 — 칸 건설 (소모: {BuildSpendPreview(hotbar, _carBuildAim.Cost)})</color>";
             }
 
             GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.58f, 360f, 24f), prompt);
@@ -221,7 +237,7 @@ namespace Game.UI
         /// 못 붙이는 이유는 먼저 걸리는 것 하나만 보여준다(구조적 순서 → 진행 → 비용).
         /// 칸 건설 안내와는 상호 배타라 같은 자리에 그린다.
         /// </summary>
-        private void DrawCarRecouplePrompt()
+        private void DrawCarRecouplePrompt(ILocalHotbar hotbar)
         {
             if (!_carRecoupleAim.Aiming || _panelOpen)
             {
@@ -238,10 +254,10 @@ namespace Game.UI
                     prompt = $"<color=red>칸을 슬롯까지 끌어와야 한다 ({_carRecoupleAim.RemainingMeters:F1} m 남음)</color>";
                     break;
                 case RecouplePrompt.InsufficientResources:
-                    prompt = $"<color=red>재결합 자원 부족 ({_carRecoupleAim.Cost}개 필요)</color>";
+                    prompt = $"<color=red>재결합 자원 부족 (건자재 {_carRecoupleAim.Cost}개 필요)</color>";
                     break;
                 default:
-                    prompt = $"<color=yellow>우클릭 — 재결합 (자원 {_carRecoupleAim.Cost}개)</color>";
+                    prompt = $"<color=yellow>우클릭 — 재결합 (소모: {BuildSpendPreview(hotbar, _carRecoupleAim.Cost)})</color>";
                     break;
             }
 
@@ -249,7 +265,7 @@ namespace Game.UI
         }
 
         /// <summary>망치 조준 라벨 — 겨눈 부위의 체력과 가능한 조작(수리/설치)을 조준점 아래에 보여준다(수리 과정 가시화).</summary>
-        private void DrawHammerTarget()
+        private void DrawHammerTarget(ILocalHotbar hotbar)
         {
             if (!_hammerTarget.HasTarget || _panelOpen)
             {
@@ -284,8 +300,8 @@ namespace Game.UI
             if (_hammerTarget.CanBuildStructure)
             {
                 action += _hammerTarget.CanAffordStructure
-                    ? $" — 우클릭 온실 돔 설치 (자원 {_hammerTarget.StructureCost}개)"
-                    : $" — <color=red>돔 설치 자원 부족 ({_hammerTarget.StructureCost}개 필요)</color>";
+                    ? $" — 우클릭 온실 돔 설치 (소모: {BuildSpendPreview(hotbar, _hammerTarget.StructureCost)})"
+                    : $" — <color=red>돔 설치 자원 부족 (건자재 {_hammerTarget.StructureCost}개 필요)</color>";
             }
 
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth
@@ -293,6 +309,70 @@ namespace Game.UI
                 : "white";
             GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.54f, 400f, 24f),
                 $"<color={color}>{partName}: {healthText}{action}</color>");
+        }
+
+        /// <summary>
+        /// 건설 비용으로 실제 소모될 종류·수량 미리보기 (M5 검증 E1) — 서버와 같은 규칙
+        /// (뒤 칸부터 건자재 차감)을 복제 슬롯 사본 위에서 재현하므로 표시와 실소모가 항상 일치한다.
+        /// </summary>
+        private string BuildSpendPreview(ILocalHotbar hotbar, int cost)
+        {
+            if (_catalog == null || cost <= 0)
+            {
+                return $"건자재 {cost}개";
+            }
+
+            var slots = new HotbarSlotView[hotbar.SlotCount];
+            for (int i = 0; i < slots.Length; i++)
+            {
+                slots[i] = hotbar.GetSlot(i);
+            }
+
+            // 소모 내역 집계 — 종류 가짓수가 적어 배열 순회로 충분하다.
+            var types = new ResourceType[cost];
+            var counts = new int[cost];
+            int distinct = 0;
+            for (int n = 0; n < cost; n++)
+            {
+                if (!HotbarLogic.TryRemoveAnyResource(slots, _catalog.IsBuildMaterial, out ResourceType removed))
+                {
+                    return $"건자재 {cost}개";
+                }
+
+                int found = -1;
+                for (int i = 0; i < distinct; i++)
+                {
+                    if (types[i] == removed)
+                    {
+                        found = i;
+                        break;
+                    }
+                }
+
+                if (found < 0)
+                {
+                    types[distinct] = removed;
+                    counts[distinct] = 1;
+                    distinct++;
+                }
+                else
+                {
+                    counts[found]++;
+                }
+            }
+
+            var builder = new System.Text.StringBuilder(32);
+            for (int i = 0; i < distinct; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append("·");
+                }
+
+                builder.Append($"{_catalog.GetDisplayName(types[i])} {counts[i]}");
+            }
+
+            return builder.ToString();
         }
 
         private void DrawInventoryPanel(ILocalHotbar hotbar)

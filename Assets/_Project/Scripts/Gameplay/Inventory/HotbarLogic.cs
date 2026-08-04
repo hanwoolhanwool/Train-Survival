@@ -58,16 +58,28 @@ namespace Game.Gameplay.Inventory
         /// </summary>
         public static bool TryRemoveAnyResource(HotbarSlotView[] slots, System.Func<ResourceType, bool> filter)
         {
+            return TryRemoveAnyResource(slots, filter, out _);
+        }
+
+        /// <summary>
+        /// <see cref="TryRemoveAnyResource(HotbarSlotView[], System.Func{ResourceType, bool})"/>와 동일하되
+        /// 차감된 종류를 돌려준다 — HUD의 소모 미리보기가 서버와 같은 규칙으로 내역을 집계할 수 있게 한다.
+        /// </summary>
+        public static bool TryRemoveAnyResource(HotbarSlotView[] slots, System.Func<ResourceType, bool> filter,
+            out ResourceType removed)
+        {
             for (int i = slots.Length - 1; i >= 0; i--)
             {
                 if (slots[i].ItemType == HotbarItemType.Resource &&
                     slots[i].Count > 0 && filter(slots[i].Resource))
                 {
+                    removed = slots[i].Resource;
                     RemoveOneAt(slots, i);
                     return true;
                 }
             }
 
+            removed = ResourceType.None;
             return false;
         }
 

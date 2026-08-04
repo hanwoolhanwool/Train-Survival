@@ -162,6 +162,22 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void 조건_차감은_소모된_종류를_돌려준다()
+        {
+            // HUD 소모 미리보기가 이 반환값으로 내역을 집계한다 (M5 검증 E1).
+            HotbarSlotView[] slots = CreateDefaultSlots();
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Wood);
+            slots[3] = new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Scrap);
+
+            Assert.That(HotbarLogic.TryRemoveAnyResource(slots, _ => true, out ResourceType first), Is.True);
+            Assert.That(first, Is.EqualTo(ResourceType.Scrap), "뒤 칸(고철)부터 소모");
+            Assert.That(HotbarLogic.TryRemoveAnyResource(slots, _ => true, out ResourceType second), Is.True);
+            Assert.That(second, Is.EqualTo(ResourceType.Wood));
+            Assert.That(HotbarLogic.TryRemoveAnyResource(slots, _ => true, out ResourceType none), Is.False);
+            Assert.That(none, Is.EqualTo(ResourceType.None), "실패 시 None");
+        }
+
+        [Test]
         public void 종류별_총량과_조건_총량을_구분해_센다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
