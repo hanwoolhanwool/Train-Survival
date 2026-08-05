@@ -50,7 +50,42 @@ namespace Game.Gameplay.Crafting
         public static bool TryCraft(HotbarSlotView[] slots, IngredientView[] ingredients,
             ResourceType output, int outputCount, int outputStackSize)
         {
-            if (output == ResourceType.None || outputCount <= 0 || !CanCraft(slots, ingredients))
+            if (output == ResourceType.None || outputCount <= 0 ||
+                !TryConsumeIngredients(slots, ingredients))
+            {
+                return false;
+            }
+
+            for (int n = 0; n < outputCount; n++)
+            {
+                if (!HotbarLogic.TryAddResource(slots, output, outputStackSize))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 무기·도구 제작을 수행한다 (M5 2차) — 재료 차감 후 아이템 1개를 첫 빈 칸에 지급한다.
+        /// 빈 칸이 없으면 전량 실패(false) — 자원 제작과 같은 원자 규약이다.
+        /// </summary>
+        public static bool TryCraftItem(HotbarSlotView[] slots, IngredientView[] ingredients,
+            HotbarItemType outputItem)
+        {
+            if (outputItem == HotbarItemType.None || outputItem == HotbarItemType.Resource ||
+                !TryConsumeIngredients(slots, ingredients))
+            {
+                return false;
+            }
+
+            return HotbarLogic.TryAddItem(slots, outputItem);
+        }
+
+        private static bool TryConsumeIngredients(HotbarSlotView[] slots, IngredientView[] ingredients)
+        {
+            if (!CanCraft(slots, ingredients))
             {
                 return false;
             }
@@ -63,14 +98,6 @@ namespace Game.Gameplay.Crafting
                     {
                         return false;
                     }
-                }
-            }
-
-            for (int n = 0; n < outputCount; n++)
-            {
-                if (!HotbarLogic.TryAddResource(slots, output, outputStackSize))
-                {
-                    return false;
                 }
             }
 

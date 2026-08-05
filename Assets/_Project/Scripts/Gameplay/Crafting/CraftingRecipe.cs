@@ -26,11 +26,14 @@ namespace Game.Gameplay.Crafting
 
         [SerializeField] private Ingredient[] _ingredients;
 
-        [Tooltip("산출 자원 종류.")]
+        [Tooltip("산출 자원 종류 (무기 산출 레시피에서는 무시된다).")]
         [SerializeField] private ResourceType _output = ResourceType.RevolverAmmo;
 
         [Tooltip("제작 1회당 산출 개수.")]
         [SerializeField, Min(1)] private int _outputCount = 1;
+
+        [Tooltip("무기·도구 산출 (M5 2차) — None이 아니면 자원 대신 이 아이템 1개를 첫 빈 칸에 지급한다.")]
+        [SerializeField] private HotbarItemType _outputItem = HotbarItemType.None;
 
         public string DisplayName => _displayName;
 
@@ -39,6 +42,11 @@ namespace Game.Gameplay.Crafting
         public ResourceType Output => _output;
 
         public int OutputCount => _outputCount;
+
+        public HotbarItemType OutputItem => _outputItem;
+
+        /// <summary>무기·도구 산출 레시피인가 — 산출 경로가 자원 적재와 다르다 (빈 칸 1개 필요).</summary>
+        public bool IsItemOutput => _outputItem != HotbarItemType.None && _outputItem != HotbarItemType.Resource;
 
         /// <summary>인덱스의 재료. 범위 밖이면 null.</summary>
         public Ingredient GetIngredient(int index)

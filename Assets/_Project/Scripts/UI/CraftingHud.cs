@@ -86,9 +86,11 @@ namespace Game.UI
                 CraftingLogic.IngredientView[] ingredients = recipe.ToIngredientViews();
                 bool canCraft = CraftingLogic.CanCraft(slots, ingredients);
 
-                string outputName = GetName(recipe.Output);
-                GUI.Label(new Rect(rect.x + 16f, y, 220f, 22f),
-                    $"{recipe.DisplayName}  →  {outputName} ×{recipe.OutputCount}");
+                // 무기 산출 레시피는 아이템 1개 지급 — 자원 산출과 표기가 다르다 (M5 2차).
+                string outputLine = recipe.IsItemOutput
+                    ? $"{recipe.DisplayName}  →  {HotbarItemLabels.GetLabel(recipe.OutputItem)} ×1"
+                    : $"{recipe.DisplayName}  →  {GetName(recipe.Output)} ×{recipe.OutputCount}";
+                GUI.Label(new Rect(rect.x + 16f, y, 220f, 22f), outputLine);
 
                 string ingredientLine = BuildIngredientLine(slots, ingredients);
                 GUI.Label(new Rect(rect.x + 16f, y + 20f, 260f, 22f), ingredientLine);

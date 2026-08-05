@@ -200,10 +200,22 @@ namespace Game.Gameplay.Inventory
                 return false;
             }
 
-            int outputStack = _catalog != null ? _catalog.GetMaxStack(recipe.Output, StackSize) : StackSize;
             HotbarSlotView[] slots = CopySlots();
-            if (!Crafting.CraftingLogic.TryCraft(slots, recipe.ToIngredientViews(),
-                recipe.Output, recipe.OutputCount, outputStack))
+            bool crafted;
+            if (recipe.IsItemOutput)
+            {
+                // 무기 산출 (M5 2차) — 스택 없이 빈 칸 1개에 지급.
+                crafted = Crafting.CraftingLogic.TryCraftItem(
+                    slots, recipe.ToIngredientViews(), recipe.OutputItem);
+            }
+            else
+            {
+                int outputStack = _catalog != null ? _catalog.GetMaxStack(recipe.Output, StackSize) : StackSize;
+                crafted = Crafting.CraftingLogic.TryCraft(slots, recipe.ToIngredientViews(),
+                    recipe.Output, recipe.OutputCount, outputStack);
+            }
+
+            if (!crafted)
             {
                 return false;
             }

@@ -35,6 +35,29 @@ namespace Game.Gameplay.Inventory
         }
 
         /// <summary>
+        /// 무기·도구 아이템 1개를 첫 빈 칸에 적재한다 (제작 무기 지급 — 스택 없음, M5 2차).
+        /// 빈 칸이 없으면 실패한다. 자원은 <see cref="TryAddResource"/> 소관.
+        /// </summary>
+        public static bool TryAddItem(HotbarSlotView[] slots, HotbarItemType item)
+        {
+            if (item == HotbarItemType.None || item == HotbarItemType.Resource)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].IsEmpty)
+                {
+                    slots[i] = new HotbarSlotView(item, 1);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 지정한 종류의 자원 1개를 차감한다 — 뒤에서부터(부분 스택이 먼저 비도록) 찾는다. 스택이 비면 빈 칸이 된다.
         /// </summary>
         public static bool TryRemoveResource(HotbarSlotView[] slots, ResourceType type)

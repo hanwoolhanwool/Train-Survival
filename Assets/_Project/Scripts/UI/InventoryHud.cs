@@ -138,21 +138,15 @@ namespace Game.UI
 
         private string GetSlotLabel(HotbarSlotView slot, int stackSize)
         {
-            switch (slot.ItemType)
+            if (slot.ItemType == HotbarItemType.Resource)
             {
-                case HotbarItemType.Harpoon:
-                    return "집게";
-                case HotbarItemType.Revolver:
-                    return "리볼버";
-                case HotbarItemType.Resource:
-                    string name = _catalog != null ? _catalog.GetDisplayName(slot.Resource) : "자원";
-                    int maxStack = _catalog != null ? _catalog.GetMaxStack(slot.Resource, stackSize) : stackSize;
-                    return $"{name}\n{slot.Count}/{maxStack}";
-                case HotbarItemType.Hammer:
-                    return "망치";
-                default:
-                    return string.Empty;
+                string name = _catalog != null ? _catalog.GetDisplayName(slot.Resource) : "자원";
+                int maxStack = _catalog != null ? _catalog.GetMaxStack(slot.Resource, stackSize) : stackSize;
+                return $"{name}\n{slot.Count}/{maxStack}";
             }
+
+            // 무기·도구 표시명은 제작 UI와 공유한다 (M5 2차 — 무기 종류 확장).
+            return HotbarItemLabels.GetLabel(slot.ItemType);
         }
 
         private void DrawHotbar(ILocalHotbar hotbar)
