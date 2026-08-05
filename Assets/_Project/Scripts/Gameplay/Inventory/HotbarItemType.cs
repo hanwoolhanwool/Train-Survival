@@ -10,6 +10,12 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>수리 망치 (기획서 §9 — 열차 부위 수리 도구, §M3).</summary>
         Hammer = 4,
+
+        /// <summary>샷건 — 승차한 근접 몬스터 처리 (기획서 §6.2, M5 2차 제작 무기).</summary>
+        Shotgun = 5,
+
+        /// <summary>볼트액션 라이플 — 원거리 접근 저지 (기획서 §6.2, M5 2차 제작 무기).</summary>
+        Rifle = 6,
     }
 
     /// <summary>

@@ -25,6 +25,10 @@ namespace Game.Gameplay.Inventory
         /// <summary>권총탄 — 제작품 (고철 + 화약 원료).</summary>
         RevolverAmmo = 16,
 
-        // ShotgunAmmo = 17, RifleAmmo = 18 — 무기 확장 차수(M5 2차)에서 사용할 값 예약.
+        /// <summary>산탄 — 제작품. 샷건 전용 (기획서 §6.2 탄약 3종).</summary>
+        ShotgunAmmo = 17,
+
+        /// <summary>소총탄 — 제작품. 볼트액션 전용 (기획서 §6.2 탄약 3종).</summary>
+        RifleAmmo = 18,
     }
 }

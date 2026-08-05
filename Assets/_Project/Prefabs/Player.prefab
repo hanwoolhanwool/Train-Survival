@@ -15,6 +15,8 @@ GameObject:
   - component: {fileID: 8568574822869191764}
   - component: {fileID: 7642862762512348835}
   - component: {fileID: 7965373453658798524}
+  - component: {fileID: 8811223344556677001}
+  - component: {fileID: 8811223344556677002}
   - component: {fileID: 8243473584988639474}
   - component: {fileID: 5117626470427924656}
   - component: {fileID: 1201866139057853754}
@@ -195,6 +197,40 @@ MonoBehaviour:
   _aimSource: {fileID: 1609037139869776444}
   _muzzle: {fileID: 7925440856569755618}
   _tracer: {fileID: 634568603130344358}
+--- !u!114 &8811223344556677001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 427ea74c5df5fc5439b6e3c1ad5238fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.GunController
+  ShowTopMostFoldoutHeaderGroup: 1
+  _settings: {fileID: 11400000, guid: aa00dd4e371e62849534c8b6ee5a196c, type: 2}
+  _aimSource: {fileID: 1609037139869776444}
+  _muzzle: {fileID: 7925440856569755618}
+  _tracer: {fileID: 634568603130344358}
+--- !u!114 &8811223344556677002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 427ea74c5df5fc5439b6e3c1ad5238fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.GunController
+  ShowTopMostFoldoutHeaderGroup: 1
+  _settings: {fileID: 11400000, guid: ae44d831ef4b3a786ff5df843efd9e00, type: 2}
+  _aimSource: {fileID: 1609037139869776444}
+  _muzzle: {fileID: 7925440856569755618}
+  _tracer: {fileID: 634568603130344358}
 --- !u!114 &8243473584988639474
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -242,6 +278,8 @@ MonoBehaviour:
   _hammer: {fileID: 5447795796761736459}
   _guns:
   - {fileID: 7965373453658798524}
+  - {fileID: 8811223344556677001}
+  - {fileID: 8811223344556677002}
 --- !u!114 &5447795796761736459
 MonoBehaviour:
   m_ObjectHideFlags: 0
