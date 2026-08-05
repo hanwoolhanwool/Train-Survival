@@ -189,7 +189,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 427ea74c5df5fc5439b6e3c1ad5238fb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.RevolverController
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.GunController
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: 3f521a47264d1ef479efb088b5845785, type: 2}
   _aimSource: {fileID: 1609037139869776444}
@@ -239,8 +239,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.HotbarController
   ShowTopMostFoldoutHeaderGroup: 1
   _harpoon: {fileID: 7642862762512348835}
-  _revolver: {fileID: 7965373453658798524}
   _hammer: {fileID: 5447795796761736459}
+  _guns:
+  - {fileID: 7965373453658798524}
 --- !u!114 &5447795796761736459
 MonoBehaviour:
   m_ObjectHideFlags: 0

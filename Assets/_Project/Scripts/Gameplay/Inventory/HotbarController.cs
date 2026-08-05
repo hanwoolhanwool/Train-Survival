@@ -19,8 +19,10 @@ namespace Game.Gameplay.Inventory
     public sealed class HotbarController : NetworkBehaviour, ILocalHotbar
     {
         [SerializeField] private HarpoonController _harpoon;
-        [SerializeField] private RevolverController _revolver;
         [SerializeField] private RepairHammerController _hammer;
+
+        [Tooltip("이 플레이어의 총기들 (리볼버·샷건·볼트액션) — 각자 세팅의 WeaponItem으로 게이트가 열린다.")]
+        [SerializeField] private GunController[] _guns;
 
         private PlayerInventory _inventory;
         private int _selectedIndex;
@@ -165,14 +167,20 @@ namespace Game.Gameplay.Inventory
                 _harpoon.InputEnabled = selected == HotbarItemType.Harpoon;
             }
 
-            if (_revolver != null)
-            {
-                _revolver.InputEnabled = selected == HotbarItemType.Revolver;
-            }
-
             if (_hammer != null)
             {
                 _hammer.InputEnabled = selected == HotbarItemType.Hammer;
+            }
+
+            if (_guns != null)
+            {
+                for (int i = 0; i < _guns.Length; i++)
+                {
+                    if (_guns[i] != null)
+                    {
+                        _guns[i].InputEnabled = selected == _guns[i].WeaponItem;
+                    }
+                }
             }
         }
 

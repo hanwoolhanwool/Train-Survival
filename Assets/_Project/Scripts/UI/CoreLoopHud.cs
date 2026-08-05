@@ -29,6 +29,8 @@ namespace Game.UI
         private float _temperature;
         private TemperatureStress _temperatureStress;
         private HotbarItemType _selectedItem;
+        private HotbarItemType _ammoWeapon;
+        private string _ammoWeaponName;
         private int _rounds;
         private int _capacity;
         private bool _reloading;
@@ -53,7 +55,7 @@ namespace Game.UI
             EventBus<PlayerTemperatureChangedEvent>.Subscribe(OnPlayerTemperatureChanged);
             EventBus<PlayerDiedEvent>.Subscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Subscribe(OnHotbarSelectionChanged);
-            EventBus<RevolverAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
+            EventBus<WeaponAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
             EventBus<MonsterDiedEvent>.Subscribe(OnMonsterDied);
             EventBus<CouplingBrokenEvent>.Subscribe(OnCouplingBroken);
             EventBus<CarsDetachedEvent>.Subscribe(OnCarsDetached);
@@ -73,7 +75,7 @@ namespace Game.UI
             EventBus<PlayerTemperatureChangedEvent>.Unsubscribe(OnPlayerTemperatureChanged);
             EventBus<PlayerDiedEvent>.Unsubscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Unsubscribe(OnHotbarSelectionChanged);
-            EventBus<RevolverAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
+            EventBus<WeaponAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
             EventBus<MonsterDiedEvent>.Unsubscribe(OnMonsterDied);
             EventBus<CouplingBrokenEvent>.Unsubscribe(OnCouplingBroken);
             EventBus<CarsDetachedEvent>.Unsubscribe(OnCarsDetached);
@@ -149,8 +151,10 @@ namespace Game.UI
             _selectedItem = evt.ItemType;
         }
 
-        private void OnAmmoChanged(RevolverAmmoChangedLocalEvent evt)
+        private void OnAmmoChanged(WeaponAmmoChangedLocalEvent evt)
         {
+            _ammoWeapon = evt.Weapon;
+            _ammoWeaponName = evt.WeaponName;
             _rounds = evt.RoundsLoaded;
             _capacity = evt.Capacity;
             _reloading = evt.IsReloading;
@@ -236,10 +240,11 @@ namespace Game.UI
 
             DrawTemperatureLine();
 
-            if (_selectedItem == HotbarItemType.Revolver)
+            // 든 총의 탄약만 그린다 — 활성 총만 발행하므로 "마지막 이벤트의 무기 = 현재 선택"일 때가 그 총이다.
+            if (_ammoWeapon != HotbarItemType.None && _selectedItem == _ammoWeapon)
             {
                 string state = _reloading ? "재장전 중…" : $"{_rounds} / {_capacity}";
-                GUILayout.Label($"리볼버: {state}  |  예비 {_reserveRounds}");
+                GUILayout.Label($"{_ammoWeaponName}: {state}  |  예비 {_reserveRounds}");
             }
 
             if (_killCount > 0)

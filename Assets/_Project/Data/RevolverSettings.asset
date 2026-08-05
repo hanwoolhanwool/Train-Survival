@@ -11,10 +11,15 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3d5ac2517bc42014a89d53530f9719ae, type: 3}
   m_Name: RevolverSettings
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.RevolverSettings
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.GunSettings
+  _weaponItem: 2
+  _displayName: "리볼버"
   _damage: 34
   _maxRange: 45
   _rangeTolerance: 5
-  _cylinderCapacity: 6
+  _pelletCount: 1
+  _spreadAngle: 0
+  _magazineCapacity: 6
   _fireInterval: 0.4
   _reloadDuration: 2.2
+  _ammoType: 16

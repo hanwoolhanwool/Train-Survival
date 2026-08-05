@@ -3,12 +3,12 @@ using UnityEngine;
 namespace Game.Gameplay.Combat
 {
     /// <summary>
-    /// 리볼버 실린더의 순수 상태 머신 — 장탄·발사 간격·재장전.
+    /// 총기 장탄부의 순수 상태 머신 — 장탄·발사 간격·재장전 (리볼버 실린더·샷건 튜브·볼트액션 탄창 공통).
     /// 시간은 <see cref="Tick"/> 누적으로만 흐른다 (엔진 무의존, EditMode 테스트 대상).
-    /// 재장전은 예비 탄약(M5, 인벤토리 스택)을 소모한다: 로컬 선반영으로 즉시 시작하되,
+    /// 재장전은 예비 탄약(인벤토리 스택)을 소모한다: 로컬 선반영으로 즉시 시작하되,
     /// 장전 완료는 시간 경과 <b>그리고</b> 호스트 차감 확정(<see cref="ConfirmPendingLoad"/>) 양쪽을 요구한다.
     /// </summary>
-    public sealed class RevolverCylinder
+    public sealed class GunMagazine
     {
         private readonly int _capacity;
         private readonly float _fireInterval;
@@ -20,7 +20,7 @@ namespace Game.Gameplay.Combat
         private bool _hasConfirm;
         private int _grantedRounds;
 
-        public RevolverCylinder(int capacity, float fireInterval, float reloadDuration)
+        public GunMagazine(int capacity, float fireInterval, float reloadDuration)
         {
             _capacity = Mathf.Max(1, capacity);
             _fireInterval = Mathf.Max(0f, fireInterval);
