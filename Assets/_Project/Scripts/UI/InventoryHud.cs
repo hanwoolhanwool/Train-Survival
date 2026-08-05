@@ -218,7 +218,7 @@ namespace Game.UI
             string prompt;
             if (!_carBuildAim.CanAfford)
             {
-                prompt = $"<color=red>칸 건설 자원 부족 (건자재 {_carBuildAim.Cost}개 필요)</color>";
+                prompt = $"<color=red>칸 건설 자원 부족 ({BuildShortagePrompt(hotbar, _carBuildAim.Cost)})</color>";
             }
             else if (_carBuildAim.Occupied)
             {
@@ -254,7 +254,7 @@ namespace Game.UI
                     prompt = $"<color=red>칸을 슬롯까지 끌어와야 한다 ({_carRecoupleAim.RemainingMeters:F1} m 남음)</color>";
                     break;
                 case RecouplePrompt.InsufficientResources:
-                    prompt = $"<color=red>재결합 자원 부족 (건자재 {_carRecoupleAim.Cost}개 필요)</color>";
+                    prompt = $"<color=red>재결합 자원 부족 ({BuildShortagePrompt(hotbar, _carRecoupleAim.Cost)})</color>";
                     break;
                 default:
                     prompt = $"<color=yellow>우클릭 — 재결합 (소모: {BuildSpendPreview(hotbar, _carRecoupleAim.Cost)})</color>";
@@ -301,7 +301,7 @@ namespace Game.UI
             {
                 action += _hammerTarget.CanAffordStructure
                     ? $" — 우클릭 온실 돔 설치 (소모: {BuildSpendPreview(hotbar, _hammerTarget.StructureCost)})"
-                    : $" — <color=red>돔 설치 자원 부족 (건자재 {_hammerTarget.StructureCost}개 필요)</color>";
+                    : $" — <color=red>돔 설치 자원 부족 ({BuildShortagePrompt(hotbar, _hammerTarget.StructureCost)})</color>";
             }
 
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth
@@ -373,6 +373,27 @@ namespace Game.UI
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// 비용 부족 안내 — 보유/필요와 함께 무엇이 건자재인지 알려준다 (M5 검증 E1 후속:
+        /// "부족할 때도 필요한 자원을 표시"). 예: "건자재 2/3 필요 — 목재·돌·고철".
+        /// </summary>
+        private string BuildShortagePrompt(ILocalHotbar hotbar, int cost)
+        {
+            if (_catalog == null)
+            {
+                return $"건자재 {cost}개 필요";
+            }
+
+            var slots = new HotbarSlotView[hotbar.SlotCount];
+            for (int i = 0; i < slots.Length; i++)
+            {
+                slots[i] = hotbar.GetSlot(i);
+            }
+
+            int have = HotbarLogic.CountResource(slots, _catalog.IsBuildMaterial);
+            return $"건자재 {have}/{cost} 필요 — {_catalog.GetBuildMaterialNames()}";
         }
 
         private void DrawInventoryPanel(ILocalHotbar hotbar)

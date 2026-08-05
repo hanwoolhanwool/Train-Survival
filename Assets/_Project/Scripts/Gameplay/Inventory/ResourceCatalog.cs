@@ -44,6 +44,7 @@ namespace Game.Gameplay.Inventory
         [SerializeField] private Entry[] _entries;
 
         private Entry[] _lookup;
+        private string _buildMaterialNames;
 
         /// <summary>종류의 표시명. 미등재면 종류 이름 그대로.</summary>
         public string GetDisplayName(ResourceType type)
@@ -78,6 +79,37 @@ namespace Game.Gameplay.Inventory
         {
             Entry entry = Find(type);
             return entry == null ? fallback : entry.Color;
+        }
+
+        /// <summary>건자재로 인정되는 종류들의 표시명 나열 ("목재·돌·고철") — 비용 부족 안내용.</summary>
+        public string GetBuildMaterialNames()
+        {
+            if (_buildMaterialNames != null)
+            {
+                return _buildMaterialNames;
+            }
+
+            var builder = new System.Text.StringBuilder(32);
+            if (_entries != null)
+            {
+                for (int i = 0; i < _entries.Length; i++)
+                {
+                    if (_entries[i] == null || !_entries[i].IsBuildMaterial)
+                    {
+                        continue;
+                    }
+
+                    if (builder.Length > 0)
+                    {
+                        builder.Append("·");
+                    }
+
+                    builder.Append(GetDisplayName(_entries[i].Type));
+                }
+            }
+
+            _buildMaterialNames = builder.ToString();
+            return _buildMaterialNames;
         }
 
         private Entry Find(ResourceType type)
@@ -123,6 +155,7 @@ namespace Game.Gameplay.Inventory
         private void OnValidate()
         {
             _lookup = null;
+            _buildMaterialNames = null;
         }
     }
 }
