@@ -24,6 +24,8 @@ namespace Game.Gameplay.Inventory
         [Tooltip("이 플레이어의 총기들 (리볼버·샷건·볼트액션) — 각자 세팅의 WeaponItem으로 게이트가 열린다.")]
         [SerializeField] private GunController[] _guns;
 
+        [SerializeField] private MeleeWeaponController _melee;
+
         private PlayerInventory _inventory;
         private int _selectedIndex;
         private bool _panelOpen;
@@ -170,6 +172,11 @@ namespace Game.Gameplay.Inventory
             if (_hammer != null)
             {
                 _hammer.InputEnabled = selected == HotbarItemType.Hammer;
+            }
+
+            if (_melee != null)
+            {
+                _melee.InputEnabled = selected == HotbarItemType.Melee;
             }
 
             if (_guns != null)

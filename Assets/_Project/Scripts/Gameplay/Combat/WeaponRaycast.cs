@@ -37,6 +37,33 @@ namespace Game.Gameplay.Combat
         }
 
         /// <summary>
+        /// 굵기가 있는 최근접 히트(스피어캐스트) — 근접 스윙처럼 정밀 조준을 요구하지 않는 판정용.
+        /// 제외·선택 규칙은 <see cref="TryGetClosestHit"/>와 동일하다.
+        /// </summary>
+        public static bool TryGetClosestSphereHit(
+            Vector3 origin, float radius, Vector3 direction, float maxRange, Transform ignoreRoot,
+            out RaycastHit hit)
+        {
+            int count = Physics.SphereCastNonAlloc(
+                origin, radius, direction, HitBuffer, maxRange, ~0, QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.MaxValue;
+            hit = default;
+            bool found = false;
+            for (int i = 0; i < count; i++)
+            {
+                if (HitBuffer[i].distance < bestDistance && HitBuffer[i].transform.root != ignoreRoot)
+                {
+                    bestDistance = HitBuffer[i].distance;
+                    hit = HitBuffer[i];
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        /// <summary>
         /// 조준점을 구한다 — 맞은 것이 있으면 그 지점, 없으면 최대 사거리 지점.
         /// 집게의 조준점 수렴 발사(총구→조준점 방향)가 쓴다.
         /// </summary>

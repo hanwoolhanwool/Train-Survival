@@ -16,6 +16,9 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>볼트액션 라이플 — 원거리 접근 저지 (기획서 §6.2, M5 2차 제작 무기).</summary>
         Rifle = 6,
+
+        /// <summary>마체테 — 탄약 0일 때의 최후 근접 수단, 무한 사용 (기획서 §6.2, M5 2차 제작 무기).</summary>
+        Melee = 7,
     }
 
     /// <summary>
