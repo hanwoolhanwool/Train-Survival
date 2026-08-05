@@ -1,5 +1,6 @@
 using Game.Core.Events;
 using Game.Core.Services;
+using Game.Gameplay.Combat;
 using Game.Gameplay.Inventory;
 using Game.Gameplay.Monsters;
 using Game.Gameplay.Player;
@@ -382,23 +383,8 @@ namespace Game.Gameplay.Train
 
         private bool TryRaycastHit(Vector3 origin, Vector3 direction, out RaycastHit hit)
         {
-            var ray = new Ray(origin, direction);
-            RaycastHit[] hits = Physics.RaycastAll(ray, _settings.MaxRange, ~0, QueryTriggerInteraction.Ignore);
-
-            float bestDistance = float.MaxValue;
-            hit = default;
-            bool found = false;
-            for (int i = 0; i < hits.Length; i++)
-            {
-                if (hits[i].distance < bestDistance && hits[i].transform.root != transform.root)
-                {
-                    bestDistance = hits[i].distance;
-                    hit = hits[i];
-                    found = true;
-                }
-            }
-
-            return found;
+            return WeaponRaycast.TryGetClosestHit(
+                origin, direction, _settings.MaxRange, transform.root, out hit);
         }
 
         // ── 조준 HUD 이벤트 — 바뀔 때만 발행 ────────────────────

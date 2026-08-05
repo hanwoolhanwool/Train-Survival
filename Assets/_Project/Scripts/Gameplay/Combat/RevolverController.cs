@@ -157,23 +157,7 @@ namespace Game.Gameplay.Combat
 
         private bool TryRaycastHit(Vector3 origin, Vector3 direction, out RaycastHit hit)
         {
-            var ray = new Ray(origin, direction);
-            RaycastHit[] hits = Physics.RaycastAll(ray, _settings.MaxRange, ~0, QueryTriggerInteraction.Ignore);
-
-            float bestDistance = float.MaxValue;
-            hit = default;
-            bool found = false;
-            for (int i = 0; i < hits.Length; i++)
-            {
-                if (hits[i].distance < bestDistance && hits[i].transform.root != transform.root)
-                {
-                    bestDistance = hits[i].distance;
-                    hit = hits[i];
-                    found = true;
-                }
-            }
-
-            return found;
+            return WeaponRaycast.TryGetClosestHit(origin, direction, _settings.MaxRange, transform.root, out hit);
         }
 
         private void PublishAmmoIfChanged()

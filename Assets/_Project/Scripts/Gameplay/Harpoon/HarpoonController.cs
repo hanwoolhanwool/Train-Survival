@@ -1,6 +1,7 @@
 using Game.Core.Events;
 using Game.Core.Pooling;
 using Game.Core.Services;
+using Game.Gameplay.Combat;
 using Game.Gameplay.Inventory;
 using Game.Gameplay.Player;
 using Game.Gameplay.World;
@@ -28,8 +29,6 @@ namespace Game.Gameplay.Harpoon
         [SerializeField] private Transform _muzzle;
         [SerializeField] private HarpoonProjectile _projectilePrefab;
         [SerializeField] private HarpoonRopeRenderer _rope;
-
-        private static readonly RaycastHit[] AimHitBuffer = new RaycastHit[8];
 
         private HarpoonStateMachine _stateMachine;
         private HarpoonProjectile _activeProjectile;
@@ -179,19 +178,8 @@ namespace Game.Gameplay.Harpoon
             Vector3 aimOrigin = _aimSource != null ? _aimSource.position : transform.position;
             Vector3 aimForward = _aimSource != null ? _aimSource.forward : transform.forward;
 
-            Vector3 aimPoint = aimOrigin + aimForward * _settings.MaxRange;
-            int count = Physics.RaycastNonAlloc(
-                aimOrigin, aimForward, AimHitBuffer, _settings.MaxRange, ~0, QueryTriggerInteraction.Ignore);
-            float bestDistance = float.MaxValue;
-            for (int i = 0; i < count; i++)
-            {
-                RaycastHit hit = AimHitBuffer[i];
-                if (hit.distance < bestDistance && hit.transform.root != transform.root)
-                {
-                    bestDistance = hit.distance;
-                    aimPoint = hit.point;
-                }
-            }
+            Vector3 aimPoint = WeaponRaycast.ResolveAimPoint(
+                aimOrigin, aimForward, _settings.MaxRange, transform.root);
 
             return HarpoonAimMath.ResolveFireDirection(muzzleOrigin, aimPoint, aimForward);
         }
