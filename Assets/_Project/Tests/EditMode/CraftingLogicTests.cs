@@ -107,5 +107,58 @@ namespace Game.Tests.EditMode
             Assert.That(CraftingLogic.CanCraft(null, AmmoIngredients()), Is.False);
             Assert.That(CraftingLogic.CanCraft(slots, null), Is.False);
         }
+
+        // ── 무기 산출 (M5 2차) ──────────────────────────────────────────────
+
+        private static CraftingLogic.IngredientView[] MeleeIngredients()
+        {
+            // 마체테 레시피 — 고철 2 + 목재 1.
+            return new[]
+            {
+                new CraftingLogic.IngredientView(ResourceType.Scrap, 2),
+                new CraftingLogic.IngredientView(ResourceType.Wood, 1),
+            };
+        }
+
+        [Test]
+        public void 무기_제작은_재료를_차감하고_아이템_1개를_지급한다()
+        {
+            HotbarSlotView[] slots = CreateSlots();
+            slots[1] = new HotbarSlotView(HotbarItemType.Resource, 2, ResourceType.Scrap);
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Wood);
+
+            Assert.That(CraftingLogic.TryCraftItem(slots, MeleeIngredients(), HotbarItemType.Melee), Is.True);
+
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.Scrap), Is.EqualTo(0));
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.Wood), Is.EqualTo(0));
+            Assert.That(slots[1].ItemType, Is.EqualTo(HotbarItemType.Melee), "재료가 비운 첫 칸에 지급");
+            Assert.That(slots[1].Count, Is.EqualTo(1), "무기는 스택 없음");
+        }
+
+        [Test]
+        public void 빈_칸이_없으면_무기_제작은_전량_실패한다()
+        {
+            // 재료가 남아 칸이 비지 않고, 나머지 칸도 가득 — 지급할 자리가 없다.
+            HotbarSlotView[] slots = CreateSlots();
+            slots[1] = new HotbarSlotView(HotbarItemType.Resource, 3, ResourceType.Scrap);
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 2, ResourceType.Wood);
+            slots[3] = new HotbarSlotView(HotbarItemType.Resource, StackSize, ResourceType.Stone);
+            slots[4] = new HotbarSlotView(HotbarItemType.Resource, StackSize, ResourceType.Niter);
+
+            Assert.That(CraftingLogic.TryCraftItem(slots, MeleeIngredients(), HotbarItemType.Melee), Is.False,
+                "빈 칸 없음 → 전량 실패 (호출자가 복사본을 버려 재료가 보존된다)");
+        }
+
+        [Test]
+        public void 무효_무기_산출_종류는_실패한다()
+        {
+            HotbarSlotView[] slots = CreateSlots();
+            slots[1] = new HotbarSlotView(HotbarItemType.Resource, 2, ResourceType.Scrap);
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Wood);
+
+            Assert.That(CraftingLogic.TryCraftItem(slots, MeleeIngredients(), HotbarItemType.None), Is.False);
+            Assert.That(CraftingLogic.TryCraftItem(slots, MeleeIngredients(), HotbarItemType.Resource), Is.False);
+            Assert.That(slots[1].Count, Is.EqualTo(2), "거부 시 재료 무변경");
+        }
     }
 }

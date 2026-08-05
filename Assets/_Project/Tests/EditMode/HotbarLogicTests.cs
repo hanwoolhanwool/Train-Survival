@@ -208,5 +208,40 @@ namespace Game.Tests.EditMode
             Assert.That(HotbarLogic.IsValidSwap(-1, 3, 5), Is.False);
             Assert.That(HotbarLogic.IsValidSwap(0, 5, 5), Is.False);
         }
+
+        [Test]
+        public void 무기_아이템은_첫_빈_칸에_1개_적재된다()
+        {
+            HotbarSlotView[] slots = CreateDefaultSlots();
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 3, ResourceType.Wood);
+
+            Assert.That(HotbarLogic.TryAddItem(slots, HotbarItemType.Shotgun), Is.True);
+            Assert.That(slots[3].ItemType, Is.EqualTo(HotbarItemType.Shotgun), "첫 빈 칸");
+            Assert.That(slots[3].Count, Is.EqualTo(1), "무기는 스택 없음");
+        }
+
+        [Test]
+        public void 빈_칸이_없으면_무기_적재가_실패한다()
+        {
+            HotbarSlotView[] slots = CreateDefaultSlots();
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].IsEmpty)
+                {
+                    slots[i] = new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Stone);
+                }
+            }
+
+            Assert.That(HotbarLogic.TryAddItem(slots, HotbarItemType.Melee), Is.False);
+        }
+
+        [Test]
+        public void 무효_아이템_종류는_적재가_거부된다()
+        {
+            HotbarSlotView[] slots = CreateDefaultSlots();
+
+            Assert.That(HotbarLogic.TryAddItem(slots, HotbarItemType.None), Is.False);
+            Assert.That(HotbarLogic.TryAddItem(slots, HotbarItemType.Resource), Is.False, "자원은 TryAddResource 소관");
+        }
     }
 }
