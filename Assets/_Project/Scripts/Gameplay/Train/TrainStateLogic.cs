@@ -282,8 +282,9 @@ namespace Game.Gameplay.Train
                 && !IsStructureAlive(structures[index]);
         }
 
-        /// <summary>칸 위에 건축물을 설치한다 — 최대 체력으로 시작. 설치 불가 자리면 false.</summary>
-        public static bool BuildStructure(StructureState[] structures, CarState[] cars, int index, float maxHealth)
+        /// <summary>칸 위에 건축물을 설치한다 — 지정 종류·최대 체력으로 시작. 설치 불가 자리면 false.</summary>
+        public static bool BuildStructure(
+            StructureState[] structures, CarState[] cars, int index, StructureKind kind, float maxHealth)
         {
             if (!CanBuildStructureAt(structures, cars, index))
             {
@@ -293,6 +294,7 @@ namespace Game.Gameplay.Train
             structures[index] = new StructureState
             {
                 Present = true,
+                Kind = kind,
                 Health = maxHealth,
                 MaxHealth = maxHealth,
             };

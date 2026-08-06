@@ -25,6 +25,7 @@ namespace Game.Gameplay.Train
         [SerializeField] private TrainLayoutSettings _layoutSettings;
         [SerializeField] private TrainDurabilitySettings _durabilitySettings;
         [SerializeField] private TrainExpansionSettings _expansionSettings;
+        [SerializeField] private StructureCatalog _structureCatalog;
 
         private readonly NetworkList<CarState> _cars = new NetworkList<CarState>();
         private readonly NetworkList<CouplingState> _couplings = new NetworkList<CouplingState>();
@@ -483,7 +484,11 @@ namespace Game.Gameplay.Train
 
         public int CarBuildCost => _expansionSettings != null ? _expansionSettings.CarBuildCost : 0;
 
-        public int StructureBuildCost => _expansionSettings != null ? _expansionSettings.StructureBuildCost : 0;
+        public int GetStructureBuildCost(StructureKind kind)
+        {
+            int fallback = _expansionSettings != null ? _expansionSettings.StructureBuildCost : 0;
+            return _structureCatalog != null ? _structureCatalog.GetBuildCost(kind, fallback) : fallback;
+        }
 
         public bool TryGetBuildSlot(out int slotIndex)
         {
@@ -560,8 +565,8 @@ namespace Game.Gameplay.Train
             return TrainStateLogic.CanBuildStructureAt(SnapshotStructures(), SnapshotCars(), carIndex);
         }
 
-        /// <summary>칸 위에 건축물 1개를 설치한다 — 최대 체력으로 시작, 파괴된 건축물 자리에는 새로 지을 수 있다.</summary>
-        public bool ServerTryBuildStructure(int carIndex)
+        /// <summary>칸 위에 지정 종류의 건축물 1개를 설치한다 — 종류별 최대 체력(카탈로그)으로 시작, 파괴된 자리에는 새로 지을 수 있다.</summary>
+        public bool ServerTryBuildStructure(int carIndex, StructureKind kind)
         {
             if (!IsServer)
             {
@@ -570,14 +575,14 @@ namespace Game.Gameplay.Train
 
             CarState[] cars = SnapshotCars();
             StructureState[] structures = SnapshotStructures();
-            float structureMax = _durabilitySettings != null ? _durabilitySettings.StructureMaxHealth : 1f;
-            if (!TrainStateLogic.BuildStructure(structures, cars, carIndex, structureMax))
+            float structureMax = _structureCatalog != null ? _structureCatalog.GetMaxHealth(kind, 1f) : 1f;
+            if (!TrainStateLogic.BuildStructure(structures, cars, carIndex, kind, structureMax))
             {
                 return false;
             }
 
             WriteBackStructures(structures);
-            BroadcastStructureBuiltRpc(carIndex);
+            BroadcastStructureBuiltRpc(carIndex, kind);
             return true;
         }
 
@@ -973,9 +978,9 @@ namespace Game.Gameplay.Train
         }
 
         [Rpc(SendTo.Everyone)]
-        private void BroadcastStructureBuiltRpc(int index)
+        private void BroadcastStructureBuiltRpc(int index, StructureKind kind)
         {
-            EventBus<StructureBuiltEvent>.Publish(new StructureBuiltEvent(index));
+            EventBus<StructureBuiltEvent>.Publish(new StructureBuiltEvent(index, kind));
         }
 
         [Rpc(SendTo.Everyone)]

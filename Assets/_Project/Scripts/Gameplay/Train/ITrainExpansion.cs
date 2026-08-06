@@ -15,8 +15,8 @@ namespace Game.Gameplay.Train
         /// <summary>칸 1칸 건설(재건·증설 공통)에 드는 자원 수.</summary>
         int CarBuildCost { get; }
 
-        /// <summary>건축물 1개 설치에 드는 자원 수.</summary>
-        int StructureBuildCost { get; }
+        /// <summary>이 종류의 건축물 1개 설치에 드는 자원 수 — 종류별 비용은 StructureCatalog가 정한다.</summary>
+        int GetStructureBuildCost(StructureKind kind);
 
         /// <summary>
         /// 다음 건설이 들어갈 슬롯 — 재건할 첫 빈 슬롯, 없으면 후미 증설 슬롯.
@@ -33,7 +33,7 @@ namespace Game.Gameplay.Train
         /// <summary>이 칸 위에 건축물을 설치할 수 있는지 — 칸 건재 + 살아 있는 건축물 없음(기관차 제외).</summary>
         bool CanBuildStructure(int carIndex);
 
-        /// <summary>칸 위에 건축물 1개를 설치한다. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
-        bool ServerTryBuildStructure(int carIndex);
+        /// <summary>칸 위에 지정 종류의 건축물 1개를 설치한다. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
+        bool ServerTryBuildStructure(int carIndex, StructureKind kind);
     }
 }

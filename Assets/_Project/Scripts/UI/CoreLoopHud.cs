@@ -21,6 +21,8 @@ namespace Game.UI
     {
         private const float BannerHoldSeconds = 4f;
 
+        [SerializeField] private StructureCatalog _structureCatalog;
+
         private float _fuel;
         private float _fuelCapacity;
         private float _fuelConsumptionPerSecond;
@@ -194,7 +196,10 @@ namespace Game.UI
 
         private void OnStructureBuilt(StructureBuiltEvent evt)
         {
-            _trainAlertText = $"<color=lime>건축물 설치! (#{evt.Index}번 칸)</color>";
+            string name = _structureCatalog != null
+                ? _structureCatalog.GetDisplayName(evt.Kind)
+                : "건축물";
+            _trainAlertText = $"<color=lime>{name} 설치! (#{evt.Index}번 칸)</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 

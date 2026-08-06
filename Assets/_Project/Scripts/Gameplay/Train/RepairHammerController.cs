@@ -12,7 +12,7 @@ namespace Game.Gameplay.Train
 {
     /// <summary>
     /// 수리 망치 (기획서 §9 — 수리 망치로 수리. §M3). 좌클릭 홀드 = 겨눈 부위 수리,
-    /// 우클릭 = 겨눈 칸에 건축물(온실 돔) 설치(자원 소모),
+    /// 우클릭 = 겨눈 칸에 건축물 설치(자원 소모, R 키로 종류 순환 — M5 3차 종류화),
     /// 건설 지점(재건 슬롯·후미 연결부)을 겨누면 우클릭 = 칸 건설(M3 피드백 — 건설 포트의 망치 통합),
     /// 슬롯까지 끌어온 이탈 칸의 앞 연결 지점을 겨누면 우클릭 = 재결합(손잡이-이탈저항 스펙 §4.1).
     /// 파이프라인은 리볼버와 동일 구조: 소유자 로컬 레이캐스트로 부위(칸·연결부·건축물)를 식별해
@@ -25,6 +25,7 @@ namespace Game.Gameplay.Train
         [SerializeField] private RepairHammerSettings _settings;
         [SerializeField] private Transform _aimSource;
         [SerializeField] private TrainLayoutSettings _layoutSettings;
+        [SerializeField] private StructureCatalog _structureCatalog;
 
         [Tooltip("칸 건설·재결합 지점을 '겨눴다'고 볼 시선 정렬 하한 (조준 방향·지점 방향 내적).")]
         [SerializeField, Range(0f, 1f)] private float _buildLookDotThreshold = 0.85f;
@@ -42,6 +43,10 @@ namespace Game.Gameplay.Train
         private bool _sentCanRepair;
         private bool _sentCanBuild;
         private bool _sentAfford;
+        private StructureKind _sentStructureKind;
+
+        // 설치할 건축물 종류 — R 키 순환으로 고르는 로컬 선택 (M5 3차 종류화). 확정은 RPC 페이로드로 보낸다.
+        private StructureKind _selectedStructureKind = StructureKind.Dome;
 
         // 마지막으로 알린 칸 건설 조준 상태 — 바뀔 때만 다시 발행한다.
         private bool _sentBuildAiming;
@@ -158,11 +163,21 @@ namespace Game.Gameplay.Train
 
             bool hasExpansion = ServiceLocator.TryGet(out ITrainExpansion expansion);
             bool canBuild = hasExpansion && kind == TrainPartKind.Car && expansion.CanBuildStructure(index);
-            int structureCost = hasExpansion ? expansion.StructureBuildCost : 0;
+
+            // 설치 종류 순환 (R 키) — 설치 가능한 칸을 겨눌 때만 의미가 있다. 망치 활성 중에는
+            // 총기 입력이 닫혀 있어 재장전 키와 충돌하지 않는다.
+            Keyboard keyboard = Keyboard.current;
+            if (canBuild && keyboard != null && keyboard.rKey.wasPressedThisFrame && _structureCatalog != null)
+            {
+                _selectedStructureKind = _structureCatalog.NextKind(_selectedStructureKind);
+            }
+
+            int structureCost = hasExpansion ? expansion.GetStructureBuildCost(_selectedStructureKind) : 0;
             IResourceInventory inventory = GetComponent<IResourceInventory>();
             bool afford = inventory != null && inventory.Count >= structureCost;
 
-            PublishTarget(kind, index, health, maxHealth, canRepair, canBuild, structureCost, afford);
+            PublishTarget(kind, index, health, maxHealth, canRepair, canBuild,
+                _selectedStructureKind, structureCost, afford);
 
             Mouse mouse = Mouse.current;
             if (mouse == null)
@@ -178,7 +193,7 @@ namespace Game.Gameplay.Train
 
             if (mouse.rightButton.wasPressedThisFrame && canBuild && afford)
             {
-                RequestBuildStructureServerRpc(index, hit.point);
+                RequestBuildStructureServerRpc(index, hit.point, _selectedStructureKind);
             }
         }
 
@@ -398,15 +413,16 @@ namespace Game.Gameplay.Train
 
             _sentHasTarget = false;
             EventBus<HammerTargetLocalEvent>.Publish(new HammerTargetLocalEvent(
-                false, default, -1, 0f, 0f, false, false, 0, false));
+                false, default, -1, 0f, 0f, false, false, default, 0, false));
         }
 
         private void PublishTarget(TrainPartKind kind, int index, float health, float maxHealth,
-            bool canRepair, bool canBuild, int structureCost, bool afford)
+            bool canRepair, bool canBuild, StructureKind structureKind, int structureCost, bool afford)
         {
             bool unchanged = _sentHasTarget && _sentKind == kind && _sentIndex == index
                 && Mathf.Approximately(_sentHealth, health)
-                && _sentCanRepair == canRepair && _sentCanBuild == canBuild && _sentAfford == afford;
+                && _sentCanRepair == canRepair && _sentCanBuild == canBuild && _sentAfford == afford
+                && _sentStructureKind == structureKind;
             if (unchanged)
             {
                 return;
@@ -419,8 +435,10 @@ namespace Game.Gameplay.Train
             _sentCanRepair = canRepair;
             _sentCanBuild = canBuild;
             _sentAfford = afford;
+            _sentStructureKind = structureKind;
             EventBus<HammerTargetLocalEvent>.Publish(new HammerTargetLocalEvent(
-                true, kind, index, health, maxHealth, canRepair, canBuild, structureCost, afford));
+                true, kind, index, health, maxHealth, canRepair, canBuild,
+                structureKind, structureCost, afford));
         }
 
         private void PublishBuildAim(bool aiming, int slot, int cost, bool afford, bool occupied)
@@ -497,8 +515,9 @@ namespace Game.Gameplay.Train
         /// <summary>건축물 설치 — (자원 차감 + 설치)를 원자적으로 확정하고, 설치 실패 시 자원을 되돌린다.</summary>
         [Rpc(SendTo.Server)]
         private void RequestBuildStructureServerRpc(
-            int carIndex, Vector3 hitPoint, RpcParams rpcParams = default)
+            int carIndex, Vector3 hitPoint, StructureKind structureKind, RpcParams rpcParams = default)
         {
+            // 종류·비용은 호스트가 카탈로그로 재검증한다 — 조작된 종류 값도 카탈로그 폴백 비용으로 계산될 뿐이다.
             if (_settings == null || !IsWithinRange(hitPoint)
                 || !ServiceLocator.TryGet(out ITrainExpansion expansion)
                 || !expansion.CanBuildStructure(carIndex))
@@ -508,8 +527,8 @@ namespace Game.Gameplay.Train
 
             // 건자재 차감과 건설을 원자적으로 확정한다 — 건설 실패 시 차감도 반영되지 않는다.
             IResourceInventory inventory = GetComponent<IResourceInventory>();
-            inventory?.ServerTrySpend(expansion.StructureBuildCost,
-                () => expansion.ServerTryBuildStructure(carIndex));
+            inventory?.ServerTrySpend(expansion.GetStructureBuildCost(structureKind),
+                () => expansion.ServerTryBuildStructure(carIndex, structureKind));
         }
 
         /// <summary>

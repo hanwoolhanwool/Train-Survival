@@ -20,6 +20,7 @@ namespace Game.UI
         private const float SlotGap = 6f;
 
         [SerializeField] private ResourceCatalog _catalog;
+        [SerializeField] private StructureCatalog _structureCatalog;
 
         private float _health;
         private float _maxHealth;
@@ -293,9 +294,12 @@ namespace Game.UI
 
             if (_hammerTarget.CanBuildStructure)
             {
+                string structureName = _structureCatalog != null
+                    ? _structureCatalog.GetDisplayName(_hammerTarget.SelectedStructureKind)
+                    : _hammerTarget.SelectedStructureKind.ToString();
                 action += _hammerTarget.CanAffordStructure
-                    ? $" — 우클릭 온실 돔 설치 (소모: {BuildSpendPreview(hotbar, _hammerTarget.StructureCost)})"
-                    : $" — <color=red>돔 설치 자원 부족 ({BuildShortagePrompt(hotbar, _hammerTarget.StructureCost)})</color>";
+                    ? $" — 우클릭 {structureName} 설치 (소모: {BuildSpendPreview(hotbar, _hammerTarget.StructureCost)}) [R] 종류 변경"
+                    : $" — <color=red>{structureName} 설치 자원 부족 ({BuildShortagePrompt(hotbar, _hammerTarget.StructureCost)})</color> [R] 종류 변경";
             }
 
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth

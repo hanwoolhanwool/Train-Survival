@@ -160,9 +160,13 @@ namespace Game.Gameplay.Train
     {
         public readonly int Index;
 
-        public StructureBuiltEvent(int index)
+        /// <summary>설치된 건축물 종류 (M5 3차) — HUD 배너가 종류명을 표시한다.</summary>
+        public readonly StructureKind Kind;
+
+        public StructureBuiltEvent(int index, StructureKind kind)
         {
             Index = index;
+            Kind = kind;
         }
     }
 
@@ -188,6 +192,9 @@ namespace Game.Gameplay.Train
         /// <summary>지금 우클릭으로 이 칸에 건축물을 설치할 수 있는지(칸 부위를 겨눌 때만).</summary>
         public readonly bool CanBuildStructure;
 
+        /// <summary>설치하려는 건축물 종류 — R 키 순환으로 고른 로컬 선택 (M5 3차 종류화).</summary>
+        public readonly StructureKind SelectedStructureKind;
+
         public readonly int StructureCost;
 
         /// <summary>설치 비용을 지불할 자원이 있는지.</summary>
@@ -195,7 +202,8 @@ namespace Game.Gameplay.Train
 
         public HammerTargetLocalEvent(bool hasTarget, TrainPartKind kind, int index,
             float health, float maxHealth, bool canRepair,
-            bool canBuildStructure, int structureCost, bool canAffordStructure)
+            bool canBuildStructure, StructureKind selectedStructureKind,
+            int structureCost, bool canAffordStructure)
         {
             HasTarget = hasTarget;
             Kind = kind;
@@ -204,6 +212,7 @@ namespace Game.Gameplay.Train
             MaxHealth = maxHealth;
             CanRepair = canRepair;
             CanBuildStructure = canBuildStructure;
+            SelectedStructureKind = selectedStructureKind;
             StructureCost = structureCost;
             CanAffordStructure = canAffordStructure;
         }

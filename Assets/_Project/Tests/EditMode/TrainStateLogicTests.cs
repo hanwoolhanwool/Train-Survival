@@ -287,7 +287,7 @@ namespace Game.Tests.EditMode
         {
             cars = BuildTrain(3);
             structures = TrainStateLogic.BuildInitialStructures(3);
-            TrainStateLogic.BuildStructure(structures, cars, 2, 50f);
+            TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f);
         }
 
         [Test]
@@ -308,14 +308,14 @@ namespace Game.Tests.EditMode
             CarState[] cars = BuildTrain(3);
             StructureState[] structures = TrainStateLogic.BuildInitialStructures(3);
 
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 0, 50f), Is.False, "기관차 위에는 설치 불가");
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, 50f), Is.True);
+            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 0, StructureKind.Dome, 50f), Is.False, "기관차 위에는 설치 불가");
+            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f), Is.True);
             Assert.That(structures[2].Present, Is.True);
             Assert.That(structures[2].Health, Is.EqualTo(50f));
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, 50f), Is.False, "살아 있는 건축물 위에 중복 설치 불가");
+            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f), Is.False, "살아 있는 건축물 위에 중복 설치 불가");
 
             TrainStateLogic.DetachFrom(cars, 1);
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 1, 50f), Is.False, "이탈 칸에는 설치 불가");
+            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 1, StructureKind.Dome, 50f), Is.False, "이탈 칸에는 설치 불가");
         }
 
         [Test]
@@ -325,8 +325,34 @@ namespace Game.Tests.EditMode
             TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f);
             Assert.That(TrainStateLogic.IsStructureAlive(structures[2]), Is.False);
 
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, 50f), Is.True);
+            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f), Is.True);
             Assert.That(structures[2].Health, Is.EqualTo(50f));
+        }
+
+        [Test]
+        public void 건축물은_설치한_종류를_보존한다()
+        {
+            CarState[] cars = BuildTrain(3);
+            StructureState[] structures = TrainStateLogic.BuildInitialStructures(3);
+
+            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 1, StructureKind.Heater, 40f), Is.True);
+            Assert.That(structures[1].Kind, Is.EqualTo(StructureKind.Heater));
+            Assert.That(structures[1].MaxHealth, Is.EqualTo(40f), "종류별 체력이 그대로 들어간다");
+
+            // 데미지를 입어도 종류는 유지된다.
+            TrainStateLogic.ApplyStructureDamage(structures, cars, 1, 10f);
+            Assert.That(structures[1].Kind, Is.EqualTo(StructureKind.Heater));
+        }
+
+        [Test]
+        public void 파괴된_건축물_자리에_다른_종류를_지을_수_있다()
+        {
+            BuildTrainWithStructure(out CarState[] cars, out StructureState[] structures);
+            TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f);
+
+            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Storage, 60f), Is.True);
+            Assert.That(structures[2].Kind, Is.EqualTo(StructureKind.Storage), "자리의 이전 종류에 구속되지 않는다");
+            Assert.That(structures[2].MaxHealth, Is.EqualTo(60f));
         }
 
         [Test]
@@ -470,7 +496,7 @@ namespace Game.Tests.EditMode
             CarState[] cars = BuildTrain(4);
             CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(4, 60f);
             StructureState[] structures = TrainStateLogic.BuildInitialStructures(4);
-            TrainStateLogic.BuildStructure(structures, cars, 2, 50f);
+            TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f);
 
             // 칸2 파괴 → 연결부 1·2 절단, 칸3 이탈, 건축물 잔해(체력 0) 존재.
             TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f);

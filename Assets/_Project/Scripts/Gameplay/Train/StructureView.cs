@@ -20,8 +20,14 @@ namespace Game.Gameplay.Train
         [Tooltip("이탈 칸이 뒤로 이만큼(m) 멀어지면 표현을 끈다 — CarView의 소실 표현과 같은 거리로 맞춘다.")]
         [SerializeField, Min(5f)] private float _ejectHideMeters = 50f;
 
+        [Tooltip("종류별 시각 루트 — 인덱스 = StructureKind 값 (0=돔, 1=난방, 2=창고, 3=제작대). " +
+            "살아 있는 건축물의 종류 루트만 켜진다. 비워 두면 서브트리 전체를 단일 표현으로 쓴다.")]
+        [SerializeField] private GameObject[] _kindVisualRoots;
+
         private Renderer[] _renderers;
         private Collider[] _colliders;
+        private Renderer[][] _kindRenderers;
+        private Collider[][] _kindColliders;
 
         private StructureState _lastStructure;
         private CarState _lastCar;
@@ -46,6 +52,25 @@ namespace Game.Gameplay.Train
 
         private void Awake()
         {
+            if (_kindVisualRoots != null && _kindVisualRoots.Length > 0)
+            {
+                // 종류별 루트 지정 시(M5 3차) — 루트 단위로 수집해 살아 있는 종류만 켠다.
+                _kindRenderers = new Renderer[_kindVisualRoots.Length][];
+                _kindColliders = new Collider[_kindVisualRoots.Length][];
+                for (int i = 0; i < _kindVisualRoots.Length; i++)
+                {
+                    GameObject root = _kindVisualRoots[i];
+                    _kindRenderers[i] = root != null
+                        ? root.GetComponentsInChildren<Renderer>(includeInactive: true)
+                        : System.Array.Empty<Renderer>();
+                    _kindColliders[i] = root != null
+                        ? root.GetComponentsInChildren<Collider>(includeInactive: true)
+                        : System.Array.Empty<Collider>();
+                }
+
+                return;
+            }
+
             _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
             _colliders = GetComponentsInChildren<Collider>(includeInactive: true);
         }
@@ -184,6 +209,29 @@ namespace Game.Gameplay.Train
 
         private void SetPresentation(bool visible)
         {
+            if (_kindRenderers != null)
+            {
+                // 종류 루트 방식 — 보일 때는 현재 종류의 루트만, 숨길 때는 전부 끈다.
+                int activeKind = (int)_lastStructure.Kind;
+                for (int k = 0; k < _kindRenderers.Length; k++)
+                {
+                    bool on = visible && k == activeKind;
+                    Renderer[] renderers = _kindRenderers[k];
+                    for (int i = 0; i < renderers.Length; i++)
+                    {
+                        renderers[i].enabled = on;
+                    }
+
+                    Collider[] colliders = _kindColliders[k];
+                    for (int i = 0; i < colliders.Length; i++)
+                    {
+                        colliders[i].enabled = on;
+                    }
+                }
+
+                return;
+            }
+
             for (int i = 0; i < _renderers.Length; i++)
             {
                 _renderers[i].enabled = visible;
