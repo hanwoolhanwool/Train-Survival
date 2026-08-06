@@ -5183,6 +5183,7 @@ GameObject:
   - component: {fileID: 1904839120}
   - component: {fileID: 1904839122}
   - component: {fileID: 1904839123}
+  - component: {fileID: 1904839124}
   m_Layer: 0
   m_Name: Train
   m_TagString: Untagged
@@ -5284,6 +5285,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.QaDebugHotkeys
   ShowTopMostFoldoutHeaderGroup: 1
   _enableQaKeys: 1
+--- !u!114 &1904839124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faafe362c44d79f478854976764b99a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainStorage
+  ShowTopMostFoldoutHeaderGroup: 1
+  _layoutSettings: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
+  _expansionSettings: {fileID: 11400000, guid: f67ca358a1afd2e499d082c012a23939, type: 2}
+  _catalog: {fileID: 11400000, guid: 9747de51e37a616479a984ac3e8d4116, type: 2}
+  _slotsPerStorage: 10
+  _interactRadius: 3
+  _lookDotThreshold: 0.8
 --- !u!1 &2017756347
 GameObject:
   m_ObjectHideFlags: 0
