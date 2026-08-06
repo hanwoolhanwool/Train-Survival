@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a53c2e2042b718443961f50d24e2a51f, type: 3}
+  m_Name: EquipmentCatalog
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.EquipmentCatalog
+  _entries:
+  - _item: 8
+    _slot: 1
+    _damageReduction: 0.15
+    _coldInsulation: 0.5
+    _heatInsulation: -0.15
+  - _item: 9
+    _slot: 1
+    _damageReduction: 0.05
+    _coldInsulation: 0.2
+    _heatInsulation: 0.5
+  - _item: 10
+    _slot: 0
+    _damageReduction: 0.2
+    _coldInsulation: 0
+    _heatInsulation: 0
+  - _item: 11
+    _slot: 2
+    _damageReduction: 0.05
+    _coldInsulation: 0.25
+    _heatInsulation: -0.05
+  - _item: 12
+    _slot: 3
+    _damageReduction: 0.05
+    _coldInsulation: 0.1
+    _heatInsulation: 0.15
+  _damageReductionCap: 0.6
