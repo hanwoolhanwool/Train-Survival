@@ -8,14 +8,18 @@ using UnityEngine.InputSystem;
 namespace Game.Gameplay.Crafting
 {
     /// <summary>
-    /// 기관차 고정 제작 지점 (M5 1차 골격) — 근접 + 시선에서 E키로 제작 창을 연다
-    /// (<see cref="Game.Gameplay.Train.EngineFuelPort"/>와 같은 상호작용 규약).
-    /// 제작 확정은 호스트: 요청 RPC를 받아 거리 재검증 후 (재료 차감 + 산출 지급)을 원자적으로 확정한다.
-    /// 제작대 건축물이 생기는 차수(M5 3차)에는 이 트리거 표면만 건축물로 옮긴다 — 레시피·확정 경로 재사용.
+    /// 제작 서비스 — 레시피 목록·요청 RPC·확정 경로의 단일 소유자 (M5 1차 골격).
+    /// 유효 제작 지점은 다중이다 (M5 3차 — "제작 서비스 단일 + 제작 지점 다중"):
+    /// 기관차 고정 지점(이 오브젝트 위치 — 시작 직후 건자재 없이도 탄약 루프가 성립해야 한다)
+    /// + 제작대 건축물(<see cref="Train.StructureKind.Workbench"/>)이 살아 있는 칸들.
+    /// 근접 + 시선에서 E키로 제작 창을 열고, 확정은 호스트: 거리 재검증 후
+    /// (재료 차감 + 산출 지급)을 원자적으로 확정한다. 로컬 판정과 서버 재검증이
+    /// 같은 지점 산출 함수를 쓴다 — 판정이 갈리지 않는다.
     /// </summary>
     public sealed class CraftingStation : NetworkBehaviour, ICraftingStation
     {
         [SerializeField] private RecipeCatalog _recipes;
+        [SerializeField] private Train.TrainLayoutSettings _layoutSettings;
         [SerializeField, Min(0.5f)] private float _interactRadius = 3f;
 
         [Tooltip("제작대를 '쳐다봤다'고 볼 시선 정렬 하한 (카메라 전방·제작대 방향 내적).")]
@@ -58,7 +62,7 @@ namespace Game.Gameplay.Crafting
                 return;
             }
 
-            NetworkObject localPlayer = GetLocalPlayerObject();
+            NetworkObject localPlayer = Player.LocalInteraction.GetLocalPlayerObject();
             if (localPlayer == null)
             {
                 SetLocalInRange(false);
@@ -66,9 +70,10 @@ namespace Game.Gameplay.Crafting
                 return;
             }
 
-            bool inRange = (localPlayer.transform.position - transform.position).sqrMagnitude
-                <= _interactRadius * _interactRadius;
-            bool ready = inRange && IsLookingAtStation(localPlayer);
+            bool inRange = TryGetNearestCraftPoint(localPlayer.transform.position, out Vector3 craftPoint)
+                && Player.LocalInteraction.IsWithinRange(localPlayer, craftPoint, _interactRadius);
+            bool ready = inRange
+                && Player.LocalInteraction.IsLookingAt(localPlayer, craftPoint, _lookDotThreshold);
 
             // 범위를 벗어나면 창을 닫는다 — 열림 상태 안내는 창이 대신하므로 프롬프트는 끈다.
             if (!inRange)
@@ -105,33 +110,42 @@ namespace Game.Gameplay.Crafting
             }
         }
 
-        private static NetworkObject GetLocalPlayerObject()
+        /// <summary>
+        /// 위치에서 가장 가까운 유효 제작 지점 (M5 3차 — 제작 지점 다중).
+        /// 기관차 고정 지점은 항상 유효하고, 제작대 건축물이 살아 있는 칸(파괴 아님 — 이탈은 허용)의
+        /// 중심이 추가된다. 로컬 근접·시선 판정과 서버 거리 재검증이 이 함수 하나를 공유한다.
+        /// </summary>
+        private bool TryGetNearestCraftPoint(Vector3 position, out Vector3 point)
         {
-            NetworkManager manager = NetworkManager.Singleton;
-            if (manager == null || manager.LocalClient == null)
-            {
-                return null;
-            }
+            point = transform.position;
+            float bestSqr = (position - point).sqrMagnitude;
 
-            return manager.LocalClient.PlayerObject;
-        }
-
-        /// <summary>로컬 플레이어 카메라가 제작대를 향하고 있는지 — 카메라를 못 찾으면 거리만으로 폴백한다.</summary>
-        private bool IsLookingAtStation(NetworkObject localPlayer)
-        {
-            Camera camera = localPlayer.GetComponentInChildren<Camera>();
-            if (camera == null)
+            if (_layoutSettings == null || !ServiceLocator.TryGet(out Train.ITrainState train))
             {
                 return true;
             }
 
-            Vector3 toStation = transform.position - camera.transform.position;
-            if (toStation.sqrMagnitude < 0.0001f)
+            for (int i = 0; i < train.CarCount; i++)
             {
-                return true;
+                if (!train.TryGetStructure(i, out Train.StructureState structure)
+                    || !structure.Present || structure.Kind != Train.StructureKind.Workbench
+                    || structure.Health <= 0f
+                    || !train.TryGetCar(i, out Train.CarState car) || car.Health <= 0f)
+                {
+                    continue;
+                }
+
+                float z = _layoutSettings.CarCenterZ(i, train.GetEjectOffset(i));
+                var carPoint = new Vector3(0f, _layoutSettings.DeckHeight, z);
+                float sqr = (position - carPoint).sqrMagnitude;
+                if (sqr < bestSqr)
+                {
+                    bestSqr = sqr;
+                    point = carPoint;
+                }
             }
 
-            return Vector3.Dot(camera.transform.forward, toStation.normalized) >= _lookDotThreshold;
+            return true;
         }
 
         private void SetLocalInRange(bool inRange)
@@ -167,10 +181,15 @@ namespace Game.Gameplay.Crafting
                 return;
             }
 
-            // 서버 측 거리 검증 — 범위 밖 제작 요청은 기각한다 (호스트 검증 원칙).
+            // 서버 측 거리 검증 — 로컬 판정과 같은 지점 산출로 최근접 유효 지점 기준 거리를 본다.
+            Vector3 playerPosition = client.PlayerObject.transform.position;
+            if (!TryGetNearestCraftPoint(playerPosition, out Vector3 craftPoint))
+            {
+                return;
+            }
+
             float maxDistance = _interactRadius + 1.5f;
-            if ((client.PlayerObject.transform.position - transform.position).sqrMagnitude
-                > maxDistance * maxDistance)
+            if ((playerPosition - craftPoint).sqrMagnitude > maxDistance * maxDistance)
             {
                 return;
             }
