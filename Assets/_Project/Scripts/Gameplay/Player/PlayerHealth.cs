@@ -53,6 +53,21 @@ namespace Game.Gameplay.Player
 
         public void ApplyDamage(float amount, ulong instigatorClientId)
         {
+            ServerApplyDamageInternal(amount);
+        }
+
+        /// <summary>
+        /// 환경 피해(체온 등) 전용 진입점 — 서버 전용. 물리 피해(<see cref="ApplyDamage"/>)와
+        /// 진입점을 분리해 장비 피해 감소(M5)가 물리 경로에만 적용되게 한다
+        /// (체온 피해는 장비의 체온 축이 이미 완화를 담당한다).
+        /// </summary>
+        public void ApplyEnvironmentalDamage(float amount)
+        {
+            ServerApplyDamageInternal(amount);
+        }
+
+        private void ServerApplyDamageInternal(float amount)
+        {
             if (!IsServer || !IsAlive || _settings == null)
             {
                 return;

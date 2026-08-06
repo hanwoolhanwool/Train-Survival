@@ -189,8 +189,8 @@ namespace Game.Gameplay.Player
             float amount = Mathf.Floor(_pendingDamage);
             _pendingDamage -= amount;
 
-            // 환경 피해 — 가해자는 서버 자신으로 기록한다.
-            _health.ApplyDamage(amount, NetworkManager.ServerClientId);
+            // 환경 피해 — 물리 경로와 분리된 전용 진입점 (장비 피해 감소의 영향을 받지 않는다).
+            _health.ApplyEnvironmentalDamage(amount);
         }
 
         private void OnTemperatureChanged(float previous, float current)
