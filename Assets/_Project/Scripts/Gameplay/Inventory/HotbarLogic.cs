@@ -153,6 +153,29 @@ namespace Game.Gameplay.Inventory
             return total;
         }
 
+        /// <summary>
+        /// 지정한 칸의 자원 스택을 전량 비운다 (아이템 버리기, M5 3차 — hotbar 명세 §11 해소).
+        /// 무기·도구 칸은 실패한다 — 버릴 수 없고 처분은 공유 창고 보관이 담당한다.
+        /// 비워진 종류·수량을 돌려줘 호출자(버리기 확정)가 지상 낙하 스폰에 쓴다.
+        /// </summary>
+        public static bool TryClearResourceSlot(
+            HotbarSlotView[] slots, int index, out ResourceType type, out int count)
+        {
+            type = ResourceType.None;
+            count = 0;
+
+            if (index < 0 || index >= slots.Length ||
+                slots[index].ItemType != HotbarItemType.Resource || slots[index].Count <= 0)
+            {
+                return false;
+            }
+
+            type = slots[index].Resource;
+            count = slots[index].Count;
+            slots[index] = new HotbarSlotView(HotbarItemType.None, 0);
+            return true;
+        }
+
         private static void RemoveOneAt(HotbarSlotView[] slots, int index)
         {
             int remaining = slots[index].Count - 1;

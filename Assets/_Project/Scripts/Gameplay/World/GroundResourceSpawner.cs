@@ -14,7 +14,7 @@ namespace Game.Gameplay.World
     /// 스폰/소멸은 PoolManager + NGO 스폰(등록된 PooledNetworkPrefabHandler 경유)로 처리한다.
     /// 지역이 바뀌면 이후 심는 자원의 종류·밀도가 지역 데이터를 따른다 (M4, 기획서 §4).
     /// </summary>
-    public sealed class GroundResourceSpawner : NetworkBehaviour
+    public sealed class GroundResourceSpawner : NetworkBehaviour, IResourceDropper
     {
         [SerializeField] private ResourceSpawnSettings _settings;
 
@@ -47,12 +47,22 @@ namespace Game.Gameplay.World
             if (IsServer)
             {
                 _nextSpawnDistance = 0f;
+
+                if (!ServiceLocator.IsRegistered<IResourceDropper>())
+                {
+                    ServiceLocator.Register<IResourceDropper>(this);
+                }
             }
         }
 
         public override void OnNetworkDespawn()
         {
             EventBus<RegionChangedEvent>.Unsubscribe(OnRegionChanged);
+
+            if (ServiceLocator.TryGet(out IResourceDropper dropper) && ReferenceEquals(dropper, this))
+            {
+                ServiceLocator.Unregister<IResourceDropper>();
+            }
         }
 
         private void OnRegionChanged(RegionChangedEvent evt)
@@ -142,6 +152,46 @@ namespace Game.Gameplay.World
                 // 지역별 자원 밀도 — 배율이 클수록 간격이 벌어져 희소해진다 (기획서 §4 자원 등급).
                 _nextSpawnDistance += _settings.SpawnIntervalMeters * _activeIntervalMultiplier;
             }
+        }
+
+        /// <summary>
+        /// 버린 자원의 낙하 스폰 (M5 3차 — 아이템 버리기). 주기 스폰과 같은 경로
+        /// (PoolManager → 종류 주입 → NGO 스폰 → 회수 목록)를 타므로 낙하 노드도
+        /// 컨베이어로 흘러가고 뒤로 밀리면 회수된다. 집게로 다시 주울 수 있다.
+        /// </summary>
+        public bool ServerSpawnDropped(Inventory.ResourceType type, int count, Vector3 dropOrigin)
+        {
+            if (!IsSpawned || !IsServer || _settings == null || _activeResourcePrefab == null
+                || type == Inventory.ResourceType.None || count <= 0
+                || !ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                return false;
+            }
+
+            float distance = scroll.TraveledDistance;
+            for (int i = 0; i < count; i++)
+            {
+                // 버린 사람 옆 선로변 — 주기 스폰과 같은 측면 대역에, 수량만큼 앞뒤로 산포한다.
+                float lateral = Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset);
+                float side = Random.value < 0.5f ? -1f : 1f;
+                var spawnPosition = new Vector3(
+                    side * lateral, _settings.SpawnHeight, dropOrigin.z + Random.Range(-2f, 2f));
+
+                GameObject instance = PoolManager.Spawn(_activeResourcePrefab, spawnPosition, Quaternion.identity);
+                var node = instance.GetComponent<ResourceNode>();
+                if (node == null)
+                {
+                    PoolManager.Despawn(instance);
+                    return i > 0;
+                }
+
+                node.ServerSetSpawnBinding(spawnPosition, distance);
+                node.ServerSetResourceType(type);
+                node.NetworkObject.Spawn();
+                _activeNodes.Add(node);
+            }
+
+            return true;
         }
 
         private void DespawnBehind(float distance)

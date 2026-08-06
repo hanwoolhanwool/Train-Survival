@@ -1,3 +1,4 @@
+using Game.Core.Services;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -224,6 +225,41 @@ namespace Game.Gameplay.Inventory
             NetworkSlot temp = _slots[a];
             _slots[a] = _slots[b];
             _slots[b] = temp;
+        }
+
+        /// <summary>칸의 자원 스택 전량 버리기 요청 (I 창 패널 밖 드롭, M5 3차) — 소유자에서 호출한다.</summary>
+        public void RequestDrop(int slotIndex)
+        {
+            if (IsOwner && slotIndex >= 0 && slotIndex < _slots.Count)
+            {
+                RequestDropServerRpc(slotIndex);
+            }
+        }
+
+        /// <summary>
+        /// 버리기 확정 — 자원 칸만 유효(무기·도구는 기각 — 처분은 공유 창고 보관).
+        /// 차감과 낙하 스폰을 원자적으로 확정한다: 스폰이 성립했을 때만 복사본 차감을 반영한다.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        private void RequestDropServerRpc(int slotIndex)
+        {
+            if (_settings == null || !ServiceLocator.TryGet(out World.IResourceDropper dropper))
+            {
+                return;
+            }
+
+            HotbarSlotView[] slots = CopySlots();
+            if (!HotbarLogic.TryClearResourceSlot(slots, slotIndex, out ResourceType type, out int count))
+            {
+                return;
+            }
+
+            if (!dropper.ServerSpawnDropped(type, count, transform.position))
+            {
+                return;
+            }
+
+            ApplySlots(slots);
         }
 
         private void ServerInitializeSlots()

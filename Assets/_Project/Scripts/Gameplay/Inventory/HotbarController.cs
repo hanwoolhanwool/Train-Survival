@@ -106,6 +106,11 @@ namespace Game.Gameplay.Inventory
             _inventory?.RequestSwap(a, b);
         }
 
+        public void RequestDrop(int slotIndex)
+        {
+            _inventory?.RequestDrop(slotIndex);
+        }
+
         private void Update()
         {
             if (!IsSpawned || !IsOwner)

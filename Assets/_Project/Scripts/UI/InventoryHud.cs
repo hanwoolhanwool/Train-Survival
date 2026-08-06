@@ -409,7 +409,7 @@ namespace Game.UI
 
             var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
                 panelWidth, panelHeight);
-            GUI.Box(rect, "인벤토리 / 캐릭터 상태 [I 닫기] — 드래그로 재배치");
+            GUI.Box(rect, "인벤토리 / 캐릭터 상태 [I 닫기] — 드래그로 재배치 · 패널 밖 드롭 = 버리기");
 
             float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
             float cursorY = rect.y + 34f;
@@ -449,9 +449,19 @@ namespace Game.UI
                 }
             }
 
-            if (current.type == EventType.MouseUp)
+            if (current.type == EventType.MouseUp && _dragFromIndex >= 0)
             {
-                // 슬롯 밖에서 놓으면 드래그 취소 (드롭 없음 — 기획서 §3.4, M2).
+                // 패널 안 공백 = 취소(실수 방지선), 패널 밖 = 버리기 (M5 3차 — hotbar 명세 §11 해소).
+                // 무기·도구는 서버가 기각한다 — 처분하려면 공유 창고에 보관한다.
+                if (!rect.Contains(current.mousePosition))
+                {
+                    HotbarSlotView dropSlot = hotbar.GetSlot(_dragFromIndex);
+                    if (dropSlot.ItemType == HotbarItemType.Resource)
+                    {
+                        hotbar.RequestDrop(_dragFromIndex);
+                    }
+                }
+
                 _dragFromIndex = -1;
             }
 

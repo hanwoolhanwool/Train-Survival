@@ -21,5 +21,11 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>두 슬롯의 교환을 요청한다 (자유 배치, I 창 드래그). 확정은 호스트.</summary>
         void RequestSwap(int a, int b);
+
+        /// <summary>
+        /// 칸의 자원 스택 전량 버리기를 요청한다 (I 창에서 패널 밖 드롭, M5 3차).
+        /// 무기·도구 칸은 서버가 기각한다. 확정은 호스트 — 버린 자원은 열차 측면 지상에 낙하한다.
+        /// </summary>
+        void RequestDrop(int slotIndex);
     }
 }
