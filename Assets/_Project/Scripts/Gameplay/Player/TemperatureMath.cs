@@ -38,13 +38,15 @@ namespace Game.Gameplay.Player
 
         public readonly float ShelterFactor;
 
+        public readonly float HeaterFactor;
+
         public TemperatureCurve(
             float normalBody, float minBody, float maxBody,
             float comfortMin, float comfortMax,
             float driftRatePerDegree, float recoveryRate,
             float heatWarnThreshold, float heatDamageThreshold,
             float coldWarnThreshold, float coldDamageThreshold,
-            float damagePerDegreePerSecond, float shelterFactor)
+            float damagePerDegreePerSecond, float shelterFactor, float heaterFactor)
         {
             NormalBody = normalBody;
             MinBody = minBody;
@@ -59,6 +61,7 @@ namespace Game.Gameplay.Player
             ColdDamageThreshold = coldDamageThreshold;
             DamagePerDegreePerSecond = damagePerDegreePerSecond;
             ShelterFactor = shelterFactor;
+            HeaterFactor = heaterFactor;
         }
 
         /// <summary>쾌적대의 중심 — 차폐(건축물 아래)가 환경 온도를 끌어당기는 목표점.</summary>
@@ -73,18 +76,24 @@ namespace Game.Gameplay.Player
     public static class TemperatureMath
     {
         /// <summary>
-        /// 차폐를 반영한 실효 환경 온도 — 건축물 아래는 <b>그늘</b>이므로 <b>더위만 막는다</b>.
-        /// 환경 온도가 쾌적 상한을 넘을 때만 쾌적대 중심으로 당겨지며, 밤 급랭·혹한은 완화하지 못한다
-        /// (지붕이 햇빛은 가려도 난방은 되지 않는다 — 추위 대응은 난방 건축물·방한 장비의 몫, M5).
+        /// 건축물 효과를 반영한 실효 환경 온도 (M5 3차 — 건축물 종류화).
+        /// 그늘(돔)은 환경 온도가 쾌적 상한을 넘을 때만, 난방(난방기)은 쾌적 하한을 밑돌 때만
+        /// 쾌적대 중심으로 당긴다 — 지붕이 햇빛은 가려도 난방은 되지 않고, 화로가 그늘을 만들지도 않는다.
         /// </summary>
-        public static float ResolveAmbient(float regionAmbient, bool sheltered, in TemperatureCurve curve)
+        public static float ResolveAmbient(
+            float regionAmbient, bool hasShade, bool hasHeat, in TemperatureCurve curve)
         {
-            if (!sheltered || regionAmbient <= curve.ComfortMax)
+            if (hasShade && regionAmbient > curve.ComfortMax)
             {
-                return regionAmbient;
+                return Mathf.Lerp(regionAmbient, curve.ComfortCenter, Mathf.Clamp01(curve.ShelterFactor));
             }
 
-            return Mathf.Lerp(regionAmbient, curve.ComfortCenter, Mathf.Clamp01(curve.ShelterFactor));
+            if (hasHeat && regionAmbient < curve.ComfortMin)
+            {
+                return Mathf.Lerp(regionAmbient, curve.ComfortCenter, Mathf.Clamp01(curve.HeaterFactor));
+            }
+
+            return regionAmbient;
         }
 
         /// <summary>한 스텝 뒤의 체온. 표류 속도는 쾌적대를 벗어난 정도에 비례한다.</summary>

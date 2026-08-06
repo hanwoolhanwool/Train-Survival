@@ -34,9 +34,12 @@ namespace Game.Gameplay.Player
         [Tooltip("피해 임계를 1℃ 벗어날 때마다 초당 이만큼 체력이 깎인다.")]
         [SerializeField, Min(0f)] private float _damagePerDegreePerSecond = 3f;
 
-        [Header("차폐 (M4의 유일한 완화 수단 — 건축물 아래)")]
-        [Tooltip("건축물이 있는 칸 위에 있을 때 환경 온도가 쾌적대 중심으로 당겨지는 정도 (0~1).")]
+        [Header("건축물 완화 (M5 3차 — 그늘은 더위만, 난방은 추위만)")]
+        [Tooltip("그늘 건축물(돔)이 있는 칸 위에서 더운 환경 온도가 쾌적대 중심으로 당겨지는 정도 (0~1).")]
         [SerializeField, Range(0f, 1f)] private float _shelterFactor = 0.8f;
+
+        [Tooltip("난방 건축물이 있는 칸 위에서 추운 환경 온도가 쾌적대 중심으로 당겨지는 정도 (0~1).")]
+        [SerializeField, Range(0f, 1f)] private float _heaterFactor = 0.8f;
 
         public float NormalBodyTemperature => _normalBodyTemperature;
 
@@ -57,7 +60,7 @@ namespace Game.Gameplay.Player
                 _driftRatePerDegree, _recoveryRate,
                 _heatWarnThreshold, _heatDamageThreshold,
                 _coldWarnThreshold, _coldDamageThreshold,
-                _damagePerDegreePerSecond, _shelterFactor);
+                _damagePerDegreePerSecond, _shelterFactor, _heaterFactor);
         }
     }
 }

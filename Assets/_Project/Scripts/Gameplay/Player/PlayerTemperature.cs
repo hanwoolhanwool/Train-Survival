@@ -11,14 +11,15 @@ namespace Game.Gameplay.Player
     /// <summary>
     /// 플레이어 체온 — 호스트 권위 (권위 분담표: 상태 변경·피해 적용 = 호스트).
     /// 지역·국면이 정하는 환경 온도에 따라 체온이 표류하고, 임계를 벗어나면 지속 피해를 준다
-    /// (기획서 §4.2 — 사막 낮 열사병 / 밤 급랭). M4의 유일한 완화 수단은 <b>건축물이 있는 칸 위</b>로,
-    /// M3 건축물 시스템을 그대로 재사용한다. M5 장비(사막 로브·방한 세트)가 이 위에 얹힌다.
+    /// (기획서 §4.2 — 사막 낮 열사병 / 밤 급랭). 완화 수단은 <b>건축물이 있는 칸 위</b> —
+    /// 종류에 따라 그늘(돔 = 더위)·난방(난방기 = 추위)이 갈린다 (M5 3차 종류화, 카탈로그 데이터).
     /// </summary>
     [RequireComponent(typeof(PlayerHealth))]
     public sealed class PlayerTemperature : NetworkBehaviour
     {
         [SerializeField] private TemperatureSettings _settings;
         [SerializeField] private TrainLayoutSettings _trainLayout;
+        [SerializeField] private StructureCatalog _structureCatalog;
 
         /// <summary>체온은 초당 1℃ 미만으로 천천히 변하므로, 이만큼 벌어졌을 때만 복제해 대역폭을 아낀다.</summary>
         private const float SyncThreshold = 0.05f;
@@ -74,7 +75,8 @@ namespace Game.Gameplay.Player
             }
 
             TemperatureCurve curve = _settings.ToCurve();
-            float ambient = TemperatureMath.ResolveAmbient(GetRegionAmbient(curve), IsSheltered(), curve);
+            ResolveShelter(out bool hasShade, out bool hasHeat);
+            float ambient = TemperatureMath.ResolveAmbient(GetRegionAmbient(curve), hasShade, hasHeat, curve);
 
             _serverTemperature = TemperatureMath.Step(_serverTemperature, ambient, curve, Time.deltaTime);
 
@@ -102,15 +104,20 @@ namespace Game.Gameplay.Player
         }
 
         /// <summary>
-        /// 살아 있는 건축물이 있는 칸 위에 서 있는가 — 그늘로 취급해 더위를 완화한다.
-        /// 판단 기준은 <b>지붕의 존재</b>이므로 칸이 편성에서 이탈했는지는 보지 않는다
+        /// 살아 있는 건축물이 있는 칸 위에 서 있는가 — 건축물 종류에 따라 그늘(더위 완화)과
+        /// 난방(추위 완화)을 구분해 알려준다 (M5 3차 — 건축물 종류화, 효과는 카탈로그 데이터).
+        /// 판단 기준은 <b>건축물의 존재</b>이므로 칸이 편성에서 이탈했는지는 보지 않는다
         /// (이탈 칸에 고립된 플레이어가 체온으로 이중 처벌받지 않게 한다). 파괴된 건축물은 제외.
         /// </summary>
-        private bool IsSheltered()
+        private void ResolveShelter(out bool hasShade, out bool hasHeat)
         {
-            if (_trainLayout == null || !ServiceLocator.TryGet(out ITrainState train))
+            hasShade = false;
+            hasHeat = false;
+
+            if (_trainLayout == null || _structureCatalog == null
+                || !ServiceLocator.TryGet(out ITrainState train))
             {
-                return false;
+                return;
             }
 
             Vector3 position = transform.position;
@@ -118,23 +125,29 @@ namespace Game.Gameplay.Player
             // 갑판 위에 올라와 있고 열차 폭 안이어야 한다 — 지상에서 칸 옆을 지나는 경우를 배제.
             if (position.y < _trainLayout.DeckHeight - 0.5f)
             {
-                return false;
+                return;
             }
 
             if (Mathf.Abs(position.x) > _trainLayout.CarWidth * 0.5f + 0.5f)
             {
-                return false;
+                return;
             }
 
             int carIndex = ResolveCarIndexAt(position.z, train);
             if (carIndex < 0)
             {
-                return false;
+                return;
             }
 
-            // 부서진 건축물은 지붕 역할을 못 한다 — Present만으로는 파괴된 자리도 통과하므로 체력까지 본다.
-            return train.TryGetStructure(carIndex, out StructureState structure)
-                && structure.Present && structure.Health > 0f;
+            // 부서진 건축물은 효과가 없다 — Present만으로는 파괴된 자리도 통과하므로 체력까지 본다.
+            if (!train.TryGetStructure(carIndex, out StructureState structure)
+                || !structure.Present || structure.Health <= 0f)
+            {
+                return;
+            }
+
+            hasShade = _structureCatalog.ProvidesShade(structure.Kind);
+            hasHeat = _structureCatalog.ProvidesHeat(structure.Kind);
         }
 
         /// <summary>

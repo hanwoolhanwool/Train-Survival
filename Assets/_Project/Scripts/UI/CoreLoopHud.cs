@@ -282,8 +282,8 @@ namespace Game.UI
                     break;
 
                 case TemperatureStress.Cold:
-                    // 그늘은 추위를 막지 못한다 — 난방 수단(M5)이 생기기 전까지 행동 지시가 없다.
-                    GUILayout.Label($"<color=aqua>{text} — 추위!</color>");
+                    // 그늘은 추위를 막지 못한다 — 난방 건축물이 있는 칸 위가 대응 수단이다 (M5 3차).
+                    GUILayout.Label($"<color=aqua>{text} — 추위! 난방 칸 위로</color>");
                     break;
 
                 default:
