@@ -172,6 +172,61 @@ namespace Game.Tests.EditMode
             Assert.That(sheltered, Is.LessThan(38f), "차폐 안에서는 내려간다");
         }
 
+        // ── 장비 단열 (기획서 §6.3, M5 3차 — 양방향 계수, 음수 = 역효과) ──────────────────
+
+        [Test]
+        public void 단열은_추위를_쾌적_하한으로_당긴다()
+        {
+            TemperatureCurve curve = Curve();
+
+            // 사막 밤 2℃ + 방한 0.5 → 2 + (10−2)×0.5 = 6
+            float insulated = TemperatureMath.ApplyInsulation(2f, 0.5f, 0f, curve);
+
+            Assert.That(insulated, Is.EqualTo(6f).Within(0.001f));
+        }
+
+        [Test]
+        public void 단열은_더위를_쾌적_상한으로_당긴다()
+        {
+            TemperatureCurve curve = Curve();
+
+            // 사막 낮 45℃ + 내열 0.5 → 45 + (32−45)×0.5 = 38.5
+            float insulated = TemperatureMath.ApplyInsulation(45f, 0f, 0.5f, curve);
+
+            Assert.That(insulated, Is.EqualTo(38.5f).Within(0.001f));
+        }
+
+        [Test]
+        public void 음수_단열은_이탈을_키운다()
+        {
+            // 가죽 옷의 사막 낮 역효과 (§6.3 — "북극 필수 / 사막 낮에는 역효과").
+            TemperatureCurve curve = Curve();
+
+            float worsened = TemperatureMath.ApplyInsulation(45f, 0f, -0.15f, curve);
+
+            Assert.That(worsened, Is.EqualTo(46.95f).Within(0.001f), "45 + (32−45)×(−0.15) = 46.95");
+        }
+
+        [Test]
+        public void 쾌적대_안에서는_단열이_아무것도_바꾸지_않는다()
+        {
+            TemperatureCurve curve = Curve();
+
+            Assert.That(TemperatureMath.ApplyInsulation(22f, 0.5f, 0.5f, curve), Is.EqualTo(22f));
+        }
+
+        [Test]
+        public void 단열_계수는_상한_0_9로_잘려_완전_무효화되지_않는다()
+        {
+            TemperatureCurve curve = Curve();
+
+            // 계수 1.5를 넣어도 0.9로 잘린다 → 2 + (10−2)×0.9 = 9.2 (여전히 쾌적대 밖)
+            float insulated = TemperatureMath.ApplyInsulation(2f, 1.5f, 0f, curve);
+
+            Assert.That(insulated, Is.EqualTo(9.2f).Within(0.001f));
+            Assert.That(insulated, Is.LessThan(curve.ComfortMin), "장비만으로는 혹한을 완전히 못 막는다");
+        }
+
         [Test]
         public void 피해는_임계를_벗어난_만큼만_발생한다()
         {

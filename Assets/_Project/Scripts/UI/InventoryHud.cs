@@ -39,6 +39,11 @@ namespace Game.UI
         private int _storagePromptCar = -1;
         private int _storageOpenCar = -1;
 
+        // 장비 착용 (M5 3차) — 드래그 출처가 착용 칸이면 그 부위 인덱스, 아니면 -1.
+        private int _dragFromEquip = -1;
+
+        private static readonly string[] EquipSlotLabels = { "머리", "상체", "하체", "신발" };
+
         private void OnEnable()
         {
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
@@ -446,7 +451,8 @@ namespace Game.UI
             float stride = SlotSize + SlotGap;
             float gridWidth = columns * SlotSize + (columns - 1) * SlotGap;
             float panelWidth = gridWidth + 40f;
-            float panelHeight = 34f + 20f + SlotSize + 16f + 20f + bagRows * stride + 12f + 90f;
+            float panelHeight = 34f + 20f + SlotSize + 16f + 20f + bagRows * stride + 12f
+                + 20f + SlotSize + 16f + 90f;
 
             var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
                 panelWidth, panelHeight);
@@ -465,6 +471,11 @@ namespace Game.UI
             float bagStartY = cursorY;
             cursorY += bagRows * stride + 12f;
 
+            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "착용 — 장비를 끌어다 놓기 (기획서 §6.3)");
+            cursorY += 20f;
+            float equipRowY = cursorY;
+            cursorY += SlotSize + 16f;
+
             Event current = Event.current;
             for (int i = 0; i < total; i++)
             {
@@ -475,26 +486,60 @@ namespace Game.UI
                     !hotbar.GetSlot(i).IsEmpty)
                 {
                     _dragFromIndex = i;
+                    _dragFromEquip = -1;
                     current.Use();
                 }
                 else if (current.type == EventType.MouseUp && slotRect.Contains(current.mousePosition) &&
-                    _dragFromIndex >= 0)
+                    (_dragFromIndex >= 0 || _dragFromEquip >= 0))
                 {
-                    if (_dragFromIndex != i)
+                    if (_dragFromEquip >= 0)
+                    {
+                        // 착용 해제 — 서버가 첫 빈 인벤토리 칸으로 되돌린다.
+                        hotbar.RequestUnequip(_dragFromEquip);
+                    }
+                    else if (_dragFromIndex != i)
                     {
                         hotbar.RequestSwap(_dragFromIndex, i);
                     }
 
                     _dragFromIndex = -1;
+                    _dragFromEquip = -1;
                     current.Use();
                 }
             }
 
-            if (current.type == EventType.MouseUp && _dragFromIndex >= 0)
+            // 착용 4칸 — 어느 칸에 놓아도 부위는 서버가 카탈로그로 판정한다.
+            for (int part = 0; part < EquipSlotLabels.Length; part++)
+            {
+                var slotRect = new Rect(gridX + part * stride, equipRowY, SlotSize, SlotSize);
+                HotbarSlotView equipped = hotbar.GetEquipmentSlot(part);
+                string label = equipped.IsEmpty
+                    ? $"({EquipSlotLabels[part]})"
+                    : GetSlotLabel(equipped, hotbar.StackSize);
+                GUI.Box(slotRect, label);
+
+                if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
+                    && !equipped.IsEmpty)
+                {
+                    _dragFromEquip = part;
+                    _dragFromIndex = -1;
+                    current.Use();
+                }
+                else if (current.type == EventType.MouseUp && slotRect.Contains(current.mousePosition)
+                    && _dragFromIndex >= 0)
+                {
+                    hotbar.RequestEquip(_dragFromIndex);
+                    _dragFromIndex = -1;
+                    _dragFromEquip = -1;
+                    current.Use();
+                }
+            }
+
+            if (current.type == EventType.MouseUp && (_dragFromIndex >= 0 || _dragFromEquip >= 0))
             {
                 // 패널 안 공백 = 취소(실수 방지선), 패널 밖 = 버리기 (M5 3차 — hotbar 명세 §11 해소).
-                // 무기·도구는 서버가 기각한다 — 처분하려면 공유 창고에 보관한다.
-                if (!rect.Contains(current.mousePosition))
+                // 무기·도구·착용 장비는 서버가 기각·취소한다 — 처분하려면 공유 창고에 보관한다.
+                if (!rect.Contains(current.mousePosition) && _dragFromIndex >= 0)
                 {
                     HotbarSlotView dropSlot = hotbar.GetSlot(_dragFromIndex);
                     if (dropSlot.ItemType == HotbarItemType.Resource)
@@ -504,13 +549,17 @@ namespace Game.UI
                 }
 
                 _dragFromIndex = -1;
+                _dragFromEquip = -1;
             }
 
-            if (_dragFromIndex >= 0)
+            if (_dragFromIndex >= 0 || _dragFromEquip >= 0)
             {
                 var dragRect = new Rect(current.mousePosition.x - SlotSize * 0.5f,
                     current.mousePosition.y - SlotSize * 0.5f, SlotSize, SlotSize);
-                GUI.Box(dragRect, GetSlotLabel(hotbar.GetSlot(_dragFromIndex), hotbar.StackSize));
+                HotbarSlotView dragSlot = _dragFromEquip >= 0
+                    ? hotbar.GetEquipmentSlot(_dragFromEquip)
+                    : hotbar.GetSlot(_dragFromIndex);
+                GUI.Box(dragRect, GetSlotLabel(dragSlot, hotbar.StackSize));
             }
 
             GUILayout.BeginArea(new Rect(rect.x + 16f, cursorY, rect.width - 32f, 84f));

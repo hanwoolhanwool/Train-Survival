@@ -19,6 +19,23 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>마체테 — 탄약 0일 때의 최후 근접 수단, 무한 사용 (기획서 §6.2, M5 2차 제작 무기).</summary>
         Melee = 7,
+
+        // ── 장비 (기획서 §6.3 — 의류/방어구, M5 3차 제작 장비). 부위·효과는 EquipmentCatalog가 정한다 ──
+
+        /// <summary>가죽 옷 (상체) — 피해 감소 소 + 보온 대. 사막 낮에는 역효과.</summary>
+        LeatherCoat = 8,
+
+        /// <summary>사막 로브 (상체) — 낮 열 차단 + 밤 보온 소량. 사막 전용 해법.</summary>
+        DesertRobe = 9,
+
+        /// <summary>고철 투구 (머리) — 피해 감소 특화.</summary>
+        ScrapHelmet = 10,
+
+        /// <summary>누비 바지 (하체) — 보온 소량.</summary>
+        PaddedPants = 11,
+
+        /// <summary>사막 장화 (신발) — 내열 소량.</summary>
+        DesertBoots = 12,
     }
 
     /// <summary>

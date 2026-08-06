@@ -27,6 +27,7 @@ namespace Game.Gameplay.Player
         private readonly NetworkVariable<float> _temperature = new NetworkVariable<float>();
 
         private PlayerHealth _health;
+        private Inventory.PlayerInventory _inventory;
         private float _serverTemperature;
         private float _pendingDamage;
 
@@ -36,6 +37,7 @@ namespace Game.Gameplay.Player
         private void Awake()
         {
             _health = GetComponent<PlayerHealth>();
+            _inventory = GetComponent<Inventory.PlayerInventory>();
         }
 
         public override void OnNetworkSpawn()
@@ -77,6 +79,13 @@ namespace Game.Gameplay.Player
             TemperatureCurve curve = _settings.ToCurve();
             ResolveShelter(out bool hasShade, out bool hasHeat);
             float ambient = TemperatureMath.ResolveAmbient(GetRegionAmbient(curve), hasShade, hasHeat, curve);
+
+            // 장비 단열 (기획서 §6.3, M5 3차) — 건축물 다음 층으로 적용한다. 음수 계수 = 역효과.
+            if (_inventory != null)
+            {
+                _inventory.GetEquippedInsulation(out float cold, out float heat);
+                ambient = TemperatureMath.ApplyInsulation(ambient, cold, heat, curve);
+            }
 
             _serverTemperature = TemperatureMath.Step(_serverTemperature, ambient, curve, Time.deltaTime);
 

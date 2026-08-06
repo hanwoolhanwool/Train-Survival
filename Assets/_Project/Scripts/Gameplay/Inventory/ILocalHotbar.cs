@@ -27,5 +27,14 @@ namespace Game.Gameplay.Inventory
         /// 무기·도구 칸은 서버가 기각한다. 확정은 호스트 — 버린 자원은 열차 측면 지상에 낙하한다.
         /// </summary>
         void RequestDrop(int slotIndex);
+
+        /// <summary>착용 칸 조회 — 인덱스 = <see cref="EquipSlot"/> 값 (기획서 §6.3, M5 3차).</summary>
+        HotbarSlotView GetEquipmentSlot(int partIndex);
+
+        /// <summary>인벤토리 칸의 장비 착용을 요청한다 (I 창 드래그). 부위 판정·확정은 호스트.</summary>
+        void RequestEquip(int slotIndex);
+
+        /// <summary>착용 해제를 요청한다 — 첫 빈 인벤토리 칸으로 되돌아온다. 확정은 호스트.</summary>
+        void RequestUnequip(int partIndex);
     }
 }

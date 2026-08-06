@@ -114,6 +114,23 @@ namespace Game.Gameplay.Inventory
             _inventory?.RequestDrop(slotIndex);
         }
 
+        public HotbarSlotView GetEquipmentSlot(int partIndex)
+        {
+            return _inventory != null
+                ? _inventory.GetEquipmentSlot(partIndex)
+                : new HotbarSlotView(HotbarItemType.None, 0);
+        }
+
+        public void RequestEquip(int slotIndex)
+        {
+            _inventory?.RequestEquip(slotIndex);
+        }
+
+        public void RequestUnequip(int partIndex)
+        {
+            _inventory?.RequestUnequip(partIndex);
+        }
+
         private void Update()
         {
             if (!IsSpawned || !IsOwner)

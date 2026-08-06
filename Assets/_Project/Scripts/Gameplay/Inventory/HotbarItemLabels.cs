@@ -22,6 +22,16 @@ namespace Game.Gameplay.Inventory
                     return "볼트액션";
                 case HotbarItemType.Melee:
                     return "마체테";
+                case HotbarItemType.LeatherCoat:
+                    return "가죽 옷";
+                case HotbarItemType.DesertRobe:
+                    return "사막 로브";
+                case HotbarItemType.ScrapHelmet:
+                    return "고철 투구";
+                case HotbarItemType.PaddedPants:
+                    return "누비 바지";
+                case HotbarItemType.DesertBoots:
+                    return "사막 장화";
                 default:
                     return string.Empty;
             }

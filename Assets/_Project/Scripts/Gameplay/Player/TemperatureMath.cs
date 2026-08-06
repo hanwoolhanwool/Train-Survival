@@ -96,6 +96,32 @@ namespace Game.Gameplay.Player
             return regionAmbient;
         }
 
+        /// <summary>
+        /// 장비 단열을 반영한 실효 환경 온도 (기획서 §6.3, M5 3차) — 적용 순서는
+        /// 지역 온도 → 건축물(<see cref="ResolveAmbient"/>) → 장비 → <see cref="Step"/>.
+        /// 추우면 쾌적 하한으로 cold만큼, 더우면 쾌적 상한으로 heat만큼 당긴다.
+        /// <b>음수 계수 = 이탈 확대</b> — 보온복의 사막 낮 역효과가 같은 수식으로 성립한다.
+        /// </summary>
+        public static float ApplyInsulation(float ambient, float cold, float heat, in TemperatureCurve curve)
+        {
+            if (ambient < curve.ComfortMin)
+            {
+                return Mathf.LerpUnclamped(ambient, curve.ComfortMin, EquipmentClamp(cold));
+            }
+
+            if (ambient > curve.ComfortMax)
+            {
+                return Mathf.LerpUnclamped(ambient, curve.ComfortMax, EquipmentClamp(heat));
+            }
+
+            return ambient;
+        }
+
+        private static float EquipmentClamp(float factor)
+        {
+            return Mathf.Clamp(factor, -1f, 0.9f);
+        }
+
         /// <summary>한 스텝 뒤의 체온. 표류 속도는 쾌적대를 벗어난 정도에 비례한다.</summary>
         public static float Step(float current, float ambient, in TemperatureCurve curve, float deltaTime)
         {

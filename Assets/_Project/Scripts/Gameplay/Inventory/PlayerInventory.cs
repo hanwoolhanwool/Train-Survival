@@ -14,8 +14,15 @@ namespace Game.Gameplay.Inventory
     {
         [SerializeField] private InventorySettings _settings;
         [SerializeField] private ResourceCatalog _catalog;
+        [SerializeField] private EquipmentCatalog _equipmentCatalog;
 
         private readonly NetworkList<NetworkSlot> _slots = new NetworkList<NetworkSlot>();
+
+        // 착용 장비 — 인덱스 = EquipSlot 값 (기획서 §6.3, M5 3차). 핫바(_slots)와 분리해
+        // "첫 빈 칸" 계열 규칙이 착용 칸을 넘보지 않게 한다.
+        private readonly NetworkList<NetworkSlot> _equipment = new NetworkList<NetworkSlot>();
+
+        private const int EquipmentSlotCount = 4;
 
         public int SlotCount => _settings != null ? _settings.SlotCount : 0;
 
@@ -67,6 +74,7 @@ namespace Game.Gameplay.Inventory
             if (IsServer)
             {
                 ServerInitializeSlots();
+                ServerInitializeEquipment();
             }
         }
 
@@ -225,6 +233,145 @@ namespace Game.Gameplay.Inventory
             NetworkSlot temp = _slots[a];
             _slots[a] = _slots[b];
             _slots[b] = temp;
+        }
+
+        // ── 장비 착용 (기획서 §6.3, M5 3차) — 착용도 호스트 확정 ───────────────────
+
+        /// <summary>착용 칸 조회 — 인덱스 = <see cref="EquipSlot"/> 값.</summary>
+        public HotbarSlotView GetEquipmentSlot(int partIndex)
+        {
+            if (partIndex < 0 || partIndex >= _equipment.Count)
+            {
+                return new HotbarSlotView(HotbarItemType.None, 0);
+            }
+
+            NetworkSlot slot = _equipment[partIndex];
+            return new HotbarSlotView(slot.ItemType, slot.Count, slot.Resource);
+        }
+
+        /// <summary>착용 부위 합산 피해 배율 (상한 반영) — 물리 피해 경로(PlayerHealth)가 곱한다. 1 = 감소 없음.</summary>
+        public float GetEquippedDamageMultiplier()
+        {
+            if (_equipmentCatalog == null)
+            {
+                return 1f;
+            }
+
+            float total = 0f;
+            for (int i = 0; i < _equipment.Count; i++)
+            {
+                total += _equipmentCatalog.GetDamageReduction(_equipment[i].ItemType);
+            }
+
+            return EquipmentLogic.GetDamageMultiplier(total, _equipmentCatalog.DamageReductionCap);
+        }
+
+        /// <summary>착용 부위 합산 단열 계수 (클램프 반영) — 체온 경로(PlayerTemperature)가 쓴다.</summary>
+        public void GetEquippedInsulation(out float cold, out float heat)
+        {
+            cold = 0f;
+            heat = 0f;
+            if (_equipmentCatalog == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _equipment.Count; i++)
+            {
+                cold += _equipmentCatalog.GetColdInsulation(_equipment[i].ItemType);
+                heat += _equipmentCatalog.GetHeatInsulation(_equipment[i].ItemType);
+            }
+
+            cold = EquipmentLogic.ClampInsulation(cold);
+            heat = EquipmentLogic.ClampInsulation(heat);
+        }
+
+        /// <summary>인벤토리 칸의 장비 착용 요청 (I 창 드래그) — 소유자에서 호출한다. 부위는 서버가 카탈로그로 판정.</summary>
+        public void RequestEquip(int slotIndex)
+        {
+            if (IsOwner && slotIndex >= 0 && slotIndex < _slots.Count)
+            {
+                RequestEquipServerRpc(slotIndex);
+            }
+        }
+
+        /// <summary>착용 해제 요청 — 첫 빈 인벤토리 칸으로 되돌린다 (빈 칸 없으면 실패 — 장비 보존).</summary>
+        public void RequestUnequip(int partIndex)
+        {
+            if (IsOwner && partIndex >= 0 && partIndex < _equipment.Count)
+            {
+                RequestUnequipServerRpc(partIndex);
+            }
+        }
+
+        [Rpc(SendTo.Server)]
+        private void RequestEquipServerRpc(int slotIndex)
+        {
+            if (_equipmentCatalog == null)
+            {
+                return;
+            }
+
+            HotbarSlotView[] slots = CopySlots();
+            HotbarSlotView[] equipment = CopyEquipment();
+            if (!EquipmentLogic.TryEquip(slots, equipment, slotIndex, _equipmentCatalog.TryGetSlot))
+            {
+                return;
+            }
+
+            ApplySlots(slots);
+            ApplyEquipment(equipment);
+        }
+
+        [Rpc(SendTo.Server)]
+        private void RequestUnequipServerRpc(int partIndex)
+        {
+            HotbarSlotView[] slots = CopySlots();
+            HotbarSlotView[] equipment = CopyEquipment();
+            if (!EquipmentLogic.TryUnequip(equipment, partIndex, slots))
+            {
+                return;
+            }
+
+            ApplySlots(slots);
+            ApplyEquipment(equipment);
+        }
+
+        private void ServerInitializeEquipment()
+        {
+            _equipment.Clear();
+            for (int i = 0; i < EquipmentSlotCount; i++)
+            {
+                _equipment.Add(new NetworkSlot { ItemType = HotbarItemType.None, Count = 0 });
+            }
+        }
+
+        private HotbarSlotView[] CopyEquipment()
+        {
+            var copy = new HotbarSlotView[_equipment.Count];
+            for (int i = 0; i < _equipment.Count; i++)
+            {
+                copy[i] = new HotbarSlotView(_equipment[i].ItemType, _equipment[i].Count, _equipment[i].Resource);
+            }
+
+            return copy;
+        }
+
+        private void ApplyEquipment(HotbarSlotView[] equipment)
+        {
+            for (int i = 0; i < equipment.Length && i < _equipment.Count; i++)
+            {
+                var next = new NetworkSlot
+                {
+                    ItemType = equipment[i].ItemType,
+                    Count = (byte)equipment[i].Count,
+                    Resource = equipment[i].Resource,
+                };
+                if (!_equipment[i].Equals(next))
+                {
+                    _equipment[i] = next;
+                }
+            }
         }
 
         /// <summary>칸의 자원 스택 전량 버리기 요청 (I 창 패널 밖 드롭, M5 3차) — 소유자에서 호출한다.</summary>

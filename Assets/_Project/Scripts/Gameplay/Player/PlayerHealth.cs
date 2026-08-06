@@ -22,6 +22,7 @@ namespace Game.Gameplay.Player
         private readonly NetworkVariable<float> _health = new NetworkVariable<float>();
 
         private NetworkPlayerController _controller;
+        private Inventory.PlayerInventory _inventory;
         private bool _serverDead;
 
         public bool IsAlive => IsSpawned && !_serverDead && _health.Value > 0f;
@@ -33,6 +34,7 @@ namespace Game.Gameplay.Player
         private void Awake()
         {
             _controller = GetComponent<NetworkPlayerController>();
+            _inventory = GetComponent<Inventory.PlayerInventory>();
         }
 
         public override void OnNetworkSpawn()
@@ -53,7 +55,10 @@ namespace Game.Gameplay.Player
 
         public void ApplyDamage(float amount, ulong instigatorClientId)
         {
-            ServerApplyDamageInternal(amount);
+            // 물리 피해만 장비 감산을 통과한다 (기획서 §6.3, M5 3차) — 체온 피해는
+            // ApplyEnvironmentalDamage 경로라 장비의 체온 축이 이미 완화를 담당한다.
+            float multiplier = _inventory != null ? _inventory.GetEquippedDamageMultiplier() : 1f;
+            ServerApplyDamageInternal(amount * multiplier);
         }
 
         /// <summary>
