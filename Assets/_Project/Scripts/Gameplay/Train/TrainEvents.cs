@@ -171,6 +171,41 @@ namespace Game.Gameplay.Train
     }
 
     /// <summary>
+    /// 로컬 표현 이벤트 — 공유 창고 칸에 근접해 열 수 있는 상태 (M5 3차). HUD의 "E — 창고" 안내용.
+    /// </summary>
+    public readonly struct StoragePromptLocalEvent
+    {
+        public readonly bool IsInRange;
+
+        /// <summary>대상 창고가 있는 칸 인덱스 — 범위 밖이면 -1.</summary>
+        public readonly int CarIndex;
+
+        public StoragePromptLocalEvent(bool isInRange, int carIndex)
+        {
+            IsInRange = isInRange;
+            CarIndex = carIndex;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 공유 창고 창 토글 (M5 3차). I 창과 같은 규약으로
+    /// 열려 있는 동안 시점 회전·무기 입력이 정지된다.
+    /// </summary>
+    public readonly struct StoragePanelToggledLocalEvent
+    {
+        public readonly bool IsOpen;
+
+        /// <summary>연 창고의 칸 인덱스 — 닫힘이면 -1.</summary>
+        public readonly int CarIndex;
+
+        public StoragePanelToggledLocalEvent(bool isOpen, int carIndex)
+        {
+            IsOpen = isOpen;
+            CarIndex = carIndex;
+        }
+    }
+
+    /// <summary>
     /// 로컬 표현 이벤트 — 수리 망치가 지금 겨누고 있는 열차 부위와 그 상태. 조준 HUD("칸 #2 70/100 — 좌클릭 수리")용.
     /// 겨눈 대상·체력·설치 가능 여부가 바뀔 때마다 발행된다.
     /// </summary>

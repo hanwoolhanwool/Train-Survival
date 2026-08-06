@@ -300,6 +300,23 @@ namespace Game.Gameplay.Inventory
             return _catalog != null && _catalog.IsBuildMaterial(type);
         }
 
+        // ── 서버 협력 API — 공유 창고(TrainStorage)가 인벤토리↔창고 이동을 원자 확정할 때 쓴다 ──
+
+        /// <summary>서버 전용 — 슬롯 복사본. 순수 로직 판정용, 반영은 <see cref="ServerApplySlotViews"/>.</summary>
+        public HotbarSlotView[] ServerCopySlotViews()
+        {
+            return IsServer ? CopySlots() : System.Array.Empty<HotbarSlotView>();
+        }
+
+        /// <summary>서버 전용 — 판정을 마친 복사본을 권위 상태로 되쓴다 (변경 칸만).</summary>
+        public void ServerApplySlotViews(HotbarSlotView[] slots)
+        {
+            if (IsServer)
+            {
+                ApplySlots(slots);
+            }
+        }
+
         private HotbarSlotView[] CopySlots()
         {
             var copy = new HotbarSlotView[_slots.Count];

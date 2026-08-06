@@ -339,6 +339,9 @@ namespace Game.Gameplay.Train
             CouplingState[] couplings = SnapshotCouplings();
             int[] detached = TrainStateLogic.DestroyAndDetach(cars, index);
 
+            // 칸 파괴 = 칸 위 건축물도 함께 소멸 — 창고였다면 내용물을 소실시킨다 (M5 3차, 이탈과 달리 복구 불가).
+            ServerClearStorageIfPresent(index);
+
             // 파괴된 칸에 닿은 앞뒤 연결부를 끊는다 (뒤 연결부는 칸이 마지막이면 없다).
             var brokenCouplings = new List<int>(2);
             if (TrainStateLogic.BreakCoupling(couplings, index - 1))
@@ -420,7 +423,25 @@ namespace Game.Gameplay.Train
 
             if (result == CarDamageResult.Destroyed)
             {
+                // 창고 파괴 = 내용물 소실 (M5 3차) — Kind는 파괴 후에도 남으므로 스냅샷에서 읽는다.
+                if (structures[index].Kind == StructureKind.Storage)
+                {
+                    ServerClearStorageIfPresent(index);
+                }
+
                 BroadcastStructureDestroyedRpc(index);
+            }
+        }
+
+        /// <summary>
+        /// 창고 내용물 소실 — 건축물이 죽는 확정 지점(건축물 파괴·칸 파괴·슬롯 재건)에서 명시 호출한다.
+        /// 이벤트 구독이 아닌 직접 호출이라 누락 지점이 코드 리뷰에서 드러난다. 이탈은 소실이 아니다(재결합 보존).
+        /// </summary>
+        private void ServerClearStorageIfPresent(int index)
+        {
+            if (ServiceLocator.TryGet(out ITrainStorage storage))
+            {
+                storage.ServerClearStorage(index);
             }
         }
 
@@ -552,6 +573,9 @@ namespace Game.Gameplay.Train
                 WriteBackCars(cars);
                 WriteBackCouplings(couplings);
                 WriteBackStructures(structures);
+
+                // 재건은 잔해 제거 — 그 자리 창고 내용물도 남아 있을 이유가 없다 (파괴 시점 소실의 안전망).
+                ServerClearStorageIfPresent(slot);
 
                 ResetEjectSimulation(slot);
             }

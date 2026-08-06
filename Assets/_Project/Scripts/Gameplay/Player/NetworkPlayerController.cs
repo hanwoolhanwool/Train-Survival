@@ -48,6 +48,7 @@ namespace Game.Gameplay.Player
         private bool _inventoryPanelOpen;
         private bool _sessionMenuOpen;
         private bool _craftingPanelOpen;
+        private bool _storagePanelOpen;
         private bool _standingOnWorldFrame;
         private CarView _ridingCar;
         private Vector3 _ridingCarLastPos;
@@ -85,6 +86,7 @@ namespace Game.Gameplay.Player
                 EventBus<InventoryPanelToggledLocalEvent>.Subscribe(OnInventoryPanelToggled);
                 EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
                 EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
+                EventBus<Train.StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
             }
         }
 
@@ -95,6 +97,7 @@ namespace Game.Gameplay.Player
                 EventBus<InventoryPanelToggledLocalEvent>.Unsubscribe(OnInventoryPanelToggled);
                 EventBus<SessionMenuToggledLocalEvent>.Unsubscribe(OnSessionMenuToggled);
                 EventBus<Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
+                EventBus<Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
@@ -121,9 +124,16 @@ namespace Game.Gameplay.Player
             ApplyCursorState();
         }
 
+        /// <summary>창고 창 토글 — I 창과 동일 규약 (시점 정지 + 커서 표시).</summary>
+        private void OnStoragePanelToggled(Train.StoragePanelToggledLocalEvent evt)
+        {
+            _storagePanelOpen = evt.IsOpen;
+            ApplyCursorState();
+        }
+
         private void ApplyCursorState()
         {
-            bool uiOpen = _inventoryPanelOpen || _sessionMenuOpen || _craftingPanelOpen;
+            bool uiOpen = _inventoryPanelOpen || _sessionMenuOpen || _craftingPanelOpen || _storagePanelOpen;
             Cursor.lockState = uiOpen ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = uiOpen;
         }
@@ -166,7 +176,7 @@ namespace Game.Gameplay.Player
                 return;
             }
 
-            if (!_inventoryPanelOpen && !_sessionMenuOpen && !_craftingPanelOpen)
+            if (!_inventoryPanelOpen && !_sessionMenuOpen && !_craftingPanelOpen && !_storagePanelOpen)
             {
                 UpdateLook();
             }

@@ -33,6 +33,12 @@ namespace Game.UI
         private bool _panelOpen;
         private int _dragFromIndex = -1;
 
+        // 공유 창고 (M5 3차) — 드래그 출처가 창고인지, 어느 칸의 창고가 열려 있는지.
+        private bool _dragFromStorage;
+        private bool _storagePromptInRange;
+        private int _storagePromptCar = -1;
+        private int _storageOpenCar = -1;
+
         private void OnEnable()
         {
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
@@ -41,6 +47,8 @@ namespace Game.UI
             EventBus<CarBuildAimLocalEvent>.Subscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Subscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
+            EventBus<StoragePromptLocalEvent>.Subscribe(OnStoragePrompt);
+            EventBus<StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
         }
 
         private void OnDisable()
@@ -51,6 +59,8 @@ namespace Game.UI
             EventBus<CarBuildAimLocalEvent>.Unsubscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Unsubscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
+            EventBus<StoragePromptLocalEvent>.Unsubscribe(OnStoragePrompt);
+            EventBus<StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
         }
 
         private void OnPlayerHealthChanged(PlayerHealthChangedEvent evt)
@@ -107,10 +117,24 @@ namespace Game.UI
             _hammerTarget = evt;
         }
 
+        private void OnStoragePrompt(StoragePromptLocalEvent evt)
+        {
+            _storagePromptInRange = evt.IsInRange;
+            _storagePromptCar = evt.CarIndex;
+        }
+
+        private void OnStoragePanelToggled(StoragePanelToggledLocalEvent evt)
+        {
+            _storageOpenCar = evt.IsOpen ? evt.CarIndex : -1;
+            _dragFromIndex = -1;
+            _dragFromStorage = false;
+        }
+
         private void Update()
         {
+            // 창고 창이 열려 있는 동안 I키는 무시한다 — 창고 창이 이미 개인 인벤토리를 포함한다.
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.iKey.wasPressedThisFrame)
+            if (keyboard != null && keyboard.iKey.wasPressedThisFrame && _storageOpenCar < 0)
             {
                 _panelOpen = !_panelOpen;
                 _dragFromIndex = -1;
@@ -130,11 +154,28 @@ namespace Game.UI
             DrawCarBuildPrompt(hotbar);
             DrawCarRecouplePrompt(hotbar);
             DrawHammerTarget(hotbar);
+            DrawStoragePrompt();
 
-            if (_panelOpen)
+            if (_storageOpenCar >= 0)
+            {
+                DrawStoragePanel(hotbar);
+            }
+            else if (_panelOpen)
             {
                 DrawInventoryPanel(hotbar);
             }
+        }
+
+        /// <summary>공유 창고 접근 안내 — 창고 칸 근접 + 시선에서 표시한다 (M5 3차).</summary>
+        private void DrawStoragePrompt()
+        {
+            if (!_storagePromptInRange || _panelOpen || _storageOpenCar >= 0)
+            {
+                return;
+            }
+
+            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.66f, 300f, 24f),
+                $"<color=yellow>E — 공유 창고 (#{_storagePromptCar}번 칸)</color>");
         }
 
         private string GetSlotLabel(HotbarSlotView slot, int stackSize)
@@ -494,6 +535,135 @@ namespace Game.UI
                 gridX + bagIndex % columns * stride,
                 bagStartY + bagIndex / columns * stride,
                 SlotSize, SlotSize);
+        }
+
+        /// <summary>
+        /// 공유 창고 창 (M5 3차) — 창고 격자(위) + 개인 인벤토리(아래)를 한 패널에 그리고,
+        /// 격자 간 드래그로 이동 요청을 보낸다 (확정은 호스트 — <see cref="ITrainStorage"/>).
+        /// </summary>
+        private void DrawStoragePanel(ILocalHotbar hotbar)
+        {
+            if (!ServiceLocator.TryGet(out ITrainStorage storage))
+            {
+                return;
+            }
+
+            const int columns = 5;
+            int storageSlots = storage.SlotsPerStorage;
+            int storageRows = Mathf.CeilToInt(storageSlots / (float)columns);
+            int hotbarSize = hotbar.HotbarSize;
+            int total = hotbar.SlotCount;
+            int bagSize = Mathf.Max(0, total - hotbarSize);
+            int bagRows = bagSize > 0 ? Mathf.CeilToInt(bagSize / (float)columns) : 0;
+
+            float stride = SlotSize + SlotGap;
+            float gridWidth = columns * SlotSize + (columns - 1) * SlotGap;
+            float panelWidth = gridWidth + 40f;
+            float panelHeight = 34f + 20f + storageRows * stride + 16f
+                + 20f + SlotSize + 16f + 20f + bagRows * stride + 16f;
+
+            var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
+                panelWidth, panelHeight);
+            GUI.Box(rect, $"공유 창고 (#{_storageOpenCar}번 칸) [E 닫기] — 드래그로 이동");
+
+            float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
+            float cursorY = rect.y + 34f;
+
+            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "창고");
+            cursorY += 20f;
+            float storageStartY = cursorY;
+            cursorY += storageRows * stride + 16f;
+
+            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "핫바 [숫자 키 1~5]");
+            cursorY += 20f;
+            float hotbarRowY = cursorY;
+            cursorY += SlotSize + 16f;
+
+            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "가방");
+            cursorY += 20f;
+            float bagStartY = cursorY;
+
+            Event current = Event.current;
+
+            // 창고 격자 — MouseDown = 드래그 시작(창고 출처), MouseUp = 이 칸으로 이동.
+            for (int i = 0; i < storageSlots; i++)
+            {
+                var slotRect = new Rect(
+                    gridX + i % columns * stride, storageStartY + i / columns * stride, SlotSize, SlotSize);
+                GUI.Box(slotRect, GetSlotLabel(storage.GetSlot(_storageOpenCar, i), hotbar.StackSize));
+
+                if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
+                    && !storage.GetSlot(_storageOpenCar, i).IsEmpty)
+                {
+                    _dragFromIndex = i;
+                    _dragFromStorage = true;
+                    current.Use();
+                }
+                else if (current.type == EventType.MouseUp && slotRect.Contains(current.mousePosition)
+                    && _dragFromIndex >= 0)
+                {
+                    byte from = _dragFromStorage ? ITrainStorage.ContainerStorage : ITrainStorage.ContainerInventory;
+                    storage.RequestTransfer(_storageOpenCar, from, _dragFromIndex, ITrainStorage.ContainerStorage, i);
+                    _dragFromIndex = -1;
+                    _dragFromStorage = false;
+                    current.Use();
+                }
+            }
+
+            // 개인 격자 — 개인끼리는 기존 스왑 경로, 창고에서 오면 이동 요청.
+            for (int i = 0; i < total; i++)
+            {
+                Rect slotRect = GetPanelSlotRect(i, hotbarSize, columns, stride, gridX, hotbarRowY, bagStartY);
+                GUI.Box(slotRect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
+
+                if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
+                    && !hotbar.GetSlot(i).IsEmpty)
+                {
+                    _dragFromIndex = i;
+                    _dragFromStorage = false;
+                    current.Use();
+                }
+                else if (current.type == EventType.MouseUp && slotRect.Contains(current.mousePosition)
+                    && _dragFromIndex >= 0)
+                {
+                    if (_dragFromStorage)
+                    {
+                        storage.RequestTransfer(_storageOpenCar,
+                            ITrainStorage.ContainerStorage, _dragFromIndex, ITrainStorage.ContainerInventory, i);
+                    }
+                    else if (_dragFromIndex != i)
+                    {
+                        hotbar.RequestSwap(_dragFromIndex, i);
+                    }
+
+                    _dragFromIndex = -1;
+                    _dragFromStorage = false;
+                    current.Use();
+                }
+            }
+
+            if (current.type == EventType.MouseUp && _dragFromIndex >= 0)
+            {
+                // 패널 밖 = 버리기 (개인 자원 칸만 — I 창과 같은 규약). 창고 출처는 취소.
+                if (!rect.Contains(current.mousePosition) && !_dragFromStorage
+                    && hotbar.GetSlot(_dragFromIndex).ItemType == HotbarItemType.Resource)
+                {
+                    hotbar.RequestDrop(_dragFromIndex);
+                }
+
+                _dragFromIndex = -1;
+                _dragFromStorage = false;
+            }
+
+            if (_dragFromIndex >= 0)
+            {
+                var dragRect = new Rect(current.mousePosition.x - SlotSize * 0.5f,
+                    current.mousePosition.y - SlotSize * 0.5f, SlotSize, SlotSize);
+                HotbarSlotView dragSlot = _dragFromStorage
+                    ? storage.GetSlot(_storageOpenCar, _dragFromIndex)
+                    : hotbar.GetSlot(_dragFromIndex);
+                GUI.Box(dragRect, GetSlotLabel(dragSlot, hotbar.StackSize));
+            }
         }
     }
 }
