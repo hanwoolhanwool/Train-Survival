@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 1201866139057853754}
   - component: {fileID: 5447795796761736459}
   - component: {fileID: 4471223956018827741}
+  - component: {fileID: 4471223956018827742}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -333,6 +334,20 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 385df4eaf3bf3ad4f9f8d9a6a91a8ae6, type: 2}
   _trainLayout: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
   _structureCatalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
+--- !u!114 &4471223956018827742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d321aba946106444833639cc5b9c980, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerHunger
+  ShowTopMostFoldoutHeaderGroup: 1
+  _settings: {fileID: 11400000, guid: 3e413afc9d8f8ba4bb679ffa846e8565, type: 2}
 --- !u!1 &2635673702125266619
 GameObject:
   m_ObjectHideFlags: 0
