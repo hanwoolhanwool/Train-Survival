@@ -14,7 +14,7 @@ namespace Game.Gameplay.Monsters
     /// 밤 시작(권위 이벤트)에 Day 비례 계획을 세우고, "지속 유입" 간격으로 동시 존재 상한 안에서 스폰한다.
     /// 새벽에는 생존 몬스터를 도주 처리(회수)한다. 스폰/소멸은 PoolManager + NGO 스폰 경유. Game 씬에 1개 배치한다.
     /// </summary>
-    public sealed class MonsterWaveSpawner : NetworkBehaviour
+    public sealed class MonsterWaveSpawner : NetworkBehaviour, IWaveSpawnToggle
     {
         [SerializeField] private WaveSettings _settings;
         [SerializeField] private GameObject _monsterPrefab;
@@ -31,15 +31,47 @@ namespace Game.Gameplay.Monsters
         private int _spawnedCount;
         private float _spawnTimer;
         private int _waveDayNumber = 1;
+        private bool _spawnEnabled = true;
+
+        /// <summary>스폰 허용 여부 — QA 토글 (기본 켜짐, 릴리스 동작 불변).</summary>
+        public bool SpawnEnabled => _spawnEnabled;
+
+        /// <summary>스폰 토글 — 서버 전용. 끄면 진행 중인 웨이브를 즉시 회수하고 다음 밤도 쉰다.</summary>
+        public void ServerSetSpawnEnabled(bool enabled)
+        {
+            if (!IsServer || _spawnEnabled == enabled)
+            {
+                return;
+            }
+
+            _spawnEnabled = enabled;
+            if (!enabled)
+            {
+                _waveActive = false;
+                ServerRetreatAll();
+            }
+
+            Debug.Log($"[MonsterWaveSpawner] QA 스폰 토글: {(enabled ? "켜짐 — 다음 밤부터 웨이브 재개" : "꺼짐 — 웨이브 회수·중지")}");
+        }
 
         public override void OnNetworkSpawn()
         {
             EventBus<DayPhaseChangedEvent>.Subscribe(OnDayPhaseChanged);
+
+            if (!ServiceLocator.IsRegistered<IWaveSpawnToggle>())
+            {
+                ServiceLocator.Register<IWaveSpawnToggle>(this);
+            }
         }
 
         public override void OnNetworkDespawn()
         {
             EventBus<DayPhaseChangedEvent>.Unsubscribe(OnDayPhaseChanged);
+
+            if (ServiceLocator.TryGet(out IWaveSpawnToggle toggle) && ReferenceEquals(toggle, this))
+            {
+                ServiceLocator.Unregister<IWaveSpawnToggle>();
+            }
         }
 
         private void OnDayPhaseChanged(DayPhaseChangedEvent evt)
@@ -51,6 +83,13 @@ namespace Game.Gameplay.Monsters
 
             if (evt.Phase == DayPhase.Night)
             {
+                // QA 토글로 꺼져 있으면 밤 웨이브를 계획하지 않는다 (M5 4차 — 밤 노숙 검증성).
+                if (!_spawnEnabled)
+                {
+                    Debug.Log($"[MonsterWaveSpawner] QA 스폰 꺼짐 — Day {evt.DayNumber} 밤 웨이브 생략");
+                    return;
+                }
+
                 // 지역은 Day 번호의 순수 함수이므로 Day를 직접 넘겨 조회한다 —
                 // RegionController와 이 스포너의 이벤트 처리 순서에 결과가 좌우되지 않게 한다.
                 RegionDifficulty difficulty = ServiceLocator.TryGet(out IRegionService region)
