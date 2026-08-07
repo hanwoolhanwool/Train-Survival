@@ -24,6 +24,8 @@ GameObject:
   - component: {fileID: 5447795796761736459}
   - component: {fileID: 4471223956018827741}
   - component: {fileID: 4471223956018827742}
+  - component: {fileID: 4471223956018827743}
+  - component: {fileID: 4471223956018827744}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -348,6 +350,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerHunger
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: 3e413afc9d8f8ba4bb679ffa846e8565, type: 2}
+--- !u!114 &4471223956018827743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 521e87b90dbd4e54fb58f947400cc0de, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerBuffs
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &4471223956018827744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d38fa309303cb2428b3dacca3807468, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerFoodConsumer
+  ShowTopMostFoldoutHeaderGroup: 1
+  _foodCatalog: {fileID: 11400000, guid: 1d9e405564de4ea6baabfdb956f62067, type: 2}
 --- !u!1 &2635673702125266619
 GameObject:
   m_ObjectHideFlags: 0

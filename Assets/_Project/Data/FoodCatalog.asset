@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5002bf075c9bb224c9b0b31b7e912afb, type: 3}
+  m_Name: FoodCatalog
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.FoodCatalog
+  _entries:
+  - _type: 19
+    _hungerRestore: 35
+    _regenPerSecond: 1
+    _regenDurationSeconds: 15
+    _coldInsulationBonus: 0
+    _warmthDurationSeconds: 0
+  - _type: 20
+    _hungerRestore: 60
+    _regenPerSecond: 0.5
+    _regenDurationSeconds: 20
+    _coldInsulationBonus: 0.3
+    _warmthDurationSeconds: 90
