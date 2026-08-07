@@ -57,15 +57,25 @@ namespace Game.Gameplay.Crafting
             {
                 ServiceLocator.Register<ICraftingStation>(this);
             }
+
+            EventBus<Player.UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
         }
 
         public override void OnNetworkDespawn()
         {
+            EventBus<Player.UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
+
             if (ServiceLocator.TryGet(out ICraftingStation station) && ReferenceEquals(station, this))
             {
                 ServiceLocator.Unregister<ICraftingStation>();
             }
 
+            SetPanelOpen(false);
+        }
+
+        /// <summary>Esc의 닫기 요청 (M5 4차 — Esc 우선순위): 열린 제작 창을 닫는다.</summary>
+        private void OnUiCloseRequested(Player.UiCloseRequestedLocalEvent evt)
+        {
             SetPanelOpen(false);
         }
 

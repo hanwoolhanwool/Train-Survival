@@ -19,14 +19,60 @@ namespace Game.UI
         private const string MainSceneName = "Main";
 
         private bool _menuOpen;
+        private bool _inventoryOpen;
+        private bool _craftingOpen;
+        private bool _storageOpen;
+
+        private void OnEnable()
+        {
+            EventBus<Gameplay.Inventory.InventoryPanelToggledLocalEvent>.Subscribe(OnInventoryToggled);
+            EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingToggled);
+            EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Subscribe(OnStorageToggled);
+        }
+
+        private void OnDisable()
+        {
+            EventBus<Gameplay.Inventory.InventoryPanelToggledLocalEvent>.Unsubscribe(OnInventoryToggled);
+            EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingToggled);
+            EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStorageToggled);
+        }
 
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && IsSessionActive())
+            if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame || !IsSessionActive())
             {
-                SetMenuOpen(!_menuOpen);
+                return;
             }
+
+            // Esc 우선순위 (M5 4차): 열린 창 닫기 > 세션 메뉴. 메뉴가 열려 있으면 메뉴부터 닫는다.
+            if (_menuOpen)
+            {
+                SetMenuOpen(false);
+            }
+            else if (_inventoryOpen || _craftingOpen || _storageOpen)
+            {
+                EventBus<UiCloseRequestedLocalEvent>.Publish(default);
+            }
+            else
+            {
+                SetMenuOpen(true);
+            }
+        }
+
+        private void OnInventoryToggled(Gameplay.Inventory.InventoryPanelToggledLocalEvent evt)
+        {
+            _inventoryOpen = evt.IsOpen;
+        }
+
+        private void OnCraftingToggled(Gameplay.Crafting.CraftingPanelToggledLocalEvent evt)
+        {
+            _craftingOpen = evt.IsOpen;
+        }
+
+        private void OnStorageToggled(Gameplay.Train.StoragePanelToggledLocalEvent evt)
+        {
+            _storageOpen = evt.IsOpen;
         }
 
         private void OnGUI()

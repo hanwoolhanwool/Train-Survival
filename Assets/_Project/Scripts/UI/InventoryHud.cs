@@ -58,6 +58,7 @@ namespace Game.UI
             EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
             EventBus<StoragePromptLocalEvent>.Subscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
+            EventBus<UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
         }
 
         private void OnDisable()
@@ -71,6 +72,7 @@ namespace Game.UI
             EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
             EventBus<StoragePromptLocalEvent>.Unsubscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
+            EventBus<UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
         }
 
         private void OnPlayerHealthChanged(PlayerHealthChangedEvent evt)
@@ -164,6 +166,17 @@ namespace Game.UI
             _storageOpenCar = evt.IsOpen ? evt.CarIndex : -1;
             _dragFromIndex = -1;
             _dragFromStorage = false;
+        }
+
+        /// <summary>Esc의 닫기 요청 (M5 4차) — I 창만 여기서 닫는다 (창고·제작 창은 각자의 소유자가 닫는다).</summary>
+        private void OnUiCloseRequested(UiCloseRequestedLocalEvent evt)
+        {
+            if (_panelOpen)
+            {
+                _panelOpen = false;
+                _dragFromIndex = -1;
+                EventBus<InventoryPanelToggledLocalEvent>.Publish(new InventoryPanelToggledLocalEvent(false));
+            }
         }
 
         private void Update()

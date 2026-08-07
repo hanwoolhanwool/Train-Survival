@@ -49,15 +49,25 @@ namespace Game.Gameplay.Train
             {
                 ServiceLocator.Register<ITrainStorage>(this);
             }
+
+            EventBus<UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
         }
 
         public override void OnNetworkDespawn()
         {
+            EventBus<UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
+
             if (ServiceLocator.TryGet(out ITrainStorage storage) && ReferenceEquals(storage, this))
             {
                 ServiceLocator.Unregister<ITrainStorage>();
             }
 
+            SetPanelOpen(-1);
+        }
+
+        /// <summary>Esc의 닫기 요청 (M5 4차 — Esc 우선순위): 열린 창고 창을 닫는다.</summary>
+        private void OnUiCloseRequested(UiCloseRequestedLocalEvent evt)
+        {
             SetPanelOpen(-1);
         }
 

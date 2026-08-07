@@ -46,6 +46,15 @@ namespace Game.Gameplay.Player
     }
 
     /// <summary>
+    /// 로컬 표현 이벤트 — Esc의 "열린 창 닫기" 요청 (M5 4차 — Esc 우선순위).
+    /// 열린 창(I 창·창고·제작)의 소유자들이 구독해 자기 창을 닫는다. 열린 창이 없을 때만
+    /// Esc가 세션 메뉴를 연다 — 발행 판단은 SessionExitHud가 창 토글 이벤트 추적으로 한다.
+    /// </summary>
+    public readonly struct UiCloseRequestedLocalEvent
+    {
+    }
+
+    /// <summary>
     /// 로컬 표현 이벤트 — 세션 메뉴(Esc) 열림/닫힘. 열려 있는 동안 시점 회전을 멈추고 커서를 버튼 클릭용으로 푼다
     /// (I 창과 동일한 처리 — 플레이어 컨트롤러·무기 게이트가 구독한다).
     /// </summary>
