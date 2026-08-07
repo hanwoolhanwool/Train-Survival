@@ -35,6 +35,9 @@ namespace Game.Gameplay.Crafting
         [Tooltip("무기·도구 산출 (M5 2차) — None이 아니면 자원 대신 이 아이템 1개를 첫 빈 칸에 지급한다.")]
         [SerializeField] private HotbarItemType _outputItem = HotbarItemType.None;
 
+        [Tooltip("요구 제작 지점 (M5 4차) — 기본 = 제작대/기관차, 요리는 화덕. 지점이 근처에 없으면 목록에서 빠진다.")]
+        [SerializeField] private CraftStationKind _station = CraftStationKind.Workbench;
+
         public string DisplayName => _displayName;
 
         public int IngredientCount => _ingredients == null ? 0 : _ingredients.Length;
@@ -44,6 +47,9 @@ namespace Game.Gameplay.Crafting
         public int OutputCount => _outputCount;
 
         public HotbarItemType OutputItem => _outputItem;
+
+        /// <summary>요구 제작 지점 종류 — 유효 지점 판정은 CraftingStation이 한다.</summary>
+        public CraftStationKind Station => _station;
 
         /// <summary>무기·도구 산출 레시피인가 — 산출 경로가 자원 적재와 다르다 (빈 칸 1개 필요).</summary>
         public bool IsItemOutput => _outputItem != HotbarItemType.None && _outputItem != HotbarItemType.Resource;

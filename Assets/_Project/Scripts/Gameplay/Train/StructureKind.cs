@@ -19,5 +19,8 @@ namespace Game.Gameplay.Train
 
         /// <summary>제작대 — 제작 상호작용 지점. 레시피·확정 경로는 CraftingStation을 재사용한다.</summary>
         Workbench = 3,
+
+        /// <summary>화덕 — 요리 상호작용 지점 (M5 4차). 난방 없음 — 건축물 1종 = 역할 1개 계약 유지.</summary>
+        Campfire = 4,
     }
 }

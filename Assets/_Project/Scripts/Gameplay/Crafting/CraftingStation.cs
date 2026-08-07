@@ -27,6 +27,8 @@ namespace Game.Gameplay.Crafting
 
         private bool _localInRange;
         private bool _panelOpen;
+        private bool _workbenchInRange;
+        private bool _campfireInRange;
 
         public int RecipeCount => _recipes == null ? 0 : _recipes.Count;
 
@@ -35,6 +37,18 @@ namespace Game.Gameplay.Crafting
         public CraftingRecipe GetRecipe(int index)
         {
             return _recipes == null ? null : _recipes.GetRecipe(index);
+        }
+
+        /// <summary>레시피의 요구 지점(제작대/화덕)이 로컬 플레이어 범위 안에 있는가 (M5 4차).</summary>
+        public bool IsRecipeAvailable(int index)
+        {
+            CraftingRecipe recipe = GetRecipe(index);
+            if (recipe == null)
+            {
+                return false;
+            }
+
+            return recipe.Station == CraftStationKind.Campfire ? _campfireInRange : _workbenchInRange;
         }
 
         public override void OnNetworkSpawn()
@@ -65,15 +79,23 @@ namespace Game.Gameplay.Crafting
             NetworkObject localPlayer = Player.LocalInteraction.GetLocalPlayerObject();
             if (localPlayer == null)
             {
+                _workbenchInRange = false;
+                _campfireInRange = false;
                 SetLocalInRange(false);
                 SetPanelOpen(false);
                 return;
             }
 
-            bool inRange = TryGetNearestCraftPoint(localPlayer.transform.position, out Vector3 craftPoint)
-                && Player.LocalInteraction.IsWithinRange(localPlayer, craftPoint, _interactRadius);
-            bool ready = inRange
-                && Player.LocalInteraction.IsLookingAt(localPlayer, craftPoint, _lookDotThreshold);
+            // 지점 종류별 판정 (M5 4차) — 어느 한 종류라도 근처면 창이 열리고,
+            // 종류별 범위 플래그는 레시피 필터(IsRecipeAvailable)가 쓴다.
+            Vector3 playerPosition = localPlayer.transform.position;
+            bool workbenchReady = ResolveStation(
+                localPlayer, playerPosition, CraftStationKind.Workbench, out _workbenchInRange);
+            bool campfireReady = ResolveStation(
+                localPlayer, playerPosition, CraftStationKind.Campfire, out _campfireInRange);
+
+            bool inRange = _workbenchInRange || _campfireInRange;
+            bool ready = workbenchReady || campfireReady;
 
             // 범위를 벗어나면 창을 닫는다 — 열림 상태 안내는 창이 대신하므로 프롬프트는 끈다.
             if (!inRange)
@@ -110,25 +132,49 @@ namespace Game.Gameplay.Crafting
             }
         }
 
-        /// <summary>
-        /// 위치에서 가장 가까운 유효 제작 지점 (M5 3차 — 제작 지점 다중).
-        /// 기관차 고정 지점은 항상 유효하고, 제작대 건축물이 살아 있는 칸(파괴 아님 — 이탈은 허용)의
-        /// 중심이 추가된다. 로컬 근접·시선 판정과 서버 거리 재검증이 이 함수 하나를 공유한다.
-        /// </summary>
-        private bool TryGetNearestCraftPoint(Vector3 position, out Vector3 point)
+        /// <summary>지점 종류 하나의 로컬 판정 — 근접 플래그를 내고, 근접 + 시선이면 true(창 열기 가능).</summary>
+        private bool ResolveStation(
+            NetworkObject localPlayer, Vector3 position, CraftStationKind kind, out bool inRange)
         {
-            point = transform.position;
-            float bestSqr = (position - point).sqrMagnitude;
+            inRange = TryGetNearestCraftPoint(position, kind, out Vector3 point)
+                && Player.LocalInteraction.IsWithinRange(localPlayer, point, _interactRadius);
+
+            return inRange && Player.LocalInteraction.IsLookingAt(localPlayer, point, _lookDotThreshold);
+        }
+
+        /// <summary>
+        /// 위치에서 가장 가까운 유효 제작 지점 (M5 3차 — 제작 지점 다중, 4차 — 종류 분리).
+        /// 제작대 종류는 기관차 고정 지점이 항상 유효하고 제작대 건축물 칸이 추가된다.
+        /// 화덕 종류는 화덕 건축물이 살아 있는 칸(파괴 아님 — 이탈은 허용)만 유효하다.
+        /// 로컬 근접·시선 판정과 서버 거리 재검증이 이 함수 하나를 공유한다.
+        /// </summary>
+        private bool TryGetNearestCraftPoint(Vector3 position, CraftStationKind kind, out Vector3 point)
+        {
+            bool found = false;
+            point = default;
+            float bestSqr = float.PositiveInfinity;
+
+            if (kind == CraftStationKind.Workbench)
+            {
+                // 기관차 고정 지점 — 시작 직후(건자재 0)에도 탄약 루프가 성립해야 한다.
+                point = transform.position;
+                bestSqr = (position - point).sqrMagnitude;
+                found = true;
+            }
 
             if (_layoutSettings == null || !ServiceLocator.TryGet(out Train.ITrainState train))
             {
-                return true;
+                return found;
             }
+
+            Train.StructureKind structureKind = kind == CraftStationKind.Campfire
+                ? Train.StructureKind.Campfire
+                : Train.StructureKind.Workbench;
 
             for (int i = 0; i < train.CarCount; i++)
             {
                 if (!train.TryGetStructure(i, out Train.StructureState structure)
-                    || !structure.Present || structure.Kind != Train.StructureKind.Workbench
+                    || !structure.Present || structure.Kind != structureKind
                     || structure.Health <= 0f
                     || !train.TryGetCar(i, out Train.CarState car) || car.Health <= 0f)
                 {
@@ -142,10 +188,11 @@ namespace Game.Gameplay.Crafting
                 {
                     bestSqr = sqr;
                     point = carPoint;
+                    found = true;
                 }
             }
 
-            return true;
+            return found;
         }
 
         private void SetLocalInRange(bool inRange)
@@ -181,9 +228,10 @@ namespace Game.Gameplay.Crafting
                 return;
             }
 
-            // 서버 측 거리 검증 — 로컬 판정과 같은 지점 산출로 최근접 유효 지점 기준 거리를 본다.
+            // 서버 측 거리 검증 — 로컬 판정과 같은 지점 산출로, 레시피의 요구 지점 종류 기준
+            // 최근접 유효 지점을 본다 (요리를 기관차·제작대에서 확정받을 수 없다 — M5 4차).
             Vector3 playerPosition = client.PlayerObject.transform.position;
-            if (!TryGetNearestCraftPoint(playerPosition, out Vector3 craftPoint))
+            if (!TryGetNearestCraftPoint(playerPosition, recipe.Station, out Vector3 craftPoint))
             {
                 return;
             }

@@ -62,8 +62,18 @@ namespace Game.UI
                 return;
             }
 
+            // 유효 지점이 근처에 없는 레시피는 목록에서 뺀다 (M5 4차 — 요리는 화덕 근처에서만).
             int recipeCount = station.RecipeCount;
-            float height = 80f + recipeCount * 64f;
+            int visibleCount = 0;
+            for (int i = 0; i < recipeCount; i++)
+            {
+                if (station.IsRecipeAvailable(i))
+                {
+                    visibleCount++;
+                }
+            }
+
+            float height = 80f + visibleCount * 64f;
             var rect = new Rect(Screen.width * 0.5f - 190f, Screen.height * 0.5f - height * 0.5f, 380f, height);
             GUI.Box(rect, "— 제작 (E 닫기) —");
 
@@ -78,7 +88,7 @@ namespace Game.UI
             for (int i = 0; i < recipeCount; i++)
             {
                 CraftingRecipe recipe = station.GetRecipe(i);
-                if (recipe == null)
+                if (recipe == null || !station.IsRecipeAvailable(i))
                 {
                     continue;
                 }
