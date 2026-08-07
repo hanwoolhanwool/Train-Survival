@@ -71,6 +71,19 @@ namespace Game.Gameplay.Player
             ServerApplyDamageInternal(amount);
         }
 
+        /// <summary>
+        /// 체력 회복 — 서버 전용 (M5 4차 요리 재생 버프). 최대치에서 잘리고 사망 중에는 무효다.
+        /// </summary>
+        public void ServerHeal(float amount)
+        {
+            if (!IsServer || !IsAlive || _settings == null || amount <= 0f)
+            {
+                return;
+            }
+
+            _health.Value = Mathf.Min(_settings.MaxHealth, _health.Value + amount);
+        }
+
         private void ServerApplyDamageInternal(float amount)
         {
             if (!IsServer || !IsAlive || _settings == null)

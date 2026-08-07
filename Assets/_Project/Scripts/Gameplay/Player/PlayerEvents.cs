@@ -113,6 +113,33 @@ namespace Game.Gameplay.Player
     }
 
     /// <summary>
+    /// 권위 이벤트 — 요리 버프 잔여 시간 변경 (기획서 §7.3, M5 4차). 호스트 확정 값의 동기화
+    /// 수신 시점에 각 피어에서 발행된다. HUD 버프 표시가 자기 플레이어로 걸러 구독한다.
+    /// </summary>
+    public readonly struct PlayerBuffsChangedEvent
+    {
+        public readonly ulong ClientId;
+
+        /// <summary>이 피어에서 자기 플레이어의 버프인가 (HUD 필터용).</summary>
+        public readonly bool IsLocalPlayer;
+
+        /// <summary>재생 버프 잔여 초 (0 = 없음).</summary>
+        public readonly float RegenRemainingSeconds;
+
+        /// <summary>보온 버프 잔여 초 (0 = 없음).</summary>
+        public readonly float WarmthRemainingSeconds;
+
+        public PlayerBuffsChangedEvent(
+            ulong clientId, bool isLocalPlayer, float regenRemainingSeconds, float warmthRemainingSeconds)
+        {
+            ClientId = clientId;
+            IsLocalPlayer = isLocalPlayer;
+            RegenRemainingSeconds = regenRemainingSeconds;
+            WarmthRemainingSeconds = warmthRemainingSeconds;
+        }
+    }
+
+    /// <summary>
     /// 권위 이벤트 — 플레이어 체온 변경 (기획서 §4.2, M4). 호스트가 계산한 값의 동기화 수신 시점에
     /// 각 피어에서 발행된다. HUD 체온 표시·경고가 자기 플레이어로 걸러 구독한다.
     /// </summary>

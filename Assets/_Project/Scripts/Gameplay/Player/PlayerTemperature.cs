@@ -28,6 +28,7 @@ namespace Game.Gameplay.Player
 
         private PlayerHealth _health;
         private Inventory.PlayerInventory _inventory;
+        private PlayerBuffs _buffs;
         private float _serverTemperature;
         private float _pendingDamage;
 
@@ -38,6 +39,7 @@ namespace Game.Gameplay.Player
         {
             _health = GetComponent<PlayerHealth>();
             _inventory = GetComponent<Inventory.PlayerInventory>();
+            _buffs = GetComponent<PlayerBuffs>();
         }
 
         public override void OnNetworkSpawn()
@@ -84,6 +86,13 @@ namespace Game.Gameplay.Player
             if (_inventory != null)
             {
                 _inventory.GetEquippedInsulation(out float cold, out float heat);
+
+                // 요리 보온 버프 (M5 4차) — 장비 합산에 가산하고 같은 클램프[−1, 0.9]를 통과한다.
+                if (_buffs != null)
+                {
+                    cold += _buffs.ServerColdInsulationBonus;
+                }
+
                 ambient = TemperatureMath.ApplyInsulation(ambient, cold, heat, curve);
             }
 

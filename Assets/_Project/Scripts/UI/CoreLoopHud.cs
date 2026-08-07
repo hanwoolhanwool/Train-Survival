@@ -33,6 +33,8 @@ namespace Game.UI
         private float _hunger;
         private float _maxHunger;
         private HungerStress _hungerStress;
+        private float _regenBuffSeconds;
+        private float _warmthBuffSeconds;
         private HotbarItemType _selectedItem;
         private HotbarItemType _ammoWeapon;
         private string _ammoWeaponName;
@@ -59,6 +61,7 @@ namespace Game.UI
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Subscribe(OnPlayerTemperatureChanged);
             EventBus<PlayerHungerChangedEvent>.Subscribe(OnPlayerHungerChanged);
+            EventBus<PlayerBuffsChangedEvent>.Subscribe(OnPlayerBuffsChanged);
             EventBus<PlayerDiedEvent>.Subscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Subscribe(OnHotbarSelectionChanged);
             EventBus<WeaponAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
@@ -80,6 +83,7 @@ namespace Game.UI
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Unsubscribe(OnPlayerTemperatureChanged);
             EventBus<PlayerHungerChangedEvent>.Unsubscribe(OnPlayerHungerChanged);
+            EventBus<PlayerBuffsChangedEvent>.Unsubscribe(OnPlayerBuffsChanged);
             EventBus<PlayerDiedEvent>.Unsubscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Unsubscribe(OnHotbarSelectionChanged);
             EventBus<WeaponAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
@@ -152,6 +156,15 @@ namespace Game.UI
                 _hunger = evt.Hunger;
                 _maxHunger = evt.MaxHunger;
                 _hungerStress = evt.Stress;
+            }
+        }
+
+        private void OnPlayerBuffsChanged(PlayerBuffsChangedEvent evt)
+        {
+            if (evt.IsLocalPlayer)
+            {
+                _regenBuffSeconds = evt.RegenRemainingSeconds;
+                _warmthBuffSeconds = evt.WarmthRemainingSeconds;
             }
         }
 
@@ -260,6 +273,7 @@ namespace Game.UI
 
             DrawTemperatureLine();
             DrawHungerLine();
+            DrawBuffLine();
 
             // 든 총의 탄약만 그린다 — 활성 총만 발행하므로 "마지막 이벤트의 무기 = 현재 선택"일 때가 그 총이다.
             if (_ammoWeapon != HotbarItemType.None && _selectedItem == _ammoWeapon)
@@ -279,6 +293,29 @@ namespace Game.UI
             }
 
             GUILayout.EndArea();
+        }
+
+        /// <summary>활성 요리 버프의 잔여 시간 (기획서 §7.3, M5 4차) — 없으면 줄 자체를 그리지 않는다.</summary>
+        private void DrawBuffLine()
+        {
+            if (_regenBuffSeconds <= 0f && _warmthBuffSeconds <= 0f)
+            {
+                return;
+            }
+
+            var builder = new System.Text.StringBuilder(32);
+            builder.Append("버프:");
+            if (_regenBuffSeconds > 0f)
+            {
+                builder.Append($" 재생 {_regenBuffSeconds:F0}s");
+            }
+
+            if (_warmthBuffSeconds > 0f)
+            {
+                builder.Append($" 보온 {_warmthBuffSeconds:F0}s");
+            }
+
+            GUILayout.Label($"<color=lime>{builder}</color>");
         }
 
         /// <summary>허기와 굶주림 경고 (기획서 §3.4, M5 4차 — 회복 수단은 화덕 요리 섭취).</summary>
