@@ -12,7 +12,7 @@ namespace Game.Gameplay.Train
     /// - 숫자패드 + : 게임 재시작(Game 씬 재로드, 호스트 권위로 편성·웨이브·사이클 초기화).
     /// - 숫자패드 7 : 현재 표적 가능한(후미) 연결부 1개 파괴(후방 연쇄 이탈 테스트).
     /// - 숫자패드 8 : 칸 1칸 무료 건설 — 빈 슬롯(파괴·소실) 재건 우선, 없으면 후미 증설(비용 경로는 건설 포트로 검증).
-    /// - 숫자패드 9 : 요청자에게 자원 10개 지급(증설 비용·연료 투입 테스트).
+    /// - 숫자패드 9 : 요청자에게 자원 지급(건자재·제작 재료·식재료 — 증설 비용·연료 투입·요리 테스트).
     /// - 숫자패드 6 : 표적 연결부·후미 칸·건축물에 샘플 데미지 30(수리 망치 테스트).
     /// - 숫자패드 5 : 몬스터 웨이브 스폰 토글(M5 4차 — 밤 노숙 체온 검증용).
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
@@ -22,7 +22,7 @@ namespace Game.Gameplay.Train
         private const string GameplaySceneName = "Game";
         private const float SampleDamage = 30f;
 
-        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글. QA 전용이므로 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
 
         private void Update()
@@ -136,11 +136,13 @@ namespace Game.Gameplay.Train
             IResourceInventory inventory = client.PlayerObject.GetComponent<IResourceInventory>();
             if (inventory != null)
             {
-                // 검증 편의 — 건자재 2종 + 제작 재료 2종을 함께 지급해 건설·제작 경로를 모두 시험할 수 있게 한다.
+                // 검증 편의 — 건자재 2종 + 제작 재료 2종 + 식재료를 함께 지급해
+                // 건설·제작·요리 경로를 모두 시험할 수 있게 한다 (식재료 4 = 스튜 1회 또는 구운 식사 2회).
                 inventory.ServerTryAdd(ResourceType.Wood, 4);
                 inventory.ServerTryAdd(ResourceType.Stone, 2);
                 inventory.ServerTryAdd(ResourceType.Scrap, 2);
                 inventory.ServerTryAdd(ResourceType.Niter, 2);
+                inventory.ServerTryAdd(ResourceType.RawFood, 4);
             }
         }
 
