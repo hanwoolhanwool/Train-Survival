@@ -30,6 +30,9 @@ namespace Game.UI
         private float _maxHealth;
         private float _temperature;
         private TemperatureStress _temperatureStress;
+        private float _hunger;
+        private float _maxHunger;
+        private HungerStress _hungerStress;
         private HotbarItemType _selectedItem;
         private HotbarItemType _ammoWeapon;
         private string _ammoWeaponName;
@@ -55,6 +58,7 @@ namespace Game.UI
             EventBus<FuelChangedEvent>.Subscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Subscribe(OnPlayerTemperatureChanged);
+            EventBus<PlayerHungerChangedEvent>.Subscribe(OnPlayerHungerChanged);
             EventBus<PlayerDiedEvent>.Subscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Subscribe(OnHotbarSelectionChanged);
             EventBus<WeaponAmmoChangedLocalEvent>.Subscribe(OnAmmoChanged);
@@ -75,6 +79,7 @@ namespace Game.UI
             EventBus<FuelChangedEvent>.Unsubscribe(OnFuelChanged);
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Unsubscribe(OnPlayerTemperatureChanged);
+            EventBus<PlayerHungerChangedEvent>.Unsubscribe(OnPlayerHungerChanged);
             EventBus<PlayerDiedEvent>.Unsubscribe(OnPlayerDied);
             EventBus<HotbarSelectionChangedLocalEvent>.Unsubscribe(OnHotbarSelectionChanged);
             EventBus<WeaponAmmoChangedLocalEvent>.Unsubscribe(OnAmmoChanged);
@@ -137,6 +142,16 @@ namespace Game.UI
             {
                 _temperature = evt.Temperature;
                 _temperatureStress = evt.Stress;
+            }
+        }
+
+        private void OnPlayerHungerChanged(PlayerHungerChangedEvent evt)
+        {
+            if (evt.IsLocalPlayer)
+            {
+                _hunger = evt.Hunger;
+                _maxHunger = evt.MaxHunger;
+                _hungerStress = evt.Stress;
             }
         }
 
@@ -244,6 +259,7 @@ namespace Game.UI
             }
 
             DrawTemperatureLine();
+            DrawHungerLine();
 
             // 든 총의 탄약만 그린다 — 활성 총만 발행하므로 "마지막 이벤트의 무기 = 현재 선택"일 때가 그 총이다.
             if (_ammoWeapon != HotbarItemType.None && _selectedItem == _ammoWeapon)
@@ -263,6 +279,32 @@ namespace Game.UI
             }
 
             GUILayout.EndArea();
+        }
+
+        /// <summary>허기와 굶주림 경고 (기획서 §3.4, M5 4차 — 회복 수단은 화덕 요리 섭취).</summary>
+        private void DrawHungerLine()
+        {
+            if (_maxHunger <= 0f)
+            {
+                return;
+            }
+
+            string text = $"허기: {_hunger:F0} / {_maxHunger:F0}";
+
+            switch (_hungerStress)
+            {
+                case HungerStress.Hungry:
+                    GUILayout.Label($"<color=yellow>{text} — 허기! 요리를 먹어라</color>");
+                    break;
+
+                case HungerStress.Starving:
+                    GUILayout.Label($"<color=red>{text} — 굶주림! 체력이 깎인다</color>");
+                    break;
+
+                default:
+                    GUILayout.Label(text);
+                    break;
+            }
         }
 
         /// <summary>체온과 더위·추위 경고 (기획서 §4.2 — 사막 낮 열사병 / 밤 급랭).</summary>

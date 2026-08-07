@@ -26,6 +26,9 @@ namespace Game.UI
         private float _maxHealth;
         private float _temperature;
         private TemperatureStress _temperatureStress;
+        private float _hunger;
+        private float _maxHunger;
+        private HungerStress _hungerStress;
         private bool _engineInRange;
         private CarBuildAimLocalEvent _carBuildAim;
         private CarRecoupleAimLocalEvent _carRecoupleAim;
@@ -48,6 +51,7 @@ namespace Game.UI
         {
             EventBus<PlayerHealthChangedEvent>.Subscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Subscribe(OnPlayerTemperatureChanged);
+            EventBus<PlayerHungerChangedEvent>.Subscribe(OnPlayerHungerChanged);
             EventBus<EnginePromptLocalEvent>.Subscribe(OnEnginePrompt);
             EventBus<CarBuildAimLocalEvent>.Subscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Subscribe(OnCarRecoupleAim);
@@ -60,6 +64,7 @@ namespace Game.UI
         {
             EventBus<PlayerHealthChangedEvent>.Unsubscribe(OnPlayerHealthChanged);
             EventBus<PlayerTemperatureChangedEvent>.Unsubscribe(OnPlayerTemperatureChanged);
+            EventBus<PlayerHungerChangedEvent>.Unsubscribe(OnPlayerHungerChanged);
             EventBus<EnginePromptLocalEvent>.Unsubscribe(OnEnginePrompt);
             EventBus<CarBuildAimLocalEvent>.Unsubscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Unsubscribe(OnCarRecoupleAim);
@@ -83,6 +88,32 @@ namespace Game.UI
             {
                 _temperature = evt.Temperature;
                 _temperatureStress = evt.Stress;
+            }
+        }
+
+        private void OnPlayerHungerChanged(PlayerHungerChangedEvent evt)
+        {
+            if (evt.IsLocalPlayer)
+            {
+                _hunger = evt.Hunger;
+                _maxHunger = evt.MaxHunger;
+                _hungerStress = evt.Stress;
+            }
+        }
+
+        /// <summary>상태 창 허기 줄에 붙일 압박 표시 — 색 태그 없이 텍스트로만 알린다.</summary>
+        private string GetHungerSuffix()
+        {
+            switch (_hungerStress)
+            {
+                case HungerStress.Hungry:
+                    return " (배고픔)";
+
+                case HungerStress.Starving:
+                    return " (굶주림)";
+
+                default:
+                    return string.Empty;
             }
         }
 
@@ -566,7 +597,7 @@ namespace Game.UI
             GUILayout.Label("— 캐릭터 상태 —");
             GUILayout.Label(_maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
             GUILayout.Label(_temperature > 0f ? $"체온: {_temperature:F1}℃{GetStressSuffix()}" : "체온: -");
-            GUILayout.Label("허기: 이후 요리 시스템(M5)에서 추가");
+            GUILayout.Label(_maxHunger > 0f ? $"허기: {_hunger:F0} / {_maxHunger:F0}{GetHungerSuffix()}" : "허기: -");
             GUILayout.EndArea();
         }
 

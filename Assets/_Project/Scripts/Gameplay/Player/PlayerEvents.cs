@@ -84,6 +84,35 @@ namespace Game.Gameplay.Player
     }
 
     /// <summary>
+    /// 권위 이벤트 — 플레이어 허기 변경 (기획서 §3.4, M5 4차). 호스트가 계산한 값의 동기화 수신
+    /// 시점에 각 피어에서 발행된다. HUD 허기 게이지·경고가 자기 플레이어로 걸러 구독한다.
+    /// </summary>
+    public readonly struct PlayerHungerChangedEvent
+    {
+        public readonly ulong ClientId;
+
+        /// <summary>이 피어에서 자기 플레이어의 허기인가 (HUD 필터용).</summary>
+        public readonly bool IsLocalPlayer;
+
+        public readonly float Hunger;
+
+        public readonly float MaxHunger;
+
+        /// <summary>경고 임계 기준 압박 단계.</summary>
+        public readonly HungerStress Stress;
+
+        public PlayerHungerChangedEvent(
+            ulong clientId, bool isLocalPlayer, float hunger, float maxHunger, HungerStress stress)
+        {
+            ClientId = clientId;
+            IsLocalPlayer = isLocalPlayer;
+            Hunger = hunger;
+            MaxHunger = maxHunger;
+            Stress = stress;
+        }
+    }
+
+    /// <summary>
     /// 권위 이벤트 — 플레이어 체온 변경 (기획서 §4.2, M4). 호스트가 계산한 값의 동기화 수신 시점에
     /// 각 피어에서 발행된다. HUD 체온 표시·경고가 자기 플레이어로 걸러 구독한다.
     /// </summary>
