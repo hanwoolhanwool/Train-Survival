@@ -67,8 +67,15 @@ namespace Game.Gameplay.Train
         // 넘치면 초과분이 조용히 버려져 사람을 놓칠 수 있으므로, 지형·자원까지 겹쳐도 남을 만큼 넉넉히 잡는다.
         private readonly Collider[] _occupancyBuffer = new Collider[32];
 
+        private PlayerHealth _health;
+
         /// <summary>도구 슬롯 활성 여부 — <see cref="Game.Gameplay.Inventory.HotbarController"/>가 제어한다. 소유자 입력 게이트.</summary>
         public bool InputEnabled { get; set; }
+
+        private void Awake()
+        {
+            _health = GetComponent<PlayerHealth>();
+        }
 
         private void Update()
         {
@@ -77,7 +84,8 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            if (!InputEnabled)
+            // 사망~부활 사이에는 수리·설치·건설 입력을 닫는다 (M5 3차 발견 버그 — 사망 중 건설 가능).
+            if (!InputEnabled || (_health != null && !_health.IsAlive))
             {
                 PublishNoTarget();
                 PublishBuildAim(false, -1, 0, false, false);
@@ -501,7 +509,7 @@ namespace Game.Gameplay.Train
         private void RequestRepairServerRpc(
             TrainPartKind kind, int index, Vector3 hitPoint, RpcParams rpcParams = default)
         {
-            if (_settings == null || !IsWithinRange(hitPoint))
+            if (_settings == null || !IsSenderAlive() || !IsWithinRange(hitPoint))
             {
                 return;
             }
@@ -518,7 +526,7 @@ namespace Game.Gameplay.Train
             int carIndex, Vector3 hitPoint, StructureKind structureKind, RpcParams rpcParams = default)
         {
             // 종류·비용은 호스트가 카탈로그로 재검증한다 — 조작된 종류 값도 카탈로그 폴백 비용으로 계산될 뿐이다.
-            if (_settings == null || !IsWithinRange(hitPoint)
+            if (_settings == null || !IsSenderAlive() || !IsWithinRange(hitPoint)
                 || !ServiceLocator.TryGet(out ITrainExpansion expansion)
                 || !expansion.CanBuildStructure(carIndex))
             {
@@ -538,7 +546,7 @@ namespace Game.Gameplay.Train
         [Rpc(SendTo.Server)]
         private void RequestBuildCarServerRpc(RpcParams rpcParams = default)
         {
-            if (_settings == null || _layoutSettings == null
+            if (_settings == null || _layoutSettings == null || !IsSenderAlive()
                 || !ServiceLocator.TryGet(out ITrainExpansion expansion)
                 || !expansion.TryGetBuildSlot(out int slot)
                 || !IsWithinRange(SlotCouplingAnchor(slot))
@@ -558,7 +566,7 @@ namespace Game.Gameplay.Train
         [Rpc(SendTo.Server)]
         private void RequestRecoupleServerRpc(int carIndex, RpcParams rpcParams = default)
         {
-            if (_settings == null || _layoutSettings == null
+            if (_settings == null || _layoutSettings == null || !IsSenderAlive()
                 || !ServiceLocator.TryGet(out ITrainRecouple recouple)
                 || !recouple.TryGetRecoupleTarget(out int target) || target != carIndex
                 || !IsWithinRange(SlotCouplingAnchor(target)))
@@ -568,6 +576,12 @@ namespace Game.Gameplay.Train
 
             IResourceInventory inventory = GetComponent<IResourceInventory>();
             inventory?.ServerTrySpend(recouple.RecoupleCost, () => recouple.ServerTryRecouple(target));
+        }
+
+        /// <summary>요청자 생존 재검증 — 사망 중 도착한 수리·설치·건설·재결합 요청은 기각한다 (호스트 검증 원칙).</summary>
+        private bool IsSenderAlive()
+        {
+            return _health == null || _health.IsAlive;
         }
 
         /// <summary>거리 검증 — 요청자(이 오브젝트는 소유자의 플레이어) 위치 기준 사거리 초과 보고는 기각한다.</summary>
