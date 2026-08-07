@@ -22,6 +22,9 @@ namespace Game.Gameplay.Inventory
         /// <summary>화약 원료 — 사막 (초석·유황 통합). 연료 투입 불가, 탄약 전용.</summary>
         Niter = 4,
 
+        /// <summary>식재료 — 숲·사막 공용 (M5 4차 요리·허기). 화덕 요리 재료, 연료·건자재 불가.</summary>
+        RawFood = 5,
+
         /// <summary>권총탄 — 제작품 (고철 + 화약 원료).</summary>
         RevolverAmmo = 16,
 
@@ -30,5 +33,11 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>소총탄 — 제작품. 볼트액션 전용 (기획서 §6.2 탄약 3종).</summary>
         RifleAmmo = 18,
+
+        /// <summary>구운 식사 — 화덕 요리 (M5 4차). 허기 회복 + 재생 버프. 효과는 FoodCatalog가 정한다.</summary>
+        CookedMeal = 19,
+
+        /// <summary>든든한 스튜 — 화덕 요리 (M5 4차). 허기 회복 대 + 소량 재생 + 보온 버프.</summary>
+        HeartyStew = 20,
     }
 }
