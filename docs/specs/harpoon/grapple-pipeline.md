@@ -89,12 +89,14 @@ classDiagram
     }
     class IGrabbable {
         <<interface>>
+        +Kind GrabKind
+        +GrabWeight int
         +IsAvailableForGrab bool
         +IsClaimed bool
         +TryClaimGrab(clientId) bool
         +UpdateTowPosition(pos)
         +ReleaseGrab()
-        +CompleteGrab()
+        +TryCompleteGrab(completion) bool
     }
     class HarpoonRopeRenderer {
         +Show(start, end, slack, isFail)
@@ -107,21 +109,32 @@ classDiagram
     HarpoonController ..> IGrabbable : NetworkObjectReference
     HarpoonProjectile --> HarpoonHookMotion
     IGrabbable <|.. ResourceNode : (world 도메인)
+    IGrabbable <|.. HandrailAnchor : (train 도메인)
+    IGrabbable <|.. MonsterGrabTarget : (monsters 도메인, M5 5차)
 ```
 
 ## 5. 데이터 구조 — `HarpoonSettings`
 
 기획자가 코드 수정 없이 조정하는 값 전부. 에셋: `Assets/_Project/Data/HarpoonSettings.asset`.
 
+**등급별 값** (M5 5차) — `Tier[]` 배열. 인덱스 0 = 1단계. 등급은 `HarpoonController`가
+`NetworkVariable<byte>`로 복제하므로 게스트의 코스메틱 훅도 같은 궤적을 재생한다.
+
+| 필드 | 1단계 | 2단계 | 3단계 | 의미 |
+|---|---|---|---|---|
+| `MaxRange` | 20 m | 26 m | 32 m | 사거리 (슬라이스 스펙 §2.2) |
+| `ReelSpeed` | 8 m/s | 11 m/s | 14 m/s | 견인(릴) 속도 |
+| `FireCooldown` | 0.5 s | 0.45 s | 0.4 s | 명중·취소 후 재발사 대기 |
+| `MissRecoveryDuration` | 2.5 s | 1.8 s | 1.2 s | 빗나감 페널티 (상위 단계일수록 회수가 빠르다) |
+| `GrabWeightLimit` | 1 | 2 | 3 | **낚아챌 수 있는 대상 무게 상한** — `GrabValidation.CanLift`의 등급 인자 |
+
+**등급 공통 값**
+
 | 필드 | 기본값 | 의미 |
 |---|---|---|
-| `MaxRange` | 20 m | 사거리 (슬라이스 스펙 §2.2) |
 | `ProjectileSpeed` | 40 m/s | 투사체 비행 속도 |
 | `ProjectileRadius` | 0.15 m | SphereCast 반경 |
-| `ReelSpeed` | 8 m/s | 견인(릴) 속도 |
-| `FireCooldown` | 0.5 s | 명중·취소 후 재발사 대기 |
-| `MissRecoveryDuration` | 2.5 s | 빗나감 페널티 |
-| `ArriveRadius` | 1.2 m | 이 거리 안으로 끌려오면 획득 완료 |
+| `ArriveRadius` | 1.2 m | 이 거리 안으로 끌려오면 도착 확정 |
 | `RangeTolerance` | 2 m | 호스트 거리 검증 여유분 |
 | `TowInterpolationRate` | 20 | 견인 스냅샷 보간 계수 |
 | `RetractSpeed` | 14 m/s | 실패 시 총구로 되돌아가는 속도 |
@@ -189,8 +202,10 @@ sequenceDiagram
 
 ## 7. 인터페이스·의존성 (경계)
 
-- **`IGrabbable`** — Harpoon → World 방향 경계. `ResourceNode`(world 도메인)가 구현하며, Harpoon은 구체 타입을 모른 채 인터페이스로만 그랩·견인·해제를 호출한다. 몬스터 그랩(M5)도 같은 계약을 구현하면 `HarpoonController` 무수정으로 확장된다.
-- **`ISharedResourceCounter`** (world 도메인) — 획득 확정 시 `ServiceLocator.TryGet`으로 조회해 카운터를 증가시킨다. 직접 참조가 아니라 서비스 조회이므로 Harpoon 어셈블리가 world의 구체 구현을 참조하지 않는다.
+- **`IGrabbable`** — Harpoon → 대상 도메인 방향 경계. `ResourceNode`(world) · `HandrailAnchor`(train) · `MonsterGrabTarget`(monsters, M5 5차)이 구현하며, Harpoon은 구체 타입을 모른 채 인터페이스로만 그랩·견인·해제·도착 확정을 호출한다. **M5 5차에서 `CompleteGrab()`이 `bool TryCompleteGrab(in GrabCompletion)`으로 바뀌었다** — 도착 시 무슨 일이 일어나는지를 **대상이 결정**한다(자원 = 수납 후 소멸, 몬스터 = 소멸 없이 무력화, 앵커 = 해당 없음). false면 집게는 기존 "해제 + `ForceRelease` RPC" 경로로 되돌아간다. 덕분에 대상 종류가 늘어도 `HarpoonController`에 분기가 늘지 않는다.
+- **`GrabCompletion`** (Harpoon 도메인) — 도착 시 대상에게 넘기는 그래버 정보 (clientId · 그래버 `GameObject` · 집게 등급). 대상이 필요한 것만 읽는다 — 자원은 `GameObject`에서 `IResourceInventory`를 뽑아 스스로 수납한다.
+- **`IHarpoonTierHolder`** (crafting 도메인, M5 5차) — 제작대 승급이 "지금 몇 단계인가"를 묻고 등급을 확정할 때 쓰는 최소 표면. **계약을 제작 쪽에 두고 집게가 구현**해 제작이 Harpoon 구현체를 직접 참조하지 않는다(DIP).
+- ~~**`ISharedResourceCounter`**~~ — **M5 5차에서 Harpoon 경계에서 제거됐다.** 획득 확정이 `ResourceNode`로 이관되면서 카운터 증가도 World 도메인 안에서 일어난다. Harpoon은 이제 World 서비스를 전혀 알지 않는다.
 - **`EventBus<HarpoonFiredLocalEvent>` / `<HarpoonMissLocalEvent>`** — UI·오디오 등 로컬 표현 구독자에게 발행하는 출력 경계. 게임 상태를 바꾸지 않는 순수 알림이므로 권위 이벤트가 아니다 (아키텍처 규칙 §3).
 - **네트워크 경계** — 소유자 전용 RPC(`SendTo.Owner`)와 브로드캐스트 RPC(`SendTo.NotOwner`)를 항상 짝으로 유지한다. 새 권위 확정 지점을 추가할 때는 두 RPC를 함께 추가해야 시각 동기화가 깨지지 않는다.
 
@@ -199,8 +214,8 @@ sequenceDiagram
 | 원칙 | 적용 |
 |---|---|
 | **SRP** | `HarpoonHookMotion`(순수 단계 전이)과 `HarpoonProjectile`(Transform·Physics 구동)을 분리 — 전이 규칙을 엔진 의존 없이 단위 테스트 가능 |
-| **OCP** | `IGrabbable` 확장만으로 그랩 대상 종류(자원→몬스터)를 늘릴 수 있음 — `HarpoonController`는 무수정 |
-| **DIP** | `ISharedResourceCounter`/`IWorldScrollService`를 `ServiceLocator` 경유로만 참조 — Harpoon 어셈블리가 World 구현체에 역방향 의존하지 않음 |
+| **OCP** | `IGrabbable` 확장만으로 그랩 대상 종류를 늘릴 수 있음 — **M5 5차에서 `MonsterGrabTarget` 추가로 실증됐다**. 도착 확정을 `TryCompleteGrab` 폴리모피즘으로 이관해 `HarpoonController`에서 `ResourceNode` 캐스팅이 사라졌다 |
+| **DIP** | Harpoon이 World 서비스를 아예 참조하지 않는다 (M5 5차 — `ISharedResourceCounter` 조회가 `ResourceNode`로 이관). 제작 승급 경로도 제작 쪽 계약(`IHarpoonTierHolder`)을 집게가 구현하는 방향이라 역방향 의존이 없다 |
 | **강조 패턴 — 상태 머신 이원화** | 조작 게이트(`HarpoonStateMachine`, 언제 입력을 받을지)와 시각 단계(`HarpoonHookMotion`, 훅이 어디 있는지)를 별개 상태 기계로 분리해, "취소=절단 vs 실패=되감기"처럼 서로 다른 규칙을 가진 두 축을 독립적으로 바꿀 수 있게 했다 |
 
 ## 9. Unity 특화

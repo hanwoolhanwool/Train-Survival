@@ -72,9 +72,10 @@ classDiagram
         -NetworkVariable~float~ _spawnDistance
         -NetworkVariable~bool~ _isTowed
         -NetworkVariable~Vector3~ _towPosition
+        +GrabWeight int
         +TryClaimGrab(clientId) bool
         +ReleaseGrab()
-        +CompleteGrab()
+        +TryCompleteGrab(completion) bool
     }
     class GroundResourceSpawner {
         +Update()
@@ -91,6 +92,7 @@ classDiagram
     ResourceNode ..> IWorldScrollService : ServiceLocator
     ResourceNode --> WorldScrollMath
     ResourceNode ..|> IGrabbable : (harpoon 도메인)
+    ResourceNode ..> ISharedResourceCounter : ServiceLocator (M5 5차)
     GroundResourceSpawner ..> IWorldScrollService : ServiceLocator
     ISharedResourceCounter <|.. SharedResourceCounter
 ```
@@ -138,8 +140,8 @@ flowchart LR
 ## 7. 인터페이스·의존성 (경계)
 
 - **`IWorldScrollService`** — World가 제공하고 Harpoon·Player·UI가 `ServiceLocator.TryGet`으로 소비하는 유일한 스크롤 진입점. 소비자는 `WorldScrollController`의 존재를 몰라도 된다.
-- **`IGrabbable`** (harpoon 도메인 소유) — `ResourceNode`가 구현. World → Harpoon 방향으로 인터페이스만 참조하며 역방향 참조는 없다 (아키텍처 규칙 §2의 단방향 원칙).
-- **`ISharedResourceCounter`** — Harpoon의 견인 완료 로직이 조회해 호출한다. World가 카운터의 "무엇이 자원인지"를 몰라도 되게 만든 경계.
+- **`IGrabbable`** (harpoon 도메인 소유) — `ResourceNode`가 구현. World → Harpoon 방향으로 인터페이스만 참조하며 역방향 참조는 없다 (아키텍처 규칙 §2의 단방향 원칙). **M5 5차**: 도착 확정이 `bool TryCompleteGrab(in GrabCompletion)`이 되면서 **획득이 무엇인지를 `ResourceNode`가 스스로 정의한다** — 그래버 `GameObject`에서 `IResourceInventory`를 뽑아 수납하고, 실패(가득)면 false를 돌려 집게가 그 자리 낙하로 처리하게 한다. 무게 등급(`GrabWeight`)도 `ResourceCatalog._grabWeight`에서 노드가 답한다.
+- **`ISharedResourceCounter`** — **M5 5차부터 `ResourceNode`가 직접 조회해 호출한다** (그전에는 Harpoon의 견인 완료 로직이 호출했다). 획득 확정이 World 도메인으로 이관되면서 카운터 증가도 같은 도메인 안에서 일어나 경계가 더 자연스러워졌다 — Harpoon은 이제 이 서비스를 알지 않는다.
 
 ## 8. 설계 포인트 (SOLID)
 
