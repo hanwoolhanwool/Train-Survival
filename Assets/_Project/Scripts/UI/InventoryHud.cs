@@ -19,6 +19,12 @@ namespace Game.UI
         private const float SlotSize = 52f;
         private const float SlotGap = 6f;
 
+        /// <summary>
+        /// 캐릭터 상태 영역의 높이 — 헤더 + 상태 3줄(체력·체온·허기)이 잘리지 않을 만큼 잡는다.
+        /// 상태 줄을 늘릴 때 이 값을 함께 올린다 (M5 4차 A2 — 허기 줄이 잘려 보이지 않던 회귀).
+        /// </summary>
+        private const float StatusAreaHeight = 110f;
+
         [SerializeField] private ResourceCatalog _catalog;
         [SerializeField] private StructureCatalog _structureCatalog;
 
@@ -495,8 +501,10 @@ namespace Game.UI
             float stride = SlotSize + SlotGap;
             float gridWidth = columns * SlotSize + (columns - 1) * SlotGap;
             float panelWidth = gridWidth + 40f;
+            // 마지막 항 = 캐릭터 상태 영역(헤더 + 체력·체온·허기 3줄). 줄이 늘면 여기와
+            // DrawCharacterStatus의 영역 높이를 함께 올려야 한다 — 낮으면 마지막 줄이 잘린다(M5 4차 A2).
             float panelHeight = 34f + 20f + SlotSize + 16f + 20f + bagRows * stride + 12f
-                + 20f + SlotSize + 16f + 90f;
+                + 20f + SlotSize + 16f + StatusAreaHeight + 8f;
 
             var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
                 panelWidth, panelHeight);
@@ -606,7 +614,7 @@ namespace Game.UI
                 GUI.Box(dragRect, GetSlotLabel(dragSlot, hotbar.StackSize));
             }
 
-            GUILayout.BeginArea(new Rect(rect.x + 16f, cursorY, rect.width - 32f, 84f));
+            GUILayout.BeginArea(new Rect(rect.x + 16f, cursorY, rect.width - 32f, StatusAreaHeight));
             GUILayout.Label("— 캐릭터 상태 —");
             GUILayout.Label(_maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
             GUILayout.Label(_temperature > 0f ? $"체온: {_temperature:F1}℃{GetStressSuffix()}" : "체온: -");
