@@ -43,7 +43,14 @@ namespace Game.Gameplay.Player
         private float _verticalSpeed;
         private float _pitch;
         private bool _respawning;
-        private bool _serverDeathPending;
+
+        /// <summary>
+        /// 이탈 사망(§4.2) 후 부활이 끝나기를 기다리는 중인가 — 호스트 확정, 전 피어 복제.
+        /// 이탈 사망은 체력을 거치지 않으므로(즉사 + 자체 부활 흐름) 이 플래그가 "죽어 있다"는
+        /// 유일한 표시다. <see cref="PlayerHealth.IsAlive"/>가 이 값을 함께 보고 두 사망을 통합한다
+        /// (M5 4차 D5·D10 — 이탈 사망 중에 섭취·버프·설치가 살아 있던 원인).
+        /// </summary>
+        private readonly NetworkVariable<bool> _respawnPending = new NetworkVariable<bool>();
         private bool _needsInitialPlacement;
         private bool _inventoryPanelOpen;
         private bool _sessionMenuOpen;
@@ -56,6 +63,9 @@ namespace Game.Gameplay.Player
         private float _groundGraceTimer;
 
         public PlayerMovementState MovementState => _movementState.Value;
+
+        /// <summary>이탈 사망 후 부활 대기 중인가 (복제 값 — 호스트·클라이언트 판정이 같다).</summary>
+        public bool IsRespawnPending => _respawnPending.Value;
 
         /// <summary>
         /// 접지 프레임 기준 — 현재 지상(월드 프레임) 위에 서 있는지. 공중에서는 이륙 당시 값을 유지한다.
@@ -376,14 +386,14 @@ namespace Game.Gameplay.Player
 
         private void ServerCheckFallBehind()
         {
-            if (_trainLayout == null || _serverDeathPending)
+            if (_trainLayout == null || _respawnPending.Value)
             {
                 return;
             }
 
             if (transform.position.z < _trainLayout.DeathZ)
             {
-                _serverDeathPending = true;
+                _respawnPending.Value = true;
                 NotifyFellBehindRpc(OwnerClientId);
                 BeginRespawnOwnerRpc(_trainLayout.RespawnPosition, _trainLayout.RespawnDelaySeconds);
             }
@@ -430,7 +440,7 @@ namespace Game.Gameplay.Player
         [Rpc(SendTo.Server)]
         private void RespawnCompleteServerRpc()
         {
-            _serverDeathPending = false;
+            _respawnPending.Value = false;
         }
 
         // ── 상태 머신 전환 (호스트 확정, §4.2) ─────────────────────────────

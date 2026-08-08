@@ -25,7 +25,14 @@ namespace Game.Gameplay.Player
         private Inventory.PlayerInventory _inventory;
         private bool _serverDead;
 
-        public bool IsAlive => IsSpawned && !_serverDead && _health.Value > 0f;
+        /// <summary>
+        /// 살아서 활동 가능한 상태인가 — <b>사망 경로가 둘</b>이므로 둘 다 본다 (M5 4차 D5·D10):
+        /// 전투·환경 피해로 체력이 0이 된 사망(<see cref="_serverDead"/>)과,
+        /// 체력을 거치지 않는 이탈 사망 후 부활 대기(<see cref="NetworkPlayerController.IsRespawnPending"/>).
+        /// 이탈 사망을 빠뜨리면 "죽어서 부활을 기다리는 동안" 섭취·버프·설치가 그대로 살아 있게 된다.
+        /// </summary>
+        public bool IsAlive => IsSpawned && !_serverDead
+            && !_controller.IsRespawnPending && _health.Value > 0f;
 
         public float Health => _health.Value;
 
