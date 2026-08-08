@@ -28,6 +28,9 @@ namespace Game.Gameplay.Inventory
             [SerializeField, Range(0f, 1f)] private float _coldInsulationBonus;
             [SerializeField, Min(0f)] private float _warmthDurationSeconds;
 
+            [Tooltip("섭취 즉시 오르는 체온(℃) — 단열과 달리 체온 자체를 올린다 (M5 5차). 0 = 없음.")]
+            [SerializeField, Min(0f)] private float _instantBodyTemperature;
+
             public ResourceType Type => _type;
 
             public float HungerRestore => _hungerRestore;
@@ -39,6 +42,9 @@ namespace Game.Gameplay.Inventory
             public float ColdInsulationBonus => _coldInsulationBonus;
 
             public float WarmthDurationSeconds => _warmthDurationSeconds;
+
+            /// <summary>섭취 즉시 오르는 체온 (℃) — 상한 클램프는 체온 쪽(PlayerTemperature)이 담당한다.</summary>
+            public float InstantBodyTemperature => _instantBodyTemperature;
         }
 
         [SerializeField] private Entry[] _entries;

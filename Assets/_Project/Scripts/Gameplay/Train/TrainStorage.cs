@@ -36,6 +36,10 @@ namespace Game.Gameplay.Train
         private int _localInRangeCar = -1;
         private int _openCarIndex = -1;
 
+        // QA 동시 경합 (M5 5차) — 요청 발행 후 총량을 다시 찍기까지의 대기. 음수 = 비활성.
+        private float _contentionLogDelay = -1f;
+        private int _contentionCarIndex = -1;
+
         public int SlotsPerStorage => _slotsPerStorage;
 
         public override void OnNetworkSpawn()
@@ -104,6 +108,15 @@ namespace Game.Gameplay.Train
             if (!IsSpawned)
             {
                 return;
+            }
+
+            if (IsServer && _contentionLogDelay >= 0f)
+            {
+                _contentionLogDelay -= Time.deltaTime;
+                if (_contentionLogDelay < 0f)
+                {
+                    LogContentionTotals(_contentionCarIndex, "확정 후");
+                }
             }
 
             NetworkObject localPlayer = LocalInteraction.GetLocalPlayerObject();
@@ -295,6 +308,105 @@ namespace Game.Gameplay.Train
                 default:
                     return null;
             }
+        }
+
+        // ── QA: 동시 경합 재현 (M5 5차 — 검증 G2) ────────────────────
+
+        /// <summary>
+        /// 전 피어가 <b>같은 프레임에 같은 이동</b>(창고 슬롯 0 → 개인 슬롯 0)을 요청하게 만든다.
+        /// 사람이 두 피어를 같은 프레임에 조작할 수 없어 3·4차 연속 미검이던 동시 경합(G2)을
+        /// 한 번의 입력으로 재현하는 QA 수단이다. 서버 검증 경로는 평소와 완전히 같다 —
+        /// 창고 생존·거리 재검증과 순수 로직 판정을 그대로 거친다.
+        /// 판정 기준: 두 요청 중 하나만 반영되거나 갱신된 상태 기준으로 처리되어 <b>총량이 보존</b>되는가.
+        /// </summary>
+        public void ServerTriggerContentionTest()
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            int carIndex = FindAnyAliveStorageCar();
+            if (carIndex < 0)
+            {
+                Debug.Log("[TrainStorage] QA 동시 경합: 살아 있는 창고가 없다 — 창고를 먼저 설치한다.");
+                return;
+            }
+
+            LogContentionTotals(carIndex, "요청 전");
+            _contentionCarIndex = carIndex;
+            _contentionLogDelay = 0.5f;
+            RunContentionTestRpc(carIndex);
+        }
+
+        /// <summary>각 피어가 수신 프레임에 자기 이동 요청을 발행한다 — 서버 도착이 붙어 경합이 재현된다.</summary>
+        [Rpc(SendTo.Everyone)]
+        private void RunContentionTestRpc(int carIndex)
+        {
+            RequestTransferServerRpc(
+                carIndex, ITrainStorage.ContainerStorage, 0, ITrainStorage.ContainerInventory, 0);
+        }
+
+        private int FindAnyAliveStorageCar()
+        {
+            if (!ServiceLocator.TryGet(out ITrainState train))
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < train.CarCount; i++)
+            {
+                if (IsStorageAlive(train, i))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>창고 + 접속 중인 전 플레이어 인벤토리의 아이템 총량 — 경합 전후를 눈으로 비교한다.</summary>
+        private void LogContentionTotals(int carIndex, string phase)
+        {
+            if (carIndex < 0)
+            {
+                return;
+            }
+
+            int storageTotal = CountItems(CopyStorageSlots(carIndex));
+            int playerTotal = 0;
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager != null)
+            {
+                foreach (NetworkClient client in manager.ConnectedClientsList)
+                {
+                    PlayerInventory inventory = client.PlayerObject != null
+                        ? client.PlayerObject.GetComponent<PlayerInventory>()
+                        : null;
+                    if (inventory != null)
+                    {
+                        playerTotal += CountItems(inventory.ServerCopySlotViews());
+                    }
+                }
+            }
+
+            Debug.Log($"[TrainStorage] QA 동시 경합 ({phase}) — #{carIndex}번 칸 창고 {storageTotal} + " +
+                $"플레이어 합계 {playerTotal} = 총 {storageTotal + playerTotal}");
+        }
+
+        private static int CountItems(HotbarSlotView[] slots)
+        {
+            int total = 0;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].ItemType != HotbarItemType.None)
+                {
+                    // 자원은 스택 수량, 무기·도구는 1개로 센다.
+                    total += Mathf.Max(1, slots[i].Count);
+                }
+            }
+
+            return total;
         }
 
         // ── 서버: 소실·복사·되쓰기 ────────────────────

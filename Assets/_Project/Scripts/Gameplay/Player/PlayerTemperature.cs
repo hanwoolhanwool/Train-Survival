@@ -62,6 +62,33 @@ namespace Game.Gameplay.Player
             _temperature.OnValueChanged -= OnTemperatureChanged;
         }
 
+        /// <summary>
+        /// 즉시 체온 가산 (M5 5차 — 따뜻한 음식 섭취). 서버 전용.
+        /// 보온 버프(단열)는 "환경을 덜 춥게" 만들 뿐이라 먹은 순간의 피드백이 없다 —
+        /// 이 진입점은 체온 자체를 즉시 올리고 <b>복제 임계를 무시하고 바로 복제</b>해
+        /// 먹자마자 HUD 수치가 움직이게 한다 (기아 0 교차 즉시 복제와 같은 규약).
+        /// 상승은 <see cref="TemperatureSettings.InstantWarmthCeiling"/>까지만 — 사막 낮에 스튜를 먹어
+        /// 더위 피해를 입는 역효과를 만들지 않는다 (역효과 축은 장비 단열이 이미 담당한다).
+        /// </summary>
+        public void ServerAddBodyTemperature(float degrees)
+        {
+            if (!IsServer || _settings == null || Mathf.Approximately(degrees, 0f) || !_health.IsAlive)
+            {
+                return;
+            }
+
+            float next = _serverTemperature + degrees;
+            if (degrees > 0f)
+            {
+                // 이미 상한 위라면 더 올리지 않되, 끌어내리지도 않는다 (음식이 냉각기가 되지 않게).
+                next = Mathf.Min(next, Mathf.Max(_serverTemperature, _settings.InstantWarmthCeiling));
+            }
+
+            _serverTemperature = Mathf.Clamp(
+                next, _settings.MinBodyTemperature, _settings.MaxBodyTemperature);
+            _temperature.Value = _serverTemperature;
+        }
+
         private void Update()
         {
             if (!IsSpawned || !IsServer || _settings == null)

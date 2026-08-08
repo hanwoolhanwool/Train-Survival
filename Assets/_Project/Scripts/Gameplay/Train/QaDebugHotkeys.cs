@@ -16,6 +16,8 @@ namespace Game.Gameplay.Train
     /// - 숫자패드 6 : 샘플 데미지 30 — <b>망치로 겨눈 부위</b>가 있으면 그 부위에, 없으면
     ///   표적 연결부·후미 칸·건축물 순의 폴백(특정 건축물을 골라 손상시킬 수 있게 한다, M5 4차 C7).
     /// - 숫자패드 5 : 몬스터 웨이브 스폰 토글(M5 4차 — 밤 노숙 체온 검증용).
+    /// - 숫자패드 4 : 공유 창고 동시 경합 재현(M5 5차 — 검증 G2). 전 피어가 같은 프레임에
+    ///   같은 이동(창고 0 → 개인 0)을 요청하고, 총량 보존 여부를 호스트 콘솔에 찍는다.
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
     /// </summary>
     public sealed class QaDebugHotkeys : NetworkBehaviour
@@ -23,7 +25,7 @@ namespace Game.Gameplay.Train
         private const string GameplaySceneName = "Game";
         private const float SampleDamage = 30f;
 
-        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글. QA 전용이므로 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
 
         // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 6의 데미지 대상 선택에 쓴다.
@@ -98,6 +100,25 @@ namespace Game.Gameplay.Train
             if (keyboard.numpad5Key.wasPressedThisFrame)
             {
                 RequestToggleMonsterSpawnServerRpc();
+            }
+
+            if (keyboard.numpad4Key.wasPressedThisFrame)
+            {
+                RequestStorageContentionServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// 공유 창고 동시 경합 재현 (M5 5차 — 검증 G2). 호스트가 전 피어에 트리거를 뿌리고
+        /// 각 피어가 수신 프레임에 같은 이동을 요청한다 — 서버 도착이 붙어 경합이 재현된다.
+        /// 총량 보존 여부는 호스트 콘솔에 (요청 전 / 확정 후) 두 줄로 찍힌다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestStorageContentionServerRpc()
+        {
+            if (ServiceLocator.TryGet(out ITrainStorage storage) && storage is TrainStorage concrete)
+            {
+                concrete.ServerTriggerContentionTest();
             }
         }
 

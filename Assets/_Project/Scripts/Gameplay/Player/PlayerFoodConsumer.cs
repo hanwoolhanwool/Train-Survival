@@ -20,6 +20,7 @@ namespace Game.Gameplay.Player
         private PlayerHealth _health;
         private PlayerHunger _hunger;
         private PlayerBuffs _buffs;
+        private PlayerTemperature _temperature;
         private HotbarController _hotbar;
 
         private void Awake()
@@ -27,6 +28,7 @@ namespace Game.Gameplay.Player
             _health = GetComponent<PlayerHealth>();
             _hunger = GetComponent<PlayerHunger>();
             _buffs = GetComponent<PlayerBuffs>();
+            _temperature = GetComponent<PlayerTemperature>();
             _hotbar = GetComponent<HotbarController>();
         }
 
@@ -81,6 +83,13 @@ namespace Game.Gameplay.Player
             _buffs.ServerApplyFood(
                 entry.RegenPerSecond, entry.RegenDurationSeconds,
                 entry.ColdInsulationBonus, entry.WarmthDurationSeconds);
+
+            // 즉시 체온 상승 (M5 5차) — 단열 버프와 달리 먹은 순간 체온계가 움직인다.
+            // 같은 원자 확정 안에서 호출한다 (차감 + 허기 + 버프 + 체온).
+            if (_temperature != null && entry.InstantBodyTemperature > 0f)
+            {
+                _temperature.ServerAddBodyTemperature(entry.InstantBodyTemperature);
+            }
         }
     }
 }
