@@ -43,6 +43,7 @@ namespace Game.Gameplay.Player
 
             _regenRemaining.OnValueChanged += OnRemainingChanged;
             _warmthRemaining.OnValueChanged += OnRemainingChanged;
+            EventBus<PlayerDiedEvent>.Subscribe(OnPlayerDied);
             PublishChanged();
         }
 
@@ -50,13 +51,27 @@ namespace Game.Gameplay.Player
         {
             _regenRemaining.OnValueChanged -= OnRemainingChanged;
             _warmthRemaining.OnValueChanged -= OnRemainingChanged;
+            EventBus<PlayerDiedEvent>.Unsubscribe(OnPlayerDied);
+        }
+
+        /// <summary>
+        /// 사망 확정 즉시 버프를 끝낸다 (M5 4차 D10) — <see cref="Update"/>의 생존 검사에만 기대면
+        /// 사망 프레임과 갱신 순서에 따라 한 틱이 새어 나갈 수 있어, 권위 이벤트에서도 정리한다.
+        /// </summary>
+        private void OnPlayerDied(PlayerDiedEvent evt)
+        {
+            if (IsServer && evt.ClientId == OwnerClientId)
+            {
+                ServerClear();
+            }
         }
 
         /// <summary>음식의 버프를 적용한다 — 서버 전용. 지속 0인 축은 건드리지 않는다.</summary>
         public void ServerApplyFood(
             float regenPerSecond, float regenDuration, float coldBonus, float warmthDuration)
         {
-            if (!IsServer)
+            // 사망 중 부여를 여기서도 막는다 — 호출부(섭취 RPC)의 검사에만 기대지 않는 심층 방어.
+            if (!IsServer || !_health.IsAlive)
             {
                 return;
             }

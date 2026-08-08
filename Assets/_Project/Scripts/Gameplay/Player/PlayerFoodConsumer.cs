@@ -10,6 +10,7 @@ namespace Game.Gameplay.Player
     /// 요리는 비연료라 엔진 투입 경로가 거부하므로 좌클릭이 겹치지 않는다 (계획 §4).
     /// 확정은 호스트: (든 칸 1개 차감 + 허기 회복 + 버프 부여)를 원자적으로 확정한다.
     /// </summary>
+    [RequireComponent(typeof(PlayerHealth))]
     [RequireComponent(typeof(PlayerHunger))]
     [RequireComponent(typeof(PlayerBuffs))]
     public sealed class PlayerFoodConsumer : NetworkBehaviour
@@ -37,7 +38,8 @@ namespace Game.Gameplay.Player
             }
 
             // 사망 중·창 열림 중에는 먹지 않는다 — 입력 규약 (I 창 = 조작 정지).
-            if (_health != null && !_health.IsAlive)
+            // null 관용을 두지 않는다 — 참조가 비면 게이트가 통째로 열려 사망 중 섭취가 새어 나간다(M5 4차 D5).
+            if (!_health.IsAlive)
             {
                 return;
             }
@@ -61,7 +63,7 @@ namespace Game.Gameplay.Player
         [Rpc(SendTo.Server)]
         private void RequestEatServerRpc(int slotIndex)
         {
-            if (_foodCatalog == null || _health == null || !_health.IsAlive)
+            if (_foodCatalog == null || !_health.IsAlive)
             {
                 return;
             }
