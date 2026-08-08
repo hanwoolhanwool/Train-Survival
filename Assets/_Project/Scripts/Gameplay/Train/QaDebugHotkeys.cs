@@ -13,7 +13,8 @@ namespace Game.Gameplay.Train
     /// - 숫자패드 7 : 현재 표적 가능한(후미) 연결부 1개 파괴(후방 연쇄 이탈 테스트).
     /// - 숫자패드 8 : 칸 1칸 무료 건설 — 빈 슬롯(파괴·소실) 재건 우선, 없으면 후미 증설(비용 경로는 건설 포트로 검증).
     /// - 숫자패드 9 : 요청자에게 자원 지급(건자재·제작 재료·식재료 — 증설 비용·연료 투입·요리 테스트).
-    /// - 숫자패드 6 : 표적 연결부·후미 칸·건축물에 샘플 데미지 30(수리 망치 테스트).
+    /// - 숫자패드 6 : 샘플 데미지 30 — <b>망치로 겨눈 부위</b>가 있으면 그 부위에, 없으면
+    ///   표적 연결부·후미 칸·건축물 순의 폴백(특정 건축물을 골라 손상시킬 수 있게 한다, M5 4차 C7).
     /// - 숫자패드 5 : 몬스터 웨이브 스폰 토글(M5 4차 — 밤 노숙 체온 검증용).
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
     /// </summary>
@@ -24,6 +25,28 @@ namespace Game.Gameplay.Train
 
         [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
+
+        // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 6의 데미지 대상 선택에 쓴다.
+        private bool _hasHammerTarget;
+        private TrainPartKind _hammerTargetKind;
+        private int _hammerTargetIndex;
+
+        private void OnEnable()
+        {
+            Core.Events.EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
+        }
+
+        private void OnDisable()
+        {
+            Core.Events.EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
+        }
+
+        private void OnHammerTarget(HammerTargetLocalEvent evt)
+        {
+            _hasHammerTarget = evt.HasTarget;
+            _hammerTargetKind = evt.Kind;
+            _hammerTargetIndex = evt.Index;
+        }
 
         private void Update()
         {
@@ -60,7 +83,16 @@ namespace Game.Gameplay.Train
 
             if (keyboard.numpad6Key.wasPressedThisFrame)
             {
-                RequestSampleDamageServerRpc();
+                // 망치로 겨눈 부위가 있으면 그것을 때린다 — 폴백은 "뒤에서 첫 부위"라
+                // 특정 건축물(예: 앞 칸의 화덕)을 손상시킬 수 없었다 (M5 4차 C7).
+                if (_hasHammerTarget)
+                {
+                    RequestTargetedDamageServerRpc(_hammerTargetKind, _hammerTargetIndex);
+                }
+                else
+                {
+                    RequestSampleDamageServerRpc();
+                }
             }
 
             if (keyboard.numpad5Key.wasPressedThisFrame)
@@ -146,7 +178,35 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>수리 대상을 만들기 위해 표적 연결부·최후미 칸·살아 있는 건축물에 샘플 데미지를 넣는다.</summary>
+        /// <summary>
+        /// 망치로 겨눈 부위 하나에 샘플 데미지를 넣는다 (M5 4차) — 겨눈 것만 맞으므로
+        /// 특정 건축물(화덕 등)을 골라 손상·파괴시킬 수 있다. 부위 식별은 망치 RPC와 같은 (종류, 인덱스) 규약.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestTargetedDamageServerRpc(TrainPartKind kind, int index)
+        {
+            if (!ServiceLocator.TryGet(out ITrainDamageSink sink))
+            {
+                return;
+            }
+
+            switch (kind)
+            {
+                case TrainPartKind.Coupling:
+                    sink.ApplyCouplingDamage(index, SampleDamage);
+                    break;
+
+                case TrainPartKind.Car:
+                    sink.ApplyCarDamage(index, SampleDamage);
+                    break;
+
+                case TrainPartKind.Structure:
+                    sink.ApplyStructureDamage(index, SampleDamage);
+                    break;
+            }
+        }
+
+        /// <summary>수리 대상을 만들기 위해 표적 연결부·최후미 칸·살아 있는 건축물에 샘플 데미지를 넣는다 (겨눈 부위가 없을 때의 폴백).</summary>
         [Rpc(SendTo.Server, RequireOwnership = false)]
         private void RequestSampleDamageServerRpc()
         {
