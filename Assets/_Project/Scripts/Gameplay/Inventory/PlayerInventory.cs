@@ -213,6 +213,28 @@ namespace Game.Gameplay.Inventory
             return true;
         }
 
+        /// <summary>
+        /// 재료 소모만 확정한다 (M5 5차 집게 승급) — 산출이 인벤토리 밖에 있는 레시피용.
+        /// 복사본에서 차감이 성립했을 때만 반영하므로, 호출부는 승급 확정과 이 호출을 묶어
+        /// "둘 다 성공할 때만 반영"을 만들 수 있다 (재료 보존 원자 규약).
+        /// </summary>
+        public bool ServerTryConsume(Crafting.CraftingRecipe recipe)
+        {
+            if (!IsServer || recipe == null)
+            {
+                return false;
+            }
+
+            HotbarSlotView[] slots = CopySlots();
+            if (!Crafting.CraftingLogic.TryConsume(slots, recipe.ToIngredientViews()))
+            {
+                return false;
+            }
+
+            ApplySlots(slots);
+            return true;
+        }
+
         /// <summary>슬롯 교환 요청 (자유 배치, I 창 드래그) — 소유자에서 호출한다.</summary>
         public void RequestSwap(int a, int b)
         {

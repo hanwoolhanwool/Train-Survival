@@ -83,6 +83,15 @@ namespace Game.Gameplay.Crafting
             return HotbarLogic.TryAddItem(slots, outputItem);
         }
 
+        /// <summary>
+        /// 재료만 소모한다 (M5 5차 집게 승급) — 산출이 인벤토리 밖(플레이어 상태)에 있는 레시피용.
+        /// 성공 시 슬롯 복사본에서 재료가 빠진 상태가 되고, 실패면 호출자가 복사본을 버린다.
+        /// </summary>
+        public static bool TryConsume(HotbarSlotView[] slots, IngredientView[] ingredients)
+        {
+            return TryConsumeIngredients(slots, ingredients);
+        }
+
         private static bool TryConsumeIngredients(HotbarSlotView[] slots, IngredientView[] ingredients)
         {
             if (!CanCraft(slots, ingredients))

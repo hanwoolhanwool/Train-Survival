@@ -56,6 +56,9 @@ namespace Game.Gameplay.World
             ? (Inventory.ResourceType)_syncedResourceType.Value
             : _defaultResourceType;
 
+        /// <summary>무게 등급은 종류가 정한다 (M5 5차) — 미등재 종류는 1이라 기존 5종의 채집 경로가 유지된다.</summary>
+        public int GrabWeight => _catalog != null ? _catalog.GetGrabWeight(ResourceType) : 1;
+
         /// <summary>서버 전용 — 스폰 직전에 자원 종류를 예약한다. OnNetworkSpawn에서 동기화된다.</summary>
         public void ServerSetResourceType(Inventory.ResourceType type)
         {
@@ -197,16 +200,34 @@ namespace Game.Gameplay.World
             _grabberClientId.Value = NoGrabber;
         }
 
-        public void CompleteGrab()
+        /// <summary>
+        /// 획득 확정 (M5 5차 — 집게에서 이관): <b>자원이 스스로</b> 그래버 인벤토리에 수납하고
+        /// 팀 카운터를 올린 뒤 소멸한다. 집게는 "무엇이 자원인지"를 알 필요가 없어진다 (OCP).
+        /// 수납 실패(가득)는 false — 집게가 그 자리 낙하(강제 해제)로 처리한다 (기획서 §3.4).
+        /// </summary>
+        public bool TryCompleteGrab(in GrabCompletion completion)
         {
-            if (!IsServer)
+            if (!IsServer || completion.Grabber == null)
             {
-                return;
+                return false;
+            }
+
+            var inventory = completion.Grabber.GetComponent<Inventory.IResourceInventory>();
+            if (inventory == null || !inventory.ServerTryAdd(ResourceType, 1))
+            {
+                return false;
+            }
+
+            // 팀 누적 채집 통계 (권위 이벤트는 카운터가 발행). 카운터는 같은 World 도메인의 서비스다.
+            if (ServiceLocator.TryGet(out ISharedResourceCounter counter))
+            {
+                counter.AddResource();
             }
 
             _acquired = true;
             // destroy: true여야 PooledNetworkPrefabHandler를 거쳐 풀로 반환된다.
             NetworkObject.Despawn(true);
+            return true;
         }
 
         private void Update()

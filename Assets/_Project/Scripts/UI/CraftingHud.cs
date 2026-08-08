@@ -96,11 +96,7 @@ namespace Game.UI
                 CraftingLogic.IngredientView[] ingredients = recipe.ToIngredientViews();
                 bool canCraft = CraftingLogic.CanCraft(slots, ingredients);
 
-                // 무기 산출 레시피는 아이템 1개 지급 — 자원 산출과 표기가 다르다 (M5 2차).
-                string outputLine = recipe.IsItemOutput
-                    ? $"{recipe.DisplayName}  →  {HotbarItemLabels.GetLabel(recipe.OutputItem)} ×1"
-                    : $"{recipe.DisplayName}  →  {GetName(recipe.Output)} ×{recipe.OutputCount}";
-                GUI.Label(new Rect(rect.x + 16f, y, 220f, 22f), outputLine);
+                GUI.Label(new Rect(rect.x + 16f, y, 220f, 22f), BuildOutputLine(recipe));
 
                 string ingredientLine = BuildIngredientLine(slots, ingredients);
                 GUI.Label(new Rect(rect.x + 16f, y + 20f, 260f, 22f), ingredientLine);
@@ -114,6 +110,21 @@ namespace Game.UI
                 GUI.enabled = true;
                 y += 64f;
             }
+        }
+
+        /// <summary>산출 표기 — 산출 종류마다 경로가 달라 표기도 다르다 (자원 적재 / 아이템 1개 / 집게 승급).</summary>
+        private string BuildOutputLine(CraftingRecipe recipe)
+        {
+            // 집게 승급 (M5 5차)은 인벤토리 산출이 없다 — 무엇으로 바뀌는지를 보여준다.
+            if (recipe.IsHarpoonTierOutput)
+            {
+                return $"{recipe.DisplayName}  →  {HotbarItemLabels.GetHarpoonLabel(recipe.OutputHarpoonTier)}";
+            }
+
+            // 무기 산출 레시피는 아이템 1개 지급 — 자원 산출과 표기가 다르다 (M5 2차).
+            return recipe.IsItemOutput
+                ? $"{recipe.DisplayName}  →  {HotbarItemLabels.GetLabel(recipe.OutputItem)} ×1"
+                : $"{recipe.DisplayName}  →  {GetName(recipe.Output)} ×{recipe.OutputCount}";
         }
 
         private string BuildIngredientLine(HotbarSlotView[] slots, CraftingLogic.IngredientView[] ingredients)

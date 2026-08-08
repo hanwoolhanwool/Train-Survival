@@ -6,6 +6,15 @@ namespace Game.Gameplay.Inventory
     /// </summary>
     public static class HotbarItemLabels
     {
+        /// <summary>
+        /// 집게의 등급별 표시명 (M5 5차 승급) — 1단계는 기존과 같은 "집게", 상위는 "집게(2단계)".
+        /// 핫바·제작 창이 이 하나를 공유해 표기가 갈리지 않는다.
+        /// </summary>
+        public static string GetHarpoonLabel(int tier)
+        {
+            return tier <= 1 ? "집게" : $"집게({tier}단계)";
+        }
+
         public static string GetLabel(HotbarItemType type)
         {
             switch (type)

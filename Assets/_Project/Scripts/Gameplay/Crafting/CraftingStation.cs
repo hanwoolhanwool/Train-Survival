@@ -30,6 +30,10 @@ namespace Game.Gameplay.Crafting
         private bool _workbenchInRange;
         private bool _campfireInRange;
 
+        // 로컬 플레이어의 집게 등급·상한 (M5 5차) — 승급 레시피 목록 필터에 쓴다. 0 = 아직 모름.
+        private int _localHarpoonTier;
+        private int _localHarpoonMaxTier;
+
         public int RecipeCount => _recipes == null ? 0 : _recipes.Count;
 
         public bool IsLocalPlayerInRange => _localInRange;
@@ -39,7 +43,11 @@ namespace Game.Gameplay.Crafting
             return _recipes == null ? null : _recipes.GetRecipe(index);
         }
 
-        /// <summary>레시피의 요구 지점(제작대/화덕)이 로컬 플레이어 범위 안에 있는가 (M5 4차).</summary>
+        /// <summary>
+        /// 레시피의 요구 지점(제작대/화덕)이 로컬 플레이어 범위 안에 있는가 (M5 4차).
+        /// 집게 승급 레시피는 여기에 등급 조건이 하나 더 붙는다 (M5 5차) — 이미 가진 등급·건너뛴
+        /// 등급은 목록에서 빠진다. 서버 확정도 같은 조건을 다시 본다 (판정이 갈리지 않는다).
+        /// </summary>
         public bool IsRecipeAvailable(int index)
         {
             CraftingRecipe recipe = GetRecipe(index);
@@ -48,7 +56,21 @@ namespace Game.Gameplay.Crafting
                 return false;
             }
 
-            return recipe.Station == CraftStationKind.Campfire ? _campfireInRange : _workbenchInRange;
+            bool stationReady = recipe.Station == CraftStationKind.Campfire ? _campfireInRange : _workbenchInRange;
+            if (!stationReady || !recipe.IsHarpoonTierOutput)
+            {
+                return stationReady;
+            }
+
+            return IsNextHarpoonTier(recipe, _localHarpoonTier, _localHarpoonMaxTier);
+        }
+
+        /// <summary>승급이 성립하는가 — 목표가 "현재 + 1"이고 데이터 상한 안일 때만 (단계 건너뛰기 금지).</summary>
+        private static bool IsNextHarpoonTier(CraftingRecipe recipe, int currentTier, int maxTier)
+        {
+            return currentTier > 0
+                && recipe.OutputHarpoonTier == currentTier + 1
+                && recipe.OutputHarpoonTier <= maxTier;
         }
 
         public override void OnNetworkSpawn()
@@ -91,10 +113,17 @@ namespace Game.Gameplay.Crafting
             {
                 _workbenchInRange = false;
                 _campfireInRange = false;
+                _localHarpoonTier = 0;
+                _localHarpoonMaxTier = 0;
                 SetLocalInRange(false);
                 SetPanelOpen(false);
                 return;
             }
+
+            // 승급 레시피 필터의 입력 (M5 5차) — 복제 값이라 로컬 조회로 충분하다.
+            var tierHolder = localPlayer.GetComponent<IHarpoonTierHolder>();
+            _localHarpoonTier = tierHolder != null ? tierHolder.Tier : 0;
+            _localHarpoonMaxTier = tierHolder != null ? tierHolder.MaxTier : 0;
 
             // 지점 종류별 판정 (M5 4차) — 어느 한 종류라도 근처면 창이 열리고,
             // 종류별 범위 플래그는 레시피 필터(IsRecipeAvailable)가 쓴다.
@@ -253,10 +282,40 @@ namespace Game.Gameplay.Crafting
             }
 
             PlayerInventory inventory = client.PlayerObject.GetComponent<PlayerInventory>();
-            if (inventory != null)
+            if (inventory == null)
             {
-                inventory.ServerTryCraft(recipe);
+                return;
             }
+
+            if (recipe.IsHarpoonTierOutput)
+            {
+                ServerTryUpgradeHarpoon(client.PlayerObject, inventory, recipe);
+                return;
+            }
+
+            inventory.ServerTryCraft(recipe);
+        }
+
+        /// <summary>
+        /// 집게 승급 확정 (M5 5차) — ① 목표 등급이 현재 + 1인지 재검증 → ② 재료 소모 →
+        /// ③ 등급 상승. 어느 하나라도 실패하면 아무것도 반영되지 않는다 (재료 보존 원자 규약 —
+        /// 소모는 복사본 위에서만 이뤄지고 성공했을 때만 되쓰인다).
+        /// </summary>
+        private static void ServerTryUpgradeHarpoon(
+            NetworkObject playerObject, PlayerInventory inventory, CraftingRecipe recipe)
+        {
+            var holder = playerObject.GetComponent<IHarpoonTierHolder>();
+            if (holder == null || !IsNextHarpoonTier(recipe, holder.Tier, holder.MaxTier))
+            {
+                return;
+            }
+
+            if (!inventory.ServerTryConsume(recipe))
+            {
+                return;
+            }
+
+            holder.ServerSetTier(recipe.OutputHarpoonTier);
         }
     }
 }

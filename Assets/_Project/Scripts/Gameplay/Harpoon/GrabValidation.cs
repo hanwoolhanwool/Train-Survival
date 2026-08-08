@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Gameplay.Harpoon
 {
-    /// <summary>호스트 그랩 검증 결과 (슬라이스 스펙 §2.4 — 거부 사유 3종 외에는 승인).</summary>
+    /// <summary>호스트 그랩 검증 결과 (슬라이스 스펙 §2.4 — 거부 사유 3종 + M5 5차 등급 게이트).</summary>
     public enum GrabVerdict
     {
         Approved,
@@ -14,7 +14,10 @@ namespace Game.Gameplay.Harpoon
         TargetClaimed,
 
         /// <summary>③ 발사 시점 플레이어 위치 ↔ 명중 지점 거리가 사거리 상한(+여유) 초과.</summary>
-        OutOfRange
+        OutOfRange,
+
+        /// <summary>④ 집게 등급이 대상의 무게 등급에 못 미침 (M5 5차 — 상위 자원·대형 몬스터 잠금).</summary>
+        InsufficientTier
     }
 
     /// <summary>
@@ -23,10 +26,20 @@ namespace Game.Gameplay.Harpoon
     /// </summary>
     public static class GrabValidation
     {
+        /// <summary>
+        /// 무게 등급 게이트 (M5 5차) — 집게 등급이 대상 무게 등급 이상이어야 낚아챌 수 있다.
+        /// 자원(§3 상위 자원)과 몬스터(§4 대형 변종)가 이 한 규칙을 공유한다.
+        /// </summary>
+        public static bool CanLift(int grabberTier, int targetWeight)
+        {
+            return grabberTier >= targetWeight;
+        }
+
         public static GrabVerdict Validate(
             bool targetExists, bool targetClaimedByOther,
             Vector3 firePosition, Vector3 hitPoint,
-            float maxRange, float rangeTolerance)
+            float maxRange, float rangeTolerance,
+            int grabberTier, int targetWeight)
         {
             if (!targetExists)
             {
@@ -42,6 +55,11 @@ namespace Game.Gameplay.Harpoon
             if ((hitPoint - firePosition).sqrMagnitude > limit * limit)
             {
                 return GrabVerdict.OutOfRange;
+            }
+
+            if (!CanLift(grabberTier, targetWeight))
+            {
+                return GrabVerdict.InsufficientTier;
             }
 
             return GrabVerdict.Approved;

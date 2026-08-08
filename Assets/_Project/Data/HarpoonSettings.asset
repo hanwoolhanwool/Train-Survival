@@ -12,12 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77d0cc762d954844b90465210bc1200b, type: 3}
   m_Name: HarpoonSettings
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Harpoon.HarpoonSettings
-  _maxRange: 20
+  _tiers:
+  - _maxRange: 20
+    _reelSpeed: 8
+    _fireCooldown: 0.5
+    _missRecoveryDuration: 2.5
+    _grabWeightLimit: 1
+  - _maxRange: 26
+    _reelSpeed: 11
+    _fireCooldown: 0.45
+    _missRecoveryDuration: 1.8
+    _grabWeightLimit: 2
+  - _maxRange: 32
+    _reelSpeed: 14
+    _fireCooldown: 0.4
+    _missRecoveryDuration: 1.2
+    _grabWeightLimit: 3
   _projectileSpeed: 40
   _projectileRadius: 0.15
-  _reelSpeed: 8
-  _fireCooldown: 0.5
-  _missRecoveryDuration: 2.5
   _arriveRadius: 1.2
   _rangeTolerance: 2
   _towInterpolationRate: 20

@@ -38,6 +38,9 @@ namespace Game.Gameplay.Crafting
         [Tooltip("요구 제작 지점 (M5 4차) — 기본 = 제작대/기관차, 요리는 화덕. 지점이 근처에 없으면 목록에서 빠진다.")]
         [SerializeField] private CraftStationKind _station = CraftStationKind.Workbench;
 
+        [Tooltip("집게 승급 산출 (M5 5차) — 0 = 미사용. 1 이상이면 인벤토리 산출 없이 집게 등급을 이 값으로 올린다.")]
+        [SerializeField, Range(0, 3)] private int _outputHarpoonTier;
+
         public string DisplayName => _displayName;
 
         public int IngredientCount => _ingredients == null ? 0 : _ingredients.Length;
@@ -53,6 +56,15 @@ namespace Game.Gameplay.Crafting
 
         /// <summary>무기·도구 산출 레시피인가 — 산출 경로가 자원 적재와 다르다 (빈 칸 1개 필요).</summary>
         public bool IsItemOutput => _outputItem != HotbarItemType.None && _outputItem != HotbarItemType.Resource;
+
+        /// <summary>목표 집게 등급 (M5 5차). 0이면 승급 레시피가 아니다.</summary>
+        public int OutputHarpoonTier => _outputHarpoonTier;
+
+        /// <summary>
+        /// 집게 승급 레시피인가 — 산출이 인벤토리가 아니라 <b>플레이어 상태</b>다.
+        /// 핫바 아이템을 늘리지 않으므로 "집게는 1번 슬롯·버릴 수 없다"(기획서 §3.4)와 충돌하지 않는다.
+        /// </summary>
+        public bool IsHarpoonTierOutput => _outputHarpoonTier > 0;
 
         /// <summary>인덱스의 재료. 범위 밖이면 null.</summary>
         public Ingredient GetIngredient(int index)

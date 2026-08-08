@@ -51,6 +51,9 @@ namespace Game.UI
         // 장비 착용 (M5 3차) — 드래그 출처가 착용 칸이면 그 부위 인덱스, 아니면 -1.
         private int _dragFromEquip = -1;
 
+        // 로컬 플레이어의 집게 등급 (M5 5차 승급) — 핫바 라벨을 "집게(2단계)"로 바꾼다.
+        private int _harpoonTier = 1;
+
         private static readonly string[] EquipSlotLabels = { "머리", "상체", "하체", "신발" };
 
         private void OnEnable()
@@ -65,6 +68,7 @@ namespace Game.UI
             EventBus<StoragePromptLocalEvent>.Subscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
+            EventBus<Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent>.Subscribe(OnHarpoonTierChanged);
         }
 
         private void OnDisable()
@@ -79,6 +83,12 @@ namespace Game.UI
             EventBus<StoragePromptLocalEvent>.Unsubscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
+            EventBus<Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent>.Unsubscribe(OnHarpoonTierChanged);
+        }
+
+        private void OnHarpoonTierChanged(Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent evt)
+        {
+            _harpoonTier = evt.Tier;
         }
 
         private void OnPlayerHealthChanged(PlayerHealthChangedEvent evt)
@@ -240,6 +250,12 @@ namespace Game.UI
                 string name = _catalog != null ? _catalog.GetDisplayName(slot.Resource) : "자원";
                 int maxStack = _catalog != null ? _catalog.GetMaxStack(slot.Resource, stackSize) : stackSize;
                 return $"{name}\n{slot.Count}/{maxStack}";
+            }
+
+            // 집게는 등급이 표시명에 들어간다 (M5 5차 승급) — 승급했는지 핫바에서 바로 보인다.
+            if (slot.ItemType == HotbarItemType.Harpoon)
+            {
+                return HotbarItemLabels.GetHarpoonLabel(_harpoonTier);
             }
 
             // 무기·도구 표시명은 제작 UI와 공유한다 (M5 2차 — 무기 종류 확장).

@@ -30,6 +30,9 @@ namespace Game.Gameplay.Train
 
         public GrabKind Kind => GrabKind.Anchor;
 
+        /// <summary>손잡이는 등급 잠금이 없다 — 이탈 저항은 1단계 집게로도 성립해야 한다.</summary>
+        public int GrabWeight => 1;
+
         /// <summary>이탈 중인 칸의 손잡이만 잡을 수 있다(스펙: 이탈 중이고 소실 전인 칸만). 서버 기준 진실.</summary>
         public bool IsAvailableForGrab =>
             IsSpawned && !_claimed
@@ -88,8 +91,11 @@ namespace Game.Gameplay.Train
         {
         }
 
-        public void CompleteGrab()
+        /// <summary>앵커에는 획득 개념이 없다 — 애초에 도착 판정을 타지 않지만(집게가 Anchor에서 앞서 return)
+        /// 계약상 "확정되지 않았다"를 돌려준다.</summary>
+        public bool TryCompleteGrab(in GrabCompletion completion)
         {
+            return false;
         }
 
         public void BeginPredictedTow()

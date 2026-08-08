@@ -1,10 +1,8 @@
 using Game.Core.Events;
 using Game.Core.Pooling;
-using Game.Core.Services;
 using Game.Gameplay.Combat;
-using Game.Gameplay.Inventory;
+using Game.Gameplay.Crafting;
 using Game.Gameplay.Player;
-using Game.Gameplay.World;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,21 +12,28 @@ namespace Game.Gameplay.Harpoon
     /// <summary>
     /// 집게(하푼) 파이프라인 — 로컬 선반영 계층과 권위 계층의 분리 (개발 가이드 §6.1):
     /// 입력 → (즉시) 로컬 연출·투사체 → 로컬 명중 판정 → 호스트 그랩 요청 → 호스트 확정
-    /// → 견인(호스트 시뮬레이션, 30 Hz 동기화) → 도착 시 획득 확정.
+    /// → 견인(호스트 시뮬레이션, 30 Hz 동기화) → 도착 시 <see cref="IGrabbable.TryCompleteGrab"/>.
     /// 조작·수치·검증 규칙은 슬라이스 스펙 §2. 상태 게이트는 <see cref="HarpoonStateMachine"/>이 담당한다.
+    ///
+    /// 도착 시 무슨 일이 일어나는지는 <b>대상이 결정한다</b> (M5 5차) — 자원 수납이든 몬스터 무력화든
+    /// 여기서는 성공/실패만 본다. 종류 분기가 없으므로 대상은 <see cref="IGrabbable"/> 구현 추가만으로 늘어난다.
     ///
     /// 발사·명중 대기·견인·실패는 <see cref="_activeProjectile"/> 하나가 로프의 시각적 종점을 대표한다
     /// (Flying/WaitingForServer/Attached/Retracting). 소유자는 이 훅으로 실제 판정을 수행하고,
     /// 다른 클라이언트는 동일 컴포넌트를 연출 전용 사본(<see cref="HarpoonProjectile.LaunchCosmetic"/>)으로
     /// 재생해 발사·견인 모습을 함께 볼 수 있다 (NotOwner 브로드캐스트 — 서버가 중계).
     /// </summary>
-    public sealed class HarpoonController : NetworkBehaviour
+    public sealed class HarpoonController : NetworkBehaviour, IHarpoonTierHolder
     {
         [SerializeField] private HarpoonSettings _settings;
         [SerializeField] private Transform _aimSource;
         [SerializeField] private Transform _muzzle;
         [SerializeField] private HarpoonProjectile _projectilePrefab;
         [SerializeField] private HarpoonRopeRenderer _rope;
+
+        // 집게 등급 (M5 5차) — 게스트도 코스메틱 훅의 사거리·속도가 필요하므로 복제한다
+        // (비소유 사본이 같은 궤적을 재생해야 한다 — 변종 인덱스 복제와 같은 규약).
+        private readonly NetworkVariable<byte> _tier = new NetworkVariable<byte>(1);
 
         private HarpoonStateMachine _stateMachine;
         private HarpoonProjectile _activeProjectile;
@@ -47,16 +52,42 @@ namespace Game.Gameplay.Harpoon
         /// <summary>무기 슬롯 활성 여부 — 무기 전환 시스템이 제어한다. 소유자 입력 게이트 (M2).</summary>
         public bool InputEnabled { get; set; } = true;
 
+        /// <summary>현재 집게 등급 (1~). 스폰 전에는 1단계로 본다.</summary>
+        public int Tier => Mathf.Max(1, _tier.Value);
+
+        /// <summary>승급 상한 — 데이터에 등재된 등급 수 (에셋이 비면 1단계).</summary>
+        public int MaxTier => _settings != null ? _settings.TierCount : 1;
+
+        /// <summary>현재 등급의 수치 묶음 — 사거리·릴 속도·페널티·무게 상한.</summary>
+        private HarpoonSettings.Tier CurrentTier => _settings.GetTier(Tier);
+
+        /// <summary>서버 전용 — 등급 확정 (제작대 승급). 범위 밖이면 무시한다.</summary>
+        public void ServerSetTier(int tier)
+        {
+            if (!IsServer || tier < 1 || tier > MaxTier)
+            {
+                return;
+            }
+
+            _tier.Value = (byte)tier;
+        }
+
         public override void OnNetworkSpawn()
         {
-            _stateMachine = new HarpoonStateMachine(
-                _settings != null ? _settings.MissRecoveryDuration : 2.5f,
-                _settings != null ? _settings.FireCooldown : 0.5f);
+            _stateMachine = BuildStateMachine();
             _player = GetComponent<NetworkPlayerController>();
+            _tier.OnValueChanged += OnTierChanged;
+
+            if (IsOwner)
+            {
+                EventBus<HarpoonTierChangedLocalEvent>.Publish(new HarpoonTierChangedLocalEvent(Tier));
+            }
         }
 
         public override void OnNetworkDespawn()
         {
+            _tier.OnValueChanged -= OnTierChanged;
+
             if (IsServer)
             {
                 ServerReleaseTow();
@@ -69,6 +100,31 @@ namespace Game.Gameplay.Harpoon
             }
 
             DiscardActiveProjectile();
+        }
+
+        /// <summary>
+        /// 등급이 바뀌면 상태 머신을 새 페널티·쿨다운으로 다시 만든다 (승급은 제작대 앞에서만 일어나므로
+        /// 잠금 중 재생성으로 잃을 진행이 사실상 없다 — 재생성 시 Ready로 복귀한다).
+        /// </summary>
+        private void OnTierChanged(byte previous, byte current)
+        {
+            _stateMachine = BuildStateMachine();
+
+            if (IsOwner)
+            {
+                EventBus<HarpoonTierChangedLocalEvent>.Publish(new HarpoonTierChangedLocalEvent(Tier));
+            }
+        }
+
+        private HarpoonStateMachine BuildStateMachine()
+        {
+            if (_settings == null)
+            {
+                return new HarpoonStateMachine(2.5f, 0.5f);
+            }
+
+            HarpoonSettings.Tier tier = CurrentTier;
+            return new HarpoonStateMachine(tier.MissRecoveryDuration, tier.FireCooldown);
         }
 
         private void Update()
@@ -163,7 +219,7 @@ namespace Game.Gameplay.Harpoon
             _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
             _activeProjectile.Launch(
                 origin, direction,
-                _settings.ProjectileSpeed, _settings.ProjectileRadius, _settings.MaxRange,
+                _settings.ProjectileSpeed, _settings.ProjectileRadius, CurrentTier.MaxRange,
                 transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld,
                 OnProjectileHit, OnProjectileMiss);
         }
@@ -179,7 +235,7 @@ namespace Game.Gameplay.Harpoon
             Vector3 aimForward = _aimSource != null ? _aimSource.forward : transform.forward;
 
             Vector3 aimPoint = WeaponRaycast.ResolveAimPoint(
-                aimOrigin, aimForward, _settings.MaxRange, transform.root);
+                aimOrigin, aimForward, CurrentTier.MaxRange, transform.root);
 
             return HarpoonAimMath.ResolveFireDirection(muzzleOrigin, aimPoint, aimForward);
         }
@@ -265,9 +321,11 @@ namespace Game.Gameplay.Harpoon
             bool targetExists = grabbable != null && grabbable.NetworkObject.IsSpawned && grabbable.IsAvailableForGrab;
             bool claimedByOther = grabbable != null && grabbable.IsClaimed;
 
+            // 무게 등급 게이트 (M5 5차) — 집게 등급 상한과 대상 무게를 순수 함수가 비교한다.
             GrabVerdict verdict = GrabValidation.Validate(
                 targetExists, claimedByOther, firePosition, hitPoint,
-                _settings.MaxRange, _settings.RangeTolerance);
+                CurrentTier.MaxRange, _settings.RangeTolerance,
+                CurrentTier.GrabWeightLimit, targetExists ? grabbable.GrabWeight : 1);
 
             if (verdict == GrabVerdict.Approved && grabbable.TryClaimGrab(senderClientId))
             {
@@ -321,16 +379,15 @@ namespace Game.Gameplay.Harpoon
 
             Vector3 anchor = transform.position + Vector3.up * 0.5f;
             Vector3 current = _serverTowTarget.NetworkObject.transform.position;
-            Vector3 next = Vector3.MoveTowards(current, anchor, _settings.ReelSpeed * Time.deltaTime);
+            Vector3 next = Vector3.MoveTowards(current, anchor, CurrentTier.ReelSpeed * Time.deltaTime);
             _serverTowTarget.UpdateTowPosition(next);
 
             if ((next - anchor).sqrMagnitude <= _settings.ArriveRadius * _settings.ArriveRadius)
             {
-                // 획득 확정 — 개인 인벤토리 수납 (기획서 §3.4). 가득 차면 획득 대신 그 자리 낙하.
-                // 종류는 노드(프리팹)가 정한다. Reel 대상이 자원 노드가 아니면 획득 없이 해제한다.
-                var node = _serverTowTarget as ResourceNode;
-                IResourceInventory inventory = GetComponent<IResourceInventory>();
-                if (node == null || inventory == null || !inventory.ServerTryAdd(node.ResourceType, 1))
+                // 도착 확정 — 무슨 일이 일어나는지는 대상이 정한다 (자원 = 수납 후 소멸, 몬스터 = 무력화).
+                // 실패(예: 인벤토리 가득)는 획득 없이 그 자리 낙하 = 기존 강제 해제 경로.
+                var completion = new GrabCompletion(OwnerClientId, gameObject, Tier);
+                if (!_serverTowTarget.TryCompleteGrab(completion))
                 {
                     ServerReleaseTow();
                     ForceReleaseOwnerRpc();
@@ -338,13 +395,6 @@ namespace Game.Gameplay.Harpoon
                     return;
                 }
 
-                // 팀 누적 채집 통계 (권위 이벤트는 카운터가 발행).
-                if (ServiceLocator.TryGet(out ISharedResourceCounter counter))
-                {
-                    counter.AddResource();
-                }
-
-                _serverTowTarget.CompleteGrab();
                 _serverTowTarget = null;
                 TargetArrivedOwnerRpc();
                 TargetArrivedNotOwnerRpc();
@@ -374,7 +424,7 @@ namespace Game.Gameplay.Harpoon
         {
             double latencyMs = (Time.realtimeSinceStartupAsDouble - _localHitTime) * 1000.0;
             HarpoonSliceMetrics.RecordGrabApproved(latencyMs);
-            HarpoonSliceMetrics.BeginTowTracking(_settings.ReelSpeed);
+            HarpoonSliceMetrics.BeginTowTracking(CurrentTier.ReelSpeed);
 
             if (targetRef.TryGet(out NetworkObject targetObject) && _activeProjectile != null)
             {
@@ -396,6 +446,9 @@ namespace Game.Gameplay.Harpoon
             _activeProjectile?.BeginRetract();
             _stateMachine.NotifyGrabRejected();
             EventBus<HarpoonMissLocalEvent>.Publish(new HarpoonMissLocalEvent(true));
+
+            // 사유 안내 (M5 5차) — 등급 부족은 외형만으로 알 수 없어 HUD가 대신 말해준다.
+            EventBus<HarpoonGrabRejectedLocalEvent>.Publish(new HarpoonGrabRejectedLocalEvent(verdict));
         }
 
         [Rpc(SendTo.Owner)]
@@ -442,7 +495,7 @@ namespace Game.Gameplay.Harpoon
             DiscardActiveProjectile();
             _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
             _activeProjectile.LaunchCosmetic(
-                origin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, _settings.MaxRange,
+                origin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, CurrentTier.MaxRange,
                 transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld);
         }
 

@@ -65,10 +65,20 @@ namespace Game.Gameplay.Harpoon
             LogTallySummary();
         }
 
-        /// <summary>Q4 분자 — 클라 명중 표시 후 호스트 거부(판정 불일치) 1회 기록.</summary>
+        /// <summary>
+        /// Q4 분자 — 클라 명중 표시 후 호스트 거부(판정 불일치) 1회 기록.
+        /// 등급 부족(M5 5차)은 경합이 아니라 <b>규칙에 의한 정상 거부</b>이므로 불일치율에 세지 않는다 —
+        /// 세면 상위 자원을 쏴 볼 때마다 Q4 지표가 오염된다.
+        /// </summary>
         [Conditional(EditorSymbol), Conditional(DevBuildSymbol)]
         public static void RecordGrabRejected(GrabVerdict verdict)
         {
+            if (verdict == GrabVerdict.InsufficientTier)
+            {
+                Debug.Log("[SliceMetrics] 그랩 거부 — 집게 등급 부족 (규칙 거부, Q4 불일치 아님)");
+                return;
+            }
+
             _rejectedCount++;
             Debug.Log($"[SliceMetrics] Q4 — 호스트 거부 발생: {verdict}");
             LogTallySummary();
