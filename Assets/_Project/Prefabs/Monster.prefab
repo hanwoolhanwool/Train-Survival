@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7753214459586755596}
   - component: {fileID: 7180523224654055460}
   - component: {fileID: 458721990192139939}
+  - component: {fileID: 5321047718290146311}
   m_Layer: 0
   m_Name: Monster
   m_TagString: Untagged
@@ -115,6 +116,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.MonsterHealth
   ShowTopMostFoldoutHeaderGroup: 1
   _settings: {fileID: 11400000, guid: a51715e874ec5fd4594dff44c386c66c, type: 2}
+--- !u!114 &5321047718290146311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6108033370838349685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 927941655db4b6f4798d6553692312aa, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.MonsterGrabTarget
+  ShowTopMostFoldoutHeaderGroup: 1
+  _tintRenderers:
+  - {fileID: 3533210009380023608}
+  _visual: {fileID: 4092482342798626734}
+  _stunnedColor: {r: 0.95, g: 0.85, b: 0.25, a: 1}
+  _stunnedPitch: 60
 --- !u!1 &7879581922871275557
 GameObject:
   m_ObjectHideFlags: 0

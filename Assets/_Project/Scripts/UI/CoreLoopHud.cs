@@ -194,6 +194,14 @@ namespace Game.UI
         private void OnMonsterDied(MonsterDiedEvent evt)
         {
             _killCount += 1;
+
+            // 처형 피드백 (M5 5차) — 무력화한 몬스터를 마무리했을 때만 배너를 띄운다.
+            // 일반 처치까지 배너를 띄우면 밤 웨이브 내내 깜빡여 정보가 아니라 소음이 된다.
+            if (evt.WasExecuted)
+            {
+                _trainAlertText = "<color=orange>처형!</color>";
+                _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
+            }
         }
 
         private void OnCouplingBroken(CouplingBrokenEvent evt)

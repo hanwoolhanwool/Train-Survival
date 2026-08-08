@@ -42,6 +42,10 @@ namespace Game.Gameplay.Monsters
         private Vector3 _lastHorizontalVelocity;
         private int _pendingVariantIndex = -1;
 
+        // M5 5차 — 집게 견인/무력화 중 시뮬레이션 정지 (서버 전용 상태. 표시는 복제된 위치로 따라온다).
+        private bool _towed;
+        private bool _stunned;
+
         /// <summary>
         /// 이 개체에 실제로 적용되는 설정 — 변종이 지정됐으면 카탈로그에서, 아니면 기본값.
         /// 클라이언트도 보간 지연·이동 파라미터가 필요하므로 인덱스를 복제해 같은 값을 조회한다.
@@ -64,6 +68,12 @@ namespace Game.Gameplay.Monsters
         }
 
         /// <summary>
+        /// 이 개체에 적용되는 설정 (변종 반영) — 나란한 관심사(체력·그랩)가 같은 값을 읽는다.
+        /// 인덱스가 복제되므로 클라이언트에서도 유효하다.
+        /// </summary>
+        public MonsterSettings ActiveSettings => Settings;
+
+        /// <summary>
         /// 스폰할 변종을 지정한다 (호스트 전용). <see cref="NetworkVariable{T}"/>는 스폰 전에 쓸 수 없으므로
         /// 대기 값으로 받아 <see cref="OnNetworkSpawn"/>에서 확정한다.
         /// </summary>
@@ -72,12 +82,51 @@ namespace Game.Gameplay.Monsters
             _pendingVariantIndex = variantIndex;
         }
 
+        /// <summary>
+        /// 견인 상태 전환 (M5 5차 — 서버 전용). 켜면 조향·중력·공격이 전부 멈추고 위치는
+        /// 집게(<see cref="MonsterGrabTarget.UpdateTowPosition"/>)가 대입한다. 끌려오는 동안은 때리지 못한다.
+        /// </summary>
+        public void ServerSetTowed(bool towed)
+        {
+            if (!IsServer || _towed == towed)
+            {
+                return;
+            }
+
+            _towed = towed;
+            _verticalSpeed = 0f;
+            _lastHorizontalVelocity = Vector3.zero;
+
+            // 상태 전환 프레임에 스냅샷을 즉시 한 번 보내 표시가 늦게 따라붙지 않게 한다.
+            _syncTimer = float.MaxValue;
+        }
+
+        /// <summary>
+        /// 무력화(그로기) 전환 (M5 5차 — 서버 전용). 조향·공격만 멈추고 중력·지지면 클램프는 유지해
+        /// 그 자리에 쓰러진 채 남는다.
+        /// </summary>
+        public void ServerSetStunned(bool stunned)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            _stunned = stunned;
+            if (stunned)
+            {
+                _lastHorizontalVelocity = Vector3.zero;
+            }
+        }
+
         public override void OnNetworkSpawn()
         {
             _verticalSpeed = 0f;
             _syncTimer = 0f;
             _attackCooldown = 0f;
             _lastHorizontalVelocity = Vector3.zero;
+            _towed = false;
+            _stunned = false;
 
             if (IsServer)
             {
@@ -124,13 +173,23 @@ namespace Game.Gameplay.Monsters
 
         private void ServerSimulate()
         {
+            // 견인 중 (M5 5차): 위치는 집게가 대입한다 — 조향·중력·공격·회수 판정을 전부 멈추고
+            // 기존 스냅샷 채널의 주기만 올려 끌려오는 모습을 매끄럽게 보여준다 (별도 위치 채널 없음).
+            if (_towed)
+            {
+                ServerSync(Settings.TowSyncHz);
+                return;
+            }
+
             float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
-            Transform target = FindNearestAliveTarget();
+
+            // 그로기 중에는 표적을 잡지 않는다 — 조향·공격이 함께 멈춘다 (중력·지지면은 그대로).
+            Transform target = _stunned ? null : FindNearestAliveTarget();
 
             bool onDeck = IsOnDeck(transform.position);
             bool grounded = onDeck || transform.position.y <= 0.01f;
 
-            Vector3 horizontalVelocity = _lastHorizontalVelocity;
+            Vector3 horizontalVelocity = _stunned ? Vector3.zero : _lastHorizontalVelocity;
             if (target != null && grounded)
             {
                 float chaseSpeed = MonsterSteering.EnforceChaseSpeed(
@@ -161,7 +220,7 @@ namespace Game.Gameplay.Monsters
             FaceVelocity(horizontalVelocity, target);
             ServerTryAttack(target);
             ServerCheckFellBehind();
-            ServerSync();
+            ServerSync(Settings.SyncHz);
         }
 
         /// <summary>
@@ -351,10 +410,11 @@ namespace Game.Gameplay.Monsters
             }
         }
 
-        private void ServerSync()
+        /// <summary>스냅샷 송신 — 주기는 상황이 정한다 (평시 <see cref="MonsterSettings.SyncHz"/>, 견인 중 고주기).</summary>
+        private void ServerSync(float hz)
         {
             _syncTimer += Time.deltaTime;
-            if (_syncTimer < 1f / Settings.SyncHz)
+            if (hz > 0f && _syncTimer < 1f / hz)
             {
                 return;
             }
@@ -391,6 +451,10 @@ namespace Game.Gameplay.Monsters
             _snapshotBuffer.Clear();
             _verticalSpeed = 0f;
             _lastHorizontalVelocity = Vector3.zero;
+
+            // 풀 재사용 시 이전 개체의 견인·그로기가 새지 않도록 되돌린다.
+            _towed = false;
+            _stunned = false;
         }
     }
 }

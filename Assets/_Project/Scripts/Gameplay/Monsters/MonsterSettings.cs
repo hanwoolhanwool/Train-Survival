@@ -31,8 +31,22 @@ namespace Game.Gameplay.Monsters
         [SerializeField, Min(0.5f)] private float _attackRange = 2.2f;
         [SerializeField, Min(0.1f)] private float _attackInterval = 1.4f;
 
+        [Header("집게 그랩·무력화 (M5 5차)")]
+        [Tooltip("집게 무게 등급 — 이 값 이상의 집게 등급이어야 낚아챌 수 있다 (3 = 향후 대형 변종 자리).")]
+        [SerializeField, Range(1, 3)] private int _grabWeight = 1;
+
+        [Tooltip("회수 도착 시 들어가는 그로기 지속 시간(초). 이동·공격이 멈추고 처형 배율이 걸린다.")]
+        [SerializeField, Min(0f)] private float _stunDurationSeconds = 5f;
+
+        [Tooltip("그로기 중 받는 피해 배율 — 기본 999(≈즉사, 처형). 3 정도로 낮추면 협동 처치 쪽으로 기운다.")]
+        [SerializeField, Min(1f)] private float _stunnedDamageMultiplier = 999f;
+
         [Header("동기화 (§6.2 — 10~15Hz + 보간)")]
         [SerializeField, Range(5f, 15f)] private float _syncHz = 12f;
+
+        [Tooltip("견인 중 위치 동기화 주기 — 별도 채널 없이 기존 스냅샷 채널의 주기만 올린다.")]
+        [SerializeField, Range(10f, 60f)] private float _towSyncHz = 30f;
+
         [SerializeField, Min(0.05f)] private float _interpolationDelaySeconds = 0.18f;
 
         [Header("회수")]
@@ -63,7 +77,19 @@ namespace Game.Gameplay.Monsters
 
         public float AttackInterval => _attackInterval;
 
+        /// <summary>집게 무게 등급 (M5 5차) — 그랩 검증의 대상 무게 인자.</summary>
+        public int GrabWeight => _grabWeight;
+
+        /// <summary>회수 도착 시 무력화 지속 시간 (초).</summary>
+        public float StunDurationSeconds => _stunDurationSeconds;
+
+        /// <summary>그로기 중 피해 배율 (처형) — 무기 종류를 보지 않는 한 규칙이다.</summary>
+        public float StunnedDamageMultiplier => _stunnedDamageMultiplier;
+
         public float SyncHz => _syncHz;
+
+        /// <summary>견인 중 위치 동기화 주기 (Hz) — 표시 매끄러움만 담당, 판정은 서버 값 그대로다.</summary>
+        public float TowSyncHz => _towSyncHz;
 
         public float InterpolationDelaySeconds => _interpolationDelaySeconds;
 
