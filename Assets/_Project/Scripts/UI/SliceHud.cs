@@ -1,4 +1,5 @@
 using Game.Core.Events;
+using Game.Gameplay.Harpoon;
 using Game.Gameplay.Player;
 using Game.Gameplay.World;
 using UnityEngine;
@@ -13,16 +14,22 @@ namespace Game.UI
     {
         private const float WarningHoldSeconds = 0.5f;
 
+        /// <summary>그랩 거부 사유 표시 시간 — 조준점 근처에 잠깐 띄우고 사라진다.</summary>
+        private const float GrabRejectHoldSeconds = 2f;
+
         private int _resourceTotal;
         private float _warningMeters;
         private float _warningUntilTime;
         private float _fellBehindUntilTime;
+        private string _grabRejectMessage;
+        private float _grabRejectUntilTime;
 
         private void OnEnable()
         {
             EventBus<ResourceAcquiredEvent>.Subscribe(OnResourceAcquired);
             EventBus<FallBehindWarningLocalEvent>.Subscribe(OnFallBehindWarning);
             EventBus<PlayerFellBehindEvent>.Subscribe(OnPlayerFellBehind);
+            EventBus<HarpoonGrabRejectedLocalEvent>.Subscribe(OnGrabRejected);
         }
 
         private void OnDisable()
@@ -30,6 +37,38 @@ namespace Game.UI
             EventBus<ResourceAcquiredEvent>.Unsubscribe(OnResourceAcquired);
             EventBus<FallBehindWarningLocalEvent>.Unsubscribe(OnFallBehindWarning);
             EventBus<PlayerFellBehindEvent>.Unsubscribe(OnPlayerFellBehind);
+            EventBus<HarpoonGrabRejectedLocalEvent>.Unsubscribe(OnGrabRejected);
+        }
+
+        /// <summary>
+        /// 그랩 거부 안내 (M5 5차) — 자원 노드는 종류 색으로만 구분되므로 "왜 안 잡히는지"를
+        /// 알려주지 않으면 상위 자원이 그냥 고장난 것처럼 보인다.
+        /// </summary>
+        private void OnGrabRejected(HarpoonGrabRejectedLocalEvent evt)
+        {
+            _grabRejectMessage = GetRejectMessage(evt.Verdict);
+            _grabRejectUntilTime = string.IsNullOrEmpty(_grabRejectMessage)
+                ? 0f
+                : Time.unscaledTime + GrabRejectHoldSeconds;
+        }
+
+        private static string GetRejectMessage(GrabVerdict verdict)
+        {
+            switch (verdict)
+            {
+                case GrabVerdict.InsufficientTier:
+                    return "너무 무겁다 — 강화 집게가 필요하다";
+
+                case GrabVerdict.TargetClaimed:
+                    return "다른 사람이 잡고 있다";
+
+                case GrabVerdict.OutOfRange:
+                    return "너무 멀다";
+
+                default:
+                    // 대상 소멸은 화면에서 이미 사라진 것이 보이므로 굳이 알리지 않는다.
+                    return string.Empty;
+            }
         }
 
         private void OnResourceAcquired(ResourceAcquiredEvent evt)
@@ -64,6 +103,12 @@ namespace Game.UI
             }
 
             GUILayout.EndArea();
+
+            if (Time.unscaledTime < _grabRejectUntilTime)
+            {
+                GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.5f + 28f, 360f, 24f),
+                    $"<color=red>{_grabRejectMessage}</color>");
+            }
 
             // 조준점.
             GUI.Label(new Rect(Screen.width * 0.5f - 4f, Screen.height * 0.5f - 8f, 8f, 16f), "+");

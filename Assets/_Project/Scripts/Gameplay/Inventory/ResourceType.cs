@@ -25,6 +25,18 @@ namespace Game.Gameplay.Inventory
         /// <summary>식재료 — 숲·사막 공용 (M5 4차 요리·허기). 화덕 요리 재료, 연료·건자재 불가.</summary>
         RawFood = 5,
 
+        /// <summary>
+        /// 원목 — 숲 (M5 5차 상위 자원, 무게 2). 목재의 2배 발열 + 건자재.
+        /// 2단계 집게가 있어야 낚아챌 수 있다 — "2단계를 만들면 연료 문제가 풀린다".
+        /// </summary>
+        Timber = 6,
+
+        /// <summary>
+        /// 광맥 — 사막 (M5 5차 상위 자원, 무게 3). 연료·건자재 불가, 탄약 대량 제작 전용.
+        /// 3단계 집게가 있어야 낚아챌 수 있다 — "3단계를 만들면 탄약 경제가 풀린다".
+        /// </summary>
+        OreVein = 7,
+
         /// <summary>권총탄 — 제작품 (고철 + 화약 원료).</summary>
         RevolverAmmo = 16,
 

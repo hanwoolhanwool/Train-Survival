@@ -14,62 +14,86 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.ResourceCatalog
   _entries:
   - _type: 1
-    _displayName: "\uBAA9\uC7AC"
+    _displayName: "목재"
     _maxStack: 5
     _fuelValue: 6
     _isBuildMaterial: 1
     _color: {r: 0.5, g: 0.33, b: 0.15, a: 1}
+    _grabWeight: 1
   - _type: 2
-    _displayName: "\uB3CC"
+    _displayName: "돌"
     _maxStack: 5
     _fuelValue: 2
     _isBuildMaterial: 1
     _color: {r: 0.58, g: 0.58, b: 0.6, a: 1}
+    _grabWeight: 1
   - _type: 3
-    _displayName: "\uACE0\uCCA0"
+    _displayName: "고철"
     _maxStack: 5
     _fuelValue: 3
     _isBuildMaterial: 1
     _color: {r: 0.48, g: 0.26, b: 0.2, a: 1}
+    _grabWeight: 1
   - _type: 4
-    _displayName: "\uD654\uC57D \uC6D0\uB8CC"
+    _displayName: "화약 원료"
     _maxStack: 5
     _fuelValue: 0
     _isBuildMaterial: 0
     _color: {r: 0.9, g: 0.8, b: 0.25, a: 1}
+    _grabWeight: 1
   - _type: 5
     _displayName: "식재료"
     _maxStack: 5
     _fuelValue: 0
     _isBuildMaterial: 0
     _color: {r: 0.45, g: 0.7, b: 0.3, a: 1}
+    _grabWeight: 1
+  - _type: 6
+    _displayName: "원목"
+    _maxStack: 3
+    _fuelValue: 12
+    _isBuildMaterial: 1
+    _color: {r: 0.32, g: 0.2, b: 0.08, a: 1}
+    _grabWeight: 2
+  - _type: 7
+    _displayName: "광맥"
+    _maxStack: 3
+    _fuelValue: 0
+    _isBuildMaterial: 0
+    _color: {r: 0.35, g: 0.42, b: 0.5, a: 1}
+    _grabWeight: 3
   - _type: 16
-    _displayName: "\uAD8C\uCD1D\uD0C4"
+    _displayName: "권총탄"
     _maxStack: 12
     _fuelValue: 0
     _isBuildMaterial: 0
     _color: {r: 0.72, g: 0.53, b: 0.28, a: 1}
+    _grabWeight: 1
   - _type: 17
-    _displayName: "\uC0B0\uD0C4"
+    _displayName: "산탄"
     _maxStack: 8
     _fuelValue: 0
     _isBuildMaterial: 0
     _color: {r: 0.85, g: 0.35, b: 0.12, a: 1}
+    _grabWeight: 1
   - _type: 18
-    _displayName: "\uC18C\uCD1D\uD0C4"
+    _displayName: "소총탄"
     _maxStack: 10
     _fuelValue: 0
     _isBuildMaterial: 0
     _color: {r: 0.25, g: 0.65, b: 0.7, a: 1}
+    _grabWeight: 1
   - _type: 19
-    _displayName: "\uAD6C\uC6B4 \uC2DD\uC0AC"
+    _displayName: "구운 식사"
     _maxStack: 5
     _fuelValue: 0
     _isBuildMaterial: 0
     _color: {r: 0.85, g: 0.6, b: 0.3, a: 1}
+    _grabWeight: 1
   - _type: 20
-    _displayName: "\uB4E0\uB4E0\uD55C \uC2A4\uD29C"
+    _displayName: "든든한 스튜"
     _maxStack: 5
     _fuelValue: 0
     _isBuildMaterial: 0
     _color: {r: 0.75, g: 0.4, b: 0.45, a: 1}
+    _grabWeight: 1
