@@ -7,8 +7,8 @@ namespace Game.Gameplay.Monsters
 {
     /// <summary>
     /// 몬스터 체력 — 호스트 권위 (권위 분담표: 데미지 적용·사망 확정 = 호스트).
-    /// 무력화(그로기) 중에는 처형 배율이 곱해진다 (M5 5차) — 그로기의 소유자는 그랩 관심사이고,
-    /// 여기서는 <see cref="IMonsterStun"/>으로 "그로기인가"만 묻는다.
+    /// 피해는 상태와 무관하게 전부 일반 데미지다 (M5 6차 — 처형 배율 제거. 기절은
+    /// 그랩 관심사의 내부 상태이고, 체력이 기절을 알아야 할 이유가 없다).
     /// 사망 확정 시 권위 이벤트 <see cref="MonsterDiedEvent"/>를 전 피어에 전파한 뒤 풀로 회수한다.
     /// </summary>
     public sealed class MonsterHealth : NetworkBehaviour, IDamageable
@@ -20,17 +20,10 @@ namespace Game.Gameplay.Monsters
         private float _pendingHealthMultiplier = 1f;
         private MonsterSettings _pendingVariant;
 
-        // 서버 전용 — 이 개체에 실제로 적용되는 설정 (변종 반영). 처형 배율을 여기서 읽는다.
+        // 서버 전용 — 이 개체에 실제로 적용되는 설정 (변종 반영).
         private MonsterSettings _effectiveSettings;
 
-        private IMonsterStun _stun;
-
         public bool IsAlive => IsSpawned && _health.Value > 0f;
-
-        private void Awake()
-        {
-            _stun = GetComponent<IMonsterStun>();
-        }
 
         /// <summary>
         /// 이 개체의 변종 설정을 스폰 직전에 주입한다 (호스트 전용). 체력은 서버만 확정하므로
@@ -70,21 +63,16 @@ namespace Game.Gameplay.Monsters
 
         public void ApplyDamage(float amount, ulong instigatorClientId)
         {
-            if (!IsServer || !IsAlive)
+            if (!IsServer || !IsAlive || amount <= 0f)
             {
                 return;
             }
 
-            // 처형 (M5 5차) — 그로기면 배율을 곱한다. 판정은 순수 규칙이 담당한다.
-            bool stunned = _stun != null && _stun.IsStunned;
-            float multiplier = _effectiveSettings != null ? _effectiveSettings.StunnedDamageMultiplier : 1f;
-            float applied = MonsterDamageMath.ResolveDamage(amount, stunned, multiplier);
-
-            _health.Value = Mathf.Max(0f, _health.Value - applied);
+            _health.Value = Mathf.Max(0f, _health.Value - amount);
 
             if (_health.Value <= 0f)
             {
-                NotifyDiedRpc(instigatorClientId, stunned);
+                NotifyDiedRpc(instigatorClientId);
                 // destroy: true여야 PooledNetworkPrefabHandler를 거쳐 풀로 반환된다.
                 NetworkObject.Despawn(true);
             }
@@ -92,9 +80,9 @@ namespace Game.Gameplay.Monsters
 
         /// <summary>권위 이벤트 전파 — 호스트 확정 후 전 피어에서 발행된다.</summary>
         [Rpc(SendTo.Everyone)]
-        private void NotifyDiedRpc(ulong killerClientId, bool executed)
+        private void NotifyDiedRpc(ulong killerClientId)
         {
-            EventBus<MonsterDiedEvent>.Publish(new MonsterDiedEvent(killerClientId, executed));
+            EventBus<MonsterDiedEvent>.Publish(new MonsterDiedEvent(killerClientId));
         }
     }
 }

@@ -9,18 +9,9 @@ namespace Game.Gameplay.Monsters
         /// <summary>처치한 플레이어의 클라이언트 ID (환경 사망은 서버 ID).</summary>
         public readonly ulong KillerClientId;
 
-        /// <summary>무력화(그로기) 상태에서 마무리된 처치인가 — 처형 피드백 구분용 (M5 5차).</summary>
-        public readonly bool WasExecuted;
-
         public MonsterDiedEvent(ulong killerClientId)
-            : this(killerClientId, false)
-        {
-        }
-
-        public MonsterDiedEvent(ulong killerClientId, bool wasExecuted)
         {
             KillerClientId = killerClientId;
-            WasExecuted = wasExecuted;
         }
     }
 }

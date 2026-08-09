@@ -11,14 +11,14 @@ namespace Game.Gameplay.Monsters
     ///
     /// M1 그랩 파이프라인을 그대로 재사용한다 — 권위 구조가 자원과 동일하고(그랩 확정·견인 = 호스트),
     /// 달라지는 것은 <b>도착했을 때 벌어지는 일</b>뿐이다: 자원은 수납 후 소멸, 몬스터는 소멸하지 않고
-    /// 무력화(그로기)에 들어간다. 그로기 동안 <see cref="MonsterHealth"/>가 처형 배율을 곱한다.
+    /// 잠깐 기절한다. 기절은 이 관심사의 내부 상태다 — 피해 배율 같은 외부 소비자는 없다 (M5 6차).
     ///
     /// 예측 고정은 no-op다 — 자원은 각 피어가 컨베이어로 로컬 유도하기 때문에 그랩 전환 순간의 스냅을
     /// 없앨 예측이 필요했지만, 몬스터는 원래부터 서버 스냅샷 보간만 하므로 그 간극이 존재하지 않는다.
     /// </summary>
     [RequireComponent(typeof(MonsterAgent))]
     [RequireComponent(typeof(MonsterHealth))]
-    public sealed class MonsterGrabTarget : NetworkBehaviour, IGrabbable, IMonsterStun, IPoolable
+    public sealed class MonsterGrabTarget : NetworkBehaviour, IGrabbable, IPoolable
     {
         [Tooltip("그로기 표현을 칠할 렌더러 (Body).")]
         [SerializeField] private Renderer[] _tintRenderers;
@@ -26,7 +26,7 @@ namespace Game.Gameplay.Monsters
         [Tooltip("그로기 자세로 기울일 표현 트랜스폼 (Body). 판정에는 영향이 없다.")]
         [SerializeField] private Transform _visual;
 
-        [Tooltip("그로기 중 덧칠할 색 — '지금 처형할 수 있다'를 한눈에 보이게 한다.")]
+        [Tooltip("기절 중 덧칠할 색 — '지금 무력화 상태다'를 한눈에 보이게 한다.")]
         [SerializeField] private Color _stunnedColor = new Color(0.95f, 0.85f, 0.25f, 1f);
 
         [Tooltip("그로기 자세로 기울이는 각도 (도).")]
@@ -164,8 +164,8 @@ namespace Game.Gameplay.Monsters
         }
 
         /// <summary>
-        /// 회수 도착 — 몬스터는 <b>소멸하지 않는다</b>. 견인을 끝내고 무력화에 들어가
-        /// 처형(그로기 피해 배율) 또는 아군의 협동 처치를 받을 수 있는 상태가 된다.
+        /// 회수 도착 — 몬스터는 <b>소멸하지 않는다</b>. 견인을 끝내고 잠깐 기절해
+        /// 아군의 협동 처치를 받을 수 있는 상태가 된다.
         /// </summary>
         public bool TryCompleteGrab(in GrabCompletion completion)
         {
