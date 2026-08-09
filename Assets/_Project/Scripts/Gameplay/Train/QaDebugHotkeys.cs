@@ -22,6 +22,8 @@ namespace Game.Gameplay.Train
     ///   장비 감산이 적용되므로 맨몸 20 vs 가죽 옷 17을 실측할 수 있다.
     /// - 숫자패드 − : 동시 그랩 경합 재현(M5 6차 — 검증 I1·I2). 호스트가 최근접 그랩 가능 자원을
     ///   골라 전 피어에 뿌리고, 각 피어가 수신 프레임에 자기 집게로 그랩을 요청한다.
+    /// - 숫자패드 * : 몬스터 단건 스폰(M5 6차). 요청자 전방 10 m 지상에 기본 변종 1마리 —
+    ///   파지·투척·즉사 존 검증을 몬스터 1마리로 통제한다.
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
     /// </summary>
     public sealed class QaDebugHotkeys : NetworkBehaviour
@@ -29,8 +31,9 @@ namespace Game.Gameplay.Train
         private const string GameplaySceneName = "Game";
         private const float SampleDamage = 30f;
         private const float SelfDamage = 20f;
+        private const float SingleMonsterSpawnDistance = 10f;
 
-        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩. QA 전용이므로 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩, * = 몬스터 단건 스폰. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
 
         // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 6의 데미지 대상 선택에 쓴다.
@@ -121,6 +124,42 @@ namespace Game.Gameplay.Train
             {
                 RequestSimultaneousGrabServerRpc();
             }
+
+            if (keyboard.numpadMultiplyKey.wasPressedThisFrame)
+            {
+                RequestSpawnSingleMonsterServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// 몬스터 단건 스폰 (M5 6차) — 요청자 전방 10 m 지상에 기본 변종 1마리를 스폰한다.
+        /// 웨이브를 기다리거나 여러 마리에 시달리지 않고 파지·투척·즉사 존을 1마리로 검증한다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestSpawnSingleMonsterServerRpc(RpcParams rpcParams = default)
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null ||
+                !manager.ConnectedClients.TryGetValue(rpcParams.Receive.SenderClientId, out NetworkClient client) ||
+                client.PlayerObject == null)
+            {
+                return;
+            }
+
+            if (!ServiceLocator.TryGet(out Monsters.IWaveSpawnToggle toggle)
+                || !(toggle is Monsters.MonsterWaveSpawner spawner))
+            {
+                Debug.Log("[QaDebugHotkeys] 단건 스폰 무효: 웨이브 스포너가 없다");
+                return;
+            }
+
+            // 요청자가 보는 방향의 수평 전방 — 어디를 보고 있든 눈앞 지상에 나온다.
+            Transform player = client.PlayerObject.transform;
+            Vector3 forward = player.forward;
+            forward.y = 0f;
+            forward = forward.sqrMagnitude > 0.01f ? forward.normalized : Vector3.forward;
+
+            spawner.ServerSpawnSingleForQa(player.position + forward * SingleMonsterSpawnDistance);
         }
 
         /// <summary>

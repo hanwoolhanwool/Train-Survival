@@ -54,6 +54,39 @@ namespace Game.Gameplay.Monsters
             Debug.Log($"[MonsterWaveSpawner] QA 스폰 토글: {(enabled ? "켜짐 — 다음 밤부터 웨이브 재개" : "꺼짐 — 웨이브 회수·중지")}");
         }
 
+        /// <summary>
+        /// QA 단건 스폰 (M5 6차) — 웨이브·밤낮과 무관하게 <b>기본 변종(일반형) 1마리</b>를 지정
+        /// 위치 지상에 스폰한다. 파지·투척·즉사 존처럼 몬스터 1마리로 상황을 통제해야 하는 검증의
+        /// 선결 수단. 체력 배율 1 고정이라 피해 수치 실측의 표본으로도 쓸 수 있다.
+        /// 스폰된 개체는 웨이브 목록에 함께 등재된다 — 새벽 회수·스폰 토글 끄기로 같이 정리된다.
+        /// </summary>
+        public void ServerSpawnSingleForQa(Vector3 position)
+        {
+            if (!IsServer || _monsterPrefab == null)
+            {
+                return;
+            }
+
+            position.y = 0f;
+            GameObject instance = PoolManager.Spawn(_monsterPrefab, position, Quaternion.identity);
+            var health = instance.GetComponent<MonsterHealth>();
+            if (health == null)
+            {
+                Debug.LogError("[MonsterWaveSpawner] 몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
+                PoolManager.Despawn(instance);
+                return;
+            }
+
+            // 변종 미지정(-1) = 프리팹 기본(일반형) · 체력 배율 1 — 수치가 통제된 표본.
+            health.ServerSetVariant(null);
+            health.ServerSetHealthMultiplier(1f);
+            instance.GetComponent<MonsterAgent>()?.ServerSetVariant(-1);
+
+            health.NetworkObject.Spawn();
+            _activeMonsters.Add(health);
+            Debug.Log($"[MonsterWaveSpawner] QA 단건 스폰: {position} (기본 변종 · 체력 배율 1)");
+        }
+
         public override void OnNetworkSpawn()
         {
             EventBus<DayPhaseChangedEvent>.Subscribe(OnDayPhaseChanged);
