@@ -333,18 +333,56 @@ namespace Game.Gameplay.Train
                 return;
             }
 
+            // 옮길 것이 없으면 두 요청 모두 조용히 기각돼 "총량 보존"이 참이지만 아무것도 검증하지
+            // 못한다 — 시작 전에 전제를 막아 헛된 통과를 만들지 않는다.
+            if (GetSlot(carIndex, 0).IsEmpty)
+            {
+                Debug.Log($"[TrainStorage] QA 동시 경합: #{carIndex}번 칸 창고의 0번 칸이 비어 있다 — " +
+                    "경합할 대상이 없다. 0번 칸에 자원을 넣고 다시 누른다.");
+                return;
+            }
+
             LogContentionTotals(carIndex, "요청 전");
             _contentionCarIndex = carIndex;
             _contentionLogDelay = 0.5f;
             RunContentionTestRpc(carIndex);
         }
 
-        /// <summary>각 피어가 수신 프레임에 자기 이동 요청을 발행한다 — 서버 도착이 붙어 경합이 재현된다.</summary>
+        /// <summary>
+        /// 각 피어가 수신 프레임에 자기 이동 요청을 발행한다 — 서버 도착이 붙어 경합이 재현된다.
+        /// 받는 칸은 <b>자기 인벤토리의 첫 빈 칸</b>이다: 0번 칸은 시작 배치가 집게라 고정으로 쓰면
+        /// 이동이 아니라 <b>스왑</b>(집게가 창고로 나간다)이 돼 경합이 아닌 장비 교환을 재는 셈이 된다.
+        /// </summary>
         [Rpc(SendTo.Everyone)]
         private void RunContentionTestRpc(int carIndex)
         {
+            NetworkObject localPlayer = LocalInteraction.GetLocalPlayerObject();
+            PlayerInventory inventory = localPlayer != null
+                ? localPlayer.GetComponent<PlayerInventory>()
+                : null;
+            if (inventory == null)
+            {
+                return;
+            }
+
+            int toIndex = -1;
+            for (int i = 0; i < inventory.SlotCount; i++)
+            {
+                if (inventory.GetSlot(i).IsEmpty)
+                {
+                    toIndex = i;
+                    break;
+                }
+            }
+
+            if (toIndex < 0)
+            {
+                Debug.Log("[TrainStorage] QA 동시 경합: 인벤토리에 빈 칸이 없어 이 피어는 요청을 보내지 않는다.");
+                return;
+            }
+
             RequestTransferServerRpc(
-                carIndex, ITrainStorage.ContainerStorage, 0, ITrainStorage.ContainerInventory, 0);
+                carIndex, ITrainStorage.ContainerStorage, 0, ITrainStorage.ContainerInventory, toIndex);
         }
 
         private int FindAnyAliveStorageCar()
