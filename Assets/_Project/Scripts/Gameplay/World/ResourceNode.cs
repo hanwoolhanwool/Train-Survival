@@ -205,17 +205,17 @@ namespace Game.Gameplay.World
         /// 팀 카운터를 올린 뒤 소멸한다. 집게는 "무엇이 자원인지"를 알 필요가 없어진다 (OCP).
         /// 수납 실패(가득)는 false — 집게가 그 자리 낙하(강제 해제)로 처리한다 (기획서 §3.4).
         /// </summary>
-        public bool TryCompleteGrab(in GrabCompletion completion)
+        public GrabCompletionResult TryCompleteGrab(in GrabCompletion completion)
         {
             if (!IsServer || completion.Grabber == null)
             {
-                return false;
+                return GrabCompletionResult.Rejected;
             }
 
             var inventory = completion.Grabber.GetComponent<Inventory.IResourceInventory>();
             if (inventory == null || !inventory.ServerTryAdd(ResourceType, 1))
             {
-                return false;
+                return GrabCompletionResult.Rejected;
             }
 
             // 팀 누적 채집 통계 (권위 이벤트는 카운터가 발행). 카운터는 같은 World 도메인의 서비스다.
@@ -227,7 +227,7 @@ namespace Game.Gameplay.World
             _acquired = true;
             // destroy: true여야 PooledNetworkPrefabHandler를 거쳐 풀로 반환된다.
             NetworkObject.Despawn(true);
-            return true;
+            return GrabCompletionResult.Consumed;
         }
 
         private void Update()

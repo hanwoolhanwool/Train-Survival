@@ -14,6 +14,22 @@ namespace Game.Gameplay.Harpoon
     }
 
     /// <summary>
+    /// 회수 완료(도착)의 결과 — <b>도착 이후 상태의 소유권</b>을 대상이 결정한다 (M5 6차).
+    /// 집게는 이 값에 따라 로프를 끊거나(해제·수납) 계속 붙잡는다(파지) — 종류 분기가 없다 (OCP).
+    /// </summary>
+    public enum GrabCompletionResult
+    {
+        /// <summary>확정 불성립 — 그 자리 낙하. 집게는 기존 "해제 + 강제 해제 통지" 경로로 되돌아간다.</summary>
+        Rejected,
+
+        /// <summary>수납·소멸 (자원) — 대상이 사라졌으므로 집게는 로프를 회수하고 쿨다운으로 넘어간다.</summary>
+        Consumed,
+
+        /// <summary>파지 유지 (몬스터) — 집게가 계속 붙잡는다. 놓을 때까지 들고 다닐 수 있다.</summary>
+        Held,
+    }
+
+    /// <summary>
     /// 회수 완료(도착) 시점에 대상에게 넘기는 그래버 정보 (M5 5차 — 획득 확정 폴리모피즘 이관).
     /// "도착하면 무슨 일이 일어나는가"를 대상이 결정하므로, 대상이 필요한 것만 여기서 읽는다
     /// (자원 = 인벤토리 수납, 몬스터 = 무력화). 집게는 종류 분기를 하지 않는다 (OCP).
@@ -72,10 +88,12 @@ namespace Game.Gameplay.Harpoon
 
         /// <summary>
         /// 서버 전용 — 회수 완료(도착) 확정. 도착 시 벌어질 일은 <b>대상이 결정한다</b>:
-        /// 자원은 수납 후 소멸, 몬스터는 소멸하지 않고 무력화에 들어간다.
-        /// false면 확정이 성립하지 않은 것 — 집게는 기존 "해제 + 강제 해제 통지" 경로로 되돌아간다.
+        /// 자원은 수납 후 소멸(<see cref="GrabCompletionResult.Consumed"/>), 몬스터는 소멸하지 않고
+        /// 집게에 매달린 채 유지된다(<see cref="GrabCompletionResult.Held"/> — M5 6차 파지).
+        /// <see cref="GrabCompletionResult.Rejected"/>면 확정이 성립하지 않은 것 —
+        /// 집게는 기존 "해제 + 강제 해제 통지" 경로로 되돌아간다.
         /// </summary>
-        bool TryCompleteGrab(in GrabCompletion completion);
+        GrabCompletionResult TryCompleteGrab(in GrabCompletion completion);
 
         /// <summary>
         /// 클라이언트 로컬 — 쏜 클라이언트가 로컬 명중 시점에 호출하는 예측 고정.

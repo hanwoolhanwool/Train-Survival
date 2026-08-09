@@ -15,6 +15,9 @@ namespace Game.Gameplay.Harpoon
         /// <summary>릴 감기 중 — 우클릭 취소 가능.</summary>
         Reeling,
 
+        /// <summary>파지 중 (M5 6차) — 도착한 대상을 집게가 계속 붙잡고 있다. 놓기 = 우클릭·무기 교체.</summary>
+        Holding,
+
         /// <summary>미스 페널티 — 릴 회수 시간 동안 재발사 불가 (§2.3).</summary>
         MissRecovery,
 

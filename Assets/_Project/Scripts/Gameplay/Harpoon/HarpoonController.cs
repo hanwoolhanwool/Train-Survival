@@ -15,8 +15,9 @@ namespace Game.Gameplay.Harpoon
     /// → 견인(호스트 시뮬레이션, 30 Hz 동기화) → 도착 시 <see cref="IGrabbable.TryCompleteGrab"/>.
     /// 조작·수치·검증 규칙은 슬라이스 스펙 §2. 상태 게이트는 <see cref="HarpoonStateMachine"/>이 담당한다.
     ///
-    /// 도착 시 무슨 일이 일어나는지는 <b>대상이 결정한다</b> (M5 5차) — 자원 수납이든 몬스터 무력화든
-    /// 여기서는 성공/실패만 본다. 종류 분기가 없으므로 대상은 <see cref="IGrabbable"/> 구현 추가만으로 늘어난다.
+    /// 도착 시 무슨 일이 일어나는지는 <b>대상이 결정한다</b> (M5 5차 → 6차) — 자원은 수납·소멸(Consumed),
+    /// 몬스터는 파지 유지(Held): 놓을 때까지 매달린 채 들고 다닌다. 여기서는 결과 enum만 본다.
+    /// 종류 분기가 없으므로 대상은 <see cref="IGrabbable"/> 구현 추가만으로 늘어난다.
     ///
     /// 발사·명중 대기·견인·실패는 <see cref="_activeProjectile"/> 하나가 로프의 시각적 종점을 대표한다
     /// (Flying/WaitingForServer/Attached/Retracting). 소유자는 이 훅으로 실제 판정을 수행하고,
@@ -46,6 +47,10 @@ namespace Game.Gameplay.Harpoon
 
         // 서버 전용 — 이 플레이어가 견인 중인 대상.
         private IGrabbable _serverTowTarget;
+
+        // 서버 전용 — 도착 후 파지 유지 중인가 (M5 6차). 견인의 연장이라 대상 참조·해제 경로를
+        // 그대로 쓰고, 위치 대입만 릴 감기에서 파지 앵커 추종으로 바뀐다.
+        private bool _serverHolding;
 
         public HarpoonState State => _stateMachine != null ? _stateMachine.State : HarpoonState.Ready;
 
@@ -167,8 +172,21 @@ namespace Game.Gameplay.Harpoon
 
         private void UpdateOwnerInput()
         {
+            // 놓기 ② — 무기 교체 (M5 6차): 핫바가 InputEnabled를 끄는 프레임에 파지를 자동으로
+            // 놓는다. "무기를 바꾸면 놓는다"가 핫바 게이트에서 공짜로 성립한다 (기존 취소 경로 재사용).
+            if (!InputEnabled)
+            {
+                if (_stateMachine.State == HarpoonState.Holding && _stateMachine.TryCancel())
+                {
+                    DiscardActiveProjectile();
+                    CancelGrabServerRpc();
+                }
+
+                return;
+            }
+
             Mouse mouse = Mouse.current;
-            if (mouse == null || !InputEnabled)
+            if (mouse == null)
             {
                 return;
             }
@@ -181,6 +199,7 @@ namespace Game.Gameplay.Harpoon
             if (mouse.rightButton.wasPressedThisFrame && _stateMachine.TryCancel())
             {
                 // 취소: 로프 절단, 대상은 그 자리에 낙하. 미스 페널티 없음 — 쿨다운만 (§2.1).
+                // 파지 중 우클릭 = 놓기 (M5 6차) — 같은 경로다. 놓인 몬스터는 대상 쪽에서 잠깐 기절한다.
                 HarpoonSliceMetrics.EndTowTracking("취소");
                 DiscardActiveProjectile();
                 CancelGrabServerRpc();
@@ -355,7 +374,9 @@ namespace Game.Gameplay.Harpoon
 
             if (_serverTowTarget.NetworkObject == null || !_serverTowTarget.NetworkObject.IsSpawned)
             {
+                // 견인·파지 중 대상 사망·디스폰 — 놓기 ③ (팀원이 든 것을 쏴 죽인 경우 포함, 5차 E12).
                 _serverTowTarget = null;
+                _serverHolding = false;
                 ForceReleaseOwnerRpc();
                 ForceReleaseNotOwnerRpc();
                 return;
@@ -377,6 +398,18 @@ namespace Game.Gameplay.Harpoon
                 return;
             }
 
+            // 파지 중 (M5 6차): 릴은 끝났고, 매 프레임 홀더 앞 파지 앵커에 대상을 대입한다 —
+            // 견인과 같은 경로·같은 30 Hz 채널이라 신규 동기화가 없다. 게스트 홀더의 위치·회전은
+            // OwnerNetworkTransform으로 서버에 이미 있으므로 이 계산은 전부 서버로 충분하다.
+            if (_serverHolding)
+            {
+                Vector3 holdAnchor = transform.position
+                    + transform.forward * _settings.HoldDistance
+                    + Vector3.up * _settings.HoldHeight;
+                _serverTowTarget.UpdateTowPosition(holdAnchor);
+                return;
+            }
+
             Vector3 anchor = transform.position + Vector3.up * 0.5f;
             Vector3 current = _serverTowTarget.NetworkObject.transform.position;
             Vector3 next = Vector3.MoveTowards(current, anchor, CurrentTier.ReelSpeed * Time.deltaTime);
@@ -384,25 +417,36 @@ namespace Game.Gameplay.Harpoon
 
             if ((next - anchor).sqrMagnitude <= _settings.ArriveRadius * _settings.ArriveRadius)
             {
-                // 도착 확정 — 무슨 일이 일어나는지는 대상이 정한다 (자원 = 수납 후 소멸, 몬스터 = 무력화).
-                // 실패(예: 인벤토리 가득)는 획득 없이 그 자리 낙하 = 기존 강제 해제 경로.
+                // 도착 확정 — 무슨 일이 일어나는지는 대상이 정한다 (자원 = 수납 후 소멸,
+                // 몬스터 = 파지 유지). 실패(예: 인벤토리 가득)는 그 자리 낙하 = 기존 강제 해제 경로.
                 var completion = new GrabCompletion(OwnerClientId, gameObject, Tier);
-                if (!_serverTowTarget.TryCompleteGrab(completion))
+                switch (_serverTowTarget.TryCompleteGrab(completion))
                 {
-                    ServerReleaseTow();
-                    ForceReleaseOwnerRpc();
-                    ForceReleaseNotOwnerRpc();
-                    return;
-                }
+                    case GrabCompletionResult.Held:
+                        // 파지 유지 — 로프·훅도 그대로다 (전 피어의 훅이 Attached 상태로 남는다).
+                        _serverHolding = true;
+                        HeldOwnerRpc();
+                        break;
 
-                _serverTowTarget = null;
-                TargetArrivedOwnerRpc();
-                TargetArrivedNotOwnerRpc();
+                    case GrabCompletionResult.Consumed:
+                        _serverTowTarget = null;
+                        TargetArrivedOwnerRpc();
+                        TargetArrivedNotOwnerRpc();
+                        break;
+
+                    default:
+                        ServerReleaseTow();
+                        ForceReleaseOwnerRpc();
+                        ForceReleaseNotOwnerRpc();
+                        break;
+                }
             }
         }
 
         private void ServerReleaseTow()
         {
+            _serverHolding = false;
+
             if (_serverTowTarget != null)
             {
                 _serverTowTarget.ReleaseGrab();
@@ -457,6 +501,14 @@ namespace Game.Gameplay.Harpoon
             HarpoonSliceMetrics.EndTowTracking("도착");
             DiscardActiveProjectile();
             _stateMachine.NotifyTargetArrived();
+        }
+
+        /// <summary>도착 = 파지 (M5 6차). 훅·로프는 회수하지 않는다 — 파지 중 로프가 계속 보인다.</summary>
+        [Rpc(SendTo.Owner)]
+        private void HeldOwnerRpc()
+        {
+            HarpoonSliceMetrics.EndTowTracking("파지 도착");
+            _stateMachine.NotifyHeld();
         }
 
         [Rpc(SendTo.Owner)]

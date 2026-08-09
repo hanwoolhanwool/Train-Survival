@@ -121,6 +121,53 @@ namespace Game.Tests.EditMode
             Assert.That(sm.State, Is.EqualTo(HarpoonState.Ready));
         }
 
+        // ── 파지 (M5 6차) — Reeling --도착(Held)--> Holding --놓기--> Cooldown ─────
+
+        private static HarpoonStateMachine CreateHolding()
+        {
+            HarpoonStateMachine sm = Create();
+            sm.TryFire();
+            sm.NotifyLocalHit();
+            sm.NotifyGrabApproved();
+            sm.NotifyHeld();
+            return sm;
+        }
+
+        [Test]
+        public void 도착이_파지면_Holding으로_전환한다()
+        {
+            Assert.That(CreateHolding().State, Is.EqualTo(HarpoonState.Holding));
+        }
+
+        [Test]
+        public void Holding_중_재발사는_거부된다()
+        {
+            HarpoonStateMachine sm = CreateHolding();
+
+            Assert.That(sm.TryFire(), Is.False, "파지 중 좌클릭은 Ready가 아니므로 자연 차단");
+            Assert.That(sm.State, Is.EqualTo(HarpoonState.Holding));
+        }
+
+        [Test]
+        public void Holding에서_놓기는_페널티_없이_쿨다운만_적용된다()
+        {
+            HarpoonStateMachine sm = CreateHolding();
+
+            Assert.That(sm.TryCancel(), Is.True, "우클릭·무기 교체 = 놓기 — 기존 취소 경로 재사용");
+            Assert.That(sm.State, Is.EqualTo(HarpoonState.Cooldown));
+            Assert.That(sm.RemainingLockTime, Is.EqualTo(Cooldown));
+        }
+
+        [Test]
+        public void Holding에서_강제_해제는_쿨다운으로_전환한다()
+        {
+            HarpoonStateMachine sm = CreateHolding();
+
+            sm.NotifyForcedRelease();
+
+            Assert.That(sm.State, Is.EqualTo(HarpoonState.Cooldown), "파지 중 대상 사망·디스폰 — 놓기 ③");
+        }
+
         [Test]
         public void 강제_해제는_PendingGrab과_Reeling_모두에서_쿨다운으로_전환한다()
         {

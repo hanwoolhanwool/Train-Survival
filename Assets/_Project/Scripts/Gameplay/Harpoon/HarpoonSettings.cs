@@ -47,6 +47,13 @@ namespace Game.Gameplay.Harpoon
         [Header("릴 (§2.2~§2.3 — 등급 공통)")]
         [SerializeField, Min(0.1f)] private float _arriveRadius = 1.2f;
 
+        [Header("파지 (M5 6차 — 등급 공통)")]
+        [Tooltip("파지 중 대상을 붙잡아 두는 앵커의 전방 거리 (m). 홀더 위치 + 전방 × 이 값.")]
+        [SerializeField, Min(0.5f)] private float _holdDistance = 1.5f;
+
+        [Tooltip("파지 앵커의 높이 오프셋 (m). 홀더 발밑 기준.")]
+        [SerializeField, Min(0f)] private float _holdHeight = 1.2f;
+
         [Header("호스트 검증 (§2.4)")]
         [SerializeField, Min(0f)] private float _rangeTolerance = 2f;
 
@@ -69,6 +76,12 @@ namespace Game.Gameplay.Harpoon
 
         /// <summary>이 거리 안으로 끌려오면 획득 완료로 처리한다.</summary>
         public float ArriveRadius => _arriveRadius;
+
+        /// <summary>파지 앵커의 전방 거리 (m) — 서버가 매 프레임 홀더 전방의 이 지점에 대상을 대입한다.</summary>
+        public float HoldDistance => _holdDistance;
+
+        /// <summary>파지 앵커의 높이 오프셋 (m) — 홀더 발밑 기준.</summary>
+        public float HoldHeight => _holdHeight;
 
         public float RangeTolerance => _rangeTolerance;
 

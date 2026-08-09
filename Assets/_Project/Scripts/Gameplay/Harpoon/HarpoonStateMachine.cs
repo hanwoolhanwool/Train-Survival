@@ -8,6 +8,7 @@ namespace Game.Gameplay.Harpoon
     /// 전이 규칙:
     /// Ready --발사--> Firing --로컬 명중--> PendingGrab --승인--> Reeling --도착/취소--> Cooldown --> Ready
     /// Firing --빗나감--> MissRecovery --> Ready,  PendingGrab --거부--> MissRecovery --> Ready
+    /// Reeling --도착(파지)--> Holding --놓기(취소·강제 해제)--> Cooldown (M5 6차 — 몬스터 파지)
     /// </summary>
     public sealed class HarpoonStateMachine
     {
@@ -49,12 +50,13 @@ namespace Game.Gameplay.Harpoon
         }
 
         /// <summary>
-        /// 그랩 취소 시도. 릴 감기 중에만 유효 — 투사체 비행 중 취소는 무효 (§2.1).
+        /// 그랩 취소 시도. 릴 감기·파지 중에만 유효 — 투사체 비행 중 취소는 무효 (§2.1).
         /// 취소 성공 시 미스 페널티 없이 발사 쿨다운만 적용된다 (§2.2).
+        /// 파지 중 취소 = 놓기 (M5 6차) — 같은 경로를 그대로 쓴다.
         /// </summary>
         public bool TryCancel()
         {
-            if (State != HarpoonState.Reeling)
+            if (State != HarpoonState.Reeling && State != HarpoonState.Holding)
             {
                 return false;
             }
@@ -108,10 +110,23 @@ namespace Game.Gameplay.Harpoon
             }
         }
 
-        /// <summary>서버 사정에 의한 강제 해제 (대상 소멸 등). 릴 감기 중이었다면 쿨다운으로 전환.</summary>
+        /// <summary>
+        /// 대상 도착 — 파지 유지 (M5 6차). 릴이 끝나도 놓지 않고 붙잡은 채 든다.
+        /// Holding 중 좌클릭(재발사)은 Ready가 아니므로 자연 차단된다.
+        /// </summary>
+        public void NotifyHeld()
+        {
+            if (State == HarpoonState.Reeling)
+            {
+                State = HarpoonState.Holding;
+            }
+        }
+
+        /// <summary>서버 사정에 의한 강제 해제 (대상 소멸 등). 감기·파지 중이었다면 쿨다운으로 전환.</summary>
         public void NotifyForcedRelease()
         {
-            if (State == HarpoonState.Reeling || State == HarpoonState.PendingGrab)
+            if (State == HarpoonState.Reeling || State == HarpoonState.PendingGrab
+                || State == HarpoonState.Holding)
             {
                 EnterCooldown();
             }

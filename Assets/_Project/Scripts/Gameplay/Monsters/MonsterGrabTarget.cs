@@ -11,7 +11,9 @@ namespace Game.Gameplay.Monsters
     ///
     /// M1 그랩 파이프라인을 그대로 재사용한다 — 권위 구조가 자원과 동일하고(그랩 확정·견인 = 호스트),
     /// 달라지는 것은 <b>도착했을 때 벌어지는 일</b>뿐이다: 자원은 수납 후 소멸, 몬스터는 소멸하지 않고
-    /// 잠깐 기절한다. 기절은 이 관심사의 내부 상태다 — 피해 배율 같은 외부 소비자는 없다 (M5 6차).
+    /// <b>집게에 매달린 채 유지된다</b> (M5 6차 파지 — 든 채 이동해 아군 앞이나 열차 바퀴에 넘긴다).
+    /// 파지에서 놓이면 잠깐 기절했다가 추격을 재개한다. 기절은 이 관심사의 내부 상태다 —
+    /// 피해 배율 같은 외부 소비자는 없다 (처형 축 제거).
     ///
     /// 예측 고정은 no-op다 — 자원은 각 피어가 컨베이어로 로컬 유도하기 때문에 그랩 전환 순간의 스냅을
     /// 없앨 예측이 필요했지만, 몬스터는 원래부터 서버 스냅샷 보간만 하므로 그 간극이 존재하지 않는다.
@@ -41,6 +43,11 @@ namespace Game.Gameplay.Monsters
         private MonsterAgent _agent;
         private MonsterHealth _health;
         private bool _claimed;
+
+        // 서버 전용 — 도착 후 파지 유지 중인가 (M5 6차). 견인(도착 전)과 구분해
+        // "파지에서 놓인 경우에만" 기절에 들어간다 — 견인 중 취소는 즉시 복귀다 (5차 E13 유지).
+        private bool _held;
+
         private bool _presentationStunned;
         private Color[] _baseColors;
         private Quaternion _visualBaseRotation;
@@ -57,7 +64,7 @@ namespace Game.Gameplay.Monsters
             }
         }
 
-        /// <summary>살아 있고, 아무도 잡고 있지 않고, 그로기가 아닐 때만 잡을 수 있다.</summary>
+        /// <summary>살아 있고, 아무도 잡고 있지 않고(견인·파지 포함), 기절이 아닐 때만 잡을 수 있다.</summary>
         public bool IsAvailableForGrab =>
             IsSpawned && _health != null && _health.IsAlive && !_claimed && !IsStunned;
 
@@ -95,8 +102,9 @@ namespace Game.Gameplay.Monsters
         {
             if (IsServer)
             {
-                // 견인·그로기 중 사망·회수로 사라져도 다음 재사용에 상태가 새지 않게 한다.
+                // 견인·파지·기절 중 사망·회수로 사라져도 다음 재사용에 상태가 새지 않게 한다.
                 _claimed = false;
+                _held = false;
                 _agent?.ServerSetTowed(false);
                 _agent?.ServerSetStunned(false);
             }
@@ -159,35 +167,44 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
+            bool wasHeld = _held;
             _claimed = false;
+            _held = false;
             _agent?.ServerSetTowed(false);
-        }
 
-        /// <summary>
-        /// 회수 도착 — 몬스터는 <b>소멸하지 않는다</b>. 견인을 끝내고 잠깐 기절해
-        /// 아군의 협동 처치를 받을 수 있는 상태가 된다.
-        /// </summary>
-        public bool TryCompleteGrab(in GrabCompletion completion)
-        {
-            if (!IsServer || !_claimed)
+            // 파지에서 놓인 경우에만 기절 (M5 6차) — 추격 재개 전의 이탈 틈.
+            // 견인 중(도착 전) 취소는 즉시 복귀다 — 기절 없음 (5차 E13 유지).
+            if (!wasHeld)
             {
-                return false;
+                return;
             }
-
-            _claimed = false;
-            _agent?.ServerSetTowed(false);
 
             MonsterSettings settings = _agent != null ? _agent.ActiveSettings : null;
             float duration = settings != null ? settings.StunDurationSeconds : 0f;
             if (duration <= 0f)
             {
-                // 지속 0 = 무력화 없음 (에셋으로 끌 수 있는 축). 도착 자체는 성립한 것으로 본다.
-                return true;
+                // 지속 0 = 기절 없음 (에셋으로 끌 수 있는 축).
+                return;
             }
 
             _stunEndTime.Value = NetworkManager.ServerTime.Time + duration;
             _agent?.ServerSetStunned(true);
-            return true;
+        }
+
+        /// <summary>
+        /// 회수 도착 — 몬스터는 <b>소멸하지도 놓이지도 않는다</b> (M5 6차 파지).
+        /// 점유·견인 정지를 유지한 채 집게에 매달린다 — 위치는 집게가 파지 앵커로 계속 대입한다.
+        /// 놓기(<see cref="ReleaseGrab"/>)가 일어나면 그때 잠깐 기절한다.
+        /// </summary>
+        public GrabCompletionResult TryCompleteGrab(in GrabCompletion completion)
+        {
+            if (!IsServer || !_claimed)
+            {
+                return GrabCompletionResult.Rejected;
+            }
+
+            _held = true;
+            return GrabCompletionResult.Held;
         }
 
         // 몬스터는 서버 스냅샷 보간만 하므로 예측 고정이 필요 없다 (§11 수정안 A의 RTT 간극이 없다).
@@ -261,6 +278,7 @@ namespace Game.Gameplay.Monsters
         public void OnDespawned()
         {
             _claimed = false;
+            _held = false;
             ApplyStunPresentation(false);
         }
     }
