@@ -322,6 +322,21 @@ namespace Game.Gameplay.Harpoon
             }
         }
 
+        /// <summary>
+        /// QA 전용 — 동시 그랩 트리거 (M5 6차, 검증 I1·I2). 발사·명중을 건너뛰고 서버 그랩 요청만
+        /// 발행한다 — 경합 판정(한쪽 승인 + 한쪽 "다른 사람이 잡고 있다")이 목적이라 훅 연출은 없다.
+        /// 승인되면 견인·수납은 실제 경로 그대로 진행된다.
+        /// </summary>
+        public void QaRequestGrab(NetworkObject target)
+        {
+            if (!IsOwner || target == null)
+            {
+                return;
+            }
+
+            RequestGrabServerRpc(target, transform.position, target.transform.position);
+        }
+
         // ── 호스트: 권위 계층 (그랩 검증·견인·획득 확정) ────────────────────
 
         [Rpc(SendTo.Server)]
@@ -348,6 +363,8 @@ namespace Game.Gameplay.Harpoon
 
             if (verdict == GrabVerdict.Approved && grabbable.TryClaimGrab(senderClientId))
             {
+                // 승인도 남긴다 — 동시 그랩 QA(I1·I2)가 "한쪽 승인 + 한쪽 거부"를 콘솔로 확인한다.
+                Debug.Log($"[HarpoonController] 그랩 승인: client={senderClientId} target={targetObject.name}");
                 _serverTowTarget = grabbable;
                 GrabApprovedOwnerRpc(targetRef);
                 GrabApprovedNotOwnerRpc(targetRef);

@@ -18,14 +18,19 @@ namespace Game.Gameplay.Train
     /// - 숫자패드 5 : 몬스터 웨이브 스폰 토글(M5 4차 — 밤 노숙 체온 검증용).
     /// - 숫자패드 4 : 공유 창고 동시 경합 재현(M5 5차 — 검증 G2). 전 피어가 같은 프레임에
     ///   같은 이동(창고 0 → 개인 0)을 요청하고, 총량 보존 여부를 호스트 콘솔에 찍는다.
+    /// - 숫자패드 0 : 피해 실측(M5 6차 — 검증 H7). 요청자에게 고정 피해 20을 물리 경로로 넣는다 —
+    ///   장비 감산이 적용되므로 맨몸 20 vs 가죽 옷 17을 실측할 수 있다.
+    /// - 숫자패드 − : 동시 그랩 경합 재현(M5 6차 — 검증 I1·I2). 호스트가 최근접 그랩 가능 자원을
+    ///   골라 전 피어에 뿌리고, 각 피어가 수신 프레임에 자기 집게로 그랩을 요청한다.
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
     /// </summary>
     public sealed class QaDebugHotkeys : NetworkBehaviour
     {
         private const string GameplaySceneName = "Game";
         private const float SampleDamage = 30f;
+        private const float SelfDamage = 20f;
 
-        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합. QA 전용이므로 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
 
         // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 6의 데미지 대상 선택에 쓴다.
@@ -106,6 +111,113 @@ namespace Game.Gameplay.Train
             {
                 RequestStorageContentionServerRpc();
             }
+
+            if (keyboard.numpad0Key.wasPressedThisFrame)
+            {
+                RequestSelfDamageServerRpc();
+            }
+
+            if (keyboard.numpadMinusKey.wasPressedThisFrame)
+            {
+                RequestSimultaneousGrabServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// 피해 실측 (M5 6차 — 검증 H7, 3~5차 연속 이월 해소). 요청자에게 고정 피해를
+        /// <b>물리 경로</b>(<see cref="Player.PlayerHealth.ApplyDamage"/>)로 넣는다 — 장비 감산이
+        /// 적용되므로 착용 전후를 같은 기준으로 실측할 수 있다. 결과는 호스트 콘솔에 찍힌다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestSelfDamageServerRpc(RpcParams rpcParams = default)
+        {
+            ulong senderId = rpcParams.Receive.SenderClientId;
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null ||
+                !manager.ConnectedClients.TryGetValue(senderId, out NetworkClient client) ||
+                client.PlayerObject == null)
+            {
+                return;
+            }
+
+            var health = client.PlayerObject.GetComponent<Player.PlayerHealth>();
+            if (health == null || !health.IsAlive)
+            {
+                Debug.Log($"[QaDebugHotkeys] 피해 실측 무효: client={senderId} — 플레이어가 살아 있지 않다");
+                return;
+            }
+
+            float before = health.Health;
+            health.ApplyDamage(SelfDamage, senderId);
+            Debug.Log($"[QaDebugHotkeys] 피해 실측: client={senderId} 기준 {SelfDamage} → " +
+                $"체력 {before:F1} → {health.Health:F1} (적용 {before - health.Health:F1})");
+        }
+
+        /// <summary>
+        /// 동시 그랩 경합 재현 (M5 6차 — 검증 I1·I2). 호스트가 요청자 최근접 그랩 가능 자원 노드를
+        /// 골라 전 피어에 브로드캐스트하고, 각 피어가 수신 프레임에 자기 집게로 그랩 요청을 발행한다 —
+        /// 서버 도착이 붙어 "한쪽 승인 + 한쪽 다른 사람이 잡고 있다"가 재현된다.
+        /// 창고 경합의 교훈대로 전제(대상 존재)를 시작 단계에서 검사하고, 승인·거부는
+        /// 집게의 호스트 콘솔 로그로 확인한다 (무효 통과 방지).
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestSimultaneousGrabServerRpc(RpcParams rpcParams = default)
+        {
+            NetworkObject target = FindNearestGrabbableResource(rpcParams.Receive.SenderClientId);
+            if (target == null)
+            {
+                Debug.Log("[QaDebugHotkeys] 동시 그랩 무효: 그랩 가능한 자원 노드가 없다");
+                return;
+            }
+
+            Debug.Log($"[QaDebugHotkeys] 동시 그랩 트리거: 대상={target.name} — 전 피어가 같은 프레임에 그랩을 요청한다");
+            TriggerSimultaneousGrabRpc(target);
+        }
+
+        private static NetworkObject FindNearestGrabbableResource(ulong requesterClientId)
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            Vector3 origin = Vector3.zero;
+            if (manager != null &&
+                manager.ConnectedClients.TryGetValue(requesterClientId, out NetworkClient client) &&
+                client.PlayerObject != null)
+            {
+                origin = client.PlayerObject.transform.position;
+            }
+
+            World.ResourceNode best = null;
+            float bestSqr = float.MaxValue;
+            foreach (World.ResourceNode node in FindObjectsByType<World.ResourceNode>(FindObjectsSortMode.None))
+            {
+                if (!node.IsAvailableForGrab)
+                {
+                    continue;
+                }
+
+                float sqr = (node.transform.position - origin).sqrMagnitude;
+                if (sqr < bestSqr)
+                {
+                    bestSqr = sqr;
+                    best = node;
+                }
+            }
+
+            return best != null ? best.NetworkObject : null;
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void TriggerSimultaneousGrabRpc(NetworkObjectReference targetRef)
+        {
+            if (!targetRef.TryGet(out NetworkObject target))
+            {
+                return;
+            }
+
+            NetworkObject player = NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClient != null
+                ? NetworkManager.Singleton.LocalClient.PlayerObject
+                : null;
+            var harpoon = player != null ? player.GetComponent<Harpoon.HarpoonController>() : null;
+            harpoon?.QaRequestGrab(target);
         }
 
         /// <summary>
