@@ -22,6 +22,20 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
+        /// 열차 하부 즉사 존 판정 (M5 6차) — 열차 발자국 안(|x| ≤ 반폭, RearZ‥FrontZ)이면서
+        /// 바퀴 높이 이하인가. killHeight 0 이하 = 존 비활성 (에셋으로 끌 수 있는 축).
+        /// 대상 제한(견인·파지·기절만)은 호출부의 몫이다 — 여기는 기하만 본다.
+        /// </summary>
+        public static bool IsInWheelKillZone(
+            Vector3 position, float halfWidth, float rearZ, float frontZ, float killHeight)
+        {
+            return killHeight > 0f
+                && position.y <= killHeight
+                && Mathf.Abs(position.x) <= halfWidth
+                && position.z >= rearZ && position.z <= frontZ;
+        }
+
+        /// <summary>
         /// Z가 그 칸의 갑판 범위 안인가 — 이탈 오프셋을 반영한다. 칸마다 오프셋이 달라 슬롯 기준
         /// 역산(O(1) 역함수)이 성립하지 않으므로, "어느 칸 위인가"는 호출부가 편성을 순회하며 묻는다.
         /// </summary>

@@ -1,5 +1,6 @@
 using Game.Core.Pooling;
 using Game.Gameplay.Harpoon;
+using Game.Gameplay.Train;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -43,6 +44,9 @@ namespace Game.Gameplay.Monsters
         private MonsterAgent _agent;
         private MonsterHealth _health;
         private bool _claimed;
+
+        // 서버 전용 — 마지막 그래버 (M5 6차 즉사 존의 처치 귀속: 바퀴에 넣은 사람의 킬).
+        private ulong _lastGrabberClientId;
 
         // 서버 전용 — 도착 후 파지 유지 중인가 (M5 6차). 견인(도착 전)과 구분해
         // "파지에서 놓인 경우에만" 기절에 들어간다 — 견인 중 취소는 즉시 복귀다 (5차 E13 유지).
@@ -93,6 +97,9 @@ namespace Game.Gameplay.Monsters
             if (IsServer)
             {
                 _stunEndTime.Value = 0d;
+
+                // 풀 재사용 시 이전 개체의 귀속이 새지 않게 환경 사망 기본값으로 되돌린다.
+                _lastGrabberClientId = NetworkManager.ServerClientId;
             }
 
             ApplyStunPresentation(IsStunned);
@@ -122,12 +129,39 @@ namespace Game.Gameplay.Monsters
             // 표현은 전 피어가 각자 갱신한다 — 복제된 종료 시각이 같으므로 같은 순간에 켜지고 꺼진다.
             ApplyStunPresentation(IsStunned);
 
-            // 그로기 해제 확정은 서버만 — 정상 복귀하고 다시 그랩 대상이 된다.
+            // 기절 해제 확정은 서버만 — 정상 복귀하고 다시 그랩 대상이 된다.
             if (IsServer && _stunEndTime.Value > 0d && !IsStunned)
             {
                 _stunEndTime.Value = 0d;
                 _agent?.ServerSetStunned(false);
             }
+
+            ServerCheckWheelKillZone();
+        }
+
+        /// <summary>
+        /// 열차 하부 즉사 존 (M5 6차) — <b>견인·파지·기절 상태만</b> 즉사한다. 자유 몬스터는 제외 —
+        /// 추격 중 열차 밑을 스치기만 해도 죽으면 밤 웨이브가 자멸한다 (존이 밸런스를 삼키지 않는 안전선).
+        /// 자기 상태를 이미 아는 이곳이 판정 주체라 조회가 없다. 처치 귀속 = 마지막 그래버.
+        /// </summary>
+        private void ServerCheckWheelKillZone()
+        {
+            if (!IsServer || (!_claimed && !IsStunned) || _health == null || !_health.IsAlive)
+            {
+                return;
+            }
+
+            TrainLayoutSettings layout = _agent != null ? _agent.TrainLayout : null;
+            if (layout == null || !TrainLayoutMath.IsInWheelKillZone(
+                    transform.position, layout.CarWidth * 0.5f, layout.RearZ, layout.FrontZ,
+                    layout.WheelKillHeight))
+            {
+                return;
+            }
+
+            // 기존 사망 확정·킬 카운트·이벤트 경로 재사용 — 어떤 체력 배율에도 반드시 즉사한다.
+            // 파지 중이었다면 디스폰을 집게의 스폰 검사가 감지해 강제 해제로 로프를 끊는다 (놓기 ③).
+            _health.ApplyDamage(float.MaxValue, _lastGrabberClientId);
         }
 
         // ── IGrabbable — 그랩 파이프라인 (권위 = 호스트) ─────────────────────
@@ -140,6 +174,7 @@ namespace Game.Gameplay.Monsters
             }
 
             _claimed = true;
+            _lastGrabberClientId = grabberClientId;
 
             // 끌려오는 동안은 조향·중력·공격이 멈춘다 — 견인 중에 때리지 못한다.
             _agent?.ServerSetTowed(true);

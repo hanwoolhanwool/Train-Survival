@@ -1,5 +1,6 @@
 using Game.Gameplay.Train;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Game.Tests.EditMode
 {
@@ -96,6 +97,45 @@ namespace Game.Tests.EditMode
         {
             Assert.That(TrainLayoutMath.IsZOnCar(0f, 1, FrontZ, 0f, CouplingGap, 0f), Is.False, "칸 길이 0");
             Assert.That(TrainLayoutMath.IsZOnCar(0f, -1, FrontZ, CarLength, CouplingGap, 0f), Is.False, "음수 인덱스");
+        }
+
+        // ── 열차 하부 즉사 존 (M5 6차) — 발자국 안 AND 바퀴 높이 이하 ─────────
+
+        private const float HalfWidth = 1.5f;
+        private const float RearZ = -19.5f;
+        private const float KillHeight = 1.2f;
+
+        private static bool InKillZone(Vector3 position, float killHeight = KillHeight)
+        {
+            return TrainLayoutMath.IsInWheelKillZone(position, HalfWidth, RearZ, FrontZ, killHeight);
+        }
+
+        [Test]
+        public void 발자국_안_바퀴_높이_이하면_즉사_존이다()
+        {
+            Assert.That(InKillZone(new Vector3(0f, 0f, 0f)), Is.True, "지면 (놓인 기절 몬스터)");
+            Assert.That(InKillZone(new Vector3(1.4f, 1.2f, -19f)), Is.True, "경계 안쪽 — 파지 앵커 높이가 걸리는 선");
+        }
+
+        [Test]
+        public void 발자국_밖이면_즉사_존이_아니다()
+        {
+            Assert.That(InKillZone(new Vector3(1.6f, 0f, 0f)), Is.False, "열차 옆 — 지상 몬스터의 추격 동선");
+            Assert.That(InKillZone(new Vector3(0f, 0f, 20f)), Is.False, "열차 앞");
+            Assert.That(InKillZone(new Vector3(0f, 0f, -20f)), Is.False, "열차 뒤");
+        }
+
+        [Test]
+        public void 바퀴_높이보다_위는_즉사_존이_아니다()
+        {
+            Assert.That(InKillZone(new Vector3(0f, 1.3f, 0f)), Is.False, "바퀴 위 몸통 높이");
+            Assert.That(InKillZone(new Vector3(0f, 3f, 0f)), Is.False, "갑판 위 — 파지한 채 갑판에 서 있어도 안전");
+        }
+
+        [Test]
+        public void 높이_0이면_존이_비활성이다()
+        {
+            Assert.That(InKillZone(new Vector3(0f, 0f, 0f), killHeight: 0f), Is.False, "에셋으로 끌 수 있는 축");
         }
     }
 }

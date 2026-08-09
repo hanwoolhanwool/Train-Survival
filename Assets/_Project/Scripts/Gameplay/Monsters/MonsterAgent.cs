@@ -74,6 +74,12 @@ namespace Game.Gameplay.Monsters
         public MonsterSettings ActiveSettings => Settings;
 
         /// <summary>
+        /// 열차 레이아웃 — 그랩 관심사의 즉사 존 판정(M5 6차)이 같은 에셋을 읽는다
+        /// (프리팹에 새 참조를 배선하지 않기 위한 노출).
+        /// </summary>
+        public TrainLayoutSettings TrainLayout => _trainLayout;
+
+        /// <summary>
         /// 스폰할 변종을 지정한다 (호스트 전용). <see cref="NetworkVariable{T}"/>는 스폰 전에 쓸 수 없으므로
         /// 대기 값으로 받아 <see cref="OnNetworkSpawn"/>에서 확정한다.
         /// </summary>

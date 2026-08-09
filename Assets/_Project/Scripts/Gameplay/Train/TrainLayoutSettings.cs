@@ -16,6 +16,10 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(1f)] private float _deckHeight = 3f;
         [SerializeField, Min(0f)] private float _couplingGap = 1.5f;
 
+        [Header("열차 하부 즉사 존 (M5 6차)")]
+        [Tooltip("이 높이(y) 이하 + 열차 발자국 안이면 견인·파지·기절 몬스터가 즉사한다. 0 = 존 비활성.")]
+        [SerializeField, Min(0f)] private float _wheelKillHeight = 1.2f;
+
         [Header("낙하·이탈 규칙 (§4.2)")]
         [SerializeField, Min(1f)] private float _fallBehindWarningMeters = 30f;
         [SerializeField, Min(1f)] private float _fallBehindDeathMeters = 40f;
@@ -30,6 +34,9 @@ namespace Game.Gameplay.Train
         public float DeckHeight => _deckHeight;
 
         public float CouplingGap => _couplingGap;
+
+        /// <summary>열차 하부 즉사 존의 높이 상한 (M5 6차). 0 = 비활성.</summary>
+        public float WheelKillHeight => _wheelKillHeight;
 
         /// <summary>연결부 포함 총 길이 (기관차 + 2칸 기본 구성 ≈ 39 m). 증설 칸은 여기 안 들어간다 — 초기 편성 기준.</summary>
         public float TotalLength => _carCount * _carLength + (_carCount - 1) * _couplingGap;
