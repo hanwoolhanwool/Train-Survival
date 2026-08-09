@@ -19,6 +19,9 @@ namespace Game.Gameplay.Monsters
     /// 예측 고정은 no-op다 — 자원은 각 피어가 컨베이어로 로컬 유도하기 때문에 그랩 전환 순간의 스냅을
     /// 없앨 예측이 필요했지만, 몬스터는 원래부터 서버 스냅샷 보간만 하므로 그 간극이 존재하지 않는다.
     /// </summary>
+    // LateUpdate 실행 순서 고정 (M5 6차 2차) — 파지 부착(여기, −10)이 훅 추종(HarpoonProjectile, 0)과
+    // 로프 그리기(HarpoonController, +10)보다 먼저 돌아야 집게가 한 프레임 늦게 따라오지 않는다.
+    [DefaultExecutionOrder(-10)]
     [RequireComponent(typeof(MonsterAgent))]
     [RequireComponent(typeof(MonsterHealth))]
     public sealed class MonsterGrabTarget : NetworkBehaviour, IGrabbable, IHoldAttachable, IPoolable

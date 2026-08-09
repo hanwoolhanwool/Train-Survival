@@ -151,14 +151,12 @@ namespace Game.Gameplay.Harpoon
                     UpdateFlying();
                     break;
 
-                case HookPhase.Attached:
-                    UpdateAttached();
-                    break;
-
                 case HookPhase.Retracting:
                     UpdateRetracting();
                     break;
 
+                // Attached: LateUpdate에서 추종한다 — 파지 부착(몬스터 LateUpdate, 실행 순서 −10)이
+                // 먼저 대상을 옮긴 뒤 따라가야 훅이 한 프레임 늦지 않는다.
                 // WaitingForServer / ImpactPause: 제자리 대기 (Tick의 타이머가 자동 전이시킨다).
             }
 
@@ -271,6 +269,20 @@ namespace Game.Gameplay.Harpoon
                 _motion.NotifyMiss();
                 _onMiss?.Invoke();
             }
+        }
+
+        /// <summary>
+        /// 부착 추종은 LateUpdate — 대상을 움직이는 쪽(서버 견인·파지 로컬 부착)이 이번 프레임 값을
+        /// 확정한 뒤에 따라가, 훅·로프가 대상보다 한 프레임 늦게 끌리지 않게 한다 (M5 6차 2차).
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (_motion == null || _motion.Phase != HookPhase.Attached)
+            {
+                return;
+            }
+
+            UpdateAttached();
         }
 
         private void UpdateAttached()

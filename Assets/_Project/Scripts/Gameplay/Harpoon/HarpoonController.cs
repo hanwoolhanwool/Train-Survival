@@ -24,6 +24,9 @@ namespace Game.Gameplay.Harpoon
     /// 다른 클라이언트는 동일 컴포넌트를 연출 전용 사본(<see cref="HarpoonProjectile.LaunchCosmetic"/>)으로
     /// 재생해 발사·견인 모습을 함께 볼 수 있다 (NotOwner 브로드캐스트 — 서버가 중계).
     /// </summary>
+    // LateUpdate 실행 순서 고정 (M5 6차 2차) — 로프 그리기(여기, +10)는 파지 부착(몬스터, −10)과
+    // 훅 추종(HarpoonProjectile, 0)이 끝난 뒤여야 로프 끝점이 한 프레임 늦게 끌리지 않는다.
+    [DefaultExecutionOrder(10)]
     public sealed class HarpoonController : NetworkBehaviour, IHarpoonTierHolder
     {
         [SerializeField] private HarpoonSettings _settings;
@@ -169,8 +172,15 @@ namespace Game.Gameplay.Harpoon
                     HarpoonSliceMetrics.RecordTowSample(_activeProjectile.transform.position, anchor, Time.deltaTime);
                 }
             }
+        }
 
-            UpdateRopeVisual();
+        private void LateUpdate()
+        {
+            if (IsSpawned)
+            {
+                // 로프는 이번 프레임의 최종 위치(파지 부착 → 훅 추종 이후)로 그린다 (M5 6차 2차).
+                UpdateRopeVisual();
+            }
         }
 
         // ── 소유자: 입력·로컬 선반영 계층 ──────────────────────────────────
