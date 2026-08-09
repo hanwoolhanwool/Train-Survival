@@ -21,7 +21,7 @@ namespace Game.Gameplay.Monsters
     /// </summary>
     [RequireComponent(typeof(MonsterAgent))]
     [RequireComponent(typeof(MonsterHealth))]
-    public sealed class MonsterGrabTarget : NetworkBehaviour, IGrabbable, IPoolable
+    public sealed class MonsterGrabTarget : NetworkBehaviour, IGrabbable, IHoldAttachable, IPoolable
     {
         [Tooltip("그로기 표현을 칠할 렌더러 (Body).")]
         [SerializeField] private Renderer[] _tintRenderers;
@@ -40,6 +40,12 @@ namespace Game.Gameplay.Monsters
         // 그로기 종료 서버 시각 — 잔여 시간을 매 프레임 복제하지 않고 <b>끝나는 시점</b>만 한 번 복제한다
         // (스폰 중인 몬스터마다 초당 수십 번 쓰는 것을 피한다). ServerTime은 전 피어에서 동기화된다.
         private readonly NetworkVariable<double> _stunEndTime = new NetworkVariable<double>();
+
+        // 파지 홀더 (M5 6차 2차) — 전 피어가 홀더의 파지 앵커에 <b>로컬 부착</b>해 홀더와 한 몸처럼
+        // 움직이게 한다. 스냅샷 보간(지연 0.18 s)으로는 "뒤따라오는" 느낌이 나기 때문이다.
+        // 투척 비행 중에는 서버가 default로 되돌려 부착을 풀고 스냅샷 표시로 복귀시킨다.
+        private readonly NetworkVariable<NetworkObjectReference> _holder =
+            new NetworkVariable<NetworkObjectReference>();
 
         private MonsterAgent _agent;
         private MonsterHealth _health;
@@ -97,6 +103,7 @@ namespace Game.Gameplay.Monsters
             if (IsServer)
             {
                 _stunEndTime.Value = 0d;
+                _holder.Value = default;
 
                 // 풀 재사용 시 이전 개체의 귀속이 새지 않게 환경 사망 기본값으로 되돌린다.
                 _lastGrabberClientId = NetworkManager.ServerClientId;
@@ -137,6 +144,27 @@ namespace Game.Gameplay.Monsters
             }
 
             ServerCheckWheelKillZone();
+        }
+
+        /// <summary>
+        /// 파지 표시 — 전 피어가 홀더의 파지 앵커에 <b>로컬 부착</b>한다 (M5 6차 2차).
+        /// 스냅샷 보간(지연 0.18 s)은 홀더가 움직일 때 "뒤따라오는" 느낌을 만들므로, 각자 화면의
+        /// 홀더 위치(소유자 = 즉시, 원격 = 보간)를 기준으로 매 프레임 같은 앵커 계산을 대입해
+        /// 홀더와 몬스터가 한 몸처럼 움직이게 한다. 판정 위치는 서버가 같은 계산으로 확정한다.
+        /// <see cref="MonsterAgent"/>의 보간 대입(Update)을 덮어써야 하므로 LateUpdate다.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (!IsSpawned)
+            {
+                return;
+            }
+
+            if (_holder.Value.TryGet(out NetworkObject holderObject)
+                && holderObject.TryGetComponent(out HarpoonController harpoon))
+            {
+                transform.position = harpoon.ComputeHoldAnchor();
+            }
         }
 
         /// <summary>
@@ -205,6 +233,7 @@ namespace Game.Gameplay.Monsters
             bool wasHeld = _held;
             _claimed = false;
             _held = false;
+            _holder.Value = default;
             _agent?.ServerSetTowed(false);
 
             // 파지에서 놓인 경우에만 기절 (M5 6차) — 추격 재개 전의 이탈 틈.
@@ -239,7 +268,24 @@ namespace Game.Gameplay.Monsters
             }
 
             _held = true;
+
+            // 홀더를 복제한다 — 전 피어가 홀더의 파지 앵커에 로컬 부착해 한 몸처럼 움직인다.
+            if (completion.Grabber != null
+                && completion.Grabber.TryGetComponent(out NetworkObject holderObject))
+            {
+                _holder.Value = holderObject;
+            }
+
             return GrabCompletionResult.Held;
+        }
+
+        /// <summary>서버 전용 — 투척 비행 시작 등 앵커 추종이 끊기면 부착 표시를 푼다 (M5 6차 2차).</summary>
+        public void ServerSetHoldAttached(bool attached)
+        {
+            if (IsServer && !attached)
+            {
+                _holder.Value = default;
+            }
         }
 
         // 몬스터는 서버 스냅샷 보간만 하므로 예측 고정이 필요 없다 (§11 수정안 A의 RTT 간극이 없다).

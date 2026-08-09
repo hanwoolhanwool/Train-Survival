@@ -52,6 +52,11 @@ namespace Game.Gameplay.Harpoon
         // 그대로 쓰고, 위치 대입만 릴 감기에서 파지 앵커 추종으로 바뀐다.
         private bool _serverHolding;
 
+        // 서버 전용 — 든 몬스터 투척 비행 중 (M5 6차 2차). 충돌·사거리 끝에서 놓임(기절)으로 끝난다.
+        private bool _serverThrowing;
+        private Vector3 _throwDirection;
+        private float _throwTraveled;
+
         public HarpoonState State => _stateMachine != null ? _stateMachine.State : HarpoonState.Ready;
 
         /// <summary>무기 슬롯 활성 여부 — 무기 전환 시스템이 제어한다. 소유자 입력 게이트 (M2).</summary>
@@ -172,16 +177,10 @@ namespace Game.Gameplay.Harpoon
 
         private void UpdateOwnerInput()
         {
-            // 놓기 ② — 무기 교체 (M5 6차): 핫바가 InputEnabled를 끄는 프레임에 파지를 자동으로
-            // 놓는다. "무기를 바꾸면 놓는다"가 핫바 게이트에서 공짜로 성립한다 (기존 취소 경로 재사용).
+            // 무기를 바꿔도 파지는 유지된다 (M5 6차 2차 — 사용자 결정으로 "놓기 ② 무기 교체" 철회).
+            // 든 채 다른 무기로 쏠 수 있고, 놓기·투척은 집게로 돌아와서 한다.
             if (!InputEnabled)
             {
-                if (_stateMachine.State == HarpoonState.Holding && _stateMachine.TryCancel())
-                {
-                    DiscardActiveProjectile();
-                    CancelGrabServerRpc();
-                }
-
                 return;
             }
 
@@ -191,9 +190,19 @@ namespace Game.Gameplay.Harpoon
                 return;
             }
 
-            if (mouse.leftButton.wasPressedThisFrame && _stateMachine.TryFire())
+            if (mouse.leftButton.wasPressedThisFrame)
             {
-                Fire();
+                if (_stateMachine.State == HarpoonState.Holding)
+                {
+                    // 파지 중 좌클릭 = 든 몬스터 투척 (M5 6차 2차) — 재발사가 아니라 슬램이다.
+                    // 상태는 Holding 그대로 두고, 서버가 비행을 끝내면 강제 해제 통지로 쿨다운에 들어간다.
+                    Vector3 direction = _aimSource != null ? _aimSource.forward : transform.forward;
+                    ThrowHeldServerRpc(direction);
+                }
+                else if (_stateMachine.TryFire())
+                {
+                    Fire();
+                }
             }
 
             if (mouse.rightButton.wasPressedThisFrame && _stateMachine.TryCancel())
@@ -394,6 +403,7 @@ namespace Game.Gameplay.Harpoon
                 // 견인·파지 중 대상 사망·디스폰 — 놓기 ③ (팀원이 든 것을 쏴 죽인 경우 포함, 5차 E12).
                 _serverTowTarget = null;
                 _serverHolding = false;
+                _serverThrowing = false;
                 ForceReleaseOwnerRpc();
                 ForceReleaseNotOwnerRpc();
                 return;
@@ -415,15 +425,19 @@ namespace Game.Gameplay.Harpoon
                 return;
             }
 
-            // 파지 중 (M5 6차): 릴은 끝났고, 매 프레임 홀더 앞 파지 앵커에 대상을 대입한다 —
+            // 파지 중 (M5 6차): 릴은 끝났고, 매 프레임 홀더의 파지 앵커에 대상을 대입한다 —
             // 견인과 같은 경로·같은 30 Hz 채널이라 신규 동기화가 없다. 게스트 홀더의 위치·회전은
-            // OwnerNetworkTransform으로 서버에 이미 있으므로 이 계산은 전부 서버로 충분하다.
+            // OwnerNetworkTransform으로 서버에 이미 있으므로 이 판정 계산은 전부 서버로 충분하다.
+            // (표시는 각 피어가 같은 계산으로 로컬 부착한다 — MonsterGrabTarget.LateUpdate.)
             if (_serverHolding)
             {
-                Vector3 holdAnchor = transform.position
-                    + transform.forward * _settings.HoldDistance
-                    + Vector3.up * _settings.HoldHeight;
-                _serverTowTarget.UpdateTowPosition(holdAnchor);
+                if (_serverThrowing)
+                {
+                    ServerUpdateThrow();
+                    return;
+                }
+
+                _serverTowTarget.UpdateTowPosition(ComputeHoldAnchor());
                 return;
             }
 
@@ -463,12 +477,97 @@ namespace Game.Gameplay.Harpoon
         private void ServerReleaseTow()
         {
             _serverHolding = false;
+            _serverThrowing = false;
 
             if (_serverTowTarget != null)
             {
                 _serverTowTarget.ReleaseGrab();
                 _serverTowTarget = null;
             }
+        }
+
+        /// <summary>
+        /// 파지 앵커 — 홀더 기준 전방·측면(좌측)·높이 오프셋 (M5 6차 2차).
+        /// 서버 판정(<see cref="ServerUpdateTow"/>)과 전 피어 표시(몬스터 쪽 로컬 부착)가
+        /// <b>같은 계산</b>을 쓴다 — 판정과 화면이 갈리지 않는다.
+        /// </summary>
+        public Vector3 ComputeHoldAnchor()
+        {
+            return transform.position
+                + transform.forward * _settings.HoldDistance
+                + transform.right * _settings.HoldSide
+                + Vector3.up * _settings.HoldHeight;
+        }
+
+        /// <summary>파지 중 좌클릭 — 든 몬스터 투척 요청 (M5 6차 2차). 비행·충돌·해제는 전부 서버가 확정한다.</summary>
+        [Rpc(SendTo.Server)]
+        private void ThrowHeldServerRpc(Vector3 direction)
+        {
+            if (!_serverHolding || _serverThrowing || _serverTowTarget == null)
+            {
+                return;
+            }
+
+            _throwDirection = direction.sqrMagnitude > 0.01f ? direction.normalized : transform.forward;
+            _throwTraveled = 0f;
+            _serverThrowing = true;
+
+            // 앵커 추종이 끊긴다 — 대상의 로컬 부착 표시를 풀어 비행이 동기화 표시로 보이게 한다.
+            (_serverTowTarget as IHoldAttachable)?.ServerSetHoldAttached(false);
+        }
+
+        /// <summary>
+        /// 투척 비행 (서버) — 든 몬스터가 조준 방향으로 짧게 날아가고, 부딪히면 큰 피해를 받은 뒤
+        /// 놓인다(파지에서 놓임 = 기절). 사거리 끝까지 아무것도 안 맞으면 그 자리에 놓인다(기절만).
+        /// 위치는 견인과 같은 채널로 나가므로 비행 모습도 신규 동기화 없이 보인다.
+        /// </summary>
+        private void ServerUpdateThrow()
+        {
+            float step = _settings.ThrowSpeed * Time.deltaTime;
+            Vector3 current = _serverTowTarget.NetworkObject.transform.position;
+
+            // 던진 사람·던져진 몬스터 자신은 충돌로 치지 않는다 (시작 겹침은 SphereCast가 무시한다).
+            if (Physics.SphereCast(current, _settings.ThrowRadius, _throwDirection, out RaycastHit hit,
+                    step, ~0, QueryTriggerInteraction.Ignore)
+                && hit.transform.root != transform.root
+                && hit.transform.root != _serverTowTarget.NetworkObject.transform.root)
+            {
+                // 슬램 — 충돌 지점에 놓고 큰 피해 + 기절. 피해 귀속 = 던진 사람.
+                _serverTowTarget.UpdateTowPosition(hit.point + hit.normal * _settings.ThrowRadius);
+                var damageable = _serverTowTarget.NetworkObject.GetComponent<IDamageable>();
+                damageable?.ApplyDamage(_settings.ThrowDamage, OwnerClientId);
+                ServerEndThrow();
+                return;
+            }
+
+            _serverTowTarget.UpdateTowPosition(current + _throwDirection * step);
+            _throwTraveled += step;
+
+            if (_throwTraveled >= _settings.ThrowRange)
+            {
+                ServerEndThrow();
+            }
+        }
+
+        private void ServerEndThrow()
+        {
+            _serverThrowing = false;
+
+            // 슬램 피해로 죽어 이미 디스폰됐으면 해제할 것이 없다 — 참조만 정리한다.
+            if (_serverTowTarget != null && _serverTowTarget.NetworkObject != null
+                && _serverTowTarget.NetworkObject.IsSpawned)
+            {
+                ServerReleaseTow();
+            }
+            else
+            {
+                _serverTowTarget = null;
+                _serverHolding = false;
+            }
+
+            // 파지 종료 통지 — 소유자는 Holding → Cooldown, 훅은 전 피어에서 되감긴다.
+            ForceReleaseOwnerRpc();
+            ForceReleaseNotOwnerRpc();
         }
 
         [Rpc(SendTo.Server)]

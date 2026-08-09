@@ -30,6 +30,17 @@ namespace Game.Gameplay.Harpoon
     }
 
     /// <summary>
+    /// 파지 부착 표시 계약 (M5 6차 2차) — <see cref="GrabCompletionResult.Held"/>를 돌려준 대상 중
+    /// "전 피어 로컬 부착 표시"를 쓰는 것이 구현한다. 집게는 앵커 추종이 끊기는 구간(투척 비행)의
+    /// 시작을 이 최소 표면으로만 알린다 — 대상 종류는 여전히 모른다 (ISP).
+    /// </summary>
+    public interface IHoldAttachable
+    {
+        /// <summary>서버 전용 — false = 앵커 추종이 끊겼다 (투척 비행). 부착 표시를 풀고 동기화 표시로 복귀한다.</summary>
+        void ServerSetHoldAttached(bool attached);
+    }
+
+    /// <summary>
     /// 회수 완료(도착) 시점에 대상에게 넘기는 그래버 정보 (M5 5차 — 획득 확정 폴리모피즘 이관).
     /// "도착하면 무슨 일이 일어나는가"를 대상이 결정하므로, 대상이 필요한 것만 여기서 읽는다
     /// (자원 = 인벤토리 수납, 몬스터 = 무력화). 집게는 종류 분기를 하지 않는다 (OCP).

@@ -54,6 +54,22 @@ namespace Game.Gameplay.Harpoon
         [Tooltip("파지 앵커의 높이 오프셋 (m). 홀더 발밑 기준.")]
         [SerializeField, Min(0f)] private float _holdHeight = 1.2f;
 
+        [Tooltip("파지 앵커의 측면 오프셋 (m). 음수 = 왼쪽 — 화면 좌측 앞에 들리게 한다.")]
+        [SerializeField] private float _holdSide = -0.8f;
+
+        [Header("투척 (M5 6차 2차 — 파지 중 좌클릭, 등급 공통)")]
+        [Tooltip("든 몬스터를 발사하는 속도 (m/s).")]
+        [SerializeField, Min(1f)] private float _throwSpeed = 20f;
+
+        [Tooltip("투척 최대 사거리 (m) — 짧게 유지한다 (원거리 무기가 아니라 슬램이다).")]
+        [SerializeField, Min(1f)] private float _throwRange = 8f;
+
+        [Tooltip("지형·구조물에 부딪혔을 때 던져진 몬스터가 받는 피해 (돌진형 60 즉사, 일반형 100 반피 이상).")]
+        [SerializeField, Min(0f)] private float _throwDamage = 60f;
+
+        [Tooltip("투척 충돌 판정 반경 (m) — 몬스터 몸 크기 근사.")]
+        [SerializeField, Min(0.05f)] private float _throwRadius = 0.5f;
+
         [Header("호스트 검증 (§2.4)")]
         [SerializeField, Min(0f)] private float _rangeTolerance = 2f;
 
@@ -82,6 +98,21 @@ namespace Game.Gameplay.Harpoon
 
         /// <summary>파지 앵커의 높이 오프셋 (m) — 홀더 발밑 기준.</summary>
         public float HoldHeight => _holdHeight;
+
+        /// <summary>파지 앵커의 측면 오프셋 (m, 음수 = 왼쪽) — "화면 좌측 앞" 배치.</summary>
+        public float HoldSide => _holdSide;
+
+        /// <summary>투척 속도 (m/s).</summary>
+        public float ThrowSpeed => _throwSpeed;
+
+        /// <summary>투척 최대 사거리 (m).</summary>
+        public float ThrowRange => _throwRange;
+
+        /// <summary>투척 충돌 시 던져진 몬스터가 받는 피해.</summary>
+        public float ThrowDamage => _throwDamage;
+
+        /// <summary>투척 충돌 판정 반경 (m).</summary>
+        public float ThrowRadius => _throwRadius;
 
         public float RangeTolerance => _rangeTolerance;
 
