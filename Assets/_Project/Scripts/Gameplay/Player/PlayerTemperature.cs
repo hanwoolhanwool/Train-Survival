@@ -80,8 +80,13 @@ namespace Game.Gameplay.Player
             float next = _serverTemperature + degrees;
             if (degrees > 0f)
             {
-                // 이미 상한 위라면 더 올리지 않되, 끌어내리지도 않는다 (음식이 냉각기가 되지 않게).
-                next = Mathf.Min(next, Mathf.Max(_serverTemperature, _settings.InstantWarmthCeiling));
+                // 더위 국면에서는 상한이 올라간다 (M5 6차 — G3 국면화. 판정은 지역 온도 = 국면 기준).
+                // 이미 상한 위라면 더 올리지 않되, 끌어내리지도 않는다 (음식이 냉각기가 되지 않게 — G4 유지).
+                TemperatureCurve curve = _settings.ToCurve();
+                float ceiling = TemperatureMath.ResolveWarmthCeiling(
+                    GetRegionAmbient(curve),
+                    _settings.InstantWarmthCeiling, _settings.InstantWarmthCeilingHot, curve);
+                next = Mathf.Min(next, Mathf.Max(_serverTemperature, ceiling));
             }
 
             _serverTemperature = Mathf.Clamp(

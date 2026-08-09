@@ -122,6 +122,17 @@ namespace Game.Gameplay.Player
             return Mathf.Clamp(factor, -1f, 0.9f);
         }
 
+        /// <summary>
+        /// 즉시 체온 상승 상한의 국면화 (M5 6차 — 5차 G3 "사막의 낮에서는 스튜 상한이 좀 더 높으면").
+        /// 환경이 쾌적 상한을 넘는 <b>더위 국면이면 hotCeiling</b>(고온 피해 임계 직전까지 허용),
+        /// 아니면 baseCeiling. "끌어내리지 않는다"(5차 G4)는 호출부의 몫이다 — 여기는 상한만 고른다.
+        /// </summary>
+        public static float ResolveWarmthCeiling(
+            float ambient, float baseCeiling, float hotCeiling, in TemperatureCurve curve)
+        {
+            return ambient > curve.ComfortMax ? hotCeiling : baseCeiling;
+        }
+
         /// <summary>한 스텝 뒤의 체온. 표류 속도는 쾌적대를 벗어난 정도에 비례한다.</summary>
         public static float Step(float current, float ambient, in TemperatureCurve curve, float deltaTime)
         {

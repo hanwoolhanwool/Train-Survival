@@ -46,6 +46,10 @@ namespace Game.Gameplay.Player
             "사막 낮에 스튜를 먹어 더위 피해를 입는 역효과를 만들지 않는다.")]
         [SerializeField] private float _instantWarmthCeiling = 38f;
 
+        [Tooltip("더위 국면(환경이 쾌적 상한 초과)의 즉시 체온 상한(℃) — 고온 피해 임계 직전. " +
+            "경고 구간까지는 허용하되 음식으로 피해 구간에 스스로 들어가지는 않는다 (M5 6차 — G3 국면화).")]
+        [SerializeField] private float _instantWarmthCeilingHot = 39f;
+
         public float NormalBodyTemperature => _normalBodyTemperature;
 
         public float MinBodyTemperature => _minBodyTemperature;
@@ -58,6 +62,9 @@ namespace Game.Gameplay.Player
 
         /// <summary>즉시 체온 상승이 넘지 못하는 상한 (℃) — 음식으로 더위 피해를 입지 않게 하는 안전선.</summary>
         public float InstantWarmthCeiling => _instantWarmthCeiling;
+
+        /// <summary>더위 국면의 즉시 체온 상한 (℃) — 국면 판정은 <see cref="TemperatureMath.ResolveWarmthCeiling"/>.</summary>
+        public float InstantWarmthCeilingHot => _instantWarmthCeilingHot;
 
         /// <summary>순수 로직(<see cref="TemperatureMath"/>)에 넘길 곡선으로 변환한다.</summary>
         public TemperatureCurve ToCurve()

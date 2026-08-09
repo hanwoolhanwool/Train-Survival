@@ -52,6 +52,25 @@ namespace Game.Tests.EditMode
             Assert.That(next, Is.EqualTo(Normal - 0.096f).Within(0.001f));
         }
 
+        // ── 즉시 체온 상한의 국면화 (M5 6차 — 5차 G3) ─────────────────────────
+
+        [Test]
+        public void 더위_국면이면_즉시_체온_상한이_올라간다()
+        {
+            // 사막 낮 45℃ — 쾌적 상한 32 초과 = 더위 국면 → 39℃ (고온 피해 임계 직전).
+            Assert.That(TemperatureMath.ResolveWarmthCeiling(45f, 38f, 39f, Curve()), Is.EqualTo(39f));
+        }
+
+        [Test]
+        public void 더위_국면이_아니면_기존_상한_그대로다()
+        {
+            TemperatureCurve curve = Curve();
+
+            Assert.That(TemperatureMath.ResolveWarmthCeiling(22f, 38f, 39f, curve), Is.EqualTo(38f), "쾌적대 안");
+            Assert.That(TemperatureMath.ResolveWarmthCeiling(2f, 38f, 39f, curve), Is.EqualTo(38f), "추위 국면");
+            Assert.That(TemperatureMath.ResolveWarmthCeiling(32f, 38f, 39f, curve), Is.EqualTo(38f), "쾌적 상한 경계는 더위가 아니다");
+        }
+
         [Test]
         public void 체온은_최소_최대_범위를_벗어나지_않는다()
         {
