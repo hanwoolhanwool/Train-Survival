@@ -26,6 +26,10 @@ namespace Game.Gameplay.Combat
         [Header("템포")]
         [SerializeField, Min(0.1f)] private float _swingInterval = 0.7f;
 
+        [Header("연출 (M5 8차 — 표시 전용, 판정 무변)")]
+        [Tooltip("타격 이펙트 프리팹 — 풀링 비네트워크. 비면 타격을 그리지 않는다.")]
+        [SerializeField] private ImpactEffectView _impactEffectPrefab;
+
         public string DisplayName => _displayName;
 
         public float Damage => _damage;
@@ -38,5 +42,8 @@ namespace Game.Gameplay.Combat
         public float RangeTolerance => _rangeTolerance;
 
         public float SwingInterval => _swingInterval;
+
+        /// <summary>타격 이펙트 프리팹 (M5 8차 — 표시 전용).</summary>
+        public ImpactEffectView ImpactEffectPrefab => _impactEffectPrefab;
     }
 }
