@@ -30,6 +30,9 @@ namespace Game.Gameplay.Player
         public readonly float DriftRatePerDegree;
         public readonly float RecoveryRate;
 
+        /// <summary>쾌적대에서 수렴점 위의 체온이 내려오는 속도 (M5 7차 2차) — 상향 회복과 분리된 느린 계수.</summary>
+        public readonly float CooldownRate;
+
         public readonly float HeatWarnThreshold;
         public readonly float HeatDamageThreshold;
         public readonly float ColdWarnThreshold;
@@ -43,7 +46,7 @@ namespace Game.Gameplay.Player
         public TemperatureCurve(
             float normalBody, float minBody, float maxBody,
             float comfortMin, float comfortMax,
-            float driftRatePerDegree, float recoveryRate,
+            float driftRatePerDegree, float recoveryRate, float cooldownRate,
             float heatWarnThreshold, float heatDamageThreshold,
             float coldWarnThreshold, float coldDamageThreshold,
             float damagePerDegreePerSecond, float shelterFactor, float heaterFactor)
@@ -55,6 +58,7 @@ namespace Game.Gameplay.Player
             ComfortMax = comfortMax;
             DriftRatePerDegree = driftRatePerDegree;
             RecoveryRate = recoveryRate;
+            CooldownRate = cooldownRate;
             HeatWarnThreshold = heatWarnThreshold;
             HeatDamageThreshold = heatDamageThreshold;
             ColdWarnThreshold = coldWarnThreshold;
@@ -151,8 +155,10 @@ namespace Game.Gameplay.Player
             }
             else
             {
+                // 하향은 별도의 느린 계수 (M5 7차 2차) — 스튜 온기가 돔 등 쾌적 공간에서
+                // 순식간에 증발하지 않게. 추위에서의 빠른 회복(상향)은 그대로 둔다.
                 target = curve.NormalBody;
-                rate = curve.RecoveryRate;
+                rate = current > curve.NormalBody ? curve.CooldownRate : curve.RecoveryRate;
             }
 
             float next = Mathf.MoveTowards(current, target, Mathf.Max(0f, rate) * Mathf.Max(0f, deltaTime));

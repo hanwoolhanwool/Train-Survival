@@ -25,6 +25,10 @@ namespace Game.Gameplay.Player
         [Tooltip("쾌적대 안에서 정상 체온으로 회복하는 초당 속도.")]
         [SerializeField, Min(0f)] private float _recoveryRate = 0.35f;
 
+        [Tooltip("쾌적대 안에서 수렴점 위의 체온이 내려오는 초당 속도 (M5 7차 2차) — " +
+            "스튜 온기가 돔 등 쾌적 공간에서 순식간에 증발하지 않게 상향 회복과 분리한다.")]
+        [SerializeField, Min(0f)] private float _cooldownRate = 0.05f;
+
         [Header("경고·피해 임계 (℃)")]
         [SerializeField] private float _heatWarnThreshold = 38f;
         [SerializeField] private float _heatDamageThreshold = 39f;
@@ -82,7 +86,7 @@ namespace Game.Gameplay.Player
                 _normalBodyTemperature + Mathf.Max(0f, bodyWarmthBonus),
                 _minBodyTemperature, _maxBodyTemperature,
                 _comfortMin, _comfortMax,
-                _driftRatePerDegree, _recoveryRate,
+                _driftRatePerDegree, _recoveryRate, _cooldownRate,
                 _heatWarnThreshold, _heatDamageThreshold,
                 _coldWarnThreshold, _coldDamageThreshold,
                 _damagePerDegreePerSecond, _shelterFactor, _heaterFactor);

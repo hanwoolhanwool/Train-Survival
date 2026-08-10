@@ -16,7 +16,7 @@ namespace Game.Tests.EditMode
             return new TemperatureCurve(
                 normalBody: Normal, minBody: 30f, maxBody: 42f,
                 comfortMin: 10f, comfortMax: 32f,
-                driftRatePerDegree: 0.012f, recoveryRate: 0.35f,
+                driftRatePerDegree: 0.012f, recoveryRate: 0.35f, cooldownRate: 0.05f,
                 heatWarnThreshold: 38f, heatDamageThreshold: 39f,
                 coldWarnThreshold: 35f, coldDamageThreshold: 34f,
                 damagePerDegreePerSecond: 3f, shelterFactor: 0.8f, heaterFactor: 0.8f);
@@ -32,6 +32,20 @@ namespace Game.Tests.EditMode
 
             Assert.That(hot, Is.LessThan(39f), "정상 체온 쪽으로 내려간다");
             Assert.That(cold, Is.GreaterThan(34f), "정상 체온 쪽으로 올라간다");
+        }
+
+        [Test]
+        public void 쾌적대_하향은_상향보다_느리다()
+        {
+            // M5 7차 2차 (검증 발견) — 스튜 온기(38 ℃)가 돔 안에서 순식간에 증발하지 않게,
+            // 수렴점 위에서 내려오는 속도(0.05)를 추위 복귀 속도(0.35)와 분리한다.
+            TemperatureCurve curve = Curve();
+
+            float down = TemperatureMath.Step(38f, 22f, curve, 1f);
+            float up = TemperatureMath.Step(35f, 22f, curve, 1f);
+
+            Assert.That(down, Is.EqualTo(38f - 0.05f).Within(0.001f), "하향 = 느린 계수");
+            Assert.That(up, Is.EqualTo(35f + 0.35f).Within(0.001f), "상향 = 기존 회복 속도");
         }
 
         [Test]
@@ -90,7 +104,7 @@ namespace Game.Tests.EditMode
             return new TemperatureCurve(
                 normalBody: Normal + bodyWarmthBonus, minBody: 30f, maxBody: 42f,
                 comfortMin: 10f, comfortMax: 32f,
-                driftRatePerDegree: 0.012f, recoveryRate: 0.35f,
+                driftRatePerDegree: 0.012f, recoveryRate: 0.35f, cooldownRate: 0.05f,
                 heatWarnThreshold: 38f, heatDamageThreshold: 39f,
                 coldWarnThreshold: 35f, coldDamageThreshold: 34f,
                 damagePerDegreePerSecond: 3f, shelterFactor: 0.8f, heaterFactor: 0.8f);
