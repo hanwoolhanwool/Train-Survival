@@ -104,6 +104,9 @@ namespace Game.Gameplay.World
             return currentDistance - _spawnDistance.Value;
         }
 
+        /// <summary>스폰 바인딩의 누적 거리 — 파생의 표시 계산(투척 포물선 등)이 같은 좌표계를 쓰게 한다.</summary>
+        protected float SpawnDistance => _spawnDistance.Value;
+
         public override void OnNetworkSpawn()
         {
             if (IsServer && _hasPendingBinding)

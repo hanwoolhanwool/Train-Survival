@@ -27,7 +27,24 @@ namespace Game.Gameplay.World
         [Tooltip("보따리를 '쳐다봤다'고 볼 시선 정렬 하한 (카메라 전방·보따리 방향 내적).")]
         [SerializeField, Range(0f, 1f)] private float _lookDotThreshold = 0.8f;
 
+        [Tooltip("칸 파괴 투척의 비행 시간 (초) — 느린 포물선 (M5 8차 §2).")]
+        [SerializeField, Min(0.1f)] private float _throwFlightSeconds = 1.6f;
+
+        [Tooltip("투척 포물선의 정점 높이 (m) — 시작·착지를 잇는 직선 위로 이만큼 부풀린다.")]
+        [SerializeField, Min(0f)] private float _throwArcHeight = 3f;
+
         private readonly NetworkList<NetworkSlot> _slots = new NetworkList<NetworkSlot>();
+
+        // 칸 파괴 투척 (M5 8차 §2) — (시작 위치, 착지 위치)만 복제하고 각 피어가 같은 포물선을
+        // 로컬 재생한다 (7차 하강 로컬 재생과 같은 규약 — 프레임 동기화 없음 = 떨림 없음).
+        // 시작 위치는 착지와 같은 월드 바인딩 좌표계라 비행 중에도 세계와 함께 흐른다.
+        // 시간축은 전 피어가 동기화된 ServerTime — 늦게 접속해도 같은 t를 계산한다.
+        private readonly NetworkVariable<Vector3> _flightStartPosition = new NetworkVariable<Vector3>();
+        private readonly NetworkVariable<double> _flightStartTime = new NetworkVariable<double>();
+        private readonly NetworkVariable<float> _flightDuration = new NetworkVariable<float>();
+
+        private Vector3 _pendingFlightStart;
+        private bool _hasPendingFlight;
 
         private HotbarSlotView[] _pendingContents;
 
@@ -41,6 +58,23 @@ namespace Game.Gameplay.World
         private bool _storagePanelOpen;
 
         public override int GrabWeight => _grabWeight;
+
+        /// <summary>투척 비행 중인가 — 비행 중에는 그랩·E창을 열 수 없다 (착수 전 결정: 불허).</summary>
+        public bool IsInFlight => _flightDuration.Value > 0f && IsSpawned
+            && NetworkManager != null
+            && NetworkManager.ServerTime.Time < _flightStartTime.Value + _flightDuration.Value;
+
+        public override bool IsAvailableForGrab => !IsInFlight && base.IsAvailableForGrab;
+
+        /// <summary>
+        /// 서버 전용 — 스폰 직전에 투척 비행(칸 파괴 지점 → 착지 지점)을 예약한다.
+        /// startPosition은 착지와 같은 월드 바인딩 좌표 (스폰 순간 traveled == spawnDistance).
+        /// </summary>
+        public void ServerSetThrowFlight(Vector3 startPosition)
+        {
+            _pendingFlightStart = startPosition;
+            _hasPendingFlight = true;
+        }
 
         /// <summary>보따리 슬롯 수 — 이관된 창고의 슬롯 수 그대로다.</summary>
         public int SlotCount => _slots.Count;
@@ -118,6 +152,18 @@ namespace Game.Gameplay.World
                 }
             }
 
+            if (IsServer)
+            {
+                // 풀 재사용 시 이전 비행이 새지 않게 — 투척 스폰만 비행 값을 얻는다.
+                _flightDuration.Value = _hasPendingFlight ? _throwFlightSeconds : 0f;
+                if (_hasPendingFlight)
+                {
+                    _flightStartPosition.Value = _pendingFlightStart;
+                    _flightStartTime.Value = NetworkManager.ServerTime.Time;
+                    _hasPendingFlight = false;
+                }
+            }
+
             _emptyCheckPending = false;
             _slots.OnListChanged += OnSlotsChanged;
 
@@ -176,7 +222,38 @@ namespace Game.Gameplay.World
                 }
             }
 
+            if (IsInFlight)
+            {
+                // 베이스가 놓은 안착 위치를 비행 위치로 덮는다 — 착지(t=1) 이후는 자연히 안착 유도로 복귀.
+                ApplyFlightPosition();
+                return;
+            }
+
             UpdateLocalInteraction();
+        }
+
+        /// <summary>
+        /// 투척 포물선 로컬 재생 — 시작·착지 모두 월드 바인딩 좌표라 세계 스크롤과 함께 흐르고,
+        /// 높이는 직선 보간 위에 4·t·(1−t) 아치를 더한다. 전 피어가 같은 수식·같은 시계를 쓴다.
+        /// </summary>
+        private void ApplyFlightPosition()
+        {
+            float duration = _flightDuration.Value;
+            float t = duration > 0f
+                ? Mathf.Clamp01((float)((NetworkManager.ServerTime.Time - _flightStartTime.Value) / duration))
+                : 1f;
+
+            Vector3 target = transform.position;
+            Vector3 start = target;
+            if (Game.Core.Services.ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                start = WorldScrollMath.GetScrolledPosition(
+                    _flightStartPosition.Value, SpawnDistance, scroll.TraveledDistance);
+            }
+
+            Vector3 position = Vector3.Lerp(start, target, t);
+            position.y += _throwArcHeight * 4f * t * (1f - t);
+            transform.position = position;
         }
 
         // ── 로컬: 근접·시선 판정과 E키 토글 (창고 창과 같은 규약 — M5 8차 회수 UX) ────────

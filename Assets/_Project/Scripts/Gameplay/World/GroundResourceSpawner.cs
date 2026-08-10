@@ -233,10 +233,11 @@ namespace Game.Gameplay.World
         }
 
         /// <summary>
-        /// 칸 파괴 — 그 자리 지상(선로변)으로 보따리를 스폰한다 (M5 8차, 월드 프레임 소속).
-        /// 버리기 낙하와 같은 측면 대역에 놓여 컨베이어로 흘러가고, 뒤로 밀리면 회수(소실)된다.
+        /// 칸 파괴 — 파괴 지점에서 지상 선로변으로 보따리를 <b>느린 포물선 투척</b> 스폰한다
+        /// (M5 8차, 월드 프레임 소속). 버리기 낙하와 같은 측면 대역에 착지해 컨베이어로 흘러가고,
+        /// 뒤로 밀리면 회수(소실)된다 — 집게로 건져 올리는 짧은 기회.
         /// </summary>
-        public bool ServerSpawnOnGround(Inventory.HotbarSlotView[] contents, float originZ)
+        public bool ServerSpawnOnGround(Inventory.HotbarSlotView[] contents, Vector3 throwOrigin)
         {
             if (_settings == null || !ServiceLocator.TryGet(out IWorldScrollService scroll))
             {
@@ -245,7 +246,7 @@ namespace Game.Gameplay.World
 
             float lateral = Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset);
             float side = Random.value < 0.5f ? -1f : 1f;
-            var position = new Vector3(side * lateral, _bundleRestOffsetY, originZ);
+            var position = new Vector3(side * lateral, _bundleRestOffsetY, throwOrigin.z);
 
             StorageBundle bundle = InstantiateBundle(contents, position);
             if (bundle == null)
@@ -254,6 +255,7 @@ namespace Game.Gameplay.World
             }
 
             bundle.ServerSetSpawnBinding(position, scroll.TraveledDistance);
+            bundle.ServerSetThrowFlight(throwOrigin);
             bundle.NetworkObject.Spawn();
             _activeNodes.Add(bundle);
             return true;

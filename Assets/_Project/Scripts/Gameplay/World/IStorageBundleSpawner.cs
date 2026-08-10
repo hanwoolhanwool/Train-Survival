@@ -1,4 +1,5 @@
 using Game.Gameplay.Inventory;
+using UnityEngine;
 
 namespace Game.Gameplay.World
 {
@@ -13,7 +14,10 @@ namespace Game.Gameplay.World
         /// <summary>건축물 파괴 (칸 생존) — 그 칸 갑판 위 휴지 상태로 스폰한다 (위치 = 칸 중심 + 갑판 높이).</summary>
         bool ServerSpawnDeckResting(HotbarSlotView[] contents, int carIndex, float deckHeight, float carCenterZ, float ejectOffset);
 
-        /// <summary>칸 파괴 — 그 자리 지상(선로변)으로 낙하 스폰한다 (월드 프레임 소속).</summary>
-        bool ServerSpawnOnGround(HotbarSlotView[] contents, float originZ);
+        /// <summary>
+        /// 칸 파괴 — 파괴 지점(throwOrigin)에서 지상 선로변으로 <b>느린 포물선 투척</b> 스폰한다
+        /// (월드 프레임 소속 — 비행은 각 피어가 로컬 재생, 비행 중 그랩 불허).
+        /// </summary>
+        bool ServerSpawnOnGround(HotbarSlotView[] contents, Vector3 throwOrigin);
     }
 }

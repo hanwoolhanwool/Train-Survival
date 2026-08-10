@@ -607,7 +607,8 @@ namespace Game.Gameplay.Train
             }
             else
             {
-                spawner.ServerSpawnOnGround(contents, centerZ);
+                // 칸 파괴 — 그 칸 갑판 높이에서 지상으로 느린 포물선 투척 (비행은 각 피어 로컬 재생).
+                spawner.ServerSpawnOnGround(contents, new Vector3(0f, _layoutSettings.DeckHeight, centerZ));
             }
         }
 
