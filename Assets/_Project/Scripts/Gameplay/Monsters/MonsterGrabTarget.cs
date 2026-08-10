@@ -50,6 +50,17 @@ namespace Game.Gameplay.Monsters
         private readonly NetworkVariable<NetworkObjectReference> _holder =
             new NetworkVariable<NetworkObjectReference>();
 
+        // 소유자 클라이언트 로컬 — 투척 선반영 (M5 6차 2차). 서버 확정을 기다리면 게스트 홀더의
+        // 좌클릭 반응이 RTT + 보간 지연만큼 늦으므로, 즉시 같은 수식으로 비행을 재생하고
+        // 서버 확정(기절 복제·디스폰·안전 시한)이 오면 동기화 표시로 복귀한다.
+        private bool _predictedThrow;
+        private Vector3 _predictedThrowDirection;
+        private float _predictedThrowSpeed;
+        private float _predictedThrowRemaining;
+        private float _predictedThrowRadius;
+        private Transform _predictedThrowIgnoreRoot;
+        private double _predictedThrowDeadline;
+
         private MonsterAgent _agent;
         private MonsterHealth _health;
         private bool _claimed;
@@ -163,11 +174,55 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
+            // 투척 선반영이 부착보다 우선한다 — 서버가 부착을 풀기(복제 도착) 전에도 즉시 날아간다.
+            if (_predictedThrow)
+            {
+                UpdatePredictedThrow();
+                return;
+            }
+
             if (_holder.Value.TryGet(out NetworkObject holderObject)
                 && holderObject.TryGetComponent(out HarpoonController harpoon))
             {
                 transform.position = harpoon.ComputeHoldAnchor();
             }
+        }
+
+        /// <summary>
+        /// 투척 선반영 비행 (소유자 클라이언트 로컬) — 서버 <c>ServerUpdateThrow</c>와 같은 수식·충돌
+        /// 규칙으로 움직인다. 피해·기절·해제 확정은 전부 서버 몫이고, 여기는 반응 표시만 앞당긴다.
+        /// 서버 확정(기절 복제)이 도착하거나 안전 시한이 지나면 동기화 표시로 복귀한다.
+        /// </summary>
+        private void UpdatePredictedThrow()
+        {
+            if (IsStunned || Time.timeAsDouble >= _predictedThrowDeadline)
+            {
+                // 서버가 놓음을 확정했다(기절 복제) — 낙하 지점도 같은 수식이라 복귀 스냅이 작다.
+                _predictedThrow = false;
+                return;
+            }
+
+            if (_predictedThrowRemaining <= 0f)
+            {
+                // 예측 비행 종료 — 서버 확정이 도착할 때까지 그 자리에 고정한다.
+                return;
+            }
+
+            float step = Mathf.Min(_predictedThrowSpeed * Time.deltaTime, _predictedThrowRemaining);
+            Vector3 current = transform.position;
+
+            if (Physics.SphereCast(current, _predictedThrowRadius, _predictedThrowDirection,
+                    out RaycastHit hit, step, ~0, QueryTriggerInteraction.Ignore)
+                && hit.transform.root != transform.root
+                && (_predictedThrowIgnoreRoot == null || hit.transform.root != _predictedThrowIgnoreRoot))
+            {
+                transform.position = hit.point + hit.normal * _predictedThrowRadius;
+                _predictedThrowRemaining = 0f;
+                return;
+            }
+
+            transform.position = current + _predictedThrowDirection * step;
+            _predictedThrowRemaining -= step;
         }
 
         /// <summary>
@@ -291,6 +346,30 @@ namespace Game.Gameplay.Monsters
             }
         }
 
+        /// <summary>
+        /// 소유자 클라이언트 로컬 — 투척 선반영 (M5 6차 2차). 좌클릭 즉시 서버와 같은 수식으로
+        /// 비행을 재생한다. 시작점이 같고(파지 앵커 — 같은 계산) 수식이 같아 서버 확정과의 오차가 작다.
+        /// </summary>
+        public void BeginPredictedThrow(Vector3 direction, float speed, float range, float radius)
+        {
+            if (IsServer || !IsSpawned)
+            {
+                return;
+            }
+
+            _predictedThrow = true;
+            _predictedThrowDirection = direction;
+            _predictedThrowSpeed = speed;
+            _predictedThrowRemaining = range;
+            _predictedThrowRadius = radius;
+            _predictedThrowDeadline = Time.timeAsDouble + 1.5d;
+
+            // 던진 홀더(자기 플레이어)는 예측 충돌에서 제외한다 — 서버 판정과 같은 규칙.
+            _predictedThrowIgnoreRoot = _holder.Value.TryGet(out NetworkObject holderObject)
+                ? holderObject.transform.root
+                : null;
+        }
+
         // 몬스터는 서버 스냅샷 보간만 하므로 예측 고정이 필요 없다 (§11 수정안 A의 RTT 간극이 없다).
         public void BeginPredictedTow()
         {
@@ -363,6 +442,8 @@ namespace Game.Gameplay.Monsters
         {
             _claimed = false;
             _held = false;
+            _predictedThrow = false;
+            _predictedThrowIgnoreRoot = null;
             ApplyStunPresentation(false);
         }
     }

@@ -207,6 +207,17 @@ namespace Game.Gameplay.Harpoon
                     // 파지 중 좌클릭 = 든 몬스터 투척 (M5 6차 2차) — 재발사가 아니라 슬램이다.
                     // 상태는 Holding 그대로 두고, 서버가 비행을 끝내면 강제 해제 통지로 쿨다운에 들어간다.
                     Vector3 direction = _aimSource != null ? _aimSource.forward : transform.forward;
+                    direction = direction.sqrMagnitude > 0.01f ? direction.normalized : transform.forward;
+
+                    // 게스트 홀더 선반영 — 서버 왕복 + 보간 지연을 기다리지 않고 즉시 비행을 재생한다
+                    // (발사 Fire의 로컬 훅과 같은 규약. 피해·기절 확정은 서버가 한다).
+                    if (!IsServer && _activeProjectile != null && _activeProjectile.AttachTarget != null)
+                    {
+                        var attachable = _activeProjectile.AttachTarget.GetComponentInParent<IHoldAttachable>();
+                        attachable?.BeginPredictedThrow(
+                            direction, _settings.ThrowSpeed, _settings.ThrowRange, _settings.ThrowRadius);
+                    }
+
                     ThrowHeldServerRpc(direction);
                 }
                 else if (_stateMachine.TryFire())

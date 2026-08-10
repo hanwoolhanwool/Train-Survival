@@ -38,6 +38,14 @@ namespace Game.Gameplay.Harpoon
     {
         /// <summary>서버 전용 — false = 앵커 추종이 끊겼다 (투척 비행). 부착 표시를 풀고 동기화 표시로 복귀한다.</summary>
         void ServerSetHoldAttached(bool attached);
+
+        /// <summary>
+        /// 소유자 클라이언트 로컬 — 투척 선반영. 서버 확정(RPC 왕복 + 스냅샷 보간)을 기다리지 않고
+        /// 좌클릭 즉시 같은 수식으로 비행을 재생해 게스트 홀더의 반응 지연을 없앤다
+        /// (그랩의 <see cref="IGrabbable.BeginPredictedTow"/>와 같은 로컬 선반영 규약).
+        /// 서버 확정(기절 복제·디스폰)이 도착하면 스스로 동기화 표시로 복귀한다. 서버에서 호출하면 무시한다.
+        /// </summary>
+        void BeginPredictedThrow(Vector3 direction, float speed, float range, float radius);
     }
 
     /// <summary>
