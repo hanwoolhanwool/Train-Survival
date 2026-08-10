@@ -83,6 +83,64 @@ namespace Game.Tests.EditMode
             Assert.That(veryCold, Is.EqualTo(30f).Within(0.001f));
         }
 
+        // ── 보온 장비 기본 체온 상향 (M5 7차 — 5차 개선 5번) ─────────────────────────
+
+        private static TemperatureCurve WarmedCurve(float bodyWarmthBonus)
+        {
+            return new TemperatureCurve(
+                normalBody: Normal + bodyWarmthBonus, minBody: 30f, maxBody: 42f,
+                comfortMin: 10f, comfortMax: 32f,
+                driftRatePerDegree: 0.012f, recoveryRate: 0.35f,
+                heatWarnThreshold: 38f, heatDamageThreshold: 39f,
+                coldWarnThreshold: 35f, coldDamageThreshold: 34f,
+                damagePerDegreePerSecond: 3f, shelterFactor: 0.8f, heaterFactor: 0.8f);
+        }
+
+        [Test]
+        public void 상향_곡선의_쾌적대_수렴점은_높아진_체온이다()
+        {
+            // 방한 착용(+0.5) — 쾌적대 안에서 36.5가 아니라 37.0으로 수렴한다.
+            TemperatureCurve curve = WarmedCurve(0.5f);
+
+            float fromBelow = TemperatureMath.Step(36.5f, 22f, curve, 100f);
+            float fromAbove = TemperatureMath.Step(38f, 22f, curve, 100f);
+
+            Assert.That(fromBelow, Is.EqualTo(37f).Within(0.001f), "평상 체온이 상향 값까지 올라간다");
+            Assert.That(fromAbove, Is.EqualTo(37f).Within(0.001f), "돔에 들어가도 상향 값까지만 내려간다");
+        }
+
+        [Test]
+        public void 상향_곡선도_추위_표류는_그대로다()
+        {
+            // 체온 상향은 수렴점 축이다 — 표류 속도(쾌적대 이탈 비례)는 바뀌지 않는다.
+            float plain = TemperatureMath.Step(Normal, 2f, Curve(), 1f);
+            float warmed = TemperatureMath.Step(Normal, 2f, WarmedCurve(0.5f), 1f);
+
+            Assert.That(warmed, Is.EqualTo(plain).Within(0.001f), "같은 시작 체온이면 같은 속도로 식는다");
+        }
+
+        [Test]
+        public void 설정_곡선_변환은_수렴점만_밀어_올린다()
+        {
+            var settings = UnityEngine.ScriptableObject.CreateInstance<TemperatureSettings>();
+            try
+            {
+                TemperatureCurve plain = settings.ToCurve();
+                TemperatureCurve warmed = settings.ToCurve(0.7f);
+                TemperatureCurve negative = settings.ToCurve(-1f);
+
+                Assert.That(warmed.NormalBody, Is.EqualTo(plain.NormalBody + 0.7f).Within(0.001f));
+                Assert.That(warmed.ComfortMin, Is.EqualTo(plain.ComfortMin), "쾌적대는 그대로");
+                Assert.That(warmed.ComfortMax, Is.EqualTo(plain.ComfortMax), "쾌적대는 그대로");
+                Assert.That(warmed.HeatWarnThreshold, Is.EqualTo(plain.HeatWarnThreshold), "경고 임계는 그대로");
+                Assert.That(negative.NormalBody, Is.EqualTo(plain.NormalBody), "음수 보너스는 무시된다");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(settings);
+            }
+        }
+
         [Test]
         public void 차폐는_더위를_쾌적대로_당긴다()
         {

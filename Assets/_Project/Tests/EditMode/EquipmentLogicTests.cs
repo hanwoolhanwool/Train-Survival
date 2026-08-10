@@ -112,5 +112,13 @@ namespace Game.Tests.EditMode
             Assert.That(EquipmentLogic.ClampInsulation(1.5f), Is.EqualTo(0.9f), "완전 무효화 방지 상한");
             Assert.That(EquipmentLogic.ClampInsulation(-2f), Is.EqualTo(-1f), "역효과 하한");
         }
+
+        [Test]
+        public void 체온_상향_합산은_유효_범위로_잘린다()
+        {
+            Assert.That(EquipmentLogic.ClampBodyWarmth(0.7f), Is.EqualTo(0.7f), "가죽 옷 + 누비 바지");
+            Assert.That(EquipmentLogic.ClampBodyWarmth(1.5f), Is.EqualTo(1f), "겹쳐 입어도 경고 임계 밑 안전선");
+            Assert.That(EquipmentLogic.ClampBodyWarmth(-0.5f), Is.EqualTo(0f), "체온 상향에 역효과는 없다");
+        }
     }
 }

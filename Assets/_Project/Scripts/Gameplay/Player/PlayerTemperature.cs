@@ -110,7 +110,9 @@ namespace Game.Gameplay.Player
                 return;
             }
 
-            TemperatureCurve curve = _settings.ToCurve();
+            // 보온 장비 체온 상향 (M5 7차) — 쾌적 환경의 수렴점을 밀어 올린 곡선으로 표류·회복한다.
+            float bodyWarmth = _inventory != null ? _inventory.GetEquippedBodyWarmth() : 0f;
+            TemperatureCurve curve = _settings.ToCurve(bodyWarmth);
             ResolveShelter(out bool hasShade, out bool hasHeat);
             float ambient = TemperatureMath.ResolveAmbient(GetRegionAmbient(curve), hasShade, hasHeat, curve);
 

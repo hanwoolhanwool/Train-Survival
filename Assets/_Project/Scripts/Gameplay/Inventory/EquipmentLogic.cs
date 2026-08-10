@@ -86,5 +86,19 @@ namespace Game.Gameplay.Inventory
 
             return total > 0.9f ? 0.9f : total;
         }
+
+        /// <summary>
+        /// 부위 합산 평상 체온 상향(℃)을 유효 범위로 자른다 (M5 7차) — 상한 1.0
+        /// (겹쳐 입어도 36.5 + 1.0 = 37.5 ℃로 고온 경고 임계 밑에 머무는 안전선), 하한 0.
+        /// </summary>
+        public static float ClampBodyWarmth(float total)
+        {
+            if (total < 0f)
+            {
+                return 0f;
+            }
+
+            return total > 1f ? 1f : total;
+        }
     }
 }

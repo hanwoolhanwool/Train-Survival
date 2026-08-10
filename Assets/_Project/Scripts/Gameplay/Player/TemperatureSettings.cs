@@ -69,8 +69,18 @@ namespace Game.Gameplay.Player
         /// <summary>순수 로직(<see cref="TemperatureMath"/>)에 넘길 곡선으로 변환한다.</summary>
         public TemperatureCurve ToCurve()
         {
+            return ToCurve(0f);
+        }
+
+        /// <summary>
+        /// 보온 장비의 평상 체온 상향(M5 7차)을 얹은 곡선 — 쾌적 환경의 수렴점(NormalBody)만
+        /// 올라간다. 돔(그늘)이 환경을 쾌적대로 당겨도 "높아진 값까지만 내려간다"가 수식으로 성립한다.
+        /// </summary>
+        public TemperatureCurve ToCurve(float bodyWarmthBonus)
+        {
             return new TemperatureCurve(
-                _normalBodyTemperature, _minBodyTemperature, _maxBodyTemperature,
+                _normalBodyTemperature + Mathf.Max(0f, bodyWarmthBonus),
+                _minBodyTemperature, _maxBodyTemperature,
                 _comfortMin, _comfortMax,
                 _driftRatePerDegree, _recoveryRate,
                 _heatWarnThreshold, _heatDamageThreshold,

@@ -308,6 +308,23 @@ namespace Game.Gameplay.Inventory
             heat = EquipmentLogic.ClampInsulation(heat);
         }
 
+        /// <summary>착용 부위 합산 평상 체온 상향 (℃, 클램프 반영) — 체온 경로(PlayerTemperature)가 곡선에 얹는다.</summary>
+        public float GetEquippedBodyWarmth()
+        {
+            if (_equipmentCatalog == null)
+            {
+                return 0f;
+            }
+
+            float total = 0f;
+            for (int i = 0; i < _equipment.Count; i++)
+            {
+                total += _equipmentCatalog.GetBodyWarmthBonus(_equipment[i].ItemType);
+            }
+
+            return EquipmentLogic.ClampBodyWarmth(total);
+        }
+
         /// <summary>인벤토리 칸의 장비 착용 요청 (I 창 드래그) — 소유자에서 호출한다. 부위는 서버가 카탈로그로 판정.</summary>
         public void RequestEquip(int slotIndex)
         {

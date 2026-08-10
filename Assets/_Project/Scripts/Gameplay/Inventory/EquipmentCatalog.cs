@@ -27,6 +27,10 @@ namespace Game.Gameplay.Inventory
             [Tooltip("더위 단열 (−1~1) — 양수면 더운 환경 온도를 쾌적 상한 쪽으로 당긴다. 음수 = 역효과.")]
             [SerializeField, Range(-1f, 1f)] private float _heatInsulation;
 
+            [Tooltip("착용 시 평상 체온 상향 (℃, M5 7차) — 쾌적 환경에서의 수렴 체온을 밀어 올린다. " +
+                "단열이 '환경을 덜 춥게'라면 이 축은 '몸 자체가 따뜻하게'다.")]
+            [SerializeField, Min(0f)] private float _bodyWarmthBonus;
+
             public HotbarItemType Item => _item;
 
             public EquipSlot Slot => _slot;
@@ -36,6 +40,8 @@ namespace Game.Gameplay.Inventory
             public float ColdInsulation => _coldInsulation;
 
             public float HeatInsulation => _heatInsulation;
+
+            public float BodyWarmthBonus => _bodyWarmthBonus;
         }
 
         [SerializeField] private Entry[] _entries;
@@ -70,6 +76,12 @@ namespace Game.Gameplay.Inventory
         {
             Entry entry = Find(item);
             return entry != null ? entry.HeatInsulation : 0f;
+        }
+
+        public float GetBodyWarmthBonus(HotbarItemType item)
+        {
+            Entry entry = Find(item);
+            return entry != null ? entry.BodyWarmthBonus : 0f;
         }
 
         private Entry Find(HotbarItemType item)
