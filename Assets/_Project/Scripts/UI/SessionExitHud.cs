@@ -22,12 +22,14 @@ namespace Game.UI
         private bool _inventoryOpen;
         private bool _craftingOpen;
         private bool _storageOpen;
+        private bool _bundleOpen;
 
         private void OnEnable()
         {
             EventBus<Gameplay.Inventory.InventoryPanelToggledLocalEvent>.Subscribe(OnInventoryToggled);
             EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingToggled);
             EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Subscribe(OnStorageToggled);
+            EventBus<Gameplay.Train.BundlePanelToggledLocalEvent>.Subscribe(OnBundleToggled);
         }
 
         private void OnDisable()
@@ -35,6 +37,7 @@ namespace Game.UI
             EventBus<Gameplay.Inventory.InventoryPanelToggledLocalEvent>.Unsubscribe(OnInventoryToggled);
             EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingToggled);
             EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStorageToggled);
+            EventBus<Gameplay.Train.BundlePanelToggledLocalEvent>.Unsubscribe(OnBundleToggled);
         }
 
         private void Update()
@@ -50,7 +53,7 @@ namespace Game.UI
             {
                 SetMenuOpen(false);
             }
-            else if (_inventoryOpen || _craftingOpen || _storageOpen)
+            else if (_inventoryOpen || _craftingOpen || _storageOpen || _bundleOpen)
             {
                 EventBus<UiCloseRequestedLocalEvent>.Publish(default);
             }
@@ -73,6 +76,11 @@ namespace Game.UI
         private void OnStorageToggled(Gameplay.Train.StoragePanelToggledLocalEvent evt)
         {
             _storageOpen = evt.IsOpen;
+        }
+
+        private void OnBundleToggled(Gameplay.Train.BundlePanelToggledLocalEvent evt)
+        {
+            _bundleOpen = evt.IsOpen;
         }
 
         private void OnGUI()

@@ -206,6 +206,37 @@ namespace Game.Gameplay.Train
     }
 
     /// <summary>
+    /// 로컬 표현 이벤트 — 창고 보따리에 근접해 열 수 있는 상태 (M5 8차). HUD의 "E — 보따리" 안내용.
+    /// </summary>
+    public readonly struct BundlePromptLocalEvent
+    {
+        public readonly bool IsInRange;
+
+        public BundlePromptLocalEvent(bool isInRange)
+        {
+            IsInRange = isInRange;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 보따리 창 토글 (M5 8차). 창고 창과 같은 규약으로
+    /// 열려 있는 동안 시점 회전·무기 입력이 정지된다.
+    /// </summary>
+    public readonly struct BundlePanelToggledLocalEvent
+    {
+        public readonly bool IsOpen;
+
+        /// <summary>연 보따리의 NetworkObjectId — 닫힘이면 0. UI가 슬롯 조회·전송 요청에 쓴다.</summary>
+        public readonly ulong BundleObjectId;
+
+        public BundlePanelToggledLocalEvent(bool isOpen, ulong bundleObjectId)
+        {
+            IsOpen = isOpen;
+            BundleObjectId = bundleObjectId;
+        }
+    }
+
+    /// <summary>
     /// 로컬 표현 이벤트 — 수리 망치가 지금 겨누고 있는 열차 부위와 그 상태. 조준 HUD("칸 #2 70/100 — 좌클릭 수리")용.
     /// 겨눈 대상·체력·설치 가능 여부가 바뀔 때마다 발행된다.
     /// </summary>

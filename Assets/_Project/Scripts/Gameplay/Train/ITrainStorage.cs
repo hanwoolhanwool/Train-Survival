@@ -16,6 +16,9 @@ namespace Game.Gameplay.Train
         /// <summary>이동 요청의 컨테이너 식별 — 창고.</summary>
         const byte ContainerStorage = 1;
 
+        /// <summary>이동 요청의 컨테이너 식별 — 창고 보따리 (M5 8차).</summary>
+        const byte ContainerBundle = 2;
+
         /// <summary>창고 하나의 슬롯 수.</summary>
         int SlotsPerStorage { get; }
 
@@ -27,6 +30,18 @@ namespace Game.Gameplay.Train
         /// 확정은 호스트: 창고 생존·거리 재검증 후 순수 로직으로 병합·스왑·이동을 판정한다.
         /// </summary>
         void RequestTransfer(int carIndex, byte fromContainer, int fromIndex, byte toContainer, int toIndex);
+
+        /// <summary>보따리 슬롯 조회 (M5 8차) — 복제 상태 기반이라 전 피어 동일 (E창 표시용).</summary>
+        HotbarSlotView GetBundleSlot(ulong bundleObjectId, int slotIndex);
+
+        /// <summary>보따리 슬롯 수 — 보따리가 없으면(회수됨) 0. E창은 0이면 닫는다.</summary>
+        int GetBundleSlotCount(ulong bundleObjectId);
+
+        /// <summary>
+        /// 개인↔보따리 슬롯 이동 요청 (M5 8차) — 로컬에서 호출한다. 창고 이동과 같은 확정 규약:
+        /// 호스트가 보따리 생존(회수·운반 중 기각)·거리를 재검증하고 순수 로직으로 판정한다.
+        /// </summary>
+        void RequestBundleTransfer(ulong bundleObjectId, byte fromContainer, int fromIndex, byte toContainer, int toIndex);
 
         /// <summary>
         /// 창고 내용물 소실 — 서버 전용. 슬롯 재건(안전망) 확정 지점에서 호출된다

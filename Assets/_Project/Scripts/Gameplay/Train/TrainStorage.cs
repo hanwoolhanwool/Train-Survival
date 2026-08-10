@@ -296,6 +296,114 @@ namespace Game.Gameplay.Train
             ApplyStorageSlots(carIndex, storageSlots);
         }
 
+        // ── 보따리 (M5 8차) — 창고 창 재사용의 컨테이너 파사드: UI는 NetworkObjectId로만 다룬다 ──
+
+        public HotbarSlotView GetBundleSlot(ulong bundleObjectId, int slotIndex)
+        {
+            World.StorageBundle bundle = ResolveBundle(bundleObjectId);
+            return bundle != null ? bundle.GetSlot(slotIndex) : new HotbarSlotView(HotbarItemType.None, 0);
+        }
+
+        public int GetBundleSlotCount(ulong bundleObjectId)
+        {
+            World.StorageBundle bundle = ResolveBundle(bundleObjectId);
+            return bundle != null ? bundle.SlotCount : 0;
+        }
+
+        public void RequestBundleTransfer(
+            ulong bundleObjectId, byte fromContainer, int fromIndex, byte toContainer, int toIndex)
+        {
+            RequestBundleTransferServerRpc(bundleObjectId, fromContainer, fromIndex, toContainer, toIndex);
+        }
+
+        /// <summary>
+        /// 보따리 이동 확정 — 창고 이동과 같은 규약: 보따리 생존(비워져 회수·운반 중이면 기각)과
+        /// 거리를 호스트 상태로 재검증하고, 복사본 위 순수 로직 판정 후 성공 시에만 되쓴다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestBundleTransferServerRpc(ulong bundleObjectId, byte fromContainer, int fromIndex,
+            byte toContainer, int toIndex, RpcParams rpcParams = default)
+        {
+            World.StorageBundle bundle = ResolveBundle(bundleObjectId);
+            if (bundle == null || !bundle.IsSpawned || bundle.IsClaimed)
+            {
+                return;
+            }
+
+            NetworkManager manager = NetworkManager.Singleton;
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            if (manager == null
+                || !manager.ConnectedClients.TryGetValue(senderClientId, out NetworkClient client)
+                || client.PlayerObject == null)
+            {
+                return;
+            }
+
+            // 서버 측 거리 검증 — 보따리의 실제 위치 기준 (창고와 같은 여유 폭).
+            float maxDistance = _interactRadius + 1.5f;
+            if ((client.PlayerObject.transform.position - bundle.transform.position).sqrMagnitude
+                > maxDistance * maxDistance)
+            {
+                return;
+            }
+
+            PlayerInventory inventory = client.PlayerObject.GetComponent<PlayerInventory>();
+            if (inventory == null)
+            {
+                return;
+            }
+
+            HotbarSlotView[] inventorySlots = inventory.ServerCopySlotViews();
+            HotbarSlotView[] bundleSlots = bundle.ServerCopySlots();
+
+            HotbarSlotView[] from = SelectBundleContainer(fromContainer, inventorySlots, bundleSlots);
+            HotbarSlotView[] to = SelectBundleContainer(toContainer, inventorySlots, bundleSlots);
+            if (from == null || to == null
+                || fromIndex < 0 || fromIndex >= from.Length
+                || toIndex < 0 || toIndex >= to.Length)
+            {
+                return;
+            }
+
+            int stackSize = _catalog != null
+                ? _catalog.GetMaxStack(from[fromIndex].Resource, inventory.StackSize)
+                : inventory.StackSize;
+
+            if (!StorageLogic.TryTransfer(from, fromIndex, to, toIndex, stackSize))
+            {
+                return;
+            }
+
+            inventory.ServerApplySlotViews(inventorySlots);
+            bundle.ServerApplySlots(bundleSlots);
+        }
+
+        private static World.StorageBundle ResolveBundle(ulong bundleObjectId)
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (bundleObjectId == 0UL || manager == null || manager.SpawnManager == null
+                || !manager.SpawnManager.SpawnedObjects.TryGetValue(bundleObjectId, out NetworkObject obj))
+            {
+                return null;
+            }
+
+            return obj.GetComponent<World.StorageBundle>();
+        }
+
+        private static HotbarSlotView[] SelectBundleContainer(
+            byte container, HotbarSlotView[] inventorySlots, HotbarSlotView[] bundleSlots)
+        {
+            switch (container)
+            {
+                case ITrainStorage.ContainerInventory:
+                    return inventorySlots;
+                case ITrainStorage.ContainerBundle:
+                    return bundleSlots;
+                default:
+                    return null;
+            }
+        }
+
         private static HotbarSlotView[] SelectContainer(
             byte container, HotbarSlotView[] inventorySlots, HotbarSlotView[] storageSlots)
         {

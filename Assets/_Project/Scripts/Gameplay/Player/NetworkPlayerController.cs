@@ -56,6 +56,7 @@ namespace Game.Gameplay.Player
         private bool _sessionMenuOpen;
         private bool _craftingPanelOpen;
         private bool _storagePanelOpen;
+        private bool _bundlePanelOpen;
         private bool _standingOnWorldFrame;
         private CarView _ridingCar;
         private Vector3 _ridingCarLastPos;
@@ -97,6 +98,7 @@ namespace Game.Gameplay.Player
                 EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
                 EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
                 EventBus<Train.StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
+                EventBus<Train.BundlePanelToggledLocalEvent>.Subscribe(OnBundlePanelToggled);
             }
         }
 
@@ -108,6 +110,7 @@ namespace Game.Gameplay.Player
                 EventBus<SessionMenuToggledLocalEvent>.Unsubscribe(OnSessionMenuToggled);
                 EventBus<Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
                 EventBus<Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
+                EventBus<Train.BundlePanelToggledLocalEvent>.Unsubscribe(OnBundlePanelToggled);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
@@ -141,9 +144,17 @@ namespace Game.Gameplay.Player
             ApplyCursorState();
         }
 
+        /// <summary>보따리 창 토글 (M5 8차) — 창고 창과 동일 규약 (시점 정지 + 커서 표시).</summary>
+        private void OnBundlePanelToggled(Train.BundlePanelToggledLocalEvent evt)
+        {
+            _bundlePanelOpen = evt.IsOpen;
+            ApplyCursorState();
+        }
+
         private void ApplyCursorState()
         {
-            bool uiOpen = _inventoryPanelOpen || _sessionMenuOpen || _craftingPanelOpen || _storagePanelOpen;
+            bool uiOpen = _inventoryPanelOpen || _sessionMenuOpen || _craftingPanelOpen || _storagePanelOpen
+                || _bundlePanelOpen;
             Cursor.lockState = uiOpen ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = uiOpen;
         }

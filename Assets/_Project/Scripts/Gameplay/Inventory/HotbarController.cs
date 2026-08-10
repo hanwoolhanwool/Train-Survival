@@ -32,6 +32,7 @@ namespace Game.Gameplay.Inventory
         private bool _sessionMenuOpen;
         private bool _craftingOpen;
         private bool _storageOpen;
+        private bool _bundleOpen;
 
         public int SlotCount => _inventory != null ? _inventory.SlotCount : 0;
 
@@ -51,8 +52,8 @@ namespace Game.Gameplay.Inventory
             ? _inventory.GetSlot(_selectedIndex).Resource
             : ResourceType.None;
 
-        /// <summary>UI(I 창·세션 메뉴·제작 창·창고 창)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
-        public bool IsPanelOpen => _panelOpen || _sessionMenuOpen || _craftingOpen || _storageOpen;
+        /// <summary>UI(I 창·세션 메뉴·제작 창·창고 창·보따리 창)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
+        public bool IsPanelOpen => _panelOpen || _sessionMenuOpen || _craftingOpen || _storageOpen || _bundleOpen;
 
         private void Awake()
         {
@@ -70,6 +71,7 @@ namespace Game.Gameplay.Inventory
             EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
             EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
             EventBus<Train.StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
+            EventBus<Train.BundlePanelToggledLocalEvent>.Subscribe(OnBundlePanelToggled);
 
             if (!ServiceLocator.IsRegistered<ILocalHotbar>())
             {
@@ -90,6 +92,7 @@ namespace Game.Gameplay.Inventory
             EventBus<SessionMenuToggledLocalEvent>.Unsubscribe(OnSessionMenuToggled);
             EventBus<Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
             EventBus<Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
+            EventBus<Train.BundlePanelToggledLocalEvent>.Unsubscribe(OnBundlePanelToggled);
 
             if (ServiceLocator.TryGet(out ILocalHotbar hotbar) && ReferenceEquals(hotbar, this))
             {
@@ -234,6 +237,11 @@ namespace Game.Gameplay.Inventory
         private void OnStoragePanelToggled(Train.StoragePanelToggledLocalEvent evt)
         {
             _storageOpen = evt.IsOpen;
+        }
+
+        private void OnBundlePanelToggled(Train.BundlePanelToggledLocalEvent evt)
+        {
+            _bundleOpen = evt.IsOpen;
         }
     }
 }
