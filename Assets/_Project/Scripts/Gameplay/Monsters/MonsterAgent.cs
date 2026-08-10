@@ -196,6 +196,16 @@ namespace Game.Gameplay.Monsters
             bool grounded = onDeck || transform.position.y <= 0.01f;
 
             Vector3 horizontalVelocity = _stunned ? Vector3.zero : _lastHorizontalVelocity;
+
+            // 기절 중 (M5 6차): 지상이면 컨베이어에 실려 자원 아이템들과 함께 뒤로 밀린다 —
+            // 세계가 흐르는데 기절체만 제자리에 박혀 있으면 프레임 소속이 어긋나 보인다.
+            // 갑판 위 기절은 열차 프레임 소속이라 그대로 둔다. 뒤로 밀리다 깨어나면 추격이
+            // 다시 따라잡고(이동속도 > 스크롤 속도), 너무 뒤처지면 기존 도주 회수로 정리된다.
+            if (_stunned && grounded && !onDeck)
+            {
+                horizontalVelocity = Vector3.back * scrollSpeed;
+            }
+
             if (target != null && grounded)
             {
                 float chaseSpeed = MonsterSteering.EnforceChaseSpeed(
@@ -223,7 +233,12 @@ namespace Game.Gameplay.Monsters
             ClampToSupport();
 
             _lastHorizontalVelocity = horizontalVelocity;
-            FaceVelocity(horizontalVelocity, target);
+
+            // 기절 중에는 방향을 돌리지 않는다 — 컨베이어 변위는 이동이 아니라 실려 가는 것이다.
+            if (!_stunned)
+            {
+                FaceVelocity(horizontalVelocity, target);
+            }
             ServerTryAttack(target);
             ServerCheckFellBehind();
             ServerSync(Settings.SyncHz);
