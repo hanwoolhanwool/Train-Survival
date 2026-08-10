@@ -45,5 +45,11 @@ namespace Game.Gameplay.Train
         /// 칸 인덱스는 휴지 노드의 이탈 추종에 쓴다 — 7차 2차 D9).
         /// </summary>
         bool TryGetDeckSurface(UnityEngine.Vector3 position, out float deckHeight, out int carIndex);
+
+        /// <summary>
+        /// 인덱스 칸의 갑판이 아직 세상에 존재하는가 — 파괴(체력 0)·소실(이탈 한계 초과)이면 false.
+        /// 갑판 위 휴지 노드의 회수 판정에 쓴다 (7차 2차 발견 — 칸이 사라지면 위의 물건도 함께 회수).
+        /// </summary>
+        bool IsDeckAlive(int carIndex);
     }
 }

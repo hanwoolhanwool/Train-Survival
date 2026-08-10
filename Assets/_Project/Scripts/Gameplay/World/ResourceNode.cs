@@ -94,6 +94,9 @@ namespace Game.Gameplay.World
         /// <summary>갑판 휴지 중인가 (M5 7차 A3) — 열차 프레임 소속이라 후방 회수 대상이 아니다.</summary>
         public bool IsDeckResting => _isDeckResting.Value;
 
+        /// <summary>휴지한 칸의 편성 인덱스 (휴지 중이 아니면 -1) — 칸 소실 시 회수 판정용 (7차 2차).</summary>
+        public int DeckCarIndex => _deckCarIndex.Value;
+
         /// <summary>서버 전용 — 스폰 직전에 (위치, 누적 거리) 바인딩을 예약한다. OnNetworkSpawn에서 동기화된다.</summary>
         public void ServerSetSpawnBinding(Vector3 spawnPosition, float spawnDistance)
         {

@@ -303,6 +303,19 @@ namespace Game.Gameplay.Train
             return false;
         }
 
+        public bool IsDeckAlive(int carIndex)
+        {
+            if (!TryGetCar(carIndex, out CarState car) || car.Health <= 0f)
+            {
+                return false;
+            }
+
+            // 붙어 있는 칸은 항상 존재한다. 이탈 칸은 소실 거리(표현이 꺼지는 지점) 전까지만 —
+            // 그 뒤로는 칸이 세상에서 사라진 것이므로 갑판 위 물건도 함께 회수돼야 한다.
+            return car.Attached
+                || (_durabilitySettings != null && GetEjectOffset(carIndex) < _durabilitySettings.LostDistance);
+        }
+
         /// <summary>연결부가 끊기지 않았고 잇는 두 칸(index, index+1)이 모두 편성에 살아 붙어 있는지.</summary>
         private bool IsCouplingLive(int index)
         {

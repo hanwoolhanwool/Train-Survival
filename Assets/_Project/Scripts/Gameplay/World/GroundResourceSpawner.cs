@@ -206,9 +206,26 @@ namespace Game.Gameplay.World
                     continue;
                 }
 
-                // 견인·갑판 휴지 중(열차 프레임 소속)에는 회수하지 않는다 — 갑판 위 노드는 뒤로 밀리지 않는다.
-                if (!node.IsClaimed && !node.IsDeckResting
-                    && node.GetMetersBehindSpawn(distance) > _settings.DespawnBehindMeters)
+                // 견인 중(열차 프레임 소속)에는 회수하지 않는다.
+                if (node.IsClaimed)
+                {
+                    continue;
+                }
+
+                // 갑판 휴지 노드는 뒤로 밀리지 않으므로 후방 회수 대상이 아니다 — 단 휴지한 칸이
+                // 소실·파괴되면 위의 물건도 함께 회수한다 (7차 2차 발견 — 재건 시 자원이 따라오지 않게).
+                if (node.IsDeckResting)
+                {
+                    if (ServiceLocator.TryGet(out Train.ITrainState train) && !train.IsDeckAlive(node.DeckCarIndex))
+                    {
+                        node.NetworkObject.Despawn(true);
+                        RemovalBuffer.Add(node);
+                    }
+
+                    continue;
+                }
+
+                if (node.GetMetersBehindSpawn(distance) > _settings.DespawnBehindMeters)
                 {
                     node.NetworkObject.Despawn(true);
                     RemovalBuffer.Add(node);
