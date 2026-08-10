@@ -13,7 +13,9 @@ namespace Game.Gameplay.World
     /// 그랩 확정 시 열차 프레임 소속으로 전환되어 견인 위치를 NetworkVariable(틱 30 Hz)로 동기화하고,
     /// 클라이언트는 짧은 보간으로 표시한다 (슬라이스 스펙 §2.4).
     /// 갑판 위에서 해제되면 <b>갑판 휴지</b>(M5 7차 A3) — 스크롤 유도를 끄고 그 자리에 남아
-    /// 재그랩을 기다린다. 해제 낙하는 서버가 스폰 Y를 천천히 내려 표현한다 (A6 — 순간이동 제거).
+    /// 재그랩을 기다리며, 휴지한 칸이 이탈로 밀려나면 함께 따라간다 (7차 2차 D9).
+    /// 해제 낙하(A6)는 최종 안착 값을 한 번에 재바인딩하고 <b>각 피어가 로컬로 하강을 재생</b>한다
+    /// (컨베이어와 같은 규약 — 프레임 단위 동기화가 없어 떨림이 없다. 7차 2차 C3).
     /// </summary>
     public sealed class ResourceNode : NetworkBehaviour, IGrabbable, IPoolable
     {
@@ -42,6 +44,10 @@ namespace Game.Gameplay.World
         // 갑판 휴지 (M5 7차 A3) — true면 스크롤 유도를 끄고 재바인딩 위치에 고정된다 (열차 프레임 소속).
         private readonly NetworkVariable<bool> _isDeckResting = new NetworkVariable<bool>();
 
+        // 휴지한 칸 (7차 2차 D9 — 이탈 추종): 휴지 이후 칸이 밀려난 만큼 z를 따라간다. -1 = 없음.
+        private readonly NetworkVariable<int> _deckCarIndex = new NetworkVariable<int>(-1);
+        private readonly NetworkVariable<float> _deckRestEjectOffset = new NetworkVariable<float>();
+
         // 자원 종류 — 몬스터 변종과 같은 규약: 프리팹을 늘리지 않고 인덱스(byte)를 복제해 각 피어가 카탈로그를 조회한다.
         private readonly NetworkVariable<byte> _syncedResourceType = new NetworkVariable<byte>();
 
@@ -51,9 +57,9 @@ namespace Game.Gameplay.World
         private float _pendingSpawnDistance;
         private bool _hasPendingBinding;
 
-        // 서버 하강 낙하 (M5 7차 A6) — 해제 시 현재 높이에서 안착 높이까지 스폰 Y를 천천히 내린다.
-        private float _serverFallTargetY;
-        private bool _serverFalling;
+        // 로컬 하강 재생 (M5 7차 A6, 2차 C3) — 해제 순간의 표시 높이에서 안착 높이까지 각 피어가 내린다.
+        private bool _falling;
+        private float _fallDisplayY;
 
         // 최초 스폰 시 지면 위 안착 오프셋 — 갑판 휴지 후 재해제돼도 안착 높이의 기준이 유지된다.
         private float _serverRestOffsetY;
@@ -113,9 +119,13 @@ namespace Game.Gameplay.World
                 _spawnDistance.Value = _pendingSpawnDistance;
                 _isTowed.Value = false;
                 _isDeckResting.Value = false;
+                _deckCarIndex.Value = -1;
                 _grabberClientId.Value = NoGrabber;
                 _hasPendingBinding = false;
             }
+
+            // 해제(견인 → 비견인)를 전 피어가 감지해 자기 표시 높이에서 로컬 하강을 시작한다 (7차 2차 C3).
+            _isTowed.OnValueChanged += OnTowedChanged;
 
             if (IsServer)
             {
@@ -133,6 +143,17 @@ namespace Game.Gameplay.World
         public override void OnNetworkDespawn()
         {
             _syncedResourceType.OnValueChanged -= OnResourceTypeChanged;
+            _isTowed.OnValueChanged -= OnTowedChanged;
+        }
+
+        /// <summary>견인이 풀리는 순간 — 현재 표시 높이에서 안착 위치까지의 하강을 로컬로 시작한다.</summary>
+        private void OnTowedChanged(bool previous, bool current)
+        {
+            if (previous && !current)
+            {
+                _falling = true;
+                _fallDisplayY = transform.position.y;
+            }
         }
 
         private void OnResourceTypeChanged(byte previous, byte current)
@@ -191,7 +212,8 @@ namespace Game.Gameplay.World
             _towPosition.Value = transform.position;
             _isTowed.Value = true;
             _isDeckResting.Value = false;
-            _serverFalling = false;
+            _deckCarIndex.Value = -1;
+            _falling = false;
             _grabberClientId.Value = grabberClientId;
             return true;
         }
@@ -218,17 +240,20 @@ namespace Game.Gameplay.World
             Vector3 dropPosition = transform.position;
 
             // 프레임 판정 (M5 7차 A3) — 갑판 위 해제는 열차 프레임 휴지(스크롤 제외), 그 외는 월드 재바인딩.
-            // 어느 쪽이든 Y는 현재 높이 그대로 두고, 서버 Update가 안착 높이까지 천천히 내린다 (A6 — 순간이동 제거).
+            // 재바인딩 Y는 곧바로 최종 안착 값이다 — 하강 표현은 전 피어가 로컬로 재생하므로 (7차 2차 C3)
+            // 프레임 단위 동기화가 없다 (_isTowed 해제를 각 피어가 감지해 자기 표시 높이에서 내려온다).
             float deckHeight = 0f;
+            int deckCarIndex = -1;
             bool onDeck = ServiceLocator.TryGet(out Train.ITrainState train)
-                && train.TryGetDeckSurface(dropPosition, out deckHeight);
+                && train.TryGetDeckSurface(dropPosition, out deckHeight, out deckCarIndex);
 
-            _serverFallTargetY = (onDeck ? deckHeight : 0f) + _serverRestOffsetY;
-            _serverFalling = !Mathf.Approximately(dropPosition.y, _serverFallTargetY);
+            dropPosition.y = (onDeck ? deckHeight : 0f) + _serverRestOffsetY;
 
             _spawnPosition.Value = dropPosition;
             _spawnDistance.Value = currentDistance;
             _isDeckResting.Value = onDeck;
+            _deckCarIndex.Value = onDeck ? deckCarIndex : -1;
+            _deckRestEjectOffset.Value = onDeck && train != null ? train.GetEjectOffset(deckCarIndex) : 0f;
             _isTowed.Value = false;
             _grabberClientId.Value = NoGrabber;
         }
@@ -285,26 +310,27 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            // 하강 낙하 (M5 7차 A6) — 서버가 스폰 Y를 안착 높이까지 내리면 각 피어는
-            // 기존 유도(스크롤·휴지 고정)가 낮아지는 값을 그대로 따라간다 (신규 동기화 없음).
-            if (IsServer && _serverFalling)
+            // 안착 목표 — 갑판 휴지면 재바인딩 위치(+ 이탈 추종), 아니면 컨베이어 유도 위치.
+            Vector3 rest = GetRestPosition();
+
+            if (_falling)
             {
-                StepFall();
+                // 하강 재생 (M5 7차 A6, 2차 C3) — 각 피어가 해제 순간의 표시 높이에서 안착 높이까지
+                // 로컬로 내린다. 동기화는 최종 안착 값 한 번뿐이라 프레임 스텝 떨림이 없다.
+                _fallDisplayY = Mathf.MoveTowards(_fallDisplayY, rest.y, _fallSpeed * Time.deltaTime);
+                if (Mathf.Approximately(_fallDisplayY, rest.y))
+                {
+                    _falling = false;
+                }
+
+                transform.position = new Vector3(rest.x, _fallDisplayY, rest.z);
+                return;
             }
 
             if (_isDeckResting.Value)
             {
-                // 갑판 휴지 (M5 7차 A3) — 열차 프레임 소속: 스크롤 유도 없이 재바인딩 위치에 고정된다.
-                if (IsServer)
-                {
-                    transform.position = _spawnPosition.Value;
-                }
-                else
-                {
-                    float t = 1f - Mathf.Exp(-_towInterpolationRate * Time.deltaTime);
-                    transform.position = Vector3.Lerp(transform.position, _spawnPosition.Value, t);
-                }
-
+                // 갑판 휴지 (M5 7차 A3) — 열차 프레임 소속: 스크롤 유도 없이 고정된다.
+                transform.position = rest;
                 return;
             }
 
@@ -314,29 +340,36 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            ApplyScrolledPosition();
+            transform.position = rest;
         }
 
-        /// <summary>서버 전용 — 해제 낙하의 한 스텝. 스폰 Y를 안착 높이까지 일정 속도로 내린다.</summary>
-        private void StepFall()
+        /// <summary>
+        /// 비견인 상태의 안착 위치 — 갑판 휴지면 재바인딩 위치에 이탈 추종(7차 2차 D9)을 더하고,
+        /// 아니면 컨베이어 유도 위치다. 전 피어가 같은 수식을 로컬 계산한다 (동기화 없는 표시 규약).
+        /// </summary>
+        private Vector3 GetRestPosition()
         {
-            Vector3 spawn = _spawnPosition.Value;
-            spawn.y = Mathf.MoveTowards(spawn.y, _serverFallTargetY, _fallSpeed * Time.deltaTime);
-            _spawnPosition.Value = spawn;
-
-            if (Mathf.Approximately(spawn.y, _serverFallTargetY))
+            if (_isDeckResting.Value)
             {
-                _serverFalling = false;
+                Vector3 rest = _spawnPosition.Value;
+                if (_deckCarIndex.Value >= 0 && ServiceLocator.TryGet(out Train.ITrainState train))
+                {
+                    // 휴지 이후 칸이 이탈로 더 밀려난(재결합으로 돌아온) 만큼 함께 움직인다 (칸은 -z로 밀린다).
+                    rest.z -= train.GetEjectOffset(_deckCarIndex.Value) - _deckRestEjectOffset.Value;
+                }
+
+                return rest;
             }
+
+            return ServiceLocator.TryGet(out IWorldScrollService scroll)
+                ? WorldScrollMath.GetScrolledPosition(_spawnPosition.Value, _spawnDistance.Value, scroll.TraveledDistance)
+                : _spawnPosition.Value;
         }
 
         private void ApplyScrolledPosition()
         {
-            if (ServiceLocator.TryGet(out IWorldScrollService scroll))
-            {
-                transform.position = WorldScrollMath.GetScrolledPosition(
-                    _spawnPosition.Value, _spawnDistance.Value, scroll.TraveledDistance);
-            }
+            // 늦게 접속한 피어의 첫 표시도 같은 안착 수식을 쓴다 — 휴지 노드는 하강 없이 곧바로 제자리.
+            transform.position = GetRestPosition();
         }
 
         public void OnSpawned()
@@ -349,7 +382,7 @@ namespace Game.Gameplay.World
             _hasPendingResourceType = false;
             _acquired = false;
             _predictedTow = false;
-            _serverFalling = false;
+            _falling = false;
             _serverRestOffsetY = 0f;
         }
     }

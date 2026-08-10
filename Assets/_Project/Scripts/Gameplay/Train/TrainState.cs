@@ -269,9 +269,10 @@ namespace Game.Gameplay.Train
         /// <summary>갑판 낙하 판정의 폭·높이 여유 (m) — PlayerTemperature의 칸 위 판정과 같은 규약.</summary>
         private const float DeckApertureMargin = 0.5f;
 
-        public bool TryGetDeckSurface(Vector3 position, out float deckHeight)
+        public bool TryGetDeckSurface(Vector3 position, out float deckHeight, out int carIndex)
         {
             deckHeight = 0f;
+            carIndex = -1;
             if (_layoutSettings == null)
             {
                 return false;
@@ -294,6 +295,7 @@ namespace Game.Gameplay.Train
                 if (_layoutSettings.IsZOnCar(position.z, i, GetEjectOffset(i)))
                 {
                     deckHeight = _layoutSettings.DeckHeight;
+                    carIndex = i;
                     return true;
                 }
             }

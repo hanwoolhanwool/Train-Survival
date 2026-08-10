@@ -40,9 +40,10 @@ namespace Game.Gameplay.Train
         bool IsCouplingTargetable(int index);
 
         /// <summary>
-        /// 위치가 살아 있는 칸의 갑판 위인가 — 맞으면 갑판 상면 높이를 돌려준다
-        /// (M5 7차 A3 — 해제 낙하의 프레임 판정. 이탈 오프셋 반영, 복제 데이터 기반 전 피어 동일 판정).
+        /// 위치가 살아 있는 칸의 갑판 위인가 — 맞으면 갑판 상면 높이와 칸 인덱스를 돌려준다
+        /// (M5 7차 A3 — 해제 낙하의 프레임 판정. 이탈 오프셋 반영, 복제 데이터 기반 전 피어 동일 판정.
+        /// 칸 인덱스는 휴지 노드의 이탈 추종에 쓴다 — 7차 2차 D9).
         /// </summary>
-        bool TryGetDeckSurface(UnityEngine.Vector3 position, out float deckHeight);
+        bool TryGetDeckSurface(UnityEngine.Vector3 position, out float deckHeight, out int carIndex);
     }
 }
