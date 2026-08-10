@@ -13,17 +13,25 @@ namespace Game.Gameplay.World
     /// 누적 주행 거리 기준으로 전방 선로변에 자원을 심고, 뒤로 밀려난 자원을 회수한다.
     /// 스폰/소멸은 PoolManager + NGO 스폰(등록된 PooledNetworkPrefabHandler 경유)로 처리한다.
     /// 지역이 바뀌면 이후 심는 자원의 종류·밀도가 지역 데이터를 따른다 (M4, 기획서 §4).
+    /// 창고 보따리(M5 8차)도 여기서 스폰·회수한다 — 자원 노드와 같은 안착·회수 규약을 타므로
+    /// 관리 목록을 <see cref="SettleableGrabbable"/>로 함께 쓴다.
     /// </summary>
-    public sealed class GroundResourceSpawner : NetworkBehaviour, IResourceDropper
+    public sealed class GroundResourceSpawner : NetworkBehaviour, IResourceDropper, IStorageBundleSpawner
     {
         [SerializeField] private ResourceSpawnSettings _settings;
 
         [Tooltip("지역 데이터에 자원 프리팹이 없을 때 쓰는 기본 자원.")]
         [SerializeField] private GameObject _resourcePrefab;
 
-        private static readonly List<ResourceNode> RemovalBuffer = new List<ResourceNode>(8);
+        [Tooltip("창고 보따리 프리팹 (M5 8차) — 파괴된 창고의 슬롯 전체를 담는 회수물.")]
+        [SerializeField] private GameObject _bundlePrefab;
 
-        private readonly List<ResourceNode> _activeNodes = new List<ResourceNode>(64);
+        [Tooltip("보따리의 지면·갑판 위 안착 오프셋 (m) — 시각 절반 높이만큼 띄운다.")]
+        [SerializeField, Min(0f)] private float _bundleRestOffsetY = 0.35f;
+
+        private static readonly List<SettleableGrabbable> RemovalBuffer = new List<SettleableGrabbable>(8);
+
+        private readonly List<SettleableGrabbable> _activeNodes = new List<SettleableGrabbable>(64);
         private float _nextSpawnDistance;
 
         private GameObject _activeResourcePrefab;
@@ -52,6 +60,11 @@ namespace Game.Gameplay.World
                 {
                     ServiceLocator.Register<IResourceDropper>(this);
                 }
+
+                if (!ServiceLocator.IsRegistered<IStorageBundleSpawner>())
+                {
+                    ServiceLocator.Register<IStorageBundleSpawner>(this);
+                }
             }
         }
 
@@ -62,6 +75,11 @@ namespace Game.Gameplay.World
             if (ServiceLocator.TryGet(out IResourceDropper dropper) && ReferenceEquals(dropper, this))
             {
                 ServiceLocator.Unregister<IResourceDropper>();
+            }
+
+            if (ServiceLocator.TryGet(out IStorageBundleSpawner spawner) && ReferenceEquals(spawner, this))
+            {
+                ServiceLocator.Unregister<IStorageBundleSpawner>();
             }
         }
 
@@ -194,12 +212,79 @@ namespace Game.Gameplay.World
             return true;
         }
 
+        /// <summary>
+        /// 건축물 파괴 (칸 생존) — 그 칸 갑판 위 <b>휴지 상태</b>로 보따리를 스폰한다 (M5 8차).
+        /// 휴지라 후방 회수 대상이 아니고, 휴지한 칸이 소실·파괴되면 함께 회수된다 (자원 노드와 같은 규약).
+        /// </summary>
+        public bool ServerSpawnDeckResting(
+            Inventory.HotbarSlotView[] contents, int carIndex, float deckHeight, float carCenterZ, float ejectOffset)
+        {
+            var position = new Vector3(0f, deckHeight + _bundleRestOffsetY, carCenterZ);
+            StorageBundle bundle = InstantiateBundle(contents, position);
+            if (bundle == null)
+            {
+                return false;
+            }
+
+            bundle.ServerSetDeckRestBinding(position, carIndex, ejectOffset, _bundleRestOffsetY);
+            bundle.NetworkObject.Spawn();
+            _activeNodes.Add(bundle);
+            return true;
+        }
+
+        /// <summary>
+        /// 칸 파괴 — 그 자리 지상(선로변)으로 보따리를 스폰한다 (M5 8차, 월드 프레임 소속).
+        /// 버리기 낙하와 같은 측면 대역에 놓여 컨베이어로 흘러가고, 뒤로 밀리면 회수(소실)된다.
+        /// </summary>
+        public bool ServerSpawnOnGround(Inventory.HotbarSlotView[] contents, float originZ)
+        {
+            if (_settings == null || !ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                return false;
+            }
+
+            float lateral = Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset);
+            float side = Random.value < 0.5f ? -1f : 1f;
+            var position = new Vector3(side * lateral, _bundleRestOffsetY, originZ);
+
+            StorageBundle bundle = InstantiateBundle(contents, position);
+            if (bundle == null)
+            {
+                return false;
+            }
+
+            bundle.ServerSetSpawnBinding(position, scroll.TraveledDistance);
+            bundle.NetworkObject.Spawn();
+            _activeNodes.Add(bundle);
+            return true;
+        }
+
+        private StorageBundle InstantiateBundle(Inventory.HotbarSlotView[] contents, Vector3 position)
+        {
+            if (!IsSpawned || !IsServer || _bundlePrefab == null || contents == null)
+            {
+                return null;
+            }
+
+            GameObject instance = PoolManager.Spawn(_bundlePrefab, position, Quaternion.identity);
+            var bundle = instance.GetComponent<StorageBundle>();
+            if (bundle == null)
+            {
+                Debug.LogError("[GroundResourceSpawner] 보따리 프리팹에 StorageBundle이 없습니다.", _bundlePrefab);
+                PoolManager.Despawn(instance);
+                return null;
+            }
+
+            bundle.ServerSetContents(contents);
+            return bundle;
+        }
+
         private void DespawnBehind(float distance)
         {
             RemovalBuffer.Clear();
             for (int i = 0; i < _activeNodes.Count; i++)
             {
-                ResourceNode node = _activeNodes[i];
+                SettleableGrabbable node = _activeNodes[i];
                 if (node == null || !node.IsSpawned)
                 {
                     RemovalBuffer.Add(node);

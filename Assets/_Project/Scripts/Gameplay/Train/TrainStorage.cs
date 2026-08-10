@@ -468,6 +468,54 @@ namespace Game.Gameplay.Train
             }
         }
 
+        /// <summary>
+        /// 창고 내용물을 보따리로 내놓고 비운다 (M5 8차) — 파괴 확정 지점 전용 (서버).
+        /// 스냅샷을 먼저 뜨고 비운 뒤 스폰을 시도한다 — 스포너 부재·빈 내용물이면 기존 소실 규약 그대로다.
+        /// </summary>
+        public void ServerDropStorageAsBundle(int carIndex, bool deckAlive)
+        {
+            if (!IsServer || carIndex < 0)
+            {
+                return;
+            }
+
+            HotbarSlotView[] contents = CopyStorageSlots(carIndex);
+            ServerClearStorage(carIndex);
+
+            // 내용물이 전부 빈 창고는 보따리를 내지 않는다 (빈 보따리 스폰 방지).
+            if (AreAllSlotsEmpty(contents)
+                || !ServiceLocator.TryGet(out World.IStorageBundleSpawner spawner)
+                || _layoutSettings == null || !ServiceLocator.TryGet(out ITrainState train))
+            {
+                return;
+            }
+
+            float ejectOffset = train.GetEjectOffset(carIndex);
+            float centerZ = _layoutSettings.CarCenterZ(carIndex, ejectOffset);
+
+            if (deckAlive)
+            {
+                spawner.ServerSpawnDeckResting(contents, carIndex, _layoutSettings.DeckHeight, centerZ, ejectOffset);
+            }
+            else
+            {
+                spawner.ServerSpawnOnGround(contents, centerZ);
+            }
+        }
+
+        private static bool AreAllSlotsEmpty(HotbarSlotView[] slots)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (!slots[i].IsEmpty)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private HotbarSlotView[] CopyStorageSlots(int carIndex)
         {
             var copy = new HotbarSlotView[_slotsPerStorage];

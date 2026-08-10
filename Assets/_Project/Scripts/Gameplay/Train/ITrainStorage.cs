@@ -29,9 +29,17 @@ namespace Game.Gameplay.Train
         void RequestTransfer(int carIndex, byte fromContainer, int fromIndex, byte toContainer, int toIndex);
 
         /// <summary>
-        /// 창고 내용물 소실 — 서버 전용. 건축물 파괴·칸 재건 확정 지점에서 호출된다
+        /// 창고 내용물 소실 — 서버 전용. 슬롯 재건(안전망) 확정 지점에서 호출된다
         /// ("칸 위 건축물은 칸과 운명을 같이한다" — 이탈 중에는 호출되지 않아 재결합 시 보존).
         /// </summary>
         void ServerClearStorage(int carIndex);
+
+        /// <summary>
+        /// 창고 내용물을 보따리로 내놓고 비운다 (M5 8차) — 서버 전용. 파괴 확정 지점에서 호출된다.
+        /// deckAlive = 칸(갑판) 생존 여부 — true(건축물만 파괴)면 갑판 휴지 스폰, false(칸 파괴)면
+        /// 지상 낙하. 내용물이 전부 비었거나 스포너가 없으면 보따리 없이 비우기만 한다.
+        /// 슬롯 재건 안전망은 이 경로가 아니라 <see cref="ServerClearStorage"/>다 — 이중 생성 방지.
+        /// </summary>
+        void ServerDropStorageAsBundle(int carIndex, bool deckAlive);
     }
 }
