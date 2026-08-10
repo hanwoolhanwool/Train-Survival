@@ -266,6 +266,41 @@ namespace Game.Gameplay.Train
             return true;
         }
 
+        /// <summary>갑판 낙하 판정의 폭·높이 여유 (m) — PlayerTemperature의 칸 위 판정과 같은 규약.</summary>
+        private const float DeckApertureMargin = 0.5f;
+
+        public bool TryGetDeckSurface(Vector3 position, out float deckHeight)
+        {
+            deckHeight = 0f;
+            if (_layoutSettings == null)
+            {
+                return false;
+            }
+
+            if (!TrainLayoutMath.IsWithinDeckAperture(
+                position, _layoutSettings.CarWidth * 0.5f, _layoutSettings.DeckHeight, DeckApertureMargin))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < CarCount; i++)
+            {
+                // 파괴된 칸은 갑판이 없다 — 이탈 칸은 갑판이 남아 있으므로 허용한다 (오프셋 반영. 창고 접근과 같은 규약).
+                if (!TryGetCar(i, out CarState car) || car.Health <= 0f)
+                {
+                    continue;
+                }
+
+                if (_layoutSettings.IsZOnCar(position.z, i, GetEjectOffset(i)))
+                {
+                    deckHeight = _layoutSettings.DeckHeight;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>연결부가 끊기지 않았고 잇는 두 칸(index, index+1)이 모두 편성에 살아 붙어 있는지.</summary>
         private bool IsCouplingLive(int index)
         {

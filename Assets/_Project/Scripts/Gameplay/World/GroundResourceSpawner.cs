@@ -206,8 +206,9 @@ namespace Game.Gameplay.World
                     continue;
                 }
 
-                // 견인 중(열차 프레임 소속)에는 회수하지 않는다.
-                if (!node.IsClaimed && node.GetMetersBehindSpawn(distance) > _settings.DespawnBehindMeters)
+                // 견인·갑판 휴지 중(열차 프레임 소속)에는 회수하지 않는다 — 갑판 위 노드는 뒤로 밀리지 않는다.
+                if (!node.IsClaimed && !node.IsDeckResting
+                    && node.GetMetersBehindSpawn(distance) > _settings.DespawnBehindMeters)
                 {
                     node.NetworkObject.Despawn(true);
                     RemovalBuffer.Add(node);

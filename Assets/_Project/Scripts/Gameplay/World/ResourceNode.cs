@@ -12,12 +12,17 @@ namespace Game.Gameplay.World
     /// 평소에는 스폰 시점 (누적 거리, 오프셋)만 동기화하고 각 피어가 위치를 로컬 유도한다 (컨베이어).
     /// 그랩 확정 시 열차 프레임 소속으로 전환되어 견인 위치를 NetworkVariable(틱 30 Hz)로 동기화하고,
     /// 클라이언트는 짧은 보간으로 표시한다 (슬라이스 스펙 §2.4).
+    /// 갑판 위에서 해제되면 <b>갑판 휴지</b>(M5 7차 A3) — 스크롤 유도를 끄고 그 자리에 남아
+    /// 재그랩을 기다린다. 해제 낙하는 서버가 스폰 Y를 천천히 내려 표현한다 (A6 — 순간이동 제거).
     /// </summary>
     public sealed class ResourceNode : NetworkBehaviour, IGrabbable, IPoolable
     {
         private const ulong NoGrabber = ulong.MaxValue;
 
         [SerializeField, Min(1f)] private float _towInterpolationRate = 20f;
+
+        [Tooltip("해제 낙하의 하강 속도 (m/s) — 노드에는 중력이 없어 서버가 스폰 Y를 이 속도로 내린다 (M5 7차 A6).")]
+        [SerializeField, Min(0.1f)] private float _fallSpeed = 6f;
 
         [Tooltip("서버가 종류를 주입하지 않았을 때의 기본 자원 종류.")]
         [SerializeField] private Inventory.ResourceType _defaultResourceType = Inventory.ResourceType.Wood;
@@ -34,6 +39,9 @@ namespace Game.Gameplay.World
         private readonly NetworkVariable<Vector3> _towPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<ulong> _grabberClientId = new NetworkVariable<ulong>(NoGrabber);
 
+        // 갑판 휴지 (M5 7차 A3) — true면 스크롤 유도를 끄고 재바인딩 위치에 고정된다 (열차 프레임 소속).
+        private readonly NetworkVariable<bool> _isDeckResting = new NetworkVariable<bool>();
+
         // 자원 종류 — 몬스터 변종과 같은 규약: 프리팹을 늘리지 않고 인덱스(byte)를 복제해 각 피어가 카탈로그를 조회한다.
         private readonly NetworkVariable<byte> _syncedResourceType = new NetworkVariable<byte>();
 
@@ -42,6 +50,13 @@ namespace Game.Gameplay.World
         private Vector3 _pendingSpawnPosition;
         private float _pendingSpawnDistance;
         private bool _hasPendingBinding;
+
+        // 서버 하강 낙하 (M5 7차 A6) — 해제 시 현재 높이에서 안착 높이까지 스폰 Y를 천천히 내린다.
+        private float _serverFallTargetY;
+        private bool _serverFalling;
+
+        // 최초 스폰 시 지면 위 안착 오프셋 — 갑판 휴지 후 재해제돼도 안착 높이의 기준이 유지된다.
+        private float _serverRestOffsetY;
         private Inventory.ResourceType _pendingResourceType;
         private bool _hasPendingResourceType;
         private bool _acquired;
@@ -70,12 +85,18 @@ namespace Game.Gameplay.World
 
         public bool IsClaimed => _isTowed.Value;
 
+        /// <summary>갑판 휴지 중인가 (M5 7차 A3) — 열차 프레임 소속이라 후방 회수 대상이 아니다.</summary>
+        public bool IsDeckResting => _isDeckResting.Value;
+
         /// <summary>서버 전용 — 스폰 직전에 (위치, 누적 거리) 바인딩을 예약한다. OnNetworkSpawn에서 동기화된다.</summary>
         public void ServerSetSpawnBinding(Vector3 spawnPosition, float spawnDistance)
         {
             _pendingSpawnPosition = spawnPosition;
             _pendingSpawnDistance = spawnDistance;
             _hasPendingBinding = true;
+
+            // 스폰 Y = 지면 위 안착 오프셋 (지면은 y 0 평면) — 낙하 안착 높이의 기준으로 보관한다.
+            _serverRestOffsetY = spawnPosition.y;
         }
 
         /// <summary>스폰 지점이 현재 누적 거리 대비 얼마나 뒤로 밀려났는가 (서버 회수 판단용).</summary>
@@ -91,6 +112,7 @@ namespace Game.Gameplay.World
                 _spawnPosition.Value = _pendingSpawnPosition;
                 _spawnDistance.Value = _pendingSpawnDistance;
                 _isTowed.Value = false;
+                _isDeckResting.Value = false;
                 _grabberClientId.Value = NoGrabber;
                 _hasPendingBinding = false;
             }
@@ -165,9 +187,11 @@ namespace Game.Gameplay.World
                 return false;
             }
 
-            // 그랩 확정 = 컨베이어 제외, 열차 프레임 소속 전환 (§2.4).
+            // 그랩 확정 = 컨베이어 제외, 열차 프레임 소속 전환 (§2.4). 갑판 휴지·하강 중이었다면 해제한다.
             _towPosition.Value = transform.position;
             _isTowed.Value = true;
+            _isDeckResting.Value = false;
+            _serverFalling = false;
             _grabberClientId.Value = grabberClientId;
             return true;
         }
@@ -190,12 +214,21 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            // 낙하 지점을 새 (위치, 누적 거리)로 재바인딩해 월드 소속으로 복귀.
             float currentDistance = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.TraveledDistance : 0f;
             Vector3 dropPosition = transform.position;
-            dropPosition.y = _spawnPosition.Value.y;
+
+            // 프레임 판정 (M5 7차 A3) — 갑판 위 해제는 열차 프레임 휴지(스크롤 제외), 그 외는 월드 재바인딩.
+            // 어느 쪽이든 Y는 현재 높이 그대로 두고, 서버 Update가 안착 높이까지 천천히 내린다 (A6 — 순간이동 제거).
+            float deckHeight = 0f;
+            bool onDeck = ServiceLocator.TryGet(out Train.ITrainState train)
+                && train.TryGetDeckSurface(dropPosition, out deckHeight);
+
+            _serverFallTargetY = (onDeck ? deckHeight : 0f) + _serverRestOffsetY;
+            _serverFalling = !Mathf.Approximately(dropPosition.y, _serverFallTargetY);
+
             _spawnPosition.Value = dropPosition;
             _spawnDistance.Value = currentDistance;
+            _isDeckResting.Value = onDeck;
             _isTowed.Value = false;
             _grabberClientId.Value = NoGrabber;
         }
@@ -252,6 +285,29 @@ namespace Game.Gameplay.World
                 return;
             }
 
+            // 하강 낙하 (M5 7차 A6) — 서버가 스폰 Y를 안착 높이까지 내리면 각 피어는
+            // 기존 유도(스크롤·휴지 고정)가 낮아지는 값을 그대로 따라간다 (신규 동기화 없음).
+            if (IsServer && _serverFalling)
+            {
+                StepFall();
+            }
+
+            if (_isDeckResting.Value)
+            {
+                // 갑판 휴지 (M5 7차 A3) — 열차 프레임 소속: 스크롤 유도 없이 재바인딩 위치에 고정된다.
+                if (IsServer)
+                {
+                    transform.position = _spawnPosition.Value;
+                }
+                else
+                {
+                    float t = 1f - Mathf.Exp(-_towInterpolationRate * Time.deltaTime);
+                    transform.position = Vector3.Lerp(transform.position, _spawnPosition.Value, t);
+                }
+
+                return;
+            }
+
             if (_predictedTow)
             {
                 // 예측 고정 — 서버 확정/거부 수신까지 현재 위치를 유지한다.
@@ -259,6 +315,19 @@ namespace Game.Gameplay.World
             }
 
             ApplyScrolledPosition();
+        }
+
+        /// <summary>서버 전용 — 해제 낙하의 한 스텝. 스폰 Y를 안착 높이까지 일정 속도로 내린다.</summary>
+        private void StepFall()
+        {
+            Vector3 spawn = _spawnPosition.Value;
+            spawn.y = Mathf.MoveTowards(spawn.y, _serverFallTargetY, _fallSpeed * Time.deltaTime);
+            _spawnPosition.Value = spawn;
+
+            if (Mathf.Approximately(spawn.y, _serverFallTargetY))
+            {
+                _serverFalling = false;
+            }
         }
 
         private void ApplyScrolledPosition()
@@ -280,6 +349,8 @@ namespace Game.Gameplay.World
             _hasPendingResourceType = false;
             _acquired = false;
             _predictedTow = false;
+            _serverFalling = false;
+            _serverRestOffsetY = 0f;
         }
     }
 }

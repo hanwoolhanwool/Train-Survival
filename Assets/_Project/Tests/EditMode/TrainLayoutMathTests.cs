@@ -137,5 +137,29 @@ namespace Game.Tests.EditMode
         {
             Assert.That(InKillZone(new Vector3(0f, 0f, 0f), killHeight: 0f), Is.False, "에셋으로 끌 수 있는 축");
         }
+
+        // ── 갑판 낙하의 폭·높이 게이트 (M5 7차 A3) — Z 범위는 IsZOnCar가 칸별 판정 ─────────
+
+        private const float DeckHeight = 3f;
+        private const float ApertureMargin = 0.5f;
+
+        private static bool InAperture(Vector3 position)
+        {
+            return TrainLayoutMath.IsWithinDeckAperture(position, HalfWidth, DeckHeight, ApertureMargin);
+        }
+
+        [Test]
+        public void 폭_안_갑판_높이_위면_갑판_낙하_게이트를_통과한다()
+        {
+            Assert.That(InAperture(new Vector3(0f, 4f, 0f)), Is.True, "갑판 위 플레이어 앞 (도착 지점)");
+            Assert.That(InAperture(new Vector3(1.9f, 2.6f, 0f)), Is.True, "여유 폭·여유 높이 경계 안쪽");
+        }
+
+        [Test]
+        public void 폭_밖이거나_갑판보다_낮으면_게이트에_걸린다()
+        {
+            Assert.That(InAperture(new Vector3(2.1f, 4f, 0f)), Is.False, "열차 옆 — 지상 낙하");
+            Assert.That(InAperture(new Vector3(0f, 1f, 0f)), Is.False, "지상 높이 — 열차 폭 안이어도 갑판이 아니다");
+        }
     }
 }

@@ -38,5 +38,11 @@ namespace Game.Gameplay.Train
         /// (연결부는 열차 끝에서부터 순차 파괴, 복제 데이터 기반이라 전 피어 동일 판정).
         /// </summary>
         bool IsCouplingTargetable(int index);
+
+        /// <summary>
+        /// 위치가 살아 있는 칸의 갑판 위인가 — 맞으면 갑판 상면 높이를 돌려준다
+        /// (M5 7차 A3 — 해제 낙하의 프레임 판정. 이탈 오프셋 반영, 복제 데이터 기반 전 피어 동일 판정).
+        /// </summary>
+        bool TryGetDeckSurface(UnityEngine.Vector3 position, out float deckHeight);
     }
 }

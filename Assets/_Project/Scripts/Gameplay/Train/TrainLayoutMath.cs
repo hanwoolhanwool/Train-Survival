@@ -36,6 +36,17 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
+        /// 갑판 낙하 판정의 폭·높이 게이트 (M5 7차 A3) — 열차 폭 안이며 갑판 높이 근처(위)인가.
+        /// "어느 칸의 Z 위인가"는 <see cref="IsZOnCar"/>가 칸별로 판정한다 (즉사 존과 같은 분담).
+        /// </summary>
+        public static bool IsWithinDeckAperture(
+            Vector3 position, float halfWidth, float deckHeight, float margin)
+        {
+            return Mathf.Abs(position.x) <= halfWidth + margin
+                && position.y >= deckHeight - margin;
+        }
+
+        /// <summary>
         /// Z가 그 칸의 갑판 범위 안인가 — 이탈 오프셋을 반영한다. 칸마다 오프셋이 달라 슬롯 기준
         /// 역산(O(1) 역함수)이 성립하지 않으므로, "어느 칸 위인가"는 호출부가 편성을 순회하며 묻는다.
         /// </summary>
