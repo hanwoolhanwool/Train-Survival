@@ -19,12 +19,14 @@ MonoBehaviour:
   _comfortMax: 32
   _driftRatePerDegree: 0.012
   _recoveryRate: 0.35
+  _cooldownRate: 0.1
   _heatWarnThreshold: 38
   _heatDamageThreshold: 39
   _coldWarnThreshold: 35
   _coldDamageThreshold: 34
   _damagePerDegreePerSecond: 3
   _shelterFactor: 0.8
-  _heaterFactor: 0.8
+  _heaterTargetNight: 36
+  _heaterTargetDay: 37
   _instantWarmthCeiling: 38
   _instantWarmthCeilingHot: 39
