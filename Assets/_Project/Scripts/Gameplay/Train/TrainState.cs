@@ -54,8 +54,20 @@ namespace Game.Gameplay.Train
         private float[] _displayOffsets;
         private float[] _displayPushSpeeds;
 
+        // 클라 전용 — 마지막으로 관측한 저항 인원과 보정률 한시 상향 종료 시각 (M5 8차 — 7차 버그 5:
+        // 인원 복제 지연 동안 옛 저항으로 적분된 드리프트가 저속 보정으로 고무줄처럼 남던 것을,
+        // 인원 변화 관측 직후에만 보정률을 상향해 빠르게 회수한다).
+        private int[] _displayGrabberCounts;
+        private float[] _displayBoostUntil;
+
         // 표시-복제 오차가 이 이상이면(후발 접속 등) 보간 없이 즉시 복제 값으로 붙는다.
         private const float EjectDisplaySnapMeters = 10f;
+
+        [Tooltip("QA — 이탈 칸의 복제 오프셋 vs 표시 오프셋 차를 주기 로그로 남긴다 (검증 R9 수치화용. 릴리스에서 끔).")]
+        [SerializeField] private bool _qaLogEjectDisplayDrift;
+
+        private const float EjectDriftLogIntervalSeconds = 0.5f;
+        private float _nextDriftLogTime;
 
         public int CarCount => _cars.Count;
 
@@ -893,6 +905,7 @@ namespace Game.Gameplay.Train
             float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
             float targetPushSpeed = EjectMotionMath.ComputeTargetPushSpeed(scrollSpeed, _durabilitySettings.EjectExtraSpeed);
             float dt = Time.deltaTime;
+            bool logDrift = _qaLogEjectDisplayDrift && Time.unscaledTime >= _nextDriftLogTime;
 
             for (int i = 0; i < count; i++)
             {
@@ -913,9 +926,35 @@ namespace Game.Gameplay.Train
                 float netVelocity = EjectMotionMath.ComputeNetVelocity(
                     _displayPushSpeeds[i], grabbers, _durabilitySettings.PullPerGrabber);
 
+                // 저항 인원 변화 관측 (M5 8차 — 7차 버그 5): 복제 지연 동안 옛 인원으로 적분된
+                // 드리프트를 빠르게 회수하도록 보정률을 한시 상향한다. 상시 상향은 틱 계단이 다시 보인다.
+                if (grabbers != _displayGrabberCounts[i])
+                {
+                    _displayGrabberCounts[i] = grabbers;
+                    _displayBoostUntil[i] = Time.unscaledTime + _durabilitySettings.EjectDisplayCorrectionBoostSeconds;
+                }
+
+                float correctionRate = _durabilitySettings.EjectDisplayCorrectionRate;
+                if (Time.unscaledTime < _displayBoostUntil[i])
+                {
+                    correctionRate *= _durabilitySettings.EjectDisplayCorrectionBoostMultiplier;
+                }
+
                 _displayOffsets[i] = EjectMotionMath.StepDisplayOffset(
                     _displayOffsets[i], target, netVelocity, dt,
-                    _durabilitySettings.EjectDisplayCorrectionRate, EjectDisplaySnapMeters);
+                    correctionRate, EjectDisplaySnapMeters);
+
+                if (logDrift)
+                {
+                    // 검증 R9 수치화 — "세기 비교"를 육안이 아닌 수치로: 복제 원값과 표시의 차·저항 입력.
+                    Debug.Log($"[TrainState] 이탈 표시 드리프트 #{i}: 복제={target:F2}m 표시={_displayOffsets[i]:F2}m "
+                        + $"차={target - _displayOffsets[i]:+0.00;-0.00}m 인원={grabbers} 표시속도={netVelocity:F2}m/s");
+                }
+            }
+
+            if (logDrift)
+            {
+                _nextDriftLogTime = Time.unscaledTime + EjectDriftLogIntervalSeconds;
             }
         }
 
@@ -929,6 +968,8 @@ namespace Game.Gameplay.Train
             int previous = _displayOffsets != null ? _displayOffsets.Length : 0;
             Array.Resize(ref _displayOffsets, count);
             Array.Resize(ref _displayPushSpeeds, count);
+            Array.Resize(ref _displayGrabberCounts, count);
+            Array.Resize(ref _displayBoostUntil, count);
 
             // 새 슬롯(후발 접속·후미 증설)은 현재 복제 값에서 시작한다 — 첫 프레임 워프 방지.
             for (int i = previous; i < count; i++)
@@ -941,6 +982,8 @@ namespace Game.Gameplay.Train
         {
             _displayOffsets[index] = target;
             _displayPushSpeeds[index] = 0f;
+            _displayGrabberCounts[index] = 0;
+            _displayBoostUntil[index] = 0f;
         }
 
         private float MaxHealthFor(CarType type)
