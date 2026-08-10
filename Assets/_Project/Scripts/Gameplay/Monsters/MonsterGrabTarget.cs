@@ -89,6 +89,10 @@ namespace Game.Gameplay.Monsters
         private Color[] _baseColors;
         private Quaternion _visualBaseRotation;
 
+        // 변종 시각 (M5 8차) — 스케일 배율의 기준이 되는 프리팹 원 스케일. 색은 _baseColors를
+        // 스폰마다 변종 색으로 덮어써 기절 해제 복원까지 변종 색이 되게 한다.
+        private Vector3 _visualBaseScale = Vector3.one;
+
         public GrabKind Kind => GrabKind.Reel;
 
         /// <summary>무게 등급은 변종이 정한다 — 일반형·돌진형 1 / 돌격형·도약형 2 / 3은 대형 변종 예약.</summary>
@@ -118,6 +122,7 @@ namespace Game.Gameplay.Monsters
             if (_visual != null)
             {
                 _visualBaseRotation = _visual.localRotation;
+                _visualBaseScale = _visual.localScale;
             }
 
             CacheBaseColors();
@@ -137,6 +142,7 @@ namespace Game.Gameplay.Monsters
                 _lastGrabberClientId = NetworkManager.ServerClientId;
             }
 
+            ApplyVariantPresentation();
             ApplyStunPresentation(IsStunned);
         }
 
@@ -466,6 +472,11 @@ namespace Game.Gameplay.Monsters
                     : _visualBaseRotation;
             }
 
+            RepaintTint(stunned);
+        }
+
+        private void RepaintTint(bool stunned)
+        {
             if (_tintRenderers == null)
             {
                 return;
@@ -485,7 +496,42 @@ namespace Game.Gameplay.Monsters
             }
         }
 
-        /// <summary>그로기 해제 시 되돌릴 원래 색 — 프리팹 머티리얼 값을 스폰 전에 한 번만 읽는다.</summary>
+        /// <summary>
+        /// 변종 시각 적용 (M5 8차 — 시각 구분): 복제된 변종 인덱스의 설정에서 색·스케일을 읽어
+        /// 표현에만 반영한다 (판정·충돌 무변). 기절 해제 복원 색도 변종 색이 되도록
+        /// <see cref="_baseColors"/>를 스폰마다 덮어쓴다 — 기절 노란색이 항상 위를 덮는다.
+        /// </summary>
+        private void ApplyVariantPresentation()
+        {
+            MonsterSettings settings = _agent != null ? _agent.ActiveSettings : null;
+            if (settings == null)
+            {
+                return;
+            }
+
+            if (_visual != null)
+            {
+                _visual.localScale = _visualBaseScale * settings.VisualScale;
+            }
+
+            if (_baseColors != null)
+            {
+                for (int i = 0; i < _baseColors.Length; i++)
+                {
+                    _baseColors[i] = settings.VariantColor;
+                }
+            }
+
+            if (!_presentationStunned)
+            {
+                RepaintTint(stunned: false);
+            }
+        }
+
+        /// <summary>
+        /// 그로기 해제 시 되돌릴 원래 색 — 프리팹 머티리얼 값을 스폰 전에 한 번만 읽는다
+        /// (변종 색이 없을 때의 안전값 — 스폰마다 <see cref="ApplyVariantPresentation"/>이 덮어쓴다).
+        /// </summary>
         private void CacheBaseColors()
         {
             if (_tintRenderers == null)
@@ -514,6 +560,12 @@ namespace Game.Gameplay.Monsters
             _predictedThrow = false;
             _predictedThrowIgnoreRoot = null;
             ApplyStunPresentation(false);
+
+            // 풀 재사용 위생 — 다음 개체의 변종 스케일이 이전 값 위에 곱해지지 않게 원 스케일로 복원.
+            if (_visual != null)
+            {
+                _visual.localScale = _visualBaseScale;
+            }
         }
     }
 }

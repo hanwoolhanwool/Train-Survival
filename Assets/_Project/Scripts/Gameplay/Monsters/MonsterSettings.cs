@@ -19,6 +19,13 @@ namespace Game.Gameplay.Monsters
         [Tooltip("등장 가능한 변종 사이의 추첨 가중치. 클수록 자주 나온다.")]
         [SerializeField, Min(0f)] private float _spawnWeight = 1f;
 
+        [Header("변종 시각 (M5 8차 — 시각 구분)")]
+        [Tooltip("몸통 색 (_BaseColor 대체) — 전 변종이 한 프리팹을 공유하므로 색이 외형 구분이다.")]
+        [SerializeField] private Color _variantColor = new Color(0.55f, 0.1f, 0.12f, 1f);
+
+        [Tooltip("표현 스케일 배율 — 몸집 차이를 보이게 한다. 판정·충돌은 변하지 않는다.")]
+        [SerializeField, Range(0.5f, 2f)] private float _visualScale = 1f;
+
         [Header("이동 (커스텀 조향 — NavMesh 불사용)")]
         [SerializeField, Min(0.5f)] private float _moveSpeed = 6.5f;
         [SerializeField, Min(0f)] private float _chaseSpeedMargin = 0.7f;
@@ -55,6 +62,12 @@ namespace Game.Gameplay.Monsters
         public int MinDayToAppear => _minDayToAppear;
 
         public float SpawnWeight => _spawnWeight;
+
+        /// <summary>변종 몸통 색 (M5 8차) — 기절 노란색이 위를 덮고, 해제 시 이 색으로 복원된다.</summary>
+        public Color VariantColor => _variantColor;
+
+        /// <summary>표현 스케일 배율 (M5 8차) — 판정·충돌 무변, 몸집으로도 변종이 구분되게 한다.</summary>
+        public float VisualScale => _visualScale;
 
         public float MoveSpeed => _moveSpeed;
 
