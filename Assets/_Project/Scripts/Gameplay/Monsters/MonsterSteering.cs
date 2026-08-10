@@ -4,7 +4,7 @@ namespace Game.Gameplay.Monsters
 {
     /// <summary>
     /// 몬스터 커스텀 조향의 순수 계산 로직 (네트워크 문서 §4.3 — NavMesh 불사용 확정).
-    /// 지상 = 목표 향 조향 + 국소 회피 + 컨베이어 변위 가산, 갑판 위 = 목표 향 조향.
+    /// 지상 = 목표 향 조향 + 국소 회피 + 컨베이어 변위 가산, 갑판 위 = 목표 향 조향 + 국소 회피.
     /// 셋 다 단순 벡터 합성이라 호스트 단독 시뮬레이션에 부담이 없다.
     /// </summary>
     public static class MonsterSteering
@@ -31,11 +31,15 @@ namespace Game.Gameplay.Monsters
             return seekDirection * chaseSpeed + Vector3.back * scrollSpeed;
         }
 
-        /// <summary>갑판 위 이동 속도 벡터 — 열차 프레임 소속이므로 컨베이어 가산이 없다.</summary>
+        /// <summary>
+        /// 갑판 위 이동 속도 벡터 — 열차 프레임 소속이므로 컨베이어 가산이 없다.
+        /// 국소 회피는 지상과 같은 법선 합산 (갑판 건축물에 막힌 채 제자리걸음하지 않게).
+        /// </summary>
         public static Vector3 ComputeDeckVelocity(
-            Vector3 position, Vector3 targetPosition, float moveSpeed)
+            Vector3 position, Vector3 targetPosition,
+            bool hasObstacle, Vector3 obstacleNormal, float moveSpeed)
         {
-            return ComputeSeekDirection(position, targetPosition, false, Vector3.zero) * moveSpeed;
+            return ComputeSeekDirection(position, targetPosition, hasObstacle, obstacleNormal) * moveSpeed;
         }
 
         private static Vector3 ComputeSeekDirection(

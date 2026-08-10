@@ -56,15 +56,30 @@ namespace Game.Tests.EditMode
         public void 갑판_위에서는_컨베이어_가산이_없다()
         {
             Vector3 velocity = MonsterSteering.ComputeDeckVelocity(
-                position: new Vector3(0f, 3f, 0f), targetPosition: new Vector3(0f, 3f, 5f), moveSpeed: 8f);
+                position: new Vector3(0f, 3f, 0f), targetPosition: new Vector3(0f, 3f, 5f),
+                hasObstacle: false, obstacleNormal: Vector3.zero, moveSpeed: 8f);
 
             Assert.That(velocity.z, Is.EqualTo(8f).Within(0.001f), "열차 프레임 소속 — 스크롤 미가산");
         }
 
         [Test]
+        public void 갑판_장애물이_있으면_법선_방향으로_회피가_섞인다()
+        {
+            // M5 8차 — 갑판 건축물(돔·난방기) 회피: 지상과 같은 법선 합산, 컨베이어 항만 없다.
+            Vector3 velocity = MonsterSteering.ComputeDeckVelocity(
+                position: new Vector3(0f, 3f, 0f), targetPosition: new Vector3(0f, 3f, 10f),
+                hasObstacle: true, obstacleNormal: Vector3.right, moveSpeed: 8f);
+
+            Assert.That(velocity.x, Is.GreaterThan(0f), "법선(+X) 쪽으로 비켜간다");
+            Assert.That(velocity.z, Is.GreaterThan(0f), "목표 방향 전진은 유지된다");
+            Assert.That(velocity.magnitude, Is.EqualTo(8f).Within(0.001f), "회피가 속도 크기를 바꾸지 않는다");
+        }
+
+        [Test]
         public void 목표와_같은_위치면_정지한다()
         {
-            Vector3 velocity = MonsterSteering.ComputeDeckVelocity(Vector3.zero, Vector3.zero, 8f);
+            Vector3 velocity = MonsterSteering.ComputeDeckVelocity(
+                Vector3.zero, Vector3.zero, hasObstacle: false, obstacleNormal: Vector3.zero, moveSpeed: 8f);
 
             Assert.That(velocity, Is.EqualTo(Vector3.zero));
         }

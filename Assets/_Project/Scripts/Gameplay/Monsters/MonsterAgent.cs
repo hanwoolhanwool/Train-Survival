@@ -203,14 +203,15 @@ namespace Game.Gameplay.Monsters
                 float chaseSpeed = MonsterSteering.EnforceChaseSpeed(
                     Settings.MoveSpeed, scrollSpeed, Settings.ChaseSpeedMargin);
 
+                bool blocked = ProbeObstacle(out Vector3 obstacleNormal);
+
                 if (onDeck)
                 {
                     horizontalVelocity = MonsterSteering.ComputeDeckVelocity(
-                        transform.position, target.position, Settings.MoveSpeed);
+                        transform.position, target.position, blocked, obstacleNormal, Settings.MoveSpeed);
                 }
                 else
                 {
-                    bool blocked = ProbeObstacle(out Vector3 obstacleNormal);
                     horizontalVelocity = MonsterSteering.ComputeGroundVelocity(
                         transform.position, target.position, blocked, obstacleNormal, chaseSpeed, scrollSpeed);
 
