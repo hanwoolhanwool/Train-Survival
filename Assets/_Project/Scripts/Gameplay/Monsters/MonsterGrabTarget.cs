@@ -1,6 +1,8 @@
 using Game.Core.Pooling;
+using Game.Core.Services;
 using Game.Gameplay.Harpoon;
 using Game.Gameplay.Train;
+using Game.Gameplay.World;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -49,6 +51,12 @@ namespace Game.Gameplay.Monsters
         // 투척 비행 중에는 서버가 default로 되돌려 부착을 풀고 스냅샷 표시로 복귀시킨다.
         private readonly NetworkVariable<NetworkObjectReference> _holder =
             new NetworkVariable<NetworkObjectReference>();
+
+        // 기절 지상 재바인딩 (M5 6차) — 착지한 기절체는 자원 노드와 <b>같은 컨베이어 수식</b>
+        // (기준 위치 + 누적 거리 차)으로 전 피어가 로컬 구동한다. 스냅샷 보간으로 실으면 옆에서
+        // 매끄럽게 흐르는 아이템들과 상대 떨림이 보인다. 거리 음수 = 앵커 없음 (갑판 위 기절 포함).
+        private readonly NetworkVariable<Vector3> _stunGroundAnchor = new NetworkVariable<Vector3>();
+        private readonly NetworkVariable<float> _stunAnchorDistance = new NetworkVariable<float>(-1f);
 
         // 소유자 클라이언트 로컬 — 투척 선반영 (M5 6차 2차). 서버 확정을 기다리면 게스트 홀더의
         // 좌클릭 반응이 RTT + 보간 지연만큼 늦으므로, 즉시 같은 수식으로 비행을 재생하고
@@ -123,6 +131,7 @@ namespace Game.Gameplay.Monsters
             {
                 _stunEndTime.Value = 0d;
                 _holder.Value = default;
+                _stunAnchorDistance.Value = -1f;
 
                 // 풀 재사용 시 이전 개체의 귀속이 새지 않게 환경 사망 기본값으로 되돌린다.
                 _lastGrabberClientId = NetworkManager.ServerClientId;
@@ -159,10 +168,44 @@ namespace Game.Gameplay.Monsters
             if (IsServer && _stunEndTime.Value > 0d && !IsStunned)
             {
                 _stunEndTime.Value = 0d;
+                _stunAnchorDistance.Value = -1f;
                 _agent?.ServerSetStunned(false);
             }
 
+            ServerUpdateStunConveyor();
             ServerCheckWheelKillZone();
+        }
+
+        /// <summary>
+        /// 기절 지상 재바인딩 (서버) — 기절체가 지상에 닿으면 (위치, 누적 거리)를 한 번 복제하고,
+        /// 이후 자원 노드와 같은 수식으로 위치를 확정한다. 갑판 위 기절(y = 갑판 높이)은 열차 프레임
+        /// 소속이라 앵커를 잡지 않는다. 뒤로 밀리다 깨어나면 추격이 다시 따라잡고
+        /// (이동속도 > 스크롤 속도), 너무 뒤처지면 기존 도주 회수로 정리된다.
+        /// </summary>
+        private void ServerUpdateStunConveyor()
+        {
+            if (!IsServer || !IsStunned)
+            {
+                return;
+            }
+
+            if (_stunAnchorDistance.Value < 0f)
+            {
+                // 낙하 중에는 앵커를 잡지 않는다 — 착지(지상) 프레임에 한 번 재바인딩한다.
+                if (transform.position.y <= 0.01f && ServiceLocator.TryGet(out IWorldScrollService bind))
+                {
+                    _stunGroundAnchor.Value = transform.position;
+                    _stunAnchorDistance.Value = bind.TraveledDistance;
+                }
+
+                return;
+            }
+
+            if (ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                transform.position = WorldScrollMath.GetScrolledPosition(
+                    _stunGroundAnchor.Value, _stunAnchorDistance.Value, scroll.TraveledDistance);
+            }
         }
 
         /// <summary>
@@ -190,6 +233,16 @@ namespace Game.Gameplay.Monsters
                 && holderObject.TryGetComponent(out HarpoonController harpoon))
             {
                 transform.position = harpoon.ComputeHoldAnchor();
+                return;
+            }
+
+            // 기절 지상 컨베이어 — 자원 노드와 같은 수식을 전 피어가 로컬로 계산해 상대 떨림을
+            // 없앤다 (스냅샷 보간을 덮어쓴다). 서버는 Update에서 같은 값을 이미 확정했다 — 재대입 무해.
+            if (IsStunned && _stunAnchorDistance.Value >= 0f
+                && ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                transform.position = WorldScrollMath.GetScrolledPosition(
+                    _stunGroundAnchor.Value, _stunAnchorDistance.Value, scroll.TraveledDistance);
             }
         }
 
