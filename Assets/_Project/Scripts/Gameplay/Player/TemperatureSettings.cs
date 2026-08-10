@@ -38,12 +38,17 @@ namespace Game.Gameplay.Player
         [Tooltip("피해 임계를 1℃ 벗어날 때마다 초당 이만큼 체력이 깎인다.")]
         [SerializeField, Min(0f)] private float _damagePerDegreePerSecond = 3f;
 
-        [Header("건축물 완화 (M5 3차 — 그늘은 더위만, 난방은 추위만)")]
+        [Header("건축물 (M5 3차 그늘 · M5 7차 2차 난방 재설계)")]
         [Tooltip("그늘 건축물(돔)이 있는 칸 위에서 더운 환경 온도가 쾌적대 중심으로 당겨지는 정도 (0~1).")]
         [SerializeField, Range(0f, 1f)] private float _shelterFactor = 0.8f;
 
-        [Tooltip("난방 건축물이 있는 칸 위에서 추운 환경 온도가 쾌적대 중심으로 당겨지는 정도 (0~1).")]
-        [SerializeField, Range(0f, 1f)] private float _heaterFactor = 0.8f;
+        [Tooltip("밤에 난방기 위에서 수렴하는 체온 (℃) — 정상 체온보다 살짝 낮아 난방기만으로는 " +
+            "완전하지 않다 (옷·요리와 조합해야 완전. M5 7차 2차 — 사용자 요청 밤 36).")]
+        [SerializeField] private float _heaterTargetNight = 36f;
+
+        [Tooltip("낮에 난방기 위에서 수렴하는 체온 (℃) — 정상 체온 위까지 데워 낮에도 가치가 있다 " +
+            "(M5 7차 2차 — 사용자 요청 낮 37).")]
+        [SerializeField] private float _heaterTargetDay = 37f;
 
         [Header("즉시 체온 상승 (M5 5차 — 따뜻한 음식 섭취)")]
         [Tooltip("음식의 즉시 체온 상승이 넘지 못하는 체온 상한(℃). 기본 = 고온 경고 임계 — " +
@@ -70,6 +75,12 @@ namespace Game.Gameplay.Player
         /// <summary>더위 국면의 즉시 체온 상한 (℃) — 국면 판정은 <see cref="TemperatureMath.ResolveWarmthCeiling"/>.</summary>
         public float InstantWarmthCeilingHot => _instantWarmthCeilingHot;
 
+        /// <summary>밤 난방기 수렴 체온 (℃) — 수렴은 <see cref="TemperatureMath.StepOnHeater"/>.</summary>
+        public float HeaterTargetNight => _heaterTargetNight;
+
+        /// <summary>낮 난방기 수렴 체온 (℃).</summary>
+        public float HeaterTargetDay => _heaterTargetDay;
+
         /// <summary>순수 로직(<see cref="TemperatureMath"/>)에 넘길 곡선으로 변환한다.</summary>
         public TemperatureCurve ToCurve()
         {
@@ -89,7 +100,7 @@ namespace Game.Gameplay.Player
                 _driftRatePerDegree, _recoveryRate, _cooldownRate,
                 _heatWarnThreshold, _heatDamageThreshold,
                 _coldWarnThreshold, _coldDamageThreshold,
-                _damagePerDegreePerSecond, _shelterFactor, _heaterFactor);
+                _damagePerDegreePerSecond, _shelterFactor);
         }
     }
 }

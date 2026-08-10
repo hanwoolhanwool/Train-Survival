@@ -19,7 +19,7 @@ namespace Game.Tests.EditMode
                 driftRatePerDegree: 0.012f, recoveryRate: 0.35f, cooldownRate: 0.05f,
                 heatWarnThreshold: 38f, heatDamageThreshold: 39f,
                 coldWarnThreshold: 35f, coldDamageThreshold: 34f,
-                damagePerDegreePerSecond: 3f, shelterFactor: 0.8f, heaterFactor: 0.8f);
+                damagePerDegreePerSecond: 3f, shelterFactor: 0.8f);
         }
 
         [Test]
@@ -107,7 +107,7 @@ namespace Game.Tests.EditMode
                 driftRatePerDegree: 0.012f, recoveryRate: 0.35f, cooldownRate: 0.05f,
                 heatWarnThreshold: 38f, heatDamageThreshold: 39f,
                 coldWarnThreshold: 35f, coldDamageThreshold: 34f,
-                damagePerDegreePerSecond: 3f, shelterFactor: 0.8f, heaterFactor: 0.8f);
+                damagePerDegreePerSecond: 3f, shelterFactor: 0.8f);
         }
 
         [Test]
@@ -161,7 +161,7 @@ namespace Game.Tests.EditMode
             TemperatureCurve curve = Curve();
 
             // 쾌적 중심 21℃, 차폐 계수 0.8 → 45 → 45 + (21−45)×0.8 = 25.8
-            float shelteredHot = TemperatureMath.ResolveAmbient(45f, true, false, curve);
+            float shelteredHot = TemperatureMath.ResolveAmbient(45f, true, curve);
 
             Assert.That(shelteredHot, Is.EqualTo(25.8f).Within(0.001f));
             Assert.That(shelteredHot, Is.LessThan(curve.ComfortMax), "차폐 안에서는 쾌적대에 들어온다");
@@ -174,39 +174,41 @@ namespace Game.Tests.EditMode
             // 추위 대응은 난방 건축물(Heater)·방한 장비의 몫이다 (M5 3차 종류화).
             TemperatureCurve curve = Curve();
 
-            Assert.That(TemperatureMath.ResolveAmbient(2f, true, false, curve), Is.EqualTo(2f), "밤 급랭은 그대로");
-            Assert.That(TemperatureMath.ResolveAmbient(-20f, true, false, curve), Is.EqualTo(-20f), "혹한도 그대로");
+            Assert.That(TemperatureMath.ResolveAmbient(2f, true, curve), Is.EqualTo(2f), "밤 급랭은 그대로");
+            Assert.That(TemperatureMath.ResolveAmbient(-20f, true, curve), Is.EqualTo(-20f), "혹한도 그대로");
+        }
+
+        // ── 난방기 국면별 목표 수렴 (M5 7차 2차 — 사용자 요청 밤 36 / 낮 37) ─────────
+
+        [Test]
+        public void 난방기는_목표_온도까지_데운다()
+        {
+            // 추운 몸(35)이 난방기 위에서 회복 속도(0.35)로 목표(밤 36)까지 올라가 멈춘다.
+            TemperatureCurve curve = Curve();
+
+            float warming = TemperatureMath.StepOnHeater(35f, 36f, curve, 1f);
+            float settled = TemperatureMath.StepOnHeater(35f, 36f, curve, 100f);
+
+            Assert.That(warming, Is.EqualTo(35.35f).Within(0.001f), "회복 속도로 데운다");
+            Assert.That(settled, Is.EqualTo(36f).Within(0.001f), "목표에서 평형 — 정상 체온까지는 못 데운다");
         }
 
         [Test]
-        public void 난방은_추위를_쾌적대로_당긴다()
+        public void 난방기_목표_위의_온기는_천천히_식는다()
         {
-            TemperatureCurve curve = Curve();
+            // 스튜 38℃로 난방기에 올라서도 온기가 급증발하지 않는다 — 하향은 느린 계수(0.05).
+            float cooled = TemperatureMath.StepOnHeater(38f, 36f, Curve(), 1f);
 
-            // 쾌적 중심 21℃, 난방 계수 0.8 → 2 → 2 + (21−2)×0.8 = 17.2
-            float heatedCold = TemperatureMath.ResolveAmbient(2f, false, true, curve);
-
-            Assert.That(heatedCold, Is.EqualTo(17.2f).Within(0.001f));
-            Assert.That(heatedCold, Is.GreaterThan(curve.ComfortMin), "난방 칸 위에서는 쾌적대에 들어온다");
+            Assert.That(cooled, Is.EqualTo(38f - 0.05f).Within(0.001f));
         }
 
         [Test]
-        public void 난방은_더위를_완화하지_않는다()
+        public void 난방기_낮_목표는_정상_체온_위까지_데운다()
         {
-            // 화로는 그늘을 만들지 않는다 — 사막 낮 대응은 여전히 돔(그늘)의 몫이다.
-            TemperatureCurve curve = Curve();
+            // 낮 목표 37 — 정상 체온(36.5)을 넘어서까지 데워 낮에도 난방기의 가치가 성립한다.
+            float settled = TemperatureMath.StepOnHeater(Normal, 37f, Curve(), 100f);
 
-            Assert.That(TemperatureMath.ResolveAmbient(45f, false, true, curve), Is.EqualTo(45f));
-        }
-
-        [Test]
-        public void 사막_밤_난방_칸_위에서는_체온이_회복된다()
-        {
-            TemperatureCurve curve = Curve();
-
-            float heated = TemperatureMath.Step(35f, TemperatureMath.ResolveAmbient(2f, false, true, curve), curve, 1f);
-
-            Assert.That(heated, Is.GreaterThan(35f), "실효 온도가 쾌적대라 정상 체온으로 돌아선다");
+            Assert.That(settled, Is.EqualTo(37f).Within(0.001f));
         }
 
         [Test]
@@ -219,7 +221,7 @@ namespace Game.Tests.EditMode
             float temperature = Normal;
             for (int i = 0; i < 150; i++)
             {
-                temperature = TemperatureMath.Step(temperature, TemperatureMath.ResolveAmbient(2f, false, false, curve), curve, 1f);
+                temperature = TemperatureMath.Step(temperature, TemperatureMath.ResolveAmbient(2f, false, curve), curve, 1f);
             }
 
             Assert.That(temperature, Is.LessThan(curve.ColdDamageThreshold), "밤 노숙은 확정 피해");
@@ -231,8 +233,8 @@ namespace Game.Tests.EditMode
         {
             TemperatureCurve curve = Curve();
 
-            Assert.That(TemperatureMath.ResolveAmbient(22f, true, false, curve), Is.EqualTo(22f));
-            Assert.That(TemperatureMath.ResolveAmbient(32f, true, false, curve), Is.EqualTo(32f), "쾌적 상한 경계");
+            Assert.That(TemperatureMath.ResolveAmbient(22f, true, curve), Is.EqualTo(22f));
+            Assert.That(TemperatureMath.ResolveAmbient(32f, true, curve), Is.EqualTo(32f), "쾌적 상한 경계");
         }
 
         [Test]
@@ -240,7 +242,7 @@ namespace Game.Tests.EditMode
         {
             TemperatureCurve curve = Curve();
 
-            float sheltered = TemperatureMath.Step(Normal, TemperatureMath.ResolveAmbient(2f, true, false, curve), curve, 1f);
+            float sheltered = TemperatureMath.Step(Normal, TemperatureMath.ResolveAmbient(2f, true, curve), curve, 1f);
 
             Assert.That(sheltered, Is.LessThan(Normal), "그늘 안에서도 추위는 진행된다");
         }
@@ -248,7 +250,7 @@ namespace Game.Tests.EditMode
         [Test]
         public void 차폐가_없으면_환경_온도가_그대로다()
         {
-            Assert.That(TemperatureMath.ResolveAmbient(45f, false, false, Curve()), Is.EqualTo(45f));
+            Assert.That(TemperatureMath.ResolveAmbient(45f, false, Curve()), Is.EqualTo(45f));
         }
 
         [Test]
@@ -256,8 +258,8 @@ namespace Game.Tests.EditMode
         {
             TemperatureCurve curve = Curve();
 
-            float exposed = TemperatureMath.Step(38f, TemperatureMath.ResolveAmbient(45f, false, false, curve), curve, 1f);
-            float sheltered = TemperatureMath.Step(38f, TemperatureMath.ResolveAmbient(45f, true, false, curve), curve, 1f);
+            float exposed = TemperatureMath.Step(38f, TemperatureMath.ResolveAmbient(45f, false, curve), curve, 1f);
+            float sheltered = TemperatureMath.Step(38f, TemperatureMath.ResolveAmbient(45f, true, curve), curve, 1f);
 
             Assert.That(exposed, Is.GreaterThan(38f), "노출 상태에서는 계속 오른다");
             Assert.That(sheltered, Is.LessThan(38f), "차폐 안에서는 내려간다");

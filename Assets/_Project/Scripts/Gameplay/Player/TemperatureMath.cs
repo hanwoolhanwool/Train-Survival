@@ -41,15 +41,13 @@ namespace Game.Gameplay.Player
 
         public readonly float ShelterFactor;
 
-        public readonly float HeaterFactor;
-
         public TemperatureCurve(
             float normalBody, float minBody, float maxBody,
             float comfortMin, float comfortMax,
             float driftRatePerDegree, float recoveryRate, float cooldownRate,
             float heatWarnThreshold, float heatDamageThreshold,
             float coldWarnThreshold, float coldDamageThreshold,
-            float damagePerDegreePerSecond, float shelterFactor, float heaterFactor)
+            float damagePerDegreePerSecond, float shelterFactor)
         {
             NormalBody = normalBody;
             MinBody = minBody;
@@ -65,7 +63,6 @@ namespace Game.Gameplay.Player
             ColdDamageThreshold = coldDamageThreshold;
             DamagePerDegreePerSecond = damagePerDegreePerSecond;
             ShelterFactor = shelterFactor;
-            HeaterFactor = heaterFactor;
         }
 
         /// <summary>쾌적대의 중심 — 차폐(건축물 아래)가 환경 온도를 끌어당기는 목표점.</summary>
@@ -80,24 +77,33 @@ namespace Game.Gameplay.Player
     public static class TemperatureMath
     {
         /// <summary>
-        /// 건축물 효과를 반영한 실효 환경 온도 (M5 3차 — 건축물 종류화).
-        /// 그늘(돔)은 환경 온도가 쾌적 상한을 넘을 때만, 난방(난방기)은 쾌적 하한을 밑돌 때만
-        /// 쾌적대 중심으로 당긴다 — 지붕이 햇빛은 가려도 난방은 되지 않고, 화로가 그늘을 만들지도 않는다.
+        /// 그늘 건축물을 반영한 실효 환경 온도 (M5 3차 — 건축물 종류화).
+        /// 그늘(돔)은 환경 온도가 쾌적 상한을 넘을 때만 쾌적대 중심으로 당긴다 — 지붕이 햇빛은
+        /// 가려도 난방은 되지 않는다. 난방기는 환경 완화가 아니라 <see cref="StepOnHeater"/>의
+        /// 국면별 목표 수렴이다 (M5 7차 2차 재설계 — 환경 완화 축은 제거).
         /// </summary>
-        public static float ResolveAmbient(
-            float regionAmbient, bool hasShade, bool hasHeat, in TemperatureCurve curve)
+        public static float ResolveAmbient(float regionAmbient, bool hasShade, in TemperatureCurve curve)
         {
             if (hasShade && regionAmbient > curve.ComfortMax)
             {
                 return Mathf.Lerp(regionAmbient, curve.ComfortCenter, Mathf.Clamp01(curve.ShelterFactor));
             }
 
-            if (hasHeat && regionAmbient < curve.ComfortMin)
-            {
-                return Mathf.Lerp(regionAmbient, curve.ComfortCenter, Mathf.Clamp01(curve.HeaterFactor));
-            }
-
             return regionAmbient;
+        }
+
+        /// <summary>
+        /// 난방기 위의 체온 한 스텝 (M5 7차 2차 — 국면별 목표 수렴). 난방기의 화력과 바깥 추위가
+        /// 평형을 이루는 목표 온도(밤 36 / 낮 37 ℃ 제안)로 <b>양방향 수렴</b>한다 — 아래에서는
+        /// 회복 속도로 데우고, 위에서는 하향 속도로 천천히 식는다 (스튜 온기 존중 — 같은 비대칭).
+        /// 환경·단열과 무관하게 난방기가 체온을 직접 붙든다 (낮에는 정상 체온 위까지 데워 낮의 가치도 성립).
+        /// </summary>
+        public static float StepOnHeater(
+            float current, float heaterTarget, in TemperatureCurve curve, float deltaTime)
+        {
+            float rate = current > heaterTarget ? curve.CooldownRate : curve.RecoveryRate;
+            float next = Mathf.MoveTowards(current, heaterTarget, Mathf.Max(0f, rate) * Mathf.Max(0f, deltaTime));
+            return Mathf.Clamp(next, curve.MinBody, curve.MaxBody);
         }
 
         /// <summary>

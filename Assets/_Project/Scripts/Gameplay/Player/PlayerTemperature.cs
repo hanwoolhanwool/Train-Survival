@@ -114,23 +114,37 @@ namespace Game.Gameplay.Player
             float bodyWarmth = _inventory != null ? _inventory.GetEquippedBodyWarmth() : 0f;
             TemperatureCurve curve = _settings.ToCurve(bodyWarmth);
             ResolveShelter(out bool hasShade, out bool hasHeat);
-            float ambient = TemperatureMath.ResolveAmbient(GetRegionAmbient(curve), hasShade, hasHeat, curve);
 
-            // 장비 단열 (기획서 §6.3, M5 3차) — 건축물 다음 층으로 적용한다. 음수 계수 = 역효과.
-            if (_inventory != null)
+            if (hasHeat)
             {
-                _inventory.GetEquippedInsulation(out float cold, out float heat);
+                // 난방기 위 (M5 7차 2차 재설계) — 환경 완화가 아니라 국면별 목표 온도로 직접
+                // 수렴한다 (밤 36 / 낮 37). 환경·단열 축은 건너뛴다 — 난방기의 화력이 체온을 붙든다.
+                float heaterTarget = IsNightPhase()
+                    ? _settings.HeaterTargetNight
+                    : _settings.HeaterTargetDay;
+                _serverTemperature = TemperatureMath.StepOnHeater(
+                    _serverTemperature, heaterTarget, curve, Time.deltaTime);
+            }
+            else
+            {
+                float ambient = TemperatureMath.ResolveAmbient(GetRegionAmbient(curve), hasShade, curve);
 
-                // 요리 보온 버프 (M5 4차) — 장비 합산에 가산하고 같은 클램프[−1, 0.9]를 통과한다.
-                if (_buffs != null)
+                // 장비 단열 (기획서 §6.3, M5 3차) — 건축물 다음 층으로 적용한다. 음수 계수 = 역효과.
+                if (_inventory != null)
                 {
-                    cold += _buffs.ServerColdInsulationBonus;
+                    _inventory.GetEquippedInsulation(out float cold, out float heat);
+
+                    // 요리 보온 버프 (M5 4차) — 장비 합산에 가산하고 같은 클램프[−1, 0.9]를 통과한다.
+                    if (_buffs != null)
+                    {
+                        cold += _buffs.ServerColdInsulationBonus;
+                    }
+
+                    ambient = TemperatureMath.ApplyInsulation(ambient, cold, heat, curve);
                 }
 
-                ambient = TemperatureMath.ApplyInsulation(ambient, cold, heat, curve);
+                _serverTemperature = TemperatureMath.Step(_serverTemperature, ambient, curve, Time.deltaTime);
             }
-
-            _serverTemperature = TemperatureMath.Step(_serverTemperature, ambient, curve, Time.deltaTime);
 
             if (Mathf.Abs(_serverTemperature - _temperature.Value) >= SyncThreshold)
             {
@@ -138,6 +152,12 @@ namespace Game.Gameplay.Player
             }
 
             ApplyStressDamage(curve);
+        }
+
+        /// <summary>현재 국면이 밤인가 — 지역 온도·난방기 목표가 같은 판정을 쓴다.</summary>
+        private static bool IsNightPhase()
+        {
+            return ServiceLocator.TryGet(out IDayCycleService cycle) && cycle.Phase == DayPhase.Night;
         }
 
         /// <summary>현재 지역·국면의 환경 온도. 지역 데이터가 없으면 쾌적대 중심으로 둔다(무해).</summary>
@@ -148,9 +168,7 @@ namespace Game.Gameplay.Player
                 return curve.ComfortCenter;
             }
 
-            bool isNight = ServiceLocator.TryGet(out IDayCycleService cycle) && cycle.Phase == DayPhase.Night;
-
-            return isNight
+            return IsNightPhase()
                 ? region.CurrentRegion.NightAmbientTemperature
                 : region.CurrentRegion.DayAmbientTemperature;
         }
