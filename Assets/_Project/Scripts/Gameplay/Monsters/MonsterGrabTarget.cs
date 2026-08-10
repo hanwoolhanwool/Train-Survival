@@ -313,7 +313,8 @@ namespace Game.Gameplay.Monsters
 
             // 기존 사망 확정·킬 카운트·이벤트 경로 재사용 — 어떤 체력 배율에도 반드시 즉사한다.
             // 파지 중이었다면 디스폰을 집게의 스폰 검사가 감지해 강제 해제로 로프를 끊는다 (놓기 ③).
-            _health.ApplyDamage(float.MaxValue, _lastGrabberClientId);
+            // 분쇄 진입점 (M5 8차) — 사망 RPC의 강조 연출(부피 큰 버스트)만 달라진다.
+            _health.ServerKillByCrush(_lastGrabberClientId);
         }
 
         // ── IGrabbable — 그랩 파이프라인 (권위 = 호스트) ─────────────────────

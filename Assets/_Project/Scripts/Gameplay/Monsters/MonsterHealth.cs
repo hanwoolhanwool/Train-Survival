@@ -1,4 +1,5 @@
 using Game.Core.Events;
+using Game.Core.Pooling;
 using Game.Gameplay.Combat;
 using Unity.Netcode;
 using UnityEngine;
@@ -10,10 +11,19 @@ namespace Game.Gameplay.Monsters
     /// 피해는 상태와 무관하게 전부 일반 데미지다 (M5 6차 — 처형 배율 제거. 기절은
     /// 그랩 관심사의 내부 상태이고, 체력이 기절을 알아야 할 이유가 없다).
     /// 사망 확정 시 권위 이벤트 <see cref="MonsterDiedEvent"/>를 전 피어에 전파한 뒤 풀로 회수한다.
+    /// 사망 연출(M5 8차)은 즉시 디스폰 앞의 짧은 파티클 버스트 — 사망 위치·분쇄 여부를
+    /// RPC에 실어 각 피어가 로컬 재생한다 (판정·킬 카운트 경로 무변).
     /// </summary>
     public sealed class MonsterHealth : NetworkBehaviour, IDamageable
     {
         [SerializeField] private MonsterSettings _settings;
+
+        [Header("사망 연출 (M5 8차 — 표시 전용)")]
+        [Tooltip("일반 사망 버스트 프리팹 — 풀링 비네트워크. 비면 연출 없음.")]
+        [SerializeField] private ImpactEffectView _deathEffectPrefab;
+
+        [Tooltip("바퀴 분쇄 강조 버스트 프리팹 — 부피 큰 변형. 비면 일반 사망 프리팹을 쓴다.")]
+        [SerializeField] private ImpactEffectView _crushEffectPrefab;
 
         private readonly NetworkVariable<float> _health = new NetworkVariable<float>();
 
@@ -72,17 +82,43 @@ namespace Game.Gameplay.Monsters
 
             if (_health.Value <= 0f)
             {
-                NotifyDiedRpc(instigatorClientId);
+                NotifyDiedRpc(instigatorClientId, transform.position, _crushKill);
                 // destroy: true여야 PooledNetworkPrefabHandler를 거쳐 풀로 반환된다.
                 NetworkObject.Despawn(true);
             }
         }
 
-        /// <summary>권위 이벤트 전파 — 호스트 확정 후 전 피어에서 발행된다.</summary>
+        /// <summary>
+        /// 바퀴 분쇄 처치 (M5 8차) — 서버 전용 별도 진입점. 판정은 일반 사망 경로에 그대로
+        /// 합류하고(<see cref="IDamageable"/> 계약 무변), 사망 RPC의 분쇄 표시만 달라진다.
+        /// </summary>
+        public void ServerKillByCrush(ulong instigatorClientId)
+        {
+            _crushKill = true;
+            ApplyDamage(float.MaxValue, instigatorClientId);
+            _crushKill = false;
+        }
+
+        // 서버 전용 — ServerKillByCrush 경유 사망인가 (RPC 발신 순간에만 참).
+        private bool _crushKill;
+
+        /// <summary>
+        /// 권위 이벤트 전파 — 호스트 확정 후 전 피어에서 발행된다. 사망 위치·분쇄 여부를 실어
+        /// 각 피어가 사망 연출을 로컬 재생한다 (M5 8차 — 디스폰과 무관한 풀링 코스메틱).
+        /// </summary>
         [Rpc(SendTo.Everyone)]
-        private void NotifyDiedRpc(ulong killerClientId)
+        private void NotifyDiedRpc(ulong killerClientId, Vector3 deathPosition, bool crushed)
         {
             EventBus<MonsterDiedEvent>.Publish(new MonsterDiedEvent(killerClientId));
+
+            ImpactEffectView prefab = crushed && _crushEffectPrefab != null
+                ? _crushEffectPrefab
+                : _deathEffectPrefab;
+            if (prefab != null)
+            {
+                ImpactEffectView effect = PoolManager.Spawn(prefab, deathPosition, Quaternion.identity);
+                effect.Play(deathPosition, Vector3.up);
+            }
         }
     }
 }
