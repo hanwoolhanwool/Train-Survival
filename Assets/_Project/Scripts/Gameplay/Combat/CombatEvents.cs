@@ -2,21 +2,8 @@ using Game.Gameplay.Inventory;
 
 namespace Game.Gameplay.Combat
 {
-    /// <summary>로컬 표현 이벤트 — 무기 발사·스윙 연출 (발사음·총구 화염). 입력 즉시 발행 (지연 0).</summary>
-    public readonly struct WeaponFiredLocalEvent
-    {
-        /// <summary>발사한 무기의 핫바 아이템 종류.</summary>
-        public readonly HotbarItemType Weapon;
-
-        /// <summary>로컬 판정이 피격 대상을 맞혔는가 (히트 마커용, 판정 확정 아님).</summary>
-        public readonly bool HitDamageable;
-
-        public WeaponFiredLocalEvent(HotbarItemType weapon, bool hitDamageable)
-        {
-            Weapon = weapon;
-            HitDamageable = hitDamageable;
-        }
-    }
+    // WeaponFiredLocalEvent는 M5 8차에서 제거 — 구독자가 끝내 생기지 않은 죽은 이벤트였고,
+    // 발사·스윙 연출은 각 컨트롤러가 풀링 코스메틱을 직접 재생한다 (죽은 축을 남기지 않는다).
 
     /// <summary>
     /// 로컬 표현 이벤트 — 자기가 든 총의 장탄 상태 변경. HUD 탄약 표시용.

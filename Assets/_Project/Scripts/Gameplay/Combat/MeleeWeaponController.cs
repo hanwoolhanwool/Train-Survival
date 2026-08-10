@@ -1,5 +1,3 @@
-using Game.Core.Events;
-using Game.Gameplay.Inventory;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -65,10 +63,6 @@ namespace Game.Gameplay.Combat
                     }
                 }
             }
-
-            // 스윙 연출은 입력 즉시 로컬 발행 (지연 0).
-            EventBus<WeaponFiredLocalEvent>.Publish(
-                new WeaponFiredLocalEvent(HotbarItemType.Melee, target != null));
 
             if (target != null)
             {

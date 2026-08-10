@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game.Core.Events;
+using Game.Core.Pooling;
 using Game.Gameplay.Inventory;
 using Unity.Netcode;
 using UnityEngine;
@@ -10,7 +11,9 @@ namespace Game.Gameplay.Combat
     /// <summary>
     /// 총기 공통 컨트롤러 — 사격 파이프라인 (권위 분담표, 개발 가이드 M2):
     /// 소유자 로컬 레이캐스트 판정(지연 0) → 호스트 보고 → 호스트가 데미지·사망 확정 → 권위 이벤트.
-    /// 발사음·트레이서는 입력 즉시 로컬 재생, 다른 클라이언트에는 연출 전용 브로드캐스트.
+    /// 연출(펠릿별 트레이서·탄착 이펙트)은 입력 즉시 로컬 재생하고, 원격에는 <b>발사 시드 1개</b>만
+    /// 중계한다 — 산탄 패턴이 시드 결정적이라 각 피어가 같은 펠릿 궤적을 재계산한다
+    /// (M5 8차, 대역폭 불변·판정 무변 — 표시 전용 재계산).
     /// 리볼버·샷건·볼트액션이 이 한 컴포넌트를 <see cref="GunSettings"/> 에셋만 바꿔 공유한다 (M5 2차).
     /// 샷건(다펠릿)은 펠릿별 판정을 대상별로 집계해 보고한다 — RPC 수는 맞은 대상 수만큼.
     /// 재장전은 인벤토리 예비 탄약을 소모한다 — 로컬 선반영 시작 후 호스트가 차감을 확정한다
@@ -18,12 +21,9 @@ namespace Game.Gameplay.Combat
     /// </summary>
     public sealed class GunController : NetworkBehaviour
     {
-        private const float TracerVisibleSeconds = 0.05f;
-
         [SerializeField] private GunSettings _settings;
         [SerializeField] private Transform _aimSource;
         [SerializeField] private Transform _muzzle;
-        [SerializeField] private LineRenderer _tracer;
 
         // 한 발사의 펠릿 명중을 대상별로 모은다 — 발사 시에만 쓰는 작업 버퍼.
         private struct PelletGroup
@@ -37,7 +37,6 @@ namespace Game.Gameplay.Combat
 
         private GunMagazine _magazine;
         private IResourceInventory _inventory;
-        private float _tracerHideTime;
         private int _lastPublishedRounds = -1;
         private bool _lastPublishedReloading;
         private int _lastPublishedReserve = -1;
@@ -67,8 +66,6 @@ namespace Game.Gameplay.Combat
             {
                 return;
             }
-
-            UpdateTracer();
 
             if (!IsOwner || _magazine == null)
             {
@@ -145,26 +142,21 @@ namespace Game.Gameplay.Combat
             Vector3 firePosition = transform.position;
             int pellets = Mathf.Max(1, _settings.PelletCount);
 
+            // 발사 시드 — 판정과 연출이 같은 시드의 같은 수열을 쓴다 (M5 8차 — 시드 중계).
+            uint seed = (uint)Random.Range(1, int.MaxValue);
+            uint state = seed;
+
             // 펠릿별 로컬 레이캐스트 판정 (지연 0) — 자기 몸은 제외, 명중은 대상별로 집계한다.
             _pelletGroups.Clear();
-            bool hitDamageable = false;
-            Vector3 tracerEnd = aimOrigin + aimForward * _settings.MaxRange;
-            float tracerBestDistance = float.MaxValue;
 
             for (int p = 0; p < pellets; p++)
             {
-                Vector3 direction = WeaponSpreadMath.ApplySpread(
-                    aimForward, _settings.SpreadAngle, Random.value, Random.value);
+                Vector3 direction = WeaponSpreadMath.ApplySpreadSeeded(
+                    aimForward, _settings.SpreadAngle, ref state);
                 if (!WeaponRaycast.TryGetClosestHit(
                         aimOrigin, direction, _settings.MaxRange, transform.root, out RaycastHit hit))
                 {
                     continue;
-                }
-
-                if (hit.distance < tracerBestDistance)
-                {
-                    tracerBestDistance = hit.distance;
-                    tracerEnd = hit.point;
                 }
 
                 NetworkObject targetObject = hit.collider.GetComponentInParent<NetworkObject>();
@@ -179,14 +171,11 @@ namespace Game.Gameplay.Combat
                     continue;
                 }
 
-                hitDamageable = true;
                 AccumulatePellet(targetObject, hit.point);
             }
 
-            // 발사 연출은 입력 즉시 로컬 발행 (지연 0).
-            EventBus<WeaponFiredLocalEvent>.Publish(
-                new WeaponFiredLocalEvent(WeaponItem, hitDamageable));
-            ShowTracer(tracerEnd);
+            // 발사 연출은 입력 즉시 로컬 재생 (지연 0) — 판정과 같은 시드라 같은 궤적이 보인다.
+            PlayFireCosmetics(aimOrigin, aimForward, seed);
 
             for (int i = 0; i < _pelletGroups.Count; i++)
             {
@@ -194,8 +183,46 @@ namespace Game.Gameplay.Combat
                     _pelletGroups[i].Target, firePosition, _pelletGroups[i].HitPoint, _pelletGroups[i].Count);
             }
 
-            // 다른 클라이언트에게 발사 모습을 보여준다 (연출 전용, 판정에는 영향 없음).
-            ReportFireServerRpc(tracerEnd);
+            // 다른 클라이언트에게 발사 모습을 보여준다 (연출 전용, 판정에는 영향 없음) — 시드 1개만 싣는다.
+            ReportFireServerRpc(seed);
+        }
+
+        /// <summary>
+        /// 발사 코스메틱 (판정 무변) — 시드에서 펠릿 궤적을 재계산해 펠릿별 트레이서와 탄착
+        /// 이펙트를 로컬 재생한다. 소유자·원격이 같은 함수·같은 시드를 쓰므로 같은 패턴이 보인다
+        /// (원격의 조준값은 복제된 자세 기준 — 표시 전용 오차 허용).
+        /// </summary>
+        private void PlayFireCosmetics(Vector3 aimOrigin, Vector3 aimForward, uint seed)
+        {
+            if (_settings == null)
+            {
+                return;
+            }
+
+            Vector3 muzzle = _muzzle != null ? _muzzle.position : transform.position;
+            int pellets = Mathf.Max(1, _settings.PelletCount);
+            uint state = seed;
+
+            for (int p = 0; p < pellets; p++)
+            {
+                Vector3 direction = WeaponSpreadMath.ApplySpreadSeeded(
+                    aimForward, _settings.SpreadAngle, ref state);
+                bool hit = WeaponRaycast.TryGetClosestHit(
+                    aimOrigin, direction, _settings.MaxRange, transform.root, out RaycastHit hitInfo);
+                Vector3 end = hit ? hitInfo.point : aimOrigin + direction * _settings.MaxRange;
+
+                if (_settings.TracerPrefab != null)
+                {
+                    TracerView tracer = PoolManager.Spawn(_settings.TracerPrefab, muzzle, Quaternion.identity);
+                    tracer.Show(muzzle, end, _settings.TracerFadeSeconds);
+                }
+
+                if (hit && _settings.ImpactEffectPrefab != null)
+                {
+                    ImpactEffectView impact = PoolManager.Spawn(_settings.ImpactEffectPrefab, end, Quaternion.identity);
+                    impact.Play(end, hitInfo.normal);
+                }
+            }
         }
 
         private void AccumulatePellet(NetworkObject target, Vector3 hitPoint)
@@ -296,38 +323,18 @@ namespace Game.Gameplay.Combat
         // ── 비소유 클라이언트: 발사 연출 브로드캐스트 (판정에 영향 없음) ────
 
         [Rpc(SendTo.Server)]
-        private void ReportFireServerRpc(Vector3 endPoint)
+        private void ReportFireServerRpc(uint seed)
         {
-            PlayRemoteFireRpc(endPoint);
+            PlayRemoteFireRpc(seed);
         }
 
         [Rpc(SendTo.NotOwner)]
-        private void PlayRemoteFireRpc(Vector3 endPoint)
+        private void PlayRemoteFireRpc(uint seed)
         {
-            ShowTracer(endPoint);
-        }
-
-        private void ShowTracer(Vector3 endPoint)
-        {
-            if (_tracer == null)
-            {
-                return;
-            }
-
-            Vector3 start = _muzzle != null ? _muzzle.position : transform.position;
-            _tracer.positionCount = 2;
-            _tracer.SetPosition(0, start);
-            _tracer.SetPosition(1, endPoint);
-            _tracer.enabled = true;
-            _tracerHideTime = Time.time + TracerVisibleSeconds;
-        }
-
-        private void UpdateTracer()
-        {
-            if (_tracer != null && _tracer.enabled && Time.time >= _tracerHideTime)
-            {
-                _tracer.enabled = false;
-            }
+            // 원격의 조준값은 복제된 자세에서 읽는다 — 보간 지연만큼의 오차는 표시 전용이라 허용.
+            Vector3 aimOrigin = _aimSource != null ? _aimSource.position : transform.position;
+            Vector3 aimForward = _aimSource != null ? _aimSource.forward : transform.forward;
+            PlayFireCosmetics(aimOrigin, aimForward, seed);
         }
     }
 }

@@ -35,5 +35,34 @@ namespace Game.Gameplay.Combat
             Vector3 tiltAxis = Quaternion.AngleAxis(azimuthDeg, forward) * ortho;
             return Quaternion.AngleAxis(tiltDeg, tiltAxis) * forward;
         }
+
+        /// <summary>
+        /// 시드 상태에서 (u, v)를 뽑아 확산을 적용한다 (M5 8차 — 펠릿 원격 중계).
+        /// 발사 시드 1개로 소유자와 원격이 펠릿 순서대로 호출하면 같은 산탄 패턴이 재계산된다
+        /// (좌표 배열 전송 없음 — 표시 전용 재계산·판정 무변).
+        /// </summary>
+        public static Vector3 ApplySpreadSeeded(Vector3 forward, float spreadAngleDeg, ref uint state)
+        {
+            float u = NextFloat01(ref state);
+            float v = NextFloat01(ref state);
+            return ApplySpread(forward, spreadAngleDeg, u, v);
+        }
+
+        /// <summary>
+        /// 시드 결정적 난수 (xorshift32) — [0, 1) 균일. 엔진 무의존이라 전 피어 동일 수열.
+        /// 상태 0은 수열이 멈추므로 1로 승격한다.
+        /// </summary>
+        public static float NextFloat01(ref uint state)
+        {
+            if (state == 0u)
+            {
+                state = 1u;
+            }
+
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            return (state & 0x00FFFFFFu) / 16777216f;
+        }
     }
 }

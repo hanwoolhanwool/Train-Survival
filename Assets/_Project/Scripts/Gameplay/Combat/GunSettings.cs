@@ -39,6 +39,16 @@ namespace Game.Gameplay.Combat
         [Tooltip("재장전이 소모하는 예비 탄약 종류.")]
         [SerializeField] private ResourceType _ammoType = ResourceType.RevolverAmmo;
 
+        [Header("연출 (M5 8차 — 표시 전용, 판정 무변)")]
+        [Tooltip("펠릿 트레이서 프리팹 — 풀링 비네트워크. 비면 트레이서를 그리지 않는다.")]
+        [SerializeField] private TracerView _tracerPrefab;
+
+        [Tooltip("트레이서 페이드 시간 (초) — 기존 0.05초 상수의 에셋화.")]
+        [SerializeField, Min(0.02f)] private float _tracerFadeSeconds = 0.12f;
+
+        [Tooltip("탄착 이펙트 프리팹 — 풀링 비네트워크. 비면 탄착을 그리지 않는다.")]
+        [SerializeField] private ImpactEffectView _impactEffectPrefab;
+
         public HotbarItemType WeaponItem => _weaponItem;
 
         public string DisplayName => _displayName;
@@ -62,5 +72,13 @@ namespace Game.Gameplay.Combat
         public float ReloadDuration => _reloadDuration;
 
         public ResourceType AmmoType => _ammoType;
+
+        /// <summary>펠릿 트레이서 프리팹 (M5 8차 — 표시 전용).</summary>
+        public TracerView TracerPrefab => _tracerPrefab;
+
+        public float TracerFadeSeconds => _tracerFadeSeconds;
+
+        /// <summary>탄착 이펙트 프리팹 (M5 8차 — 표시 전용).</summary>
+        public ImpactEffectView ImpactEffectPrefab => _impactEffectPrefab;
     }
 }
