@@ -61,6 +61,11 @@ namespace Game.Gameplay.Monsters
         private Transform _predictedThrowIgnoreRoot;
         private double _predictedThrowDeadline;
 
+        // 예측 위치는 내부 상태로 누적한다 — transform.position에서 증분하면 Update 단계의
+        // 스냅샷 보간(ClientInterpolate)이 매 프레임 위치를 되돌려 놓아 예측이 누적되지 않는다
+        // (1차 수정이 실패한 원인).
+        private Vector3 _predictedThrowPosition;
+
         private MonsterAgent _agent;
         private MonsterHealth _health;
         private bool _claimed;
@@ -202,27 +207,29 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
-            if (_predictedThrowRemaining <= 0f)
+            if (_predictedThrowRemaining > 0f)
             {
-                // 예측 비행 종료 — 서버 확정이 도착할 때까지 그 자리에 고정한다.
-                return;
+                float step = Mathf.Min(_predictedThrowSpeed * Time.deltaTime, _predictedThrowRemaining);
+                Vector3 current = _predictedThrowPosition;
+
+                if (Physics.SphereCast(current, _predictedThrowRadius, _predictedThrowDirection,
+                        out RaycastHit hit, step, ~0, QueryTriggerInteraction.Ignore)
+                    && hit.transform.root != transform.root
+                    && (_predictedThrowIgnoreRoot == null || hit.transform.root != _predictedThrowIgnoreRoot))
+                {
+                    _predictedThrowPosition = hit.point + hit.normal * _predictedThrowRadius;
+                    _predictedThrowRemaining = 0f;
+                }
+                else
+                {
+                    _predictedThrowPosition = current + _predictedThrowDirection * step;
+                    _predictedThrowRemaining -= step;
+                }
             }
 
-            float step = Mathf.Min(_predictedThrowSpeed * Time.deltaTime, _predictedThrowRemaining);
-            Vector3 current = transform.position;
-
-            if (Physics.SphereCast(current, _predictedThrowRadius, _predictedThrowDirection,
-                    out RaycastHit hit, step, ~0, QueryTriggerInteraction.Ignore)
-                && hit.transform.root != transform.root
-                && (_predictedThrowIgnoreRoot == null || hit.transform.root != _predictedThrowIgnoreRoot))
-            {
-                transform.position = hit.point + hit.normal * _predictedThrowRadius;
-                _predictedThrowRemaining = 0f;
-                return;
-            }
-
-            transform.position = current + _predictedThrowDirection * step;
-            _predictedThrowRemaining -= step;
+            // 예측이 끝났어도(착지 대기) 서버 확정 전까지 매 프레임 다시 대입한다 —
+            // Update 단계의 스냅샷 보간이 위치를 되돌려 놓기 때문이다.
+            transform.position = _predictedThrowPosition;
         }
 
         /// <summary>
@@ -364,10 +371,19 @@ namespace Game.Gameplay.Monsters
             _predictedThrowRadius = radius;
             _predictedThrowDeadline = Time.timeAsDouble + 1.5d;
 
+            // 시작점 = 화면에 보이는 위치(로컬 파지 앵커) — transform.position은 이 시점(Update 단계)
+            // 스냅샷 보간이 덮어 둔 옛 위치라 시각적 끊김이 생긴다. 부착과 같은 계산에서 이어 날린다.
             // 던진 홀더(자기 플레이어)는 예측 충돌에서 제외한다 — 서버 판정과 같은 규칙.
-            _predictedThrowIgnoreRoot = _holder.Value.TryGet(out NetworkObject holderObject)
-                ? holderObject.transform.root
-                : null;
+            _predictedThrowPosition = transform.position;
+            _predictedThrowIgnoreRoot = null;
+            if (_holder.Value.TryGet(out NetworkObject holderObject))
+            {
+                _predictedThrowIgnoreRoot = holderObject.transform.root;
+                if (holderObject.TryGetComponent(out HarpoonController harpoon))
+                {
+                    _predictedThrowPosition = harpoon.ComputeHoldAnchor();
+                }
+            }
         }
 
         // 몬스터는 서버 스냅샷 보간만 하므로 예측 고정이 필요 없다 (§11 수정안 A의 RTT 간극이 없다).
