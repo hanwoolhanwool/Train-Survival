@@ -20,10 +20,11 @@ namespace Game.UI
         private const float SlotGap = 6f;
 
         /// <summary>
-        /// 캐릭터 상태 영역의 높이 — 헤더 + 상태 3줄(체력·체온·허기)이 잘리지 않을 만큼 잡는다.
+        /// 캐릭터 상태 영역의 높이 — 헤더 + 상태 3줄(체력·체온·허기) + 버리기 안내 1줄이
+        /// 잘리지 않을 만큼 잡는다.
         /// 상태 줄을 늘릴 때 이 값을 함께 올린다 (M5 4차 A2 — 허기 줄이 잘려 보이지 않던 회귀).
         /// </summary>
-        private const float StatusAreaHeight = 110f;
+        private const float StatusAreaHeight = 130f;
 
         [SerializeField] private ResourceCatalog _catalog;
         [SerializeField] private StructureCatalog _structureCatalog;
@@ -241,6 +242,31 @@ namespace Game.UI
 
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.66f, 300f, 24f),
                 $"<color=yellow>E — 공유 창고 (#{_storagePromptCar}번 칸)</color>");
+        }
+
+        /// <summary>
+        /// 패널 밖 드롭의 버리기 수량 — 수정자 키로 결정한다 (M5 8차 — 부분 버리기).
+        /// 기본 = 전량 · Shift = 절반(최소 1) · Ctrl = 1개. 서버가 보유량으로 다시 클램프한다.
+        /// </summary>
+        private static int ComputeDropAmount(int count)
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return count;
+            }
+
+            if (keyboard.ctrlKey.isPressed)
+            {
+                return 1;
+            }
+
+            if (keyboard.shiftKey.isPressed)
+            {
+                return Mathf.Max(1, count / 2);
+            }
+
+            return count;
         }
 
         private string GetSlotLabel(HotbarSlotView slot, int stackSize)
@@ -612,7 +638,7 @@ namespace Game.UI
                     HotbarSlotView dropSlot = hotbar.GetSlot(_dragFromIndex);
                     if (dropSlot.ItemType == HotbarItemType.Resource)
                     {
-                        hotbar.RequestDrop(_dragFromIndex);
+                        hotbar.RequestDrop(_dragFromIndex, ComputeDropAmount(dropSlot.Count));
                     }
                 }
 
@@ -635,6 +661,7 @@ namespace Game.UI
             GUILayout.Label(_maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
             GUILayout.Label(_temperature > 0f ? $"체온: {_temperature:F1}℃{GetStressSuffix()}" : "체온: -");
             GUILayout.Label(_maxHunger > 0f ? $"허기: {_hunger:F0} / {_maxHunger:F0}{GetHungerSuffix()}" : "허기: -");
+            GUILayout.Label("버리기: 패널 밖 드롭 = 전량 · Shift 절반 · Ctrl 1개");
             GUILayout.EndArea();
         }
 
@@ -765,7 +792,7 @@ namespace Game.UI
                 if (!rect.Contains(current.mousePosition) && !_dragFromStorage
                     && hotbar.GetSlot(_dragFromIndex).ItemType == HotbarItemType.Resource)
                 {
-                    hotbar.RequestDrop(_dragFromIndex);
+                    hotbar.RequestDrop(_dragFromIndex, ComputeDropAmount(hotbar.GetSlot(_dragFromIndex).Count));
                 }
 
                 _dragFromIndex = -1;

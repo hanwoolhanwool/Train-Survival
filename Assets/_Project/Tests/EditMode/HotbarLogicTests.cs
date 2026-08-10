@@ -244,30 +244,60 @@ namespace Game.Tests.EditMode
             Assert.That(HotbarLogic.TryAddItem(slots, HotbarItemType.Resource), Is.False, "자원은 TryAddResource 소관");
         }
 
-        // ── 버리기 (M5 3차 — hotbar 명세 §11 해소) ──────────────────
+        // ── 버리기 (M5 3차 — hotbar 명세 §11 해소 · 수량 지정은 M5 8차) ──────────────────
 
         [Test]
-        public void 버리기는_자원_칸을_전량_비운다()
+        public void 보유량_이상을_요청하면_자원_칸을_전량_비운다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
             slots[3] = new HotbarSlotView(HotbarItemType.Resource, 4, ResourceType.Stone);
 
-            Assert.That(HotbarLogic.TryClearResourceSlot(slots, 3, out ResourceType type, out int count), Is.True);
+            Assert.That(HotbarLogic.TryTakeFromResourceSlot(
+                slots, 3, requested: 99, out ResourceType type, out int taken), Is.True);
             Assert.That(type, Is.EqualTo(ResourceType.Stone));
-            Assert.That(count, Is.EqualTo(4), "부분이 아니라 스택 전량");
+            Assert.That(taken, Is.EqualTo(4), "보유량으로 클램프 — 스택 전량");
             Assert.That(slots[3].IsEmpty, Is.True);
         }
 
         [Test]
-        public void 무기_칸과_빈_칸은_버릴_수_없다()
+        public void 부분_수량_버리기는_잔량을_남긴다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();
+            slots[3] = new HotbarSlotView(HotbarItemType.Resource, 5, ResourceType.Stone);
 
-            Assert.That(HotbarLogic.TryClearResourceSlot(slots, 0, out _, out _), Is.False,
+            Assert.That(HotbarLogic.TryTakeFromResourceSlot(
+                slots, 3, requested: 2, out ResourceType type, out int taken), Is.True);
+            Assert.That(type, Is.EqualTo(ResourceType.Stone));
+            Assert.That(taken, Is.EqualTo(2));
+            Assert.That(slots[3].ItemType, Is.EqualTo(HotbarItemType.Resource), "잔량 스택 유지");
+            Assert.That(slots[3].Count, Is.EqualTo(3));
+            Assert.That(slots[3].Resource, Is.EqualTo(ResourceType.Stone));
+        }
+
+        [Test]
+        public void 마지막_한_개를_버리면_칸이_비워진다()
+        {
+            HotbarSlotView[] slots = CreateDefaultSlots();
+            slots[3] = new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Wood);
+
+            Assert.That(HotbarLogic.TryTakeFromResourceSlot(slots, 3, 1, out _, out int taken), Is.True);
+            Assert.That(taken, Is.EqualTo(1));
+            Assert.That(slots[3].IsEmpty, Is.True, "잔량 0 = 빈 칸");
+        }
+
+        [Test]
+        public void 무기_칸과_빈_칸과_수량_0은_버릴_수_없다()
+        {
+            HotbarSlotView[] slots = CreateDefaultSlots();
+            slots[3] = new HotbarSlotView(HotbarItemType.Resource, 4, ResourceType.Stone);
+
+            Assert.That(HotbarLogic.TryTakeFromResourceSlot(slots, 0, 1, out _, out _), Is.False,
                 "무기는 버리기 불가 — 처분은 공유 창고 보관");
             Assert.That(slots[0].ItemType, Is.EqualTo(HotbarItemType.Harpoon), "무기 칸은 그대로");
-            Assert.That(HotbarLogic.TryClearResourceSlot(slots, 2, out _, out _), Is.False, "빈 칸");
-            Assert.That(HotbarLogic.TryClearResourceSlot(slots, 99, out _, out _), Is.False, "범위 밖");
+            Assert.That(HotbarLogic.TryTakeFromResourceSlot(slots, 2, 1, out _, out _), Is.False, "빈 칸");
+            Assert.That(HotbarLogic.TryTakeFromResourceSlot(slots, 99, 1, out _, out _), Is.False, "범위 밖");
+            Assert.That(HotbarLogic.TryTakeFromResourceSlot(slots, 3, 0, out _, out _), Is.False, "수량 0 기각");
+            Assert.That(slots[3].Count, Is.EqualTo(4), "기각 시 무변");
         }
     }
 }

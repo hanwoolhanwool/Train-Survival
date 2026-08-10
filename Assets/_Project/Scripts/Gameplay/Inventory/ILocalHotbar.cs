@@ -23,10 +23,11 @@ namespace Game.Gameplay.Inventory
         void RequestSwap(int a, int b);
 
         /// <summary>
-        /// 칸의 자원 스택 전량 버리기를 요청한다 (I 창에서 패널 밖 드롭, M5 3차).
-        /// 무기·도구 칸은 서버가 기각한다. 확정은 호스트 — 버린 자원은 열차 측면 지상에 낙하한다.
+        /// 칸의 자원 스택 버리기를 요청한다 (I 창에서 패널 밖 드롭, M5 3차 — 수량 지정은 M5 8차).
+        /// 수량은 서버가 보유량으로 클램프하고, 무기·도구 칸은 기각한다.
+        /// 확정은 호스트 — 버린 자원은 열차 측면 지상에 낙하한다.
         /// </summary>
-        void RequestDrop(int slotIndex);
+        void RequestDrop(int slotIndex, int amount);
 
         /// <summary>착용 칸 조회 — 인덱스 = <see cref="EquipSlot"/> 값 (기획서 §6.3, M5 3차).</summary>
         HotbarSlotView GetEquipmentSlot(int partIndex);

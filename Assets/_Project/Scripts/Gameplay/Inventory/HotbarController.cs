@@ -109,9 +109,9 @@ namespace Game.Gameplay.Inventory
             _inventory?.RequestSwap(a, b);
         }
 
-        public void RequestDrop(int slotIndex)
+        public void RequestDrop(int slotIndex, int amount)
         {
-            _inventory?.RequestDrop(slotIndex);
+            _inventory?.RequestDrop(slotIndex, amount);
         }
 
         public HotbarSlotView GetEquipmentSlot(int partIndex)

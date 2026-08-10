@@ -154,25 +154,30 @@ namespace Game.Gameplay.Inventory
         }
 
         /// <summary>
-        /// 지정한 칸의 자원 스택을 전량 비운다 (아이템 버리기, M5 3차 — hotbar 명세 §11 해소).
+        /// 지정한 칸의 자원 스택에서 요청 수량만큼 차감한다
+        /// (아이템 버리기, M5 3차 — hotbar 명세 §11 해소 · 수량 지정은 M5 8차).
+        /// 요청은 보유량으로 클램프된다 — 보유량 이상을 요청하면 전량 버리기와 같다.
         /// 무기·도구 칸은 실패한다 — 버릴 수 없고 처분은 공유 창고 보관이 담당한다.
-        /// 비워진 종류·수량을 돌려줘 호출자(버리기 확정)가 지상 낙하 스폰에 쓴다.
+        /// 차감된 종류·수량을 돌려줘 호출자(버리기 확정)가 지상 낙하 스폰에 쓴다.
         /// </summary>
-        public static bool TryClearResourceSlot(
-            HotbarSlotView[] slots, int index, out ResourceType type, out int count)
+        public static bool TryTakeFromResourceSlot(
+            HotbarSlotView[] slots, int index, int requested, out ResourceType type, out int taken)
         {
             type = ResourceType.None;
-            count = 0;
+            taken = 0;
 
-            if (index < 0 || index >= slots.Length ||
+            if (requested <= 0 || index < 0 || index >= slots.Length ||
                 slots[index].ItemType != HotbarItemType.Resource || slots[index].Count <= 0)
             {
                 return false;
             }
 
             type = slots[index].Resource;
-            count = slots[index].Count;
-            slots[index] = new HotbarSlotView(HotbarItemType.None, 0);
+            taken = requested < slots[index].Count ? requested : slots[index].Count;
+            int remaining = slots[index].Count - taken;
+            slots[index] = remaining > 0
+                ? new HotbarSlotView(HotbarItemType.Resource, remaining, type)
+                : new HotbarSlotView(HotbarItemType.None, 0);
             return true;
         }
 
