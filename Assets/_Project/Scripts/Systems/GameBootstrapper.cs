@@ -32,9 +32,21 @@ namespace Game.Systems
 
         private static void RegisterServices()
         {
+            if (!ServiceLocator.IsRegistered<IPlayerIdentityProvider>())
+            {
+                ServiceLocator.Register<IPlayerIdentityProvider>(new LocalGuidIdentityProvider());
+            }
+
+            if (!ServiceLocator.IsRegistered<IConnectionIdentityRegistry>())
+            {
+                ServiceLocator.Register<IConnectionIdentityRegistry>(new ConnectionIdentityRegistry());
+            }
+
             if (!ServiceLocator.IsRegistered<INetworkSessionService>())
             {
-                ServiceLocator.Register<INetworkSessionService>(new NgoNetworkSessionService());
+                ServiceLocator.Register<INetworkSessionService>(new NgoNetworkSessionService(
+                    ServiceLocator.Get<IPlayerIdentityProvider>(),
+                    (ConnectionIdentityRegistry)ServiceLocator.Get<IConnectionIdentityRegistry>()));
             }
         }
     }

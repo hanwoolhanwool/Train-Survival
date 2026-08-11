@@ -13,6 +13,12 @@ namespace Game.Tests.PlayMode
     {
         private GameObject _networkManagerHost;
         private NgoNetworkSessionService _service;
+        private ConnectionIdentityRegistry _identityRegistry;
+
+        private sealed class FakeIdentityProvider : IPlayerIdentityProvider
+        {
+            public string LocalPlayerToken => "test-token";
+        }
 
         [SetUp]
         public void SetUp()
@@ -20,8 +26,13 @@ namespace Game.Tests.PlayMode
             _networkManagerHost = new GameObject("NetworkManager");
             NetworkManager networkManager = _networkManagerHost.AddComponent<NetworkManager>();
             var transport = _networkManagerHost.AddComponent<UnityTransport>();
-            networkManager.NetworkConfig = new NetworkConfig { NetworkTransport = transport };
-            _service = new NgoNetworkSessionService();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = transport,
+                ConnectionApproval = true,
+            };
+            _identityRegistry = new ConnectionIdentityRegistry();
+            _service = new NgoNetworkSessionService(new FakeIdentityProvider(), _identityRegistry);
         }
 
         [UnityTearDown]
@@ -50,6 +61,16 @@ namespace Game.Tests.PlayMode
             Assert.IsTrue(started);
             Assert.IsTrue(_service.IsSessionActive);
             Assert.IsTrue(_service.IsHost);
+        }
+
+        [UnityTest]
+        public IEnumerator StartHost_는_호스트_토큰을_승인_매핑에_기록한다()
+        {
+            _service.StartHost();
+            yield return null;
+
+            Assert.IsTrue(_identityRegistry.TryGetToken(NetworkManager.ServerClientId, out string token));
+            Assert.AreEqual("test-token", token);
         }
 
         [UnityTest]
