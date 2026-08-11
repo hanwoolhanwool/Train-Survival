@@ -164,6 +164,12 @@ namespace Game.Gameplay.World
             _predictedTow = false;
         }
 
+        /// <summary>
+        /// 예측 고정 중인가 (클라이언트 로컬) — 파생의 표시 재생(투척 포물선 등)이 고정을
+        /// 존중하게 한다. 고정을 덮으면 서버 확정 도착 순간의 표시 점프가 커진다 (8차 2차 R5).
+        /// </summary>
+        protected bool IsPredictedTow => _predictedTow;
+
         public bool TryClaimGrab(ulong grabberClientId)
         {
             if (!IsServer || !IsAvailableForGrab)

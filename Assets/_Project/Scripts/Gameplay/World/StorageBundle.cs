@@ -235,7 +235,9 @@ namespace Game.Gameplay.World
                 _flightDuration.Value = 0f;
             }
 
-            if (!IsClaimed && IsInFlight)
+            // 예측 고정(자기가 쏜 클라이언트의 로컬 명중)은 비행 재생보다 우선한다 — 고정을 덮고
+            // 계속 날리면 서버 확정(견인 시작) 도착 순간의 표시 점프가 RTT만큼 커진다 (8차 2차 R5).
+            if (!IsClaimed && !IsPredictedTow && IsInFlight)
             {
                 // 베이스가 놓은 안착 위치를 비행 위치로 덮는다 — 착지(t=1) 이후는 자연히 안착 유도로 복귀.
                 ApplyFlightPosition();

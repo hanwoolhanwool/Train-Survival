@@ -282,6 +282,29 @@ namespace Game.Gameplay.Train
                 return;
             }
 
+            // 보따리 아이템 특례 (M5 8차 2차 — R3 후속 요청): 인벤토리의 보따리를 창고로 옮기면
+            // 창고에 <b>전부 들어갈 때</b> 풀어서 들어간다. 창고도 부족하면 아래 기존 이동으로
+            // 폴백 — 보따리 아이템이 창고 1칸을 점유한 채 보관된다 (내용물은 보관소 유지).
+            if (fromContainer == ITrainStorage.ContainerInventory
+                && toContainer == ITrainStorage.ContainerStorage
+                && from[fromIndex].ItemType == HotbarItemType.Bundle
+                && ServiceLocator.TryGet(out World.IBundleItemStore store)
+                && store.ServerTryPeek((byte)from[fromIndex].Count, out HotbarSlotView[] bundleContents))
+            {
+                // 실패 시 버릴 별도 복사본 — 부분 변형이 아래 폴백 이동에 새지 않게 한다.
+                HotbarSlotView[] unpackTarget = CopyStorageSlots(carIndex);
+                if (HotbarLogic.TryAddAll(unpackTarget, bundleContents,
+                        type => _catalog != null ? _catalog.GetMaxStack(type, inventory.StackSize) : inventory.StackSize))
+                {
+                    byte id = (byte)from[fromIndex].Count;
+                    inventorySlots[fromIndex] = new HotbarSlotView(HotbarItemType.None, 0);
+                    inventory.ServerApplySlotViews(inventorySlots);
+                    ApplyStorageSlots(carIndex, unpackTarget);
+                    store.ServerRemove(id);
+                    return;
+                }
+            }
+
             // 병합 상한은 옮기는 쪽 종류의 스택 상한 — 서버가 카탈로그에서 푼다.
             int stackSize = _catalog != null
                 ? _catalog.GetMaxStack(from[fromIndex].Resource, inventory.StackSize)
