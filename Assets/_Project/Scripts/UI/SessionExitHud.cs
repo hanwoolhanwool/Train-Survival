@@ -111,16 +111,33 @@ namespace Game.UI
 
         private void DrawSessionMenu()
         {
-            var box = new Rect(Screen.width - 260f, 20f, 240f, 118f);
+            // Steam 모드 + 로비 보유(호스트) — 세션 중 친구 초대 진입점 (M6 2차 결정 ③).
+            bool canInvite = Game.Systems.Networking.ActiveTransportMode.IsSteam
+                && ServiceLocator.TryGet(out Game.Systems.Networking.Steam.ISteamLobbyService lobby)
+                && lobby.HasLobby;
+
+            float height = canInvite ? 158f : 118f;
+            var box = new Rect(Screen.width - 260f, 20f, 240f, height);
             GUI.Box(box, "메뉴 (Esc — 닫기)");
 
-            if (GUI.Button(new Rect(box.x + 16f, box.y + 32f, box.width - 32f, 34f), "세션 나가기 — 메인 화면으로"))
+            float y = box.y + 32f;
+            if (canInvite)
+            {
+                if (GUI.Button(new Rect(box.x + 16f, y, box.width - 32f, 34f), "친구 초대 (Steam 오버레이)"))
+                {
+                    ServiceLocator.Get<Game.Systems.Networking.Steam.ISteamLobbyService>().OpenInviteOverlay();
+                }
+
+                y += 40f;
+            }
+
+            if (GUI.Button(new Rect(box.x + 16f, y, box.width - 32f, 34f), "세션 나가기 — 메인 화면으로"))
             {
                 LeaveToMain();
                 return;
             }
 
-            if (GUI.Button(new Rect(box.x + 16f, box.y + 72f, box.width - 32f, 34f), "계속하기"))
+            if (GUI.Button(new Rect(box.x + 16f, y + 40f, box.width - 32f, 34f), "계속하기"))
             {
                 SetMenuOpen(false);
             }
