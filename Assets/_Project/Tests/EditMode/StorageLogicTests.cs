@@ -100,5 +100,61 @@ namespace Game.Tests.EditMode
             Assert.That(StorageLogic.TryTransfer(slots, 0, slots, 9, StackSize), Is.False, "범위 밖");
             Assert.That(StorageLogic.TryTransfer(null, 0, slots, 0, StackSize), Is.False, "null 배열");
         }
+
+        // ── 보따리 창고 풀기 (M5 8차 — 3차에서 스왑 지원) ────────────────────
+
+        private static int StackOf(ResourceType type)
+        {
+            return StackSize;
+        }
+
+        [Test]
+        public void 보따리_풀기는_공간이_충분하면_스왑_없이_풀린다()
+        {
+            HotbarSlotView[] storage = Slots(Wood(1), Empty());
+            HotbarSlotView[] contents = Slots(Wood(2));
+
+            Assert.That(StorageLogic.TryUnpackBundle(storage, 0, contents, StackOf,
+                out HotbarSlotView[] result, out HotbarSlotView swappedOut), Is.True);
+            Assert.That(swappedOut.IsEmpty, Is.True, "공간이 충분하면 대상 칸을 내보내지 않는다");
+            Assert.That(result[0].Count, Is.EqualTo(3), "기존 스택에 병합");
+            Assert.That(storage[0].Count, Is.EqualTo(1), "원본은 변형하지 않는다");
+        }
+
+        [Test]
+        public void 보따리_풀기는_공간_부족_시_대상_칸을_스왑으로_비우고_풀린다()
+        {
+            // 3차 검증 발견 — 꽉 찬 창고의 마지막 아이템 칸에 보따리를 바꿔 넣으면 풀려야 한다.
+            HotbarSlotView[] storage = Slots(Wood(StackSize));
+            HotbarSlotView[] contents = Slots(Wood(2));
+
+            Assert.That(StorageLogic.TryUnpackBundle(storage, 0, contents, StackOf,
+                out HotbarSlotView[] result, out HotbarSlotView swappedOut), Is.True);
+            Assert.That(swappedOut.Count, Is.EqualTo(StackSize), "대상 칸의 가득 스택이 보따리 자리로 나온다");
+            Assert.That(result[0].Count, Is.EqualTo(2), "비운 칸에 내용물이 들어간다");
+        }
+
+        [Test]
+        public void 보따리_풀기는_스왑해도_부족하면_실패하고_원본을_남긴다()
+        {
+            HotbarSlotView[] storage = Slots(Wood(StackSize));
+            HotbarSlotView[] contents = Slots(Wood(2), new HotbarSlotView(HotbarItemType.Shotgun, 1));
+
+            Assert.That(StorageLogic.TryUnpackBundle(storage, 0, contents, StackOf,
+                out HotbarSlotView[] result, out HotbarSlotView swappedOut), Is.False);
+            Assert.That(result, Is.Null);
+            Assert.That(swappedOut.IsEmpty, Is.True);
+            Assert.That(storage[0].Count, Is.EqualTo(StackSize), "실패 시 원본 무변");
+        }
+
+        [Test]
+        public void 보따리_풀기는_대상_칸이_유효하지_않으면_스왑_재시도를_하지_않는다()
+        {
+            HotbarSlotView[] storage = Slots(Wood(StackSize), Wood(StackSize));
+            HotbarSlotView[] contents = Slots(Wood(1));
+
+            Assert.That(StorageLogic.TryUnpackBundle(storage, -1, contents, StackOf,
+                out HotbarSlotView[] _, out HotbarSlotView _), Is.False, "대상 칸 없음(범위 밖)");
+        }
     }
 }
