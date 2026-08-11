@@ -67,5 +67,9 @@ namespace Game.Gameplay.Region
         /// 지역 전환 당일에 "현재 지역"을 읽으면 갱신 순서에 따라 이전/새 지역이 갈린다.
         /// </summary>
         RegionTimelineState EvaluateForDay(int dayNumber);
+
+        /// <summary>배열 인덱스의 지역 정의 — 복제된 지역 경계 기록(M6 1차)을 프리팹으로 해석할 때
+        /// 쓴다 (전 피어가 같은 타임라인 에셋을 참조하므로 인덱스만으로 충분하다). 범위 밖이면 null.</summary>
+        RegionDefinition GetRegion(int regionIndex);
     }
 }

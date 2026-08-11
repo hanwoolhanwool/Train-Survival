@@ -41,6 +41,11 @@ namespace Game.Gameplay.Region
             return _settings == null ? default : Evaluate(dayNumber);
         }
 
+        public RegionDefinition GetRegion(int regionIndex)
+        {
+            return _settings == null ? null : _settings.GetRegion(regionIndex);
+        }
+
         public RegionDifficulty GetDifficultyForDay(int dayNumber)
         {
             if (_settings == null)
