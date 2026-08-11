@@ -39,6 +39,7 @@ namespace Game.Gameplay.Player
         private static readonly RaycastHit[] GroundProbeHits = new RaycastHit[8];
 
         private CharacterController _characterController;
+        private PlayerHealth _health;
         private Vector3 _horizontalVelocity;
         private float _verticalSpeed;
         private float _pitch;
@@ -77,6 +78,7 @@ namespace Game.Gameplay.Player
         private void Awake()
         {
             _characterController = GetComponent<CharacterController>();
+            _health = GetComponent<PlayerHealth>();
         }
 
         public override void OnNetworkSpawn()
@@ -405,6 +407,13 @@ namespace Game.Gameplay.Player
             if (transform.position.z < _trainLayout.DeathZ)
             {
                 _respawnPending.Value = true;
+
+                // 사망 확정 시각 기록 (M6 1차 결정 ⑦) — 재접속 시 잔여 대기 계산의 근거.
+                if (_health != null)
+                {
+                    _health.ServerRecordDeath(_trainLayout.RespawnDelaySeconds);
+                }
+
                 NotifyFellBehindRpc(OwnerClientId);
                 BeginRespawnOwnerRpc(_trainLayout.RespawnPosition, _trainLayout.RespawnDelaySeconds);
             }

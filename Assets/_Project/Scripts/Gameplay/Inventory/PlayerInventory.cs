@@ -513,6 +513,25 @@ namespace Game.Gameplay.Inventory
             }
         }
 
+        // ── 재접속 복원 (M6 1차) — 착용 칸의 서버 캡처·적용 래퍼 ──────────────
+        // RequestEquip 계열은 IsOwner 게이트 + 부위 판정 로직이라 서버 재주입에 쓸 수 없어
+        // private CopyEquipment/ApplyEquipment를 서버 전용으로 노출한다.
+
+        /// <summary>서버 전용 — 착용 칸 복사본 (재접속 스냅샷 캡처).</summary>
+        public HotbarSlotView[] ServerCopyEquipmentViews()
+        {
+            return IsServer ? CopyEquipment() : System.Array.Empty<HotbarSlotView>();
+        }
+
+        /// <summary>서버 전용 — 캡처해 둔 착용 칸을 권위 상태로 되쓴다 (재접속 복원).</summary>
+        public void ServerApplyEquipmentViews(HotbarSlotView[] equipment)
+        {
+            if (IsServer)
+            {
+                ApplyEquipment(equipment);
+            }
+        }
+
         private HotbarSlotView[] CopySlots()
         {
             var copy = new HotbarSlotView[_slots.Count];

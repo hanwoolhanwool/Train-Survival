@@ -26,6 +26,10 @@ namespace Game.Gameplay.Player
         /// <summary>현재 허기.</summary>
         public float Hunger => _hunger.Value;
 
+        /// <summary>서버 원본 허기 — 복제 임계(0.5) 때문에 <see cref="Hunger"/>와 미세하게 다를 수 있어
+        /// 재접속 스냅샷 캡처(M6 1차)는 이 값을 쓴다. 서버에서만 유효.</summary>
+        public float ServerHunger => _serverHunger;
+
         public float MaxHunger => _settings != null ? _settings.MaxHunger : 0f;
 
         private void Awake()
@@ -73,6 +77,22 @@ namespace Game.Gameplay.Player
             _serverHunger = HungerMath.Restore(_serverHunger, amount, curve);
             _hunger.Value = _serverHunger;
             return true;
+        }
+
+        /// <summary>
+        /// 허기 절대값 설정 — 서버 전용, 재접속 복원(M6 1차) 전용. <see cref="ServerRestore"/>는
+        /// 회복 전용 + IsAlive 게이트라 쓸 수 없다. NetworkVariable만 쓰면 다음 프레임 Update가
+        /// <see cref="_serverHunger"/> 미러(진짜 원본)로 되돌리므로 미러까지 함께 쓴다.
+        /// </summary>
+        public void ServerSetHunger(float value)
+        {
+            if (!IsServer || _settings == null)
+            {
+                return;
+            }
+
+            _serverHunger = Mathf.Clamp(value, 0f, _settings.MaxHunger);
+            _hunger.Value = _serverHunger;
         }
 
         private void Update()

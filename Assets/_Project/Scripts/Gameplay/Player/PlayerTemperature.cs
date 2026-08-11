@@ -35,6 +35,10 @@ namespace Game.Gameplay.Player
         /// <summary>현재 체온 (℃).</summary>
         public float Temperature => _temperature.Value;
 
+        /// <summary>서버 원본 체온 — 복제 임계(0.05) 때문에 <see cref="Temperature"/>와 미세하게 다를 수 있어
+        /// 재접속 스냅샷 캡처(M6 1차)는 이 값을 쓴다. 서버에서만 유효.</summary>
+        public float ServerTemperature => _serverTemperature;
+
         private void Awake()
         {
             _health = GetComponent<PlayerHealth>();
@@ -91,6 +95,23 @@ namespace Game.Gameplay.Player
 
             _serverTemperature = Mathf.Clamp(
                 next, _settings.MinBodyTemperature, _settings.MaxBodyTemperature);
+            _temperature.Value = _serverTemperature;
+        }
+
+        /// <summary>
+        /// 체온 절대값 설정 — 서버 전용, 재접속 복원(M6 1차) 전용. <see cref="ServerAddBodyTemperature"/>는
+        /// 상한·IsAlive 게이트가 있어 쓸 수 없다. NetworkVariable만 쓰면 다음 프레임 Update가
+        /// <see cref="_serverTemperature"/> 미러(진짜 원본)로 되돌리므로 미러까지 함께 쓴다.
+        /// </summary>
+        public void ServerSetTemperature(float value)
+        {
+            if (!IsServer || _settings == null)
+            {
+                return;
+            }
+
+            _serverTemperature = Mathf.Clamp(
+                value, _settings.MinBodyTemperature, _settings.MaxBodyTemperature);
             _temperature.Value = _serverTemperature;
         }
 

@@ -38,6 +38,18 @@ namespace Game.Gameplay.Player
 
         public float MaxHealth => _settings != null ? _settings.MaxHealth : 0f;
 
+        // ── 재접속 복원 (M6 1차) — 사망 상태·시각 노출 ─────────────────────
+
+        /// <summary>전투 사망으로 죽어 있는가 — 서버 전용. 이탈 사망(<see cref="NetworkPlayerController.IsRespawnPending"/>)과
+        /// 함께 스냅샷의 "부활 대기 여부" 캡처 근거가 된다.</summary>
+        public bool ServerIsDead => _serverDead;
+
+        /// <summary>사망 확정 시각 (서버 시계, 초) — 잔여 대기 계산용 (결정 ⑦). 두 사망 경로 모두 기록한다.</summary>
+        public double ServerDeathTime { get; private set; }
+
+        /// <summary>사망 확정 시 계산된 부활 대기 시간 (초).</summary>
+        public float ServerRespawnDelaySeconds { get; private set; }
+
         private void Awake()
         {
             _controller = GetComponent<NetworkPlayerController>();
@@ -118,8 +130,62 @@ namespace Game.Gameplay.Player
                 ? _trainLayout.RespawnPosition
                 : new Vector3(0f, 4f, 0f);
 
+            ServerRecordDeath(delay);
             NotifyDiedRpc(OwnerClientId);
             BeginRespawnOwnerRpc(respawnPosition, delay);
+        }
+
+        /// <summary>
+        /// 사망 확정 시각·대기 시간 기록 — 서버 전용 (M6 1차 결정 ⑦). 현행 카운트다운은 소유자
+        /// 코루틴에만 존재해 서버가 잔여를 모르므로, 확정 순간을 서버 시계로 남겨 재접속 시
+        /// "사망 시각 + 대기 시간 − 현재 시각"으로 잔여를 계산한다. 이탈 사망 경로
+        /// (<see cref="NetworkPlayerController"/>)도 이 API로 기록한다.
+        /// </summary>
+        public void ServerRecordDeath(float respawnDelaySeconds)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            ServerDeathTime = NetworkManager.ServerTime.Time;
+            ServerRespawnDelaySeconds = respawnDelaySeconds;
+        }
+
+        /// <summary>
+        /// 체력 절대값 설정 — 서버 전용, 재접속 복원(M6 1차) 전용.
+        /// <see cref="ServerHeal"/>은 증가 전용 + IsAlive 게이트라 쓸 수 없다.
+        /// </summary>
+        public void ServerSetHealth(float value)
+        {
+            if (!IsServer || _settings == null)
+            {
+                return;
+            }
+
+            _health.Value = Mathf.Clamp(value, 0f, _settings.MaxHealth);
+        }
+
+        /// <summary>
+        /// 부활 대기 재개 — 서버 전용, 재접속 복원(M6 1차 결정 ②⑦) 전용. 사망 상태로 되돌린 뒤
+        /// 잔여 시간으로 소유자 카운트다운을 다시 지시한다 (<see cref="NetworkPlayerController.BeginOwnerRespawn"/>은
+        /// IsOwner 가드 + 기존 재개 RPC는 private이라 서버에서 직접 부를 수 없어 신설).
+        /// 잔여 ≤ 0이면 대기 0초 = 즉시 부활. 부활 완료 시 스탯 초기화는 기존 부활 경로 그대로다.
+        /// </summary>
+        public void ServerResumeRespawn(float remainingSeconds)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            _serverDead = true;
+            _health.Value = 0f;
+
+            Vector3 respawnPosition = _trainLayout != null
+                ? _trainLayout.RespawnPosition
+                : new Vector3(0f, 4f, 0f);
+            BeginRespawnOwnerRpc(respawnPosition, Mathf.Max(0f, remainingSeconds));
         }
 
         /// <summary>권위 이벤트 전파 — 호스트 확정 후 전 피어에서 발행된다.</summary>
