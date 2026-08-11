@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 443216343}
   - component: {fileID: 443216342}
   - component: {fileID: 443216341}
+  - component: {fileID: 443216347}
   - component: {fileID: 443216340}
   - component: {fileID: 443216346}
   - component: {fileID: 443216345}
@@ -184,6 +185,20 @@ MonoBehaviour:
     PacketDelayMS: 0
     PacketJitterMS: 0
     PacketDropRate: 0
+--- !u!114 &443216347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443216339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7e5af964b7084841bc0b96cdb4c625e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Systems::Netcode.Transports.SteamNetworkingSocketsTransport
+  ConnectToSteamID: 0
+  options: []
 --- !u!114 &443216342
 MonoBehaviour:
   m_ObjectHideFlags: 0
