@@ -52,6 +52,13 @@ namespace Game.Gameplay.Player
         /// (M5 4차 D5·D10 — 이탈 사망 중에 섭취·버프·설치가 살아 있던 원인).
         /// </summary>
         private readonly NetworkVariable<bool> _respawnPending = new NetworkVariable<bool>();
+
+        /// <summary>
+        /// 초기 스폰 순번 — 호스트가 스폰 시 접속자 목록 내 위치로 확정한다 (M6 1차 §0 소규모 5).
+        /// clientId를 그대로 쓰면 재접속마다 커지는 값이라 스폰 z가 2 m씩 계속 뒤로 밀려
+        /// 반복 시 열차 밖까지 이탈한다 — 순번은 동시 접속 수(≤4)로 유계다.
+        /// </summary>
+        private readonly NetworkVariable<int> _spawnOrder = new NetworkVariable<int>();
         private bool _needsInitialPlacement;
         private bool _inventoryPanelOpen;
         private bool _sessionMenuOpen;
@@ -83,6 +90,11 @@ namespace Game.Gameplay.Player
 
         public override void OnNetworkSpawn()
         {
+            if (IsServer)
+            {
+                _spawnOrder.Value = ResolveSpawnOrder();
+            }
+
             bool isOwner = IsOwner;
             if (_cameraRig != null)
             {
@@ -187,7 +199,7 @@ namespace Game.Gameplay.Player
 
                 _needsInitialPlacement = false;
                 TeleportTo(_trainLayout != null
-                    ? _trainLayout.GetSpawnPosition((int)OwnerClientId)
+                    ? _trainLayout.GetSpawnPosition(_spawnOrder.Value)
                     : new Vector3(0f, 4f, 0f));
                 _horizontalVelocity = Vector3.zero;
                 _verticalSpeed = 0f;
@@ -470,6 +482,21 @@ namespace Game.Gameplay.Player
         {
             _movementState.Value = state;
             Debug.Log($"[NetworkPlayerController] 디버그 상태 전환 확정: client={OwnerClientId} state={state}");
+        }
+
+        /// <summary>현재 접속자 목록에서의 위치 = 접속 순번. 스폰 승인 직전 AddClient가 끝나 목록에 있다.</summary>
+        private int ResolveSpawnOrder()
+        {
+            var ids = NetworkManager.ConnectedClientsIds;
+            for (int i = 0; i < ids.Count; i++)
+            {
+                if (ids[i] == OwnerClientId)
+                {
+                    return i;
+                }
+            }
+
+            return ids.Count;
         }
 
         private void TeleportTo(Vector3 position)
