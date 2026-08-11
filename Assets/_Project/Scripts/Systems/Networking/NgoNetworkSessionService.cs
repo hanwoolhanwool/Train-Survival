@@ -1,4 +1,6 @@
 using System.Text;
+using Game.Systems.Networking.Steam;
+using Netcode.Transports;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -7,8 +9,10 @@ namespace Game.Systems.Networking
 {
     /// <summary>
     /// NGO 기반 <see cref="INetworkSessionService"/> 구현.
-    /// Boot 씬의 NetworkManager(+UnityTransport)를 전제로 하며, 트랜스포트 전환(개발=UnityTransport
-    /// 직결 / 릴리스=Steam 릴레이)은 이 구현 내부에 격리한다.
+    /// Boot 씬의 NetworkManager(+UnityTransport+Steam 트랜스포트)를 전제로 하며, 트랜스포트
+    /// 전환(개발=UnityTransport 직결 / 릴리스=Steam 릴레이 — M6 2차 결정 ②)은 이 구현 내부에
+    /// 격리한다: 시작 직전 <see cref="ActiveTransportMode"/>에 따라 NetworkConfig.NetworkTransport를
+    /// 스위칭하고, Steam 모드의 StartClient는 address를 호스트 SteamID64로 재해석한다.
     /// 재접속 식별(M6 1차): 시작 전에 <see cref="IPlayerIdentityProvider"/> 토큰을 승인 페이로드
     /// (NetworkConfig.ConnectionData)에 탑재하고, 호스트는 승인 콜백에서 토큰 ↔ clientId 매핑을
     /// <see cref="ConnectionIdentityRegistry"/>에 기록한다.
@@ -60,6 +64,11 @@ namespace Game.Systems.Networking
                     + "Boot 씬 NetworkManager 설정을 확인하세요.");
             }
 
+            if (!TryApplyTransport(networkManager, steamTargetId: null))
+            {
+                return false;
+            }
+
             _identityRegistry.Clear();
             LoadTokenPayload(networkManager);
             networkManager.ConnectionApprovalCallback = HandleConnectionApproval;
@@ -80,17 +89,69 @@ namespace Game.Systems.Networking
                 return false;
             }
 
-            var transport = networkManager.GetComponent<UnityTransport>();
-            if (transport == null)
+            if (!TryApplyTransport(networkManager, steamTargetId: address))
+            {
+                return false;
+            }
+
+            if (!ActiveTransportMode.IsSteam)
+            {
+                // 주소 설정 — 승인 페이로드(NetworkConfig.ConnectionData)와는 이름만 비슷한 별개다.
+                var transport = networkManager.GetComponent<UnityTransport>();
+                transport.SetConnectionData(address, port);
+            }
+
+            LoadTokenPayload(networkManager);
+            return networkManager.StartClient();
+        }
+
+        /// <summary>
+        /// 시작 직전 트랜스포트 스위칭 (M6 2차 결정 ②) — 두 트랜스포트 컴포넌트가 Boot 씬
+        /// NetworkManager에 공존하고, 모드에 맞는 쪽을 NetworkConfig에 지정한다.
+        /// Steam 모드 클라이언트는 steamTargetId(호스트 SteamID64 문자열)를 접속 대상으로 쓴다.
+        /// </summary>
+        private static bool TryApplyTransport(NetworkManager networkManager, string steamTargetId)
+        {
+            if (ActiveTransportMode.IsSteam)
+            {
+                if (!SteamService.IsInitialized)
+                {
+                    Debug.LogError("[NgoNetworkSessionService] Steam 모드지만 SteamAPI가 초기화되지 않았습니다.");
+                    return false;
+                }
+
+                var steamTransport = networkManager.GetComponent<SteamNetworkingSocketsTransport>();
+                if (steamTransport == null)
+                {
+                    Debug.LogError("[NgoNetworkSessionService] SteamNetworkingSocketsTransport가 없습니다. "
+                        + "Boot 씬 NetworkManager 구성을 확인하세요.");
+                    return false;
+                }
+
+                if (steamTargetId != null)
+                {
+                    if (!ulong.TryParse(steamTargetId, out ulong target) || target == 0)
+                    {
+                        Debug.LogError($"[NgoNetworkSessionService] 호스트 SteamID 해석 실패: '{steamTargetId}'");
+                        return false;
+                    }
+
+                    steamTransport.ConnectToSteamID = target;
+                }
+
+                networkManager.NetworkConfig.NetworkTransport = steamTransport;
+                return true;
+            }
+
+            var unityTransport = networkManager.GetComponent<UnityTransport>();
+            if (unityTransport == null)
             {
                 Debug.LogError("[NgoNetworkSessionService] UnityTransport가 없습니다. NetworkManager 구성을 확인하세요.");
                 return false;
             }
 
-            // 주소 설정 — 승인 페이로드(NetworkConfig.ConnectionData)와는 이름만 비슷한 별개다.
-            transport.SetConnectionData(address, port);
-            LoadTokenPayload(networkManager);
-            return networkManager.StartClient();
+            networkManager.NetworkConfig.NetworkTransport = unityTransport;
+            return true;
         }
 
         public bool LoadGameplayScene(string sceneName)
