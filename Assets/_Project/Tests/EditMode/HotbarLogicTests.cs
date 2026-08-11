@@ -285,6 +285,53 @@ namespace Game.Tests.EditMode
             Assert.That(slots[3].IsEmpty, Is.True, "잔량 0 = 빈 칸");
         }
 
+        // ── 보따리 일괄 획득 (M5 8차 — 1차 검증 개선 2) ──────────────────
+
+        [Test]
+        public void 일괄_획득은_전부_들어갈_때만_수납한다()
+        {
+            var slots = new HotbarSlotView[3];
+            slots[0] = new HotbarSlotView(HotbarItemType.Resource, 3, ResourceType.Wood);
+            var contents = new[]
+            {
+                new HotbarSlotView(HotbarItemType.Resource, 2, ResourceType.Wood),
+                new HotbarSlotView(HotbarItemType.Melee, 1),
+            };
+
+            Assert.That(HotbarLogic.TryAddAll(slots, contents, _ => 5), Is.True);
+            Assert.That(slots[0].Count, Is.EqualTo(5), "자원은 스택 병합 (3 + 2)");
+            Assert.That(slots[1].ItemType, Is.EqualTo(HotbarItemType.Melee), "무기는 빈 칸 1개");
+        }
+
+        [Test]
+        public void 일괄_획득은_한_칸이라도_부족하면_실패한다()
+        {
+            var slots = new HotbarSlotView[2];
+            slots[0] = new HotbarSlotView(HotbarItemType.Harpoon, 1);
+            slots[1] = new HotbarSlotView(HotbarItemType.Resource, 5, ResourceType.Stone);
+            var contents = new[]
+            {
+                new HotbarSlotView(HotbarItemType.Resource, 1, ResourceType.Stone), // 스택 만재(5/5) + 빈 칸 없음
+            };
+
+            Assert.That(HotbarLogic.TryAddAll(slots, contents, _ => 5), Is.False,
+                "실패 시 반영은 호출자 몫 — 복사본 위에서 부르고 버린다");
+        }
+
+        [Test]
+        public void 일괄_획득은_보따리_아이템의_보관_id를_보존한다()
+        {
+            var slots = new HotbarSlotView[2];
+            var contents = new[]
+            {
+                new HotbarSlotView(HotbarItemType.Bundle, 37), // Count = 보관 id
+            };
+
+            Assert.That(HotbarLogic.TryAddAll(slots, contents, _ => 5), Is.True);
+            Assert.That(slots[0].ItemType, Is.EqualTo(HotbarItemType.Bundle));
+            Assert.That(slots[0].Count, Is.EqualTo(37), "Count는 수량이 아니라 보관 id — 그대로 옮긴다");
+        }
+
         [Test]
         public void 무기_칸과_빈_칸과_수량_0은_버릴_수_없다()
         {

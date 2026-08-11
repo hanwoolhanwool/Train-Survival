@@ -36,6 +36,13 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>사막 장화 (신발) — 내열 소량.</summary>
         DesertBoots = 12,
+
+        /// <summary>
+        /// 창고 보따리 (M5 8차 — 집게 일괄 획득의 공간 부족 대체 획득물). 스택 없음 — 1칸.
+        /// Count에는 수량이 아니라 서버 보관소의 보관 id(1~255)가 실린다
+        /// (세션 한정 — 재접속 인벤토리 복원은 M6 이월과 같은 한계).
+        /// </summary>
+        Bundle = 13,
     }
 
     /// <summary>

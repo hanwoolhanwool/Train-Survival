@@ -493,6 +493,12 @@ namespace Game.Gameplay.Inventory
         // ── 서버 협력 API — 공유 창고(TrainStorage)가 인벤토리↔창고 이동을 원자 확정할 때 쓴다 ──
 
         /// <summary>서버 전용 — 슬롯 복사본. 순수 로직 판정용, 반영은 <see cref="ServerApplySlotViews"/>.</summary>
+        /// <summary>종류별 스택 상한 — 카탈로그 미등재 종류는 기본 상한 (보따리 일괄 획득이 쓴다, M5 8차).</summary>
+        public int GetMaxStack(ResourceType type)
+        {
+            return _catalog != null ? _catalog.GetMaxStack(type, StackSize) : StackSize;
+        }
+
         public HotbarSlotView[] ServerCopySlotViews()
         {
             return IsServer ? CopySlots() : System.Array.Empty<HotbarSlotView>();

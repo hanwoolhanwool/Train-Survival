@@ -10,9 +10,11 @@ namespace Game.Gameplay.World
     /// <summary>
     /// 창고 보따리 (M5 8차) — 파괴된 창고의 슬롯 전체를 담는 단일 회수물.
     /// 창고와 <b>같은 슬롯 표현</b>(<see cref="NetworkSlot"/> NetworkList)이라 무기·장비도 그대로 담긴다.
-    /// 집게는 <b>운반 전용</b> — <see cref="TryCompleteGrab"/>이 항상 Rejected라 도착·해제가
-    /// 그 자리 낙하로 처리되고, 안착 파이프라인(<see cref="SettleableGrabbable"/> — 갑판 휴지·
-    /// 하강 로컬 재생·이탈 추종·소실 회수)을 그대로 탄다. 옮겨 담기는 E 창(창고 창 재사용)이 담당한다.
+    /// 집게 도착 = <b>일괄 획득</b> (1차 검증 개선 2 — 자원과 같은 회수 감각): 내용물이 전부
+    /// 들어가면 풀어서 수납하고 소멸, 1칸이라도 부족하면 <b>보따리 아이템</b>(1칸)으로 획득한다
+    /// (내용물은 <see cref="IBundleItemStore"/>에 보관). 해제 낙하는 안착 파이프라인
+    /// (<see cref="SettleableGrabbable"/> — 갑판 휴지·하강 로컬 재생·이탈 추종·소실 회수)을 그대로 탄다.
+    /// E 창(창고 창 재사용) 코드는 휴면 — 사용하지 않되 추후 확장 대비로 남긴다 (1차 검증 결정).
     /// 슬롯이 전부 비면 서버가 자동 회수한다. 내구도는 없다 — 공격에 부서지지 않고,
     /// 소실은 후방 회수·소실 칸 회수 규약뿐이다 ("회수 기회"라는 존재 이유 보존, 착수 전 결정).
     /// </summary>
@@ -57,14 +59,18 @@ namespace Game.Gameplay.World
         private bool _localPanelOpen;
         private bool _storagePanelOpen;
 
-        public override int GrabWeight => _grabWeight;
+        /// <summary>
+        /// 비행 중에는 3단계 집게만 낚아챌 수 있다 (1차 검증 개선 1 — "불허"의 등급 예외화).
+        /// 그랩 검증이 이미 등급 ≥ 무게를 강제하므로 무게 축으로 표현한다 — 착지하면 원래 등급.
+        /// </summary>
+        public override int GrabWeight => IsInFlight ? FlightGrabWeight : _grabWeight;
 
-        /// <summary>투척 비행 중인가 — 비행 중에는 그랩·E창을 열 수 없다 (착수 전 결정: 불허).</summary>
+        private const int FlightGrabWeight = 3;
+
+        /// <summary>투척 비행 중인가 — 3단계 집게 외에는 착지 후부터 잡힌다.</summary>
         public bool IsInFlight => _flightDuration.Value > 0f && IsSpawned
             && NetworkManager != null
             && NetworkManager.ServerTime.Time < _flightStartTime.Value + _flightDuration.Value;
-
-        public override bool IsAvailableForGrab => !IsInFlight && base.IsAvailableForGrab;
 
         /// <summary>
         /// 서버 전용 — 스폰 직전에 투척 비행(칸 파괴 지점 → 착지 지점)을 예약한다.
@@ -222,7 +228,14 @@ namespace Game.Gameplay.World
                 }
             }
 
-            if (IsInFlight)
+            // 서버 — 그랩(3단계 낚아채기) 확정 순간 비행을 끝낸다. 견인이 위치를 쥐고,
+            // 이후 해제 시 포물선으로 되돌아가지 않게 한다.
+            if (IsServer && IsClaimed && _flightDuration.Value > 0f)
+            {
+                _flightDuration.Value = 0f;
+            }
+
+            if (!IsClaimed && IsInFlight)
             {
                 // 베이스가 놓은 안착 위치를 비행 위치로 덮는다 — 착지(t=1) 이후는 자연히 안착 유도로 복귀.
                 ApplyFlightPosition();
@@ -256,10 +269,19 @@ namespace Game.Gameplay.World
             transform.position = position;
         }
 
-        // ── 로컬: 근접·시선 판정과 E키 토글 (창고 창과 같은 규약 — M5 8차 회수 UX) ────────
+        // ── 로컬: 근접·시선 판정과 E키 토글 (창고 창과 같은 규약) ────────
+        // E창 휴면 (1차 검증 결정 2026-08-11) — 회수는 집게 일괄 획득으로 재설계됐다.
+        // 코드는 추후 확장(선별 회수 등)을 고려해 남긴다 — 게이트만 닫는다.
+
+        private static readonly bool EWindowEnabled = false;
 
         private void UpdateLocalInteraction()
         {
+            if (!EWindowEnabled)
+            {
+                return;
+            }
+
             NetworkObject localPlayer = Player.LocalInteraction.GetLocalPlayerObject();
             if (localPlayer == null)
             {
@@ -333,11 +355,66 @@ namespace Game.Gameplay.World
             return true;
         }
 
-        /// <summary>운반 전용 (착수 전 결정) — 무기·장비가 들어 있어 자동 수납이 성립하지 않는다.
-        /// Rejected면 집게가 그 자리 해제(낙하)로 처리해 안착 파이프라인을 탄다.</summary>
+        /// <summary>
+        /// 집게 도착 = 일괄 획득 (1차 검증 개선 2 — 운반 전용에서 재설계):
+        /// 내용물 전 슬롯(무기·장비 포함)이 들어가면 풀어서 수납하고 소멸(Consumed),
+        /// 1칸이라도 부족하면 빈 칸 1개에 <b>보따리 아이템</b>으로 획득한다 — 내용물은
+        /// 보관소(<see cref="IBundleItemStore"/>)에 맡기고 슬롯 Count에 보관 id를 싣는다.
+        /// 빈 칸조차 없거나 보관소가 가득이면 Rejected — 집게가 그 자리 낙하로 처리한다.
+        /// </summary>
         public override GrabCompletionResult TryCompleteGrab(in GrabCompletion completion)
         {
-            return GrabCompletionResult.Rejected;
+            if (!IsServer || completion.Grabber == null)
+            {
+                return GrabCompletionResult.Rejected;
+            }
+
+            var inventory = completion.Grabber.GetComponent<PlayerInventory>();
+            if (inventory == null)
+            {
+                return GrabCompletionResult.Rejected;
+            }
+
+            HotbarSlotView[] contents = ServerCopySlots();
+
+            // 1안 — 전부 풀어서 수납 (복사본 원자: 전 슬롯이 들어갈 때만 반영).
+            HotbarSlotView[] slots = inventory.ServerCopySlotViews();
+            if (HotbarLogic.TryAddAll(slots, contents, inventory.GetMaxStack))
+            {
+                inventory.ServerApplySlotViews(slots);
+                // destroy: true여야 PooledNetworkPrefabHandler를 거쳐 풀로 반환된다.
+                NetworkObject.Despawn(true);
+                return GrabCompletionResult.Consumed;
+            }
+
+            // 2안 — 공간 부족: 보따리 아이템(1칸)으로 획득. 내용물은 보관소에.
+            slots = inventory.ServerCopySlotViews();
+            int emptyIndex = -1;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].IsEmpty)
+                {
+                    emptyIndex = i;
+                    break;
+                }
+            }
+
+            if (emptyIndex < 0
+                || !Game.Core.Services.ServiceLocator.TryGet(out IBundleItemStore store))
+            {
+                return GrabCompletionResult.Rejected;
+            }
+
+            byte id = store.ServerStore(contents);
+            if (id == 0)
+            {
+                return GrabCompletionResult.Rejected;
+            }
+
+            slots[emptyIndex] = new HotbarSlotView(HotbarItemType.Bundle, id);
+            inventory.ServerApplySlotViews(slots);
+            NetworkObject.Despawn(true);
+            return GrabCompletionResult.Consumed;
         }
 
         public override void OnDespawned()

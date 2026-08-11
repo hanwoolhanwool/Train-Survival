@@ -41,6 +41,8 @@ namespace Game.Gameplay.Inventory
                     return "누비 바지";
                 case HotbarItemType.DesertBoots:
                     return "사막 장화";
+                case HotbarItemType.Bundle:
+                    return "보따리\n[좌클릭 풀기]";
                 default:
                     return string.Empty;
             }

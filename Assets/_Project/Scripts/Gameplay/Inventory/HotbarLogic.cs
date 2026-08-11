@@ -58,6 +58,64 @@ namespace Game.Gameplay.Inventory
         }
 
         /// <summary>
+        /// 여러 슬롯의 내용물을 전부 적재한다 (보따리 일괄 획득, M5 8차) — <b>전 슬롯이 들어갈 때만</b>
+        /// slots를 변형하고 true. 자원은 스택 병합, 무기·장비·기타 아이템은 빈 칸 1개씩 차지한다.
+        /// 실패 시 slots가 부분 변형된 채 남으므로 호출자는 복사본 위에서 부르고 성공 시에만 반영한다.
+        /// stackSizeOf = 종류별 스택 상한 — 호출자(서버)가 카탈로그에서 푼다.
+        /// </summary>
+        public static bool TryAddAll(
+            HotbarSlotView[] slots, HotbarSlotView[] contents, System.Func<ResourceType, int> stackSizeOf)
+        {
+            for (int i = 0; i < contents.Length; i++)
+            {
+                HotbarSlotView content = contents[i];
+                if (content.IsEmpty)
+                {
+                    continue;
+                }
+
+                if (content.ItemType == HotbarItemType.Resource)
+                {
+                    int stackSize = stackSizeOf != null ? stackSizeOf(content.Resource) : 1;
+                    for (int c = 0; c < content.Count; c++)
+                    {
+                        if (!TryAddResource(slots, content.Resource, stackSize))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    // 슬롯 뷰를 그대로 옮긴다 — 보따리 아이템은 Count가 수량이 아니라 보관 id라
+                    // TryAddItem(Count 1 초기화)을 쓰면 id가 소실된다 (보따리 속 보따리 보존).
+                    int empty = IndexOfFirstEmpty(slots);
+                    if (empty < 0)
+                    {
+                        return false;
+                    }
+
+                    slots[empty] = content;
+                }
+            }
+
+            return true;
+        }
+
+        private static int IndexOfFirstEmpty(HotbarSlotView[] slots)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].IsEmpty)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>
         /// 지정한 종류의 자원 1개를 차감한다 — 뒤에서부터(부분 스택이 먼저 비도록) 찾는다. 스택이 비면 빈 칸이 된다.
         /// </summary>
         public static bool TryRemoveResource(HotbarSlotView[] slots, ResourceType type)

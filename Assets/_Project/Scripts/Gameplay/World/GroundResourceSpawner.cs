@@ -16,7 +16,8 @@ namespace Game.Gameplay.World
     /// 창고 보따리(M5 8차)도 여기서 스폰·회수한다 — 자원 노드와 같은 안착·회수 규약을 타므로
     /// 관리 목록을 <see cref="SettleableGrabbable"/>로 함께 쓴다.
     /// </summary>
-    public sealed class GroundResourceSpawner : NetworkBehaviour, IResourceDropper, IStorageBundleSpawner
+    public sealed class GroundResourceSpawner : NetworkBehaviour, IResourceDropper, IStorageBundleSpawner,
+        IBundleItemStore
     {
         [SerializeField] private ResourceSpawnSettings _settings;
 
@@ -65,6 +66,14 @@ namespace Game.Gameplay.World
                 {
                     ServiceLocator.Register<IStorageBundleSpawner>(this);
                 }
+
+                if (!ServiceLocator.IsRegistered<IBundleItemStore>())
+                {
+                    ServiceLocator.Register<IBundleItemStore>(this);
+                }
+
+                // 새 세션 — 이전 세션의 보관물이 새지 않게 비운다 (보관은 세션 한정).
+                _bundleItemContents.Clear();
             }
         }
 
@@ -80,6 +89,11 @@ namespace Game.Gameplay.World
             if (ServiceLocator.TryGet(out IStorageBundleSpawner spawner) && ReferenceEquals(spawner, this))
             {
                 ServiceLocator.Unregister<IStorageBundleSpawner>();
+            }
+
+            if (ServiceLocator.TryGet(out IBundleItemStore store) && ReferenceEquals(store, this))
+            {
+                ServiceLocator.Unregister<IBundleItemStore>();
             }
         }
 
@@ -259,6 +273,83 @@ namespace Game.Gameplay.World
             bundle.NetworkObject.Spawn();
             _activeNodes.Add(bundle);
             return true;
+        }
+
+        /// <summary>
+        /// 지정 위치 안착 스폰 (M5 8차 — 보따리 아이템 내려놓기): 그랩 해제 낙하와 같은
+        /// 프레임 판정 — 갑판 위면 휴지, 아니면 월드 바인딩.
+        /// </summary>
+        public bool ServerSpawnResting(Inventory.HotbarSlotView[] contents, Vector3 position)
+        {
+            if (!ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                return false;
+            }
+
+            float deckHeight = 0f;
+            int carIndex = -1;
+            bool onDeck = ServiceLocator.TryGet(out Train.ITrainState train)
+                && train.TryGetDeckSurface(position, out deckHeight, out carIndex);
+            var rest = new Vector3(position.x, (onDeck ? deckHeight : 0f) + _bundleRestOffsetY, position.z);
+
+            StorageBundle bundle = InstantiateBundle(contents, rest);
+            if (bundle == null)
+            {
+                return false;
+            }
+
+            if (onDeck)
+            {
+                bundle.ServerSetDeckRestBinding(rest, carIndex, train.GetEjectOffset(carIndex), _bundleRestOffsetY);
+            }
+            else
+            {
+                bundle.ServerSetSpawnBinding(rest, scroll.TraveledDistance);
+            }
+
+            bundle.NetworkObject.Spawn();
+            _activeNodes.Add(bundle);
+            return true;
+        }
+
+        // ── 보따리 아이템 보관소 (M5 8차 — IBundleItemStore) ────────────────────
+
+        // 서버 전용 — 보관 id(1~255) → 내용물. 슬롯 Count가 byte라 id도 byte다 (세션 한정).
+        private readonly Dictionary<byte, Inventory.HotbarSlotView[]> _bundleItemContents =
+            new Dictionary<byte, Inventory.HotbarSlotView[]>();
+
+        private byte _nextBundleItemId = 1;
+
+        public byte ServerStore(Inventory.HotbarSlotView[] contents)
+        {
+            if (!IsServer || contents == null || _bundleItemContents.Count >= 255)
+            {
+                return 0;
+            }
+
+            // 1~255를 순환하며 빈 id를 찾는다 — 회수된 id를 재사용한다.
+            for (int step = 0; step < 255; step++)
+            {
+                byte id = _nextBundleItemId;
+                _nextBundleItemId = (byte)(_nextBundleItemId >= 255 ? 1 : _nextBundleItemId + 1);
+                if (!_bundleItemContents.ContainsKey(id))
+                {
+                    _bundleItemContents[id] = contents;
+                    return id;
+                }
+            }
+
+            return 0;
+        }
+
+        public bool ServerTryPeek(byte id, out Inventory.HotbarSlotView[] contents)
+        {
+            return _bundleItemContents.TryGetValue(id, out contents);
+        }
+
+        public void ServerRemove(byte id)
+        {
+            _bundleItemContents.Remove(id);
         }
 
         private StorageBundle InstantiateBundle(Inventory.HotbarSlotView[] contents, Vector3 position)
