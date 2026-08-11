@@ -26,6 +26,10 @@ namespace Game.UI
         /// </summary>
         private const float StatusAreaHeight = 130f;
 
+        // 버리기 임시 비활성 (8차 1차 검증 방침 2026-08-11 — "기능 자체를 끈다").
+        // 코드 경로(수정자 키 수량·서버 원자 확정)는 유지 — 다시 켤 때 이 게이트만 연다.
+        private static readonly bool DropEnabled = false;
+
         [SerializeField] private ResourceCatalog _catalog;
         [SerializeField] private StructureCatalog _structureCatalog;
 
@@ -673,7 +677,7 @@ namespace Game.UI
             {
                 // 패널 안 공백 = 취소(실수 방지선), 패널 밖 = 버리기 (M5 3차 — hotbar 명세 §11 해소).
                 // 무기·도구·착용 장비는 서버가 기각·취소한다 — 처분하려면 공유 창고에 보관한다.
-                if (!rect.Contains(current.mousePosition) && _dragFromIndex >= 0)
+                if (DropEnabled && !rect.Contains(current.mousePosition) && _dragFromIndex >= 0)
                 {
                     HotbarSlotView dropSlot = hotbar.GetSlot(_dragFromIndex);
                     if (dropSlot.ItemType == HotbarItemType.Resource)
@@ -701,7 +705,11 @@ namespace Game.UI
             GUILayout.Label(_maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
             GUILayout.Label(_temperature > 0f ? $"체온: {_temperature:F1}℃{GetStressSuffix()}" : "체온: -");
             GUILayout.Label(_maxHunger > 0f ? $"허기: {_hunger:F0} / {_maxHunger:F0}{GetHungerSuffix()}" : "허기: -");
-            GUILayout.Label("버리기: 패널 밖 드롭 = 전량 · Shift 절반 · Ctrl 1개");
+            if (DropEnabled)
+            {
+                GUILayout.Label("버리기: 패널 밖 드롭 = 전량 · Shift 절반 · Ctrl 1개");
+            }
+
             GUILayout.EndArea();
         }
 
@@ -829,7 +837,7 @@ namespace Game.UI
             if (current.type == EventType.MouseUp && _dragFromIndex >= 0)
             {
                 // 패널 밖 = 버리기 (개인 자원 칸만 — I 창과 같은 규약). 창고 출처는 취소.
-                if (!rect.Contains(current.mousePosition) && !_dragFromStorage
+                if (DropEnabled && !rect.Contains(current.mousePosition) && !_dragFromStorage
                     && hotbar.GetSlot(_dragFromIndex).ItemType == HotbarItemType.Resource)
                 {
                     hotbar.RequestDrop(_dragFromIndex, ComputeDropAmount(hotbar.GetSlot(_dragFromIndex).Count));
@@ -965,7 +973,7 @@ namespace Game.UI
             if (current.type == EventType.MouseUp && _dragFromIndex >= 0)
             {
                 // 패널 밖 = 버리기 (개인 자원 칸만 — I 창과 같은 규약). 보따리 출처는 취소.
-                if (!rect.Contains(current.mousePosition) && !_dragFromBundle
+                if (DropEnabled && !rect.Contains(current.mousePosition) && !_dragFromBundle
                     && hotbar.GetSlot(_dragFromIndex).ItemType == HotbarItemType.Resource)
                 {
                     hotbar.RequestDrop(_dragFromIndex, ComputeDropAmount(hotbar.GetSlot(_dragFromIndex).Count));
