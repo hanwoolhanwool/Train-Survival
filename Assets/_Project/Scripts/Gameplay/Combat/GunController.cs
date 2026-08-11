@@ -183,8 +183,10 @@ namespace Game.Gameplay.Combat
                     _pelletGroups[i].Target, firePosition, _pelletGroups[i].HitPoint, _pelletGroups[i].Count);
             }
 
-            // 다른 클라이언트에게 발사 모습을 보여준다 (연출 전용, 판정에는 영향 없음) — 시드 1개만 싣는다.
-            ReportFireServerRpc(seed);
+            // 다른 클라이언트에게 발사 모습을 보여준다 (연출 전용, 판정에는 영향 없음).
+            // 시드 + 조준 원점·방향을 싣는다 — 원격 프록시의 카메라 피벗 회전(피치)은 복제되지
+            // 않아 원격에서 읽으면 방향이 고정된다 (8차 1차 검증 버그 1). 펠릿 좌표 배열은 여전히 없다.
+            ReportFireServerRpc(seed, aimOrigin, aimForward);
         }
 
         /// <summary>
@@ -323,17 +325,16 @@ namespace Game.Gameplay.Combat
         // ── 비소유 클라이언트: 발사 연출 브로드캐스트 (판정에 영향 없음) ────
 
         [Rpc(SendTo.Server)]
-        private void ReportFireServerRpc(uint seed)
+        private void ReportFireServerRpc(uint seed, Vector3 aimOrigin, Vector3 aimForward)
         {
-            PlayRemoteFireRpc(seed);
+            PlayRemoteFireRpc(seed, aimOrigin, aimForward);
         }
 
         [Rpc(SendTo.NotOwner)]
-        private void PlayRemoteFireRpc(uint seed)
+        private void PlayRemoteFireRpc(uint seed, Vector3 aimOrigin, Vector3 aimForward)
         {
-            // 원격의 조준값은 복제된 자세에서 읽는다 — 보간 지연만큼의 오차는 표시 전용이라 허용.
-            Vector3 aimOrigin = _aimSource != null ? _aimSource.position : transform.position;
-            Vector3 aimForward = _aimSource != null ? _aimSource.forward : transform.forward;
+            // 조준값은 발사자가 실어 보낸 것을 그대로 쓴다 — 원격 프록시의 카메라 피벗 회전은
+            // 복제되지 않아 여기서 읽으면 방향이 고정된다 (8차 1차 검증 버그 1).
             PlayFireCosmetics(aimOrigin, aimForward, seed);
         }
     }
