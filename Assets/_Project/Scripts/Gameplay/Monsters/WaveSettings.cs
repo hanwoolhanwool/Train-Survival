@@ -39,6 +39,13 @@ namespace Game.Gameplay.Monsters
         [Tooltip("마지막 밤의 몬스터 체력 배율.")]
         [SerializeField, Min(1f)] private float _finalNightHealthMultiplier = 1.5f;
 
+        [Header("지역 중간 강화 밤 (M7 2차 결정 ⑥ — 마지막 밤보다 낮은 가중)")]
+        [Tooltip("지역 중앙일 밤의 총량·동시 상한 배율. 마지막 밤(기본 2)보다 낮게 둔다.")]
+        [SerializeField, Min(1f)] private float _reinforcedNightCountMultiplier = 1.4f;
+
+        [Tooltip("지역 중앙일 밤의 몬스터 체력 배율. 마지막 밤(기본 1.5)보다 낮게 둔다.")]
+        [SerializeField, Min(1f)] private float _reinforcedNightHealthMultiplier = 1.2f;
+
         [Header("스폰 배치 (지상 선로변)")]
         [SerializeField, Min(1f)] private float _minLateralOffset = 14f;
         [SerializeField, Min(1f)] private float _maxLateralOffset = 24f;
@@ -79,6 +86,10 @@ namespace Game.Gameplay.Monsters
 
         public float FinalNightHealthMultiplier => _finalNightHealthMultiplier;
 
+        public float ReinforcedNightCountMultiplier => _reinforcedNightCountMultiplier;
+
+        public float ReinforcedNightHealthMultiplier => _reinforcedNightHealthMultiplier;
+
         /// <summary>순수 로직(<see cref="WaveMath"/>)에 넘길 밸런스 곡선으로 변환한다.</summary>
         public WaveCurve ToCurve()
         {
@@ -87,7 +98,8 @@ namespace Game.Gameplay.Monsters
                 _baseSpawnInterval, _intervalReductionPerDay, _minSpawnInterval,
                 _baseMaxAlive, _maxAliveGrowthPerDay, _maxAliveCap,
                 _healthGrowthPerDay, _healthMultiplierCap,
-                _finalNightCountMultiplier, _finalNightHealthMultiplier);
+                _finalNightCountMultiplier, _finalNightHealthMultiplier,
+                _reinforcedNightCountMultiplier, _reinforcedNightHealthMultiplier);
         }
     }
 }

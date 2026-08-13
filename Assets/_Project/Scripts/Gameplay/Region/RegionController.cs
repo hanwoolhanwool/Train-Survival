@@ -71,7 +71,8 @@ namespace Game.Gameplay.Region
             return new RegionDifficulty(
                 region.WaveCountMultiplier * cycleScale,
                 region.MonsterHealthMultiplier * cycleScale,
-                state.IsFinalDayOfRegion);
+                state.IsFinalDayOfRegion,
+                state.IsReinforcedNight);
         }
 
         private void OnEnable()

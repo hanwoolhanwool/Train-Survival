@@ -59,6 +59,10 @@ namespace Game.Gameplay.Region
         [Tooltip("하루(낮 시작)마다 스탬피드가 발생할 확률 (0~1). 0 = 이 지역에서 발생하지 않는다. 날씨와 같은 규약 — 호스트 추첨·지역 첫날 제외.")]
         [SerializeField, Range(0f, 1f)] private float _stampedeChancePerDay = 0f;
 
+        [Header("지역 보스 (M7 2차, 기획서 §5 — '지역 마지막 밤 = 대형 웨이브 + 보스')")]
+        [Tooltip("이 지역의 마지막 밤에 등장할 보스 정의. 비우면 보스 없음 — 기존 대형 웨이브만으로 마지막 밤이 성립한다 (스탬피드 확률과 같은 소급 규약).")]
+        [SerializeField] private Monsters.BossDefinition _bossDefinition;
+
         [Header("지형·자원")]
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
@@ -101,6 +105,9 @@ namespace Game.Gameplay.Region
 
         /// <summary>하루(낮 시작)당 스탬피드 발생 확률 (M7 1차). 0 = 미발생 — 대초원만 0보다 크다.</summary>
         public float StampedeChancePerDay => _stampedeChancePerDay;
+
+        /// <summary>이 지역의 마지막 밤 보스 (M7 2차). null = 보스 없음 (하위 호환).</summary>
+        public Monsters.BossDefinition BossDefinition => _bossDefinition;
 
         public GameObject TerrainTilePrefab => _terrainTilePrefab;
 

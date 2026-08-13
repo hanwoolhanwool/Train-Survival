@@ -41,6 +41,9 @@ namespace Game.Gameplay.Region
 
         /// <summary>유효한 지역 정의로 평가된 상태인가 (지역 목록이 비면 false).</summary>
         public bool IsValid => RegionDayCount > 0;
+
+        /// <summary>오늘 밤이 지역 중간 강화 밤인가 (M7 2차 결정 ⑥).</summary>
+        public bool IsReinforcedNight => RegionTimelineMath.IsReinforcedNight(DayInRegion, RegionDayCount);
     }
 
     /// <summary>
@@ -117,6 +120,23 @@ namespace Game.Gameplay.Region
             return new RegionTimelineState(
                 regionIndex, cycleNumber, dayInRegion, regionDayCount,
                 nextRegionIndex, isFinalDay, isForecast);
+        }
+
+        /// <summary>
+        /// 지역 중간 강화 밤 판정 (M7 2차 결정 ⑥ — 기획서 §5 잔여 이행).
+        /// 지역 중앙일 <c>ceil(regionDayCount / 2)</c> 하루뿐이며, <b>첫날·마지막 날은 제외</b>한다
+        /// (첫날은 지형 전환과 겹치고, 마지막 날은 이미 졸업 시험이다). 2일 이하 지역에는 없다.
+        /// </summary>
+        public static bool IsReinforcedNight(int dayInRegion, int regionDayCount)
+        {
+            if (regionDayCount < 3)
+            {
+                return false;
+            }
+
+            int middleDay = Mathf.CeilToInt(regionDayCount / 2f);
+
+            return dayInRegion == middleDay && dayInRegion > 1 && dayInRegion < regionDayCount;
         }
     }
 }

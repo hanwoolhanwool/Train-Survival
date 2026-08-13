@@ -12,15 +12,24 @@ namespace Game.Gameplay.Region
         /// <summary>그 Day의 밤이 지역 마지막 밤(대형 웨이브)인가 — 기획서 §5 "지역 졸업 시험".</summary>
         public readonly bool IsFinalNightOfRegion;
 
-        public RegionDifficulty(float waveCountMultiplier, float monsterHealthMultiplier, bool isFinalNightOfRegion)
+        /// <summary>
+        /// 그 Day의 밤이 지역 중간 강화 밤인가 (M7 2차 결정 ⑥ — 기획서 §5 잔여 이행).
+        /// 마지막 밤과 배타적이다 — 첫날·마지막 날은 판정에서 제외된다.
+        /// </summary>
+        public readonly bool IsReinforcedNightOfRegion;
+
+        public RegionDifficulty(
+            float waveCountMultiplier, float monsterHealthMultiplier,
+            bool isFinalNightOfRegion, bool isReinforcedNightOfRegion)
         {
             WaveCountMultiplier = waveCountMultiplier;
             MonsterHealthMultiplier = monsterHealthMultiplier;
             IsFinalNightOfRegion = isFinalNightOfRegion;
+            IsReinforcedNightOfRegion = isReinforcedNightOfRegion;
         }
 
         /// <summary>지역 데이터가 없을 때 쓰는 무보정 기본값.</summary>
-        public static RegionDifficulty Neutral => new RegionDifficulty(1f, 1f, false);
+        public static RegionDifficulty Neutral => new RegionDifficulty(1f, 1f, false, false);
     }
 
     /// <summary>

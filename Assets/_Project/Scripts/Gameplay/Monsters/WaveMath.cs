@@ -20,13 +20,19 @@ namespace Game.Gameplay.Monsters
         /// <summary>지역 마지막 밤(대형 웨이브)인가 — 기획서 §5 "지역 졸업 시험".</summary>
         public readonly bool IsFinalNight;
 
-        public WavePlan(int totalCount, float spawnInterval, int maxAlive, float healthMultiplier, bool isFinalNight)
+        /// <summary>지역 중간 강화 밤인가 (M7 2차 결정 ⑥) — 마지막 밤보다 낮은 가중.</summary>
+        public readonly bool IsReinforcedNight;
+
+        public WavePlan(
+            int totalCount, float spawnInterval, int maxAlive, float healthMultiplier,
+            bool isFinalNight, bool isReinforcedNight)
         {
             TotalCount = totalCount;
             SpawnInterval = spawnInterval;
             MaxAlive = maxAlive;
             HealthMultiplier = healthMultiplier;
             IsFinalNight = isFinalNight;
+            IsReinforcedNight = isReinforcedNight;
         }
     }
 
@@ -54,12 +60,16 @@ namespace Game.Gameplay.Monsters
         public readonly float FinalNightCountMultiplier;
         public readonly float FinalNightHealthMultiplier;
 
+        public readonly float ReinforcedNightCountMultiplier;
+        public readonly float ReinforcedNightHealthMultiplier;
+
         public WaveCurve(
             int baseCount, int countGrowthPerDay, int totalCountCap,
             float baseInterval, float intervalReductionPerDay, float minInterval,
             int baseMaxAlive, int maxAliveGrowthPerDay, int maxAliveCap,
             float healthGrowthPerDay, float healthMultiplierCap,
-            float finalNightCountMultiplier, float finalNightHealthMultiplier)
+            float finalNightCountMultiplier, float finalNightHealthMultiplier,
+            float reinforcedNightCountMultiplier, float reinforcedNightHealthMultiplier)
         {
             BaseCount = baseCount;
             CountGrowthPerDay = countGrowthPerDay;
@@ -74,6 +84,8 @@ namespace Game.Gameplay.Monsters
             HealthMultiplierCap = healthMultiplierCap;
             FinalNightCountMultiplier = finalNightCountMultiplier;
             FinalNightHealthMultiplier = finalNightHealthMultiplier;
+            ReinforcedNightCountMultiplier = reinforcedNightCountMultiplier;
+            ReinforcedNightHealthMultiplier = reinforcedNightHealthMultiplier;
         }
     }
 
@@ -91,15 +103,23 @@ namespace Game.Gameplay.Monsters
         /// <param name="regionCountMultiplier">지역 난이도의 물량 배율 (기획서 §4 — 숲 1 / 사막 4).</param>
         /// <param name="regionHealthMultiplier">지역 난이도의 체력 배율.</param>
         /// <param name="isFinalNight">지역 마지막 밤인가 (대형 웨이브).</param>
+        /// <param name="isReinforcedNight">지역 중간 강화 밤인가 (M7 2차 결정 ⑥).</param>
         public static WavePlan Plan(
             int dayNumber, in WaveCurve curve,
-            float regionCountMultiplier, float regionHealthMultiplier, bool isFinalNight)
+            float regionCountMultiplier, float regionHealthMultiplier,
+            bool isFinalNight, bool isReinforcedNight)
         {
             int daysElapsed = Mathf.Max(0, dayNumber - 1);
 
-            float finalCountMultiplier = isFinalNight ? curve.FinalNightCountMultiplier : 1f;
+            // 마지막 밤이 우선한다 — 두 가중이 곱해지면 졸업 시험의 위상이 흐려진다.
+            bool reinforced = isReinforcedNight && !isFinalNight;
+
+            float nightCountMultiplier = isFinalNight
+                ? curve.FinalNightCountMultiplier
+                : (reinforced ? curve.ReinforcedNightCountMultiplier : 1f);
+
             // 0 이하 배율이 들어와도 물량이 사라지거나 간격이 무한대가 되지 않도록 하한을 둔다.
-            float countScale = Mathf.Max(0.01f, regionCountMultiplier * finalCountMultiplier);
+            float countScale = Mathf.Max(0.01f, regionCountMultiplier * nightCountMultiplier);
 
             // 총량: Day 성장분에 밸런스 상한을 먼저 걸고, 지역·마지막 밤 배율은 그 위에 곱한다
             // (대형 웨이브가 상한에 눌려 의미를 잃지 않게 — 대역폭 방어선은 MaxAlive 쪽이 맡는다).
@@ -116,10 +136,12 @@ namespace Game.Gameplay.Monsters
 
             // 체력: Day 성장분에만 상한을 걸고, 지역·마지막 밤 배율은 별개 축으로 곱한다.
             float dayHealth = Mathf.Min(curve.HealthMultiplierCap, 1f + curve.HealthGrowthPerDay * daysElapsed);
-            float finalHealthMultiplier = isFinalNight ? curve.FinalNightHealthMultiplier : 1f;
-            float healthMultiplier = Mathf.Max(0.01f, dayHealth * regionHealthMultiplier * finalHealthMultiplier);
+            float nightHealthMultiplier = isFinalNight
+                ? curve.FinalNightHealthMultiplier
+                : (reinforced ? curve.ReinforcedNightHealthMultiplier : 1f);
+            float healthMultiplier = Mathf.Max(0.01f, dayHealth * regionHealthMultiplier * nightHealthMultiplier);
 
-            return new WavePlan(totalCount, interval, maxAlive, healthMultiplier, isFinalNight);
+            return new WavePlan(totalCount, interval, maxAlive, healthMultiplier, isFinalNight, reinforced);
         }
     }
 }
