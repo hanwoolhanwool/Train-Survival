@@ -58,6 +58,19 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void 끊김_위치가_보존된다()
+        {
+            var snapshot = new PlayerStateSnapshot(
+                new HotbarSlotView[0], new HotbarSlotView[0], 1, 100f, 50f, 36.5f,
+                respawnPending: false, deathServerTime: 0d, respawnDelaySeconds: 0f,
+                position: new UnityEngine.Vector3(1.5f, 5f, -12f));
+
+            Assert.That(snapshot.Position.x, Is.EqualTo(1.5f));
+            Assert.That(snapshot.Position.y, Is.EqualTo(5f));
+            Assert.That(snapshot.Position.z, Is.EqualTo(-12f));
+        }
+
+        [Test]
         public void 보따리_슬롯은_Count의_보관소_id를_유지한다()
         {
             // Bundle 칸의 Count는 수량이 아니라 서버 보관소 id다 (M5 8차) — 세션 내 재접속에서 유효.

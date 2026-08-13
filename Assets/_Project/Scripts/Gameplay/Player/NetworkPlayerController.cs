@@ -59,6 +59,10 @@ namespace Game.Gameplay.Player
         /// 반복 시 열차 밖까지 이탈한다 — 순번은 동시 접속 수(≤4)로 유계다.
         /// </summary>
         private readonly NetworkVariable<int> _spawnOrder = new NetworkVariable<int>();
+
+        // 재접속 위치 복원 (M6 결정 ① 개정) — 소유자 초기 배치 전에 도착한 복원 지시를 보관한다.
+        private Vector3 _restorePlacement;
+        private bool _hasRestorePlacement;
         private bool _needsInitialPlacement;
         private bool _inventoryPanelOpen;
         private bool _sessionMenuOpen;
@@ -198,9 +202,19 @@ namespace Game.Gameplay.Player
                 }
 
                 _needsInitialPlacement = false;
-                TeleportTo(_trainLayout != null
-                    ? _trainLayout.GetSpawnPosition(_spawnOrder.Value)
-                    : new Vector3(0f, 4f, 0f));
+                if (_hasRestorePlacement)
+                {
+                    // 재접속 복원 지시가 먼저 도착해 있으면 스폰 지점 대신 끊김 위치로 (결정 ① 개정).
+                    TeleportTo(_restorePlacement);
+                    _hasRestorePlacement = false;
+                }
+                else
+                {
+                    TeleportTo(_trainLayout != null
+                        ? _trainLayout.GetSpawnPosition(_spawnOrder.Value)
+                        : new Vector3(0f, 4f, 0f));
+                }
+
                 _horizontalVelocity = Vector3.zero;
                 _verticalSpeed = 0f;
             }
@@ -482,6 +496,54 @@ namespace Game.Gameplay.Player
         {
             _movementState.Value = state;
             Debug.Log($"[NetworkPlayerController] 디버그 상태 전환 확정: client={OwnerClientId} state={state}");
+        }
+
+        // ── 재접속 위치 복원 (M6 결정 ① 개정 — 2026-08-13 사용자 승인 ⓐ) ──────────
+
+        /// <summary>
+        /// 끊김 위치 복원 — 서버 전용, 재접속 적용 훅이 부른다. 위치가 <b>편성에 붙어 있는
+        /// 살아있는 칸의 갑판 위</b>일 때만 소유자에게 배치를 지시하고, 그 외(이탈 칸·지상·
+        /// 그 사이 칸이 사라진 경우)는 아무것도 하지 않아 현행 스폰 지점 폴백이 된다.
+        /// 위치는 소유자 권위(OwnerNetworkTransform)라 서버가 직접 옮길 수 없다 — RPC 지시다.
+        /// </summary>
+        public void ServerRestorePosition(Vector3 position)
+        {
+            if (!IsServer || !ServiceLocator.TryGet(out ITrainState train))
+            {
+                return;
+            }
+
+            // 살아있는 칸의 갑판 판정 (M5 7차 A3 프레임 판정 재사용 — 이탈 오프셋 반영).
+            if (!train.TryGetDeckSurface(position, out float deckHeight, out int carIndex))
+            {
+                return;
+            }
+
+            // 이탈 중(뒤로 밀려나는) 칸은 제외 — 복원 직후 후미 이탈 사망으로 이어질 자리다.
+            if (train.GetEjectOffset(carIndex) > 0f)
+            {
+                return;
+            }
+
+            // 공중(점프 중) 캡처는 그대로 떨어뜨리되, 갑판 아래로는 들어가지 않게 받친다.
+            position.y = Mathf.Max(position.y, deckHeight + 0.1f);
+            RestorePlacementOwnerRpc(position);
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void RestorePlacementOwnerRpc(Vector3 position)
+        {
+            if (_needsInitialPlacement)
+            {
+                // 초기 배치(Game 씬 도착 후 첫 Update)가 아직이면 그때 이 위치를 쓴다.
+                _restorePlacement = position;
+                _hasRestorePlacement = true;
+                return;
+            }
+
+            TeleportTo(position);
+            _horizontalVelocity = Vector3.zero;
+            _verticalSpeed = 0f;
         }
 
         /// <summary>현재 접속자 목록에서의 위치 = 접속 순번. 스폰 승인 직전 AddClient가 끝나 목록에 있다.</summary>

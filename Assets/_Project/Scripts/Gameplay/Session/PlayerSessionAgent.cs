@@ -91,6 +91,7 @@ namespace Game.Gameplay.Session
                 GetComponent<PlayerHealth>(),
                 GetComponent<PlayerHunger>(),
                 GetComponent<PlayerTemperature>(),
+                GetComponent<NetworkPlayerController>(),
                 NetworkManager.ServerTime.Time);
             Debug.Log($"[PlayerSessionAgent] 재접속 복원 적용: client={OwnerClientId} "
                 + $"respawnPending={snapshot.RespawnPending}");

@@ -28,18 +28,21 @@ namespace Game.Gameplay.Session
                 temperature != null ? temperature.ServerTemperature : 0f,
                 respawnPending,
                 health != null ? health.ServerDeathTime : 0d,
-                health != null ? health.ServerRespawnDelaySeconds : 0f);
+                health != null ? health.ServerRespawnDelaySeconds : 0f,
+                controller != null ? controller.transform.position : default);
         }
 
         /// <summary>
-        /// 적용 순서 = 슬롯·장비·티어 → 부활 대기 분기 (§2.3): 부활 대기 중이었으면 스탯 복원을
-        /// 생략하고(사망 중 스탯은 매 프레임 정상치로 강제 리셋되고 세터도 IsAlive 게이트에 막혀
-        /// 복원해도 즉시 무효 — 결정 ②와 정합) 잔여 시간으로 부활 재개를 지시한다.
+        /// 적용 순서 = 슬롯·장비·티어 → 부활 대기 분기 (§2.3): 부활 대기 중이었으면 스탯·위치
+        /// 복원을 생략하고(사망 중 스탯은 매 프레임 정상치로 강제 리셋되고 세터도 IsAlive 게이트에
+        /// 막혀 복원해도 즉시 무효 — 결정 ②와 정합, 위치는 부활 경로가 정한다) 잔여 시간으로
+        /// 부활 재개를 지시한다. 생존 중이었으면 스탯 + 끊김 위치(유효 시 — 결정 ① 개정)를 복원한다.
         /// </summary>
         public static void Apply(
             in PlayerStateSnapshot snapshot,
             PlayerInventory inventory, HarpoonController harpoon, PlayerHealth health,
-            PlayerHunger hunger, PlayerTemperature temperature, double serverTimeNow)
+            PlayerHunger hunger, PlayerTemperature temperature, NetworkPlayerController controller,
+            double serverTimeNow)
         {
             if (inventory != null)
             {
@@ -75,6 +78,11 @@ namespace Game.Gameplay.Session
             if (temperature != null)
             {
                 temperature.ServerSetTemperature(snapshot.Temperature);
+            }
+
+            if (controller != null)
+            {
+                controller.ServerRestorePosition(snapshot.Position);
             }
         }
     }
