@@ -16,13 +16,16 @@ namespace Game.Tests.EditMode
                 baseInterval: 5f, intervalReductionPerDay: 0.4f, minInterval: 1.5f,
                 baseMaxAlive: 5, maxAliveGrowthPerDay: 1, maxAliveCap: 12,
                 healthGrowthPerDay: 0.08f, healthMultiplierCap: 3f,
-                finalNightCountMultiplier: 2f, finalNightHealthMultiplier: 1.5f);
+                finalNightCountMultiplier: 2f, finalNightHealthMultiplier: 1.5f,
+                reinforcedNightCountMultiplier: 1.4f, reinforcedNightHealthMultiplier: 1.2f);
         }
 
         private static WavePlan Plan(
-            int dayNumber, float regionCountMultiplier = 1f, float regionHealthMultiplier = 1f, bool isFinalNight = false)
+            int dayNumber, float regionCountMultiplier = 1f, float regionHealthMultiplier = 1f,
+            bool isFinalNight = false, bool isReinforcedNight = false)
         {
-            return WaveMath.Plan(dayNumber, Curve(), regionCountMultiplier, regionHealthMultiplier, isFinalNight);
+            return WaveMath.Plan(
+                dayNumber, Curve(), regionCountMultiplier, regionHealthMultiplier, isFinalNight, isReinforcedNight);
         }
 
         [Test]
@@ -112,6 +115,33 @@ namespace Game.Tests.EditMode
             Assert.That(plan.MaxAlive, Is.GreaterThanOrEqualTo(1));
             Assert.That(plan.SpawnInterval, Is.GreaterThan(0f));
             Assert.That(plan.HealthMultiplier, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void 지역_중간_강화_밤은_마지막_밤보다_약한_가중을_받는다()
+        {
+            WavePlan normal = Plan(1);
+            WavePlan reinforced = Plan(1, isReinforcedNight: true);
+            WavePlan final = Plan(1, isFinalNight: true);
+
+            Assert.That(reinforced.IsReinforcedNight, Is.True);
+            Assert.That(reinforced.TotalCount, Is.GreaterThan(normal.TotalCount));
+            Assert.That(reinforced.TotalCount, Is.LessThan(final.TotalCount));
+            Assert.That(reinforced.HealthMultiplier, Is.EqualTo(1.2f).Within(0.001f));
+            Assert.That(reinforced.HealthMultiplier, Is.LessThan(final.HealthMultiplier));
+        }
+
+        [Test]
+        public void 마지막_밤과_강화_밤이_겹치면_마지막_밤이_우선한다()
+        {
+            // 두 가중이 곱해지면 졸업 시험의 위상이 흐려진다 — 배타 처리가 규약이다.
+            WavePlan both = Plan(1, isFinalNight: true, isReinforcedNight: true);
+            WavePlan final = Plan(1, isFinalNight: true);
+
+            Assert.That(both.IsFinalNight, Is.True);
+            Assert.That(both.IsReinforcedNight, Is.False);
+            Assert.That(both.TotalCount, Is.EqualTo(final.TotalCount));
+            Assert.That(both.HealthMultiplier, Is.EqualTo(final.HealthMultiplier).Within(0.001f));
         }
     }
 }

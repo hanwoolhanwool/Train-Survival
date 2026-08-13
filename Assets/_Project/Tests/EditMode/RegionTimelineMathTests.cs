@@ -164,5 +164,59 @@ namespace Game.Tests.EditMode
             Assert.That(next.DayInRegion, Is.EqualTo(1));
             Assert.That(next.CycleNumber, Is.EqualTo(1), "두 번째 바퀴 — 난이도 보너스 가산 축");
         }
+
+        // ── 지역 중간 강화 밤 (M7 2차 결정 ⑥) ────────────────────────────────
+
+        [Test]
+        public void 강화_밤은_지역_중앙일_하루뿐이다()
+        {
+            // 숲 5일 → ceil(2.5) = 3일차 · 사막·대초원 4일 → ceil(2) = 2일차.
+            Assert.That(RegionTimelineMath.IsReinforcedNight(3, 5), Is.True);
+            Assert.That(RegionTimelineMath.IsReinforcedNight(2, 4), Is.True);
+            Assert.That(RegionTimelineMath.IsReinforcedNight(2, 3), Is.True, "북극 3일 → 2일차");
+
+            Assert.That(RegionTimelineMath.IsReinforcedNight(2, 5), Is.False);
+            Assert.That(RegionTimelineMath.IsReinforcedNight(4, 5), Is.False);
+            Assert.That(RegionTimelineMath.IsReinforcedNight(3, 4), Is.False);
+        }
+
+        [Test]
+        public void 강화_밤은_첫날과_마지막_날을_피한다()
+        {
+            // 첫날은 지형 전환과 겹치고, 마지막 날은 이미 졸업 시험이다.
+            for (int dayCount = 1; dayCount <= 8; dayCount++)
+            {
+                for (int day = 1; day <= dayCount; day++)
+                {
+                    if (!RegionTimelineMath.IsReinforcedNight(day, dayCount))
+                    {
+                        continue;
+                    }
+
+                    Assert.That(day, Is.GreaterThan(1), $"{dayCount}일 지역의 {day}일차");
+                    Assert.That(day, Is.LessThan(dayCount), $"{dayCount}일 지역의 {day}일차");
+                }
+            }
+        }
+
+        [Test]
+        public void 이틀_이하_지역에는_강화_밤이_없다()
+        {
+            Assert.That(RegionTimelineMath.IsReinforcedNight(1, 1), Is.False);
+            Assert.That(RegionTimelineMath.IsReinforcedNight(1, 2), Is.False);
+            Assert.That(RegionTimelineMath.IsReinforcedNight(2, 2), Is.False);
+        }
+
+        [Test]
+        public void 타임라인_상태가_강화_밤을_직접_알려준다()
+        {
+            // 숲 3일차 = Day 3, 사막 2일차 = Day 7, 대초원 2일차 = Day 11.
+            Assert.That(Evaluate3(3).IsReinforcedNight, Is.True);
+            Assert.That(Evaluate3(7).IsReinforcedNight, Is.True);
+            Assert.That(Evaluate3(11).IsReinforcedNight, Is.True);
+
+            Assert.That(Evaluate3(5).IsReinforcedNight, Is.False, "숲 마지막 밤과 겹치지 않는다");
+            Assert.That(Evaluate3(6).IsReinforcedNight, Is.False, "사막 첫날과 겹치지 않는다");
+        }
     }
 }
