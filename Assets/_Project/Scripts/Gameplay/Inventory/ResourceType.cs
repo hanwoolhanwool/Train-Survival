@@ -37,6 +37,12 @@ namespace Game.Gameplay.Inventory
         /// </summary>
         OreVein = 7,
 
+        /// <summary>벼 — 대초원 (M7 1차, 기획서 §4.3). 비연료·비건자재, 밥 요리 재료.</summary>
+        Rice = 8,
+
+        /// <summary>소금 — 사막 (M7 1차 소급, 기획서 §4.2). 비연료·비건자재, 보존식 재료.</summary>
+        Salt = 9,
+
         /// <summary>권총탄 — 제작품 (고철 + 화약 원료).</summary>
         RevolverAmmo = 16,
 
@@ -51,5 +57,11 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>든든한 스튜 — 화덕 요리 (M5 4차). 허기 회복 대 + 소량 재생 + 보온 버프.</summary>
         HeartyStew = 20,
+
+        /// <summary>밥 — 화덕 요리 (M7 1차, 기획서 §7.3). 벼 기반, 허기 회복 중상 + 낮은 재생.</summary>
+        CookedRice = 21,
+
+        /// <summary>보존식 — 화덕 요리 (M7 1차, 기획서 §4.3 소금 절임). 고스택 비축형 — 북극행 식량.</summary>
+        PreservedMeal = 22,
     }
 }

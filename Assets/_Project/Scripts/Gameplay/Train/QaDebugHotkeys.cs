@@ -347,6 +347,9 @@ namespace Game.Gameplay.Train
                 inventory.ServerTryAdd(ResourceType.Scrap, 2);
                 inventory.ServerTryAdd(ResourceType.Niter, 2);
                 inventory.ServerTryAdd(ResourceType.RawFood, 4);
+                // M7 1차 — 벼·소금 지급으로 밥(벼 2)·보존식(식재료 2 + 소금 1) 요리 루프를 채집 없이 검증한다.
+                inventory.ServerTryAdd(ResourceType.Rice, 4);
+                inventory.ServerTryAdd(ResourceType.Salt, 2);
             }
         }
 
