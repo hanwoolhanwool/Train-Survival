@@ -1,5 +1,6 @@
 using Game.Core.Events;
 using Game.Core.Pooling;
+using Game.Core.Services;
 using Game.Gameplay.Combat;
 using Unity.Netcode;
 using UnityEngine;
@@ -33,6 +34,12 @@ namespace Game.Gameplay.Monsters
         // 서버 전용 — 이 개체에 실제로 적용되는 설정 (변종 반영).
         private MonsterSettings _effectiveSettings;
 
+        // 서버 전용 — 처치 시 지상 드랍 (M7 1차 — 스탬피드 개체 한정 주입. 일반 웨이브는 드랍 없음 유지).
+        private Inventory.ResourceType _pendingDropType = Inventory.ResourceType.None;
+        private int _pendingDropCount;
+        private Inventory.ResourceType _dropType = Inventory.ResourceType.None;
+        private int _dropCount;
+
         public bool IsAlive => IsSpawned && _health.Value > 0f;
 
         /// <summary>
@@ -53,6 +60,16 @@ namespace Game.Gameplay.Monsters
             _pendingHealthMultiplier = Mathf.Max(0.01f, multiplier);
         }
 
+        /// <summary>
+        /// 처치 시 지상 드랍을 스폰 직전에 주입한다 (호스트 전용, M7 1차 — 결정 ③).
+        /// 스탬피드 개체만 주입한다 — 미주입 = 드랍 없음이 기본이라 일반 웨이브의 탄약 경제가 지켜진다.
+        /// </summary>
+        public void ServerSetDeathDrop(Inventory.ResourceType type, int count)
+        {
+            _pendingDropType = type;
+            _pendingDropCount = count;
+        }
+
         public override void OnNetworkSpawn()
         {
             if (!IsServer)
@@ -66,9 +83,14 @@ namespace Game.Gameplay.Monsters
                 _health.Value = _effectiveSettings.MaxHealth * _pendingHealthMultiplier;
             }
 
-            // 풀에서 재사용될 때 이전 밤의 배율·변종이 새지 않도록 즉시 되돌린다.
+            _dropType = _pendingDropType;
+            _dropCount = _pendingDropCount;
+
+            // 풀에서 재사용될 때 이전 밤의 배율·변종·드랍이 새지 않도록 즉시 되돌린다.
             _pendingHealthMultiplier = 1f;
             _pendingVariant = null;
+            _pendingDropType = Inventory.ResourceType.None;
+            _pendingDropCount = 0;
         }
 
         public void ApplyDamage(float amount, ulong instigatorClientId)
@@ -82,6 +104,14 @@ namespace Game.Gameplay.Monsters
 
             if (_health.Value <= 0f)
             {
+                // 처치 드랍 (M7 1차 — 스탬피드 개체 한정): 버리기 낙하와 같은 스포너 경로로
+                // 지상 스폰돼 컨베이어·집게 회수에 자동 편입된다 (결정 ③).
+                if (_dropType != Inventory.ResourceType.None && _dropCount > 0
+                    && ServiceLocator.TryGet(out World.IResourceDropper dropper))
+                {
+                    dropper.ServerSpawnDropped(_dropType, _dropCount, transform.position);
+                }
+
                 NotifyDiedRpc(instigatorClientId, transform.position, _crushKill);
                 // destroy: true여야 PooledNetworkPrefabHandler를 거쳐 풀로 반환된다.
                 NetworkObject.Despawn(true);

@@ -46,6 +46,10 @@ namespace Game.Gameplay.Monsters
         private bool _towed;
         private bool _stunned;
 
+        // M7 1차 — 스탬피드 통과 모드 (서버 전용 상태). 추격·공격 조향을 끄고 열차와 평행한
+        // 직선 주행만 한다 (접촉 피해는 유지). 클라이언트는 평소처럼 스냅샷 보간만 한다.
+        private bool _passThrough;
+
         /// <summary>
         /// 이 개체에 실제로 적용되는 설정 — 변종이 지정됐으면 카탈로그에서, 아니면 기본값.
         /// 클라이언트도 보간 지연·이동 파라미터가 필요하므로 인덱스를 복제해 같은 값을 조회한다.
@@ -105,6 +109,19 @@ namespace Game.Gameplay.Monsters
 
             // 상태 전환 프레임에 스냅샷을 즉시 한 번 보내 표시가 늦게 따라붙지 않게 한다.
             _syncTimer = float.MaxValue;
+        }
+
+        /// <summary>
+        /// 통과 모드 전환 (M7 1차 — 서버 전용, 스탬피드). 켜면 추격·공격·도약 조향이 꺼지고
+        /// 열차와 평행한 -Z 직선 주행(스크롤 상대 속도)만 한다. 접촉 피해는 유지된다.
+        /// 스폰 직후 호출한다 — 풀 재사용 시 <see cref="OnDespawned"/>가 되돌린다.
+        /// </summary>
+        public void ServerSetPassThrough(bool passThrough)
+        {
+            if (IsServer)
+            {
+                _passThrough = passThrough;
+            }
         }
 
         /// <summary>
@@ -187,6 +204,13 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
+            // 통과 모드 (M7 1차 — 스탬피드): 추격·도약 없이 직선 주행 + 접촉 피해만.
+            if (_passThrough)
+            {
+                ServerSimulatePassThrough();
+                return;
+            }
+
             float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
 
             // 그로기 중에는 표적을 잡지 않는다 — 조향·공격이 함께 멈춘다 (중력·지지면은 그대로).
@@ -228,6 +252,36 @@ namespace Game.Gameplay.Monsters
             _lastHorizontalVelocity = horizontalVelocity;
             FaceVelocity(horizontalVelocity, target);
             ServerTryAttack(target);
+            ServerCheckFellBehind();
+            ServerSync(Settings.SyncHz);
+        }
+
+        /// <summary>
+        /// 통과 모드 시뮬레이션 (M7 1차 — 스탬피드): 열차와 평행한 -Z 직선 주행(자체 주행 + 스크롤
+        /// 가산). 열차·플레이어를 추격하지 않고, 접촉 범위 안의 플레이어에게만 피해를 준다
+        /// (열차 무관심 — 방심 방지의 축은 "치이면 아프다"). 후방 이탈 회수는 일반 경로와 같다.
+        /// </summary>
+        private void ServerSimulatePassThrough()
+        {
+            float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
+
+            // 그로기(파지 해제 직후)에는 주행이 잠시 멈춘다 — 일반 모드와 같은 이탈 틈.
+            Vector3 horizontalVelocity = _stunned
+                ? Vector3.zero
+                : StampedeMath.ComputePassVelocity(Settings.MoveSpeed, scrollSpeed);
+
+            ApplyVerticalMotion(false);
+
+            Vector3 motion = (horizontalVelocity + Vector3.up * _verticalSpeed) * Time.deltaTime;
+            transform.position += motion;
+            ClampToSupport();
+
+            _lastHorizontalVelocity = horizontalVelocity;
+            FaceVelocity(horizontalVelocity, null);
+
+            // 접촉 피해 — 기존 공격 판정(사거리 + 쿨다운)을 플레이어 한정으로 재사용한다.
+            ServerTryAttack(_stunned ? null : FindNearestPlayer(out _));
+
             ServerCheckFellBehind();
             ServerSync(Settings.SyncHz);
         }
@@ -461,9 +515,10 @@ namespace Game.Gameplay.Monsters
             _verticalSpeed = 0f;
             _lastHorizontalVelocity = Vector3.zero;
 
-            // 풀 재사용 시 이전 개체의 견인·그로기가 새지 않도록 되돌린다.
+            // 풀 재사용 시 이전 개체의 견인·그로기·통과 모드가 새지 않도록 되돌린다.
             _towed = false;
             _stunned = false;
+            _passThrough = false;
         }
     }
 }
