@@ -28,6 +28,16 @@ namespace Game.Systems.Networking
 
         public static bool IsSteam => Mode == NetworkTransportMode.SteamRelay;
 
+        /// <summary>
+        /// 테스트 전용 — 모드를 강제하거나(값) 캐시를 비워 재결정하게(null) 한다.
+        /// PlayMode 테스트가 에디터 Steam 토글 상태에 좌우되지 않게 SetUp에서 UnityDirect로
+        /// 고정하고 TearDown에서 되돌린다.
+        /// </summary>
+        internal static void OverrideForTests(NetworkTransportMode? mode)
+        {
+            _mode = mode;
+        }
+
         private static NetworkTransportMode ResolveOnce()
         {
 #if UNITY_EDITOR

@@ -23,6 +23,9 @@ namespace Game.Tests.PlayMode
         [SetUp]
         public void SetUp()
         {
+            // 에디터 Steam 토글이 켜져 있어도 이 스위트는 UnityTransport 경로를 검증한다 (M6 2차).
+            ActiveTransportMode.OverrideForTests(NetworkTransportMode.UnityDirect);
+
             _networkManagerHost = new GameObject("NetworkManager");
             NetworkManager networkManager = _networkManagerHost.AddComponent<NetworkManager>();
             var transport = _networkManagerHost.AddComponent<UnityTransport>();
@@ -38,6 +41,7 @@ namespace Game.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            ActiveTransportMode.OverrideForTests(null);
             _service.Shutdown();
             yield return null;
 
