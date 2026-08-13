@@ -520,9 +520,11 @@ namespace Game.Gameplay.Player
         // ── 재접속 위치 복원 (M6 결정 ① 개정 — 2026-08-13 사용자 승인 ⓐ) ──────────
 
         /// <summary>
-        /// 끊김 위치 복원 — 서버 전용, 재접속 적용 훅이 부른다. 위치가 <b>편성에 붙어 있는
-        /// 살아있는 칸의 갑판 위</b>일 때만 소유자에게 배치를 지시하고, 그 외(이탈 칸·지상·
-        /// 그 사이 칸이 사라진 경우)는 아무것도 하지 않아 현행 스폰 지점 폴백이 된다.
+        /// 끊김 위치 복원 — 서버 전용, 재접속 적용 훅이 부른다. <b>살아있는 칸의 갑판 위</b>는
+        /// 그 자리로, 그 외(지상·칸 소실 등)도 <b>사망선(후미 40 m) 앞이면</b> 그 자리로
+        /// 소유자에게 배치를 지시한다 (M6 결정 ① 재개정 — 2차 검증 D3 사용자 수정 요청
+        /// 2026-08-13: "지상에서 끊겨도 지상 위치에서 부활"). 이탈 중인 칸 위와 사망선 뒤만
+        /// 스폰 지점 폴백이다 — 복원 직후 이탈 사망으로 이어질 자리라서다.
         /// 위치는 소유자 권위(OwnerNetworkTransform)라 서버가 직접 옮길 수 없다 — RPC 지시다.
         /// </summary>
         public void ServerRestorePosition(Vector3 position)
@@ -533,19 +535,28 @@ namespace Game.Gameplay.Player
             }
 
             // 살아있는 칸의 갑판 판정 (M5 7차 A3 프레임 판정 재사용 — 이탈 오프셋 반영).
-            if (!train.TryGetDeckSurface(position, out float deckHeight, out int carIndex))
+            if (train.TryGetDeckSurface(position, out float deckHeight, out int carIndex))
+            {
+                // 이탈 중(뒤로 밀려나는) 칸은 제외 — 복원 직후 후미 이탈 사망으로 이어질 자리다.
+                if (train.GetEjectOffset(carIndex) > 0f)
+                {
+                    return;
+                }
+
+                // 공중(점프 중) 캡처는 그대로 떨어뜨리되, 갑판 아래로는 들어가지 않게 받친다.
+                position.y = Mathf.Max(position.y, deckHeight + 0.1f);
+                RestorePlacementOwnerRpc(position);
+                return;
+            }
+
+            // 갑판 밖(지상·칸 소실로 공중) — 사망선 앞이면 끊긴 자리로. 지상은 복원 즉시
+            // 스크롤 밀림이 재개되므로 그 자리의 긴장(추격 복귀)까지 그대로 이어진다.
+            if (_trainLayout == null || position.z <= _trainLayout.DeathZ)
             {
                 return;
             }
 
-            // 이탈 중(뒤로 밀려나는) 칸은 제외 — 복원 직후 후미 이탈 사망으로 이어질 자리다.
-            if (train.GetEjectOffset(carIndex) > 0f)
-            {
-                return;
-            }
-
-            // 공중(점프 중) 캡처는 그대로 떨어뜨리되, 갑판 아래로는 들어가지 않게 받친다.
-            position.y = Mathf.Max(position.y, deckHeight + 0.1f);
+            position.y = Mathf.Max(position.y, 0.1f);
             RestorePlacementOwnerRpc(position);
         }
 
