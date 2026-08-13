@@ -4049,6 +4049,7 @@ GameObject:
   - component: {fileID: 1367659754}
   - component: {fileID: 1367659756}
   - component: {fileID: 1367659757}
+  - component: {fileID: 1367659758}
   m_Layer: 0
   m_Name: SliceHud
   m_TagString: Untagged
@@ -4135,6 +4136,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Game.UI.CraftingHud
   _catalog: {fileID: 11400000, guid: 9747de51e37a616479a984ac3e8d4116, type: 2}
+--- !u!114 &1367659758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1367659750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50a25e4f4d166d440831fab9e171362a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.UI::Game.UI.GameOverHud
 --- !u!1 &1371584329
 GameObject:
   m_ObjectHideFlags: 0
@@ -4676,6 +4689,7 @@ GameObject:
   - component: {fileID: 1704432519}
   - component: {fileID: 1704432520}
   - component: {fileID: 1704432521}
+  - component: {fileID: 1704432522}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -4853,6 +4867,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 63f04369e17dbd54dbc822b05bb5f7cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.WeatherVisualController
+--- !u!114 &1704432522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b446e765cfeef6c4fb0c66807fefe124, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Session.GameOverMonitor
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &1711090753
 GameObject:
   m_ObjectHideFlags: 0
