@@ -54,23 +54,8 @@ namespace Game.Systems.Networking
 
         private static string GetTokenFilePath()
         {
-            string instanceKey = ComputeStableHash(Application.dataPath);
+            string instanceKey = Utilities.StableHash.Fnv1aHex(Application.dataPath);
             return Path.Combine(Application.persistentDataPath, TokenDirectoryName, $"token-{instanceKey}.txt");
-        }
-
-        // string.GetHashCode()는 런타임에 따라 실행마다 달라질 수 있어 FNV-1a로 직접 계산한다.
-        private static string ComputeStableHash(string value)
-        {
-            unchecked
-            {
-                uint hash = 2166136261u;
-                foreach (char c in value)
-                {
-                    hash = (hash ^ c) * 16777619u;
-                }
-
-                return hash.ToString("x8");
-            }
         }
     }
 }

@@ -90,6 +90,21 @@ namespace Game.Systems
             {
                 ServiceLocator.Register<ISteamLobbyService>(new SteamLobbyService());
             }
+
+            if (!ServiceLocator.IsRegistered<Meta.IMetaProgressService>())
+            {
+                // 메타 진행·업적 (M6 3차 결정 ③) — 로컬 파일이 원천, Steam 모드면 업적만 미러.
+                var metaProgress = new Meta.MetaProgressService(new Meta.MetaProgressStore());
+                ServiceLocator.Register<Meta.IMetaProgressService>(metaProgress);
+
+                Meta.IAchievementService achievements = metaProgress;
+                if (ActiveTransportMode.IsSteam && SteamService.IsInitialized)
+                {
+                    achievements = new SteamAchievementsMirror(achievements);
+                }
+
+                ServiceLocator.Register<Meta.IAchievementService>(achievements);
+            }
         }
     }
 }
