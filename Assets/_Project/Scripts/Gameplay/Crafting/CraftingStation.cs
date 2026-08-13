@@ -310,6 +310,14 @@ namespace Game.Gameplay.Crafting
                 return;
             }
 
+            // 보유 게이트 (M6 검증 후속, 2026-08-13 사용자 결정 ⓐ) — 등급은 플레이어 컴포넌트에
+            // 있어 집게를 창고에 맡긴 채로도 승급이 성립하던 결함(M5 5차부터). 핫바에 집게
+            // 아이템이 실제로 있을 때만 확정한다. UI(CraftingHud)도 같은 조건으로 비활성화한다.
+            if (!HotbarLogic.ContainsItem(inventory.ServerCopySlotViews(), HotbarItemType.Harpoon))
+            {
+                return;
+            }
+
             if (!inventory.ServerTryConsume(recipe))
             {
                 return;

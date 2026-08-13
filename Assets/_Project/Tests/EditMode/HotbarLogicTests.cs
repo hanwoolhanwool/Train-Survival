@@ -22,6 +22,19 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void ContainsItem은_해당_종류의_보유_여부를_판정한다()
+        {
+            HotbarSlotView[] slots = CreateDefaultSlots();
+
+            Assert.That(HotbarLogic.ContainsItem(slots, HotbarItemType.Harpoon), Is.True);
+            Assert.That(HotbarLogic.ContainsItem(slots, HotbarItemType.Shotgun), Is.False);
+
+            // 집게를 뺀 상태(창고 보관 등) — 승급 보유 게이트가 걸리는 경우 (M6 검증 후속).
+            slots[0] = new HotbarSlotView(HotbarItemType.None, 0);
+            Assert.That(HotbarLogic.ContainsItem(slots, HotbarItemType.Harpoon), Is.False);
+        }
+
+        [Test]
         public void 자원은_빈_칸에_새_스택으로_적재된다()
         {
             HotbarSlotView[] slots = CreateDefaultSlots();

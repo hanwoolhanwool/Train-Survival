@@ -6,6 +6,21 @@ namespace Game.Gameplay.Inventory
     /// </summary>
     public static class HotbarLogic
     {
+        /// <summary>슬롯에 해당 종류의 아이템이 있는가 — 집게 승급의 보유 게이트(M6 검증 후속) 등
+        /// "도구를 실제로 갖고 있는가" 판정에 쓴다.</summary>
+        public static bool ContainsItem(HotbarSlotView[] slots, HotbarItemType itemType)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].ItemType == itemType)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// 자원 1개를 적재한다 — 같은 종류의 여유 있는 스택(앞에서부터)을 먼저 채우고, 없으면 첫 빈 칸에 새 스택.
         /// 전부 차 있으면 실패 (획득 불가·낙하 규칙). stackSize는 해당 종류의 스택 상한 — 호출자가 카탈로그에서 푼다.

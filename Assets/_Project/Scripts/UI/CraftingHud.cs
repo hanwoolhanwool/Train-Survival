@@ -127,6 +127,14 @@ namespace Game.UI
                     CraftingRecipe recipe = station.GetRecipe(recipeIndex);
                     CraftingLogic.IngredientView[] ingredients = recipe.ToIngredientViews();
                     bool canCraft = CraftingLogic.CanCraft(slots, ingredients);
+                    string blockedLabel = "재료 부족";
+
+                    // 집게 승급은 집게를 실제로 갖고 있어야 한다 (M6 검증 후속 — 서버 게이트와 동일 조건).
+                    if (recipe.IsHarpoonTierOutput && !HotbarLogic.ContainsItem(slots, HotbarItemType.Harpoon))
+                    {
+                        canCraft = false;
+                        blockedLabel = "집게 없음";
+                    }
 
                     GUI.Label(new Rect(16f, y, 220f, 22f), BuildOutputLine(recipe));
 
@@ -135,7 +143,7 @@ namespace Game.UI
 
                     // 비활성 버튼이 "없는 것"처럼 보이지 않게 사유를 라벨로 말해준다 (M5 6차).
                     GUI.enabled = canCraft;
-                    if (GUI.Button(new Rect(contentRect.xMax - 84f, y + 6f, 76f, 30f), canCraft ? "제작" : "재료 부족"))
+                    if (GUI.Button(new Rect(contentRect.xMax - 84f, y + 6f, 76f, 30f), canCraft ? "제작" : blockedLabel))
                     {
                         station.RequestCraft(recipeIndex);
                     }
