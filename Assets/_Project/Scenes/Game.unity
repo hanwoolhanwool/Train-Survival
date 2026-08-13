@@ -4050,6 +4050,7 @@ GameObject:
   - component: {fileID: 1367659756}
   - component: {fileID: 1367659757}
   - component: {fileID: 1367659758}
+  - component: {fileID: 1367659759}
   m_Layer: 0
   m_Name: SliceHud
   m_TagString: Untagged
@@ -4148,6 +4149,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50a25e4f4d166d440831fab9e171362a, type: 3}
   m_Name:
   m_EditorClassIdentifier: Game.UI::Game.UI.GameOverHud
+--- !u!114 &1367659759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1367659750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0bb553322b3e9b45b8815db0b7ccf7e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.UI::Game.UI.BossHudView
+  _barWidthRatio: 0.5
+  _barHeight: 18
+  _topMargin: 56
+  _killBannerSeconds: 4
 --- !u!1 &1371584329
 GameObject:
   m_ObjectHideFlags: 0
@@ -4691,6 +4708,8 @@ GameObject:
   - component: {fileID: 1704432521}
   - component: {fileID: 1704432522}
   - component: {fileID: 1704432523}
+  - component: {fileID: 1704432524}
+  - component: {fileID: 1704432525}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -4898,6 +4917,42 @@ MonoBehaviour:
   _monsterPrefab: {fileID: 6108033370838349685, guid: fb2ef60f9c01323489a0226bced18e5f, type: 3}
   _variantCatalog: {fileID: 11400000, guid: e9d2ad0dcda876842b2eadac15aafc14, type: 2}
   _regionSettings: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
+--- !u!114 &1704432524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2ca1d76d44f98e468cd586310fd04f2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.BossSpawner
+  ShowTopMostFoldoutHeaderGroup: 1
+  _regionSettings: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
+  _waveSettings: {fileID: 11400000, guid: 648802e4aec06b24fb483e6470d31813, type: 2}
+  _spawnLateralOffset: 16
+  _spawnZ: 20
+--- !u!114 &1704432525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 050cad3de77adc941883632eab07c161, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.BossMinionSpawner
+  ShowTopMostFoldoutHeaderGroup: 1
+  _monsterPrefab: {fileID: 6108033370838349685, guid: fb2ef60f9c01323489a0226bced18e5f, type: 3}
+  _variantCatalog: {fileID: 11400000, guid: e9d2ad0dcda876842b2eadac15aafc14, type: 2}
+  _combinedMaxAlive: 16
+  _summonRadius: 5
+  _herdLateralOffset: 7
+  _herdSpawnZ: 45
 --- !u!1 &1711090753
 GameObject:
   m_ObjectHideFlags: 0
