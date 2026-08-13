@@ -43,6 +43,12 @@ namespace Game.Gameplay.Inventory
         /// <summary>소금 — 사막 (M7 1차 소급, 기획서 §4.2). 비연료·비건자재, 보존식 재료.</summary>
         Salt = 9,
 
+        /// <summary>
+        /// 보스 핵 — 지역 보스 처치 보상 (M7 2차 결정 ③). 비연료·비건자재.
+        /// 채집으로는 얻을 수 없는 유일한 자연 대역 자원이다 — 소비처는 3~5차에서 연결한다.
+        /// </summary>
+        BossCore = 10,
+
         /// <summary>권총탄 — 제작품 (고철 + 화약 원료).</summary>
         RevolverAmmo = 16,
 

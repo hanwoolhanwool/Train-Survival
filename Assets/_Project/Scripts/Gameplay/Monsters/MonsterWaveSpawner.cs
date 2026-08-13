@@ -14,7 +14,7 @@ namespace Game.Gameplay.Monsters
     /// 밤 시작(권위 이벤트)에 Day 비례 계획을 세우고, "지속 유입" 간격으로 동시 존재 상한 안에서 스폰한다.
     /// 새벽에는 생존 몬스터를 도주 처리(회수)한다. 스폰/소멸은 PoolManager + NGO 스폰 경유. Game 씬에 1개 배치한다.
     /// </summary>
-    public sealed class MonsterWaveSpawner : NetworkBehaviour, IWaveSpawnToggle
+    public sealed class MonsterWaveSpawner : NetworkBehaviour, IWaveSpawnToggle, IMonsterPopulation
     {
         [SerializeField] private WaveSettings _settings;
         [SerializeField] private GameObject _monsterPrefab;
@@ -35,6 +35,20 @@ namespace Game.Gameplay.Monsters
 
         /// <summary>스폰 허용 여부 — QA 토글 (기본 켜짐, 릴리스 동작 불변).</summary>
         public bool SpawnEnabled => _spawnEnabled;
+
+        /// <summary>
+        /// 현재 살아 있는 웨이브 개체 수 (M7 2차) — 보스 소속 개체가 합산 cap을 지키기 위한 조회면.
+        /// 회수된 개체가 남아 있지 않도록 정리한 뒤 센다.
+        /// </summary>
+        public int ActiveMonsterCount
+        {
+            get
+            {
+                PruneInactive();
+
+                return _activeMonsters.Count;
+            }
+        }
 
         /// <summary>스폰 토글 — 서버 전용. 끄면 진행 중인 웨이브를 즉시 회수하고 다음 밤도 쉰다.</summary>
         public void ServerSetSpawnEnabled(bool enabled)
@@ -95,6 +109,11 @@ namespace Game.Gameplay.Monsters
             {
                 ServiceLocator.Register<IWaveSpawnToggle>(this);
             }
+
+            if (!ServiceLocator.IsRegistered<IMonsterPopulation>())
+            {
+                ServiceLocator.Register<IMonsterPopulation>(this);
+            }
         }
 
         public override void OnNetworkDespawn()
@@ -104,6 +123,11 @@ namespace Game.Gameplay.Monsters
             if (ServiceLocator.TryGet(out IWaveSpawnToggle toggle) && ReferenceEquals(toggle, this))
             {
                 ServiceLocator.Unregister<IWaveSpawnToggle>();
+            }
+
+            if (ServiceLocator.TryGet(out IMonsterPopulation population) && ReferenceEquals(population, this))
+            {
+                ServiceLocator.Unregister<IMonsterPopulation>();
             }
         }
 
@@ -132,7 +156,7 @@ namespace Game.Gameplay.Monsters
                 _plan = WaveMath.Plan(
                     evt.DayNumber, _settings.ToCurve(),
                     difficulty.WaveCountMultiplier, difficulty.MonsterHealthMultiplier,
-                    difficulty.IsFinalNightOfRegion);
+                    difficulty.IsFinalNightOfRegion, difficulty.IsReinforcedNightOfRegion);
 
                 _waveActive = true;
                 _spawnedCount = 0;
@@ -140,8 +164,12 @@ namespace Game.Gameplay.Monsters
                 _waveDayNumber = evt.DayNumber;
 
                 string regionLabel = region?.CurrentRegion == null ? "지역 없음" : region.CurrentRegion.DisplayName;
+                string nightLabel = _plan.IsFinalNight
+                    ? ", 지역 마지막 밤"
+                    : (_plan.IsReinforcedNight ? ", 지역 중간 강화 밤" : string.Empty);
+
                 Debug.Log($"[MonsterWaveSpawner] 밤 웨이브 시작: Day {evt.DayNumber} ({regionLabel}" +
-                    $"{(_plan.IsFinalNight ? ", 지역 마지막 밤" : string.Empty)}), " +
+                    $"{nightLabel}), " +
                     $"총 {_plan.TotalCount}마리, 간격 {_plan.SpawnInterval:F1}s, 동시 상한 {_plan.MaxAlive}, " +
                     $"체력 ×{_plan.HealthMultiplier:F2}");
             }

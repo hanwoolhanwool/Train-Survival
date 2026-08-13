@@ -24,6 +24,8 @@ namespace Game.Gameplay.Train
     ///   골라 전 피어에 뿌리고, 각 피어가 수신 프레임에 자기 집게로 그랩을 요청한다.
     /// - 숫자패드 * : 몬스터 단건 스폰(M5 6차). 요청자 전방 10 m 지상에 기본 변종 1마리 —
     ///   파지·투척·즉사 존 검증을 몬스터 1마리로 통제한다.
+    /// - 숫자패드 / : 현재 지역 보스 즉시 소환(M7 2차). 밤·웨이브와 무관하게 1기를 세운다 —
+    ///   숫자패드 5(웨이브 토글)와 조합하면 보스 단독 격리가 된다. <b>새벽 보류에는 걸리지 않는다.</b>
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
     /// </summary>
     public sealed class QaDebugHotkeys : NetworkBehaviour
@@ -33,7 +35,7 @@ namespace Game.Gameplay.Train
         private const float SelfDamage = 20f;
         private const float SingleMonsterSpawnDistance = 10f;
 
-        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩, * = 몬스터 단건 스폰. QA 전용이므로 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩, * = 몬스터 단건 스폰, / = 지역 보스 소환. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
 
         // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 6의 데미지 대상 선택에 쓴다.
@@ -129,6 +131,30 @@ namespace Game.Gameplay.Train
             {
                 RequestSpawnSingleMonsterServerRpc();
             }
+
+            if (keyboard.numpadDivideKey.wasPressedThisFrame)
+            {
+                RequestSpawnBossServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// 지역 보스 즉시 소환 (M7 2차) — 마지막 밤을 기다리지 않고 현재 지역 보스를 1기 세운다.
+        /// 소환된 보스는 <b>새벽 보류에 등록되지 않으므로</b> 낮에도 시간이 정상 진행한다 —
+        /// 패턴·페이즈·드랍만 격리해서 볼 수 있다 (밤 지속 규칙 자체는 마지막 밤에서 검증한다).
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestSpawnBossServerRpc()
+        {
+            if (!ServiceLocator.TryGet(out Cycle.INightHoldGate gate)
+                || !(gate is Monsters.BossSpawner spawner))
+            {
+                Debug.Log("[QaDebugHotkeys] 보스 소환 무효: 보스 스포너가 없다");
+                return;
+            }
+
+            int dayNumber = ServiceLocator.TryGet(out Cycle.IDayCycleService cycle) ? cycle.DayNumber : 1;
+            spawner.ServerSpawnBossForQa(dayNumber);
         }
 
         /// <summary>
