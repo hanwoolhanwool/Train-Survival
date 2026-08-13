@@ -4690,6 +4690,7 @@ GameObject:
   - component: {fileID: 1704432520}
   - component: {fileID: 1704432521}
   - component: {fileID: 1704432522}
+  - component: {fileID: 1704432523}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -4880,6 +4881,23 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Session.GameOverMonitor
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &1704432523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8860c0dd91949459db600a44ba94385, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.StampedeController
+  ShowTopMostFoldoutHeaderGroup: 1
+  _settings: {fileID: 11400000, guid: b1fabeeb53d4487e9152ee568155b831, type: 2}
+  _monsterPrefab: {fileID: 6108033370838349685, guid: fb2ef60f9c01323489a0226bced18e5f, type: 3}
+  _variantCatalog: {fileID: 11400000, guid: e9d2ad0dcda876842b2eadac15aafc14, type: 2}
+  _regionSettings: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
 --- !u!1 &1711090753
 GameObject:
   m_ObjectHideFlags: 0
