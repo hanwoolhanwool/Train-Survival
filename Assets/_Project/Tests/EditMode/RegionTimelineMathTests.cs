@@ -122,5 +122,47 @@ namespace Game.Tests.EditMode
             Assert.That(state.RegionIndex, Is.EqualTo(0));
             Assert.That(state.DayInRegion, Is.EqualTo(3));
         }
+
+        // ── 3지역 구성 (M7 1차 — 숲 5 + 사막 4 + 대초원 4 = 한 바퀴 13일) ────
+
+        private static readonly int[] ThreeRegions = { 5, 4, 4 };
+
+        private static RegionTimelineState Evaluate3(int dayNumber)
+        {
+            return RegionTimelineMath.Evaluate(dayNumber, ThreeRegions, ForecastLeadDays, true);
+        }
+
+        [Test]
+        public void 대초원은_Day10에_시작한다()
+        {
+            RegionTimelineState state = Evaluate3(10);
+
+            Assert.That(state.RegionIndex, Is.EqualTo(2), "숲 5일 + 사막 4일 뒤 = 대초원");
+            Assert.That(state.DayInRegion, Is.EqualTo(1));
+            Assert.That(state.RegionDayCount, Is.EqualTo(4));
+            Assert.That(state.CycleNumber, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void 사막_마지막_이틀은_대초원을_예고한다()
+        {
+            // 사막 = Day 6~9. 예고 2일 → 8·9일차가 예고 구간, 다음 지역 = 대초원(2).
+            Assert.That(Evaluate3(7).IsForecastWindow, Is.False);
+            Assert.That(Evaluate3(8).IsForecastWindow, Is.True);
+            Assert.That(Evaluate3(9).IsForecastWindow, Is.True);
+            Assert.That(Evaluate3(9).NextRegionIndex, Is.EqualTo(2), "예고 대상 = 대초원");
+        }
+
+        [Test]
+        public void 대초원_마지막_밤은_Day13이고_다음은_숲_순환이다()
+        {
+            Assert.That(Evaluate3(13).IsFinalDayOfRegion, Is.True, "대초원 4일차 = 대형 웨이브");
+            Assert.That(Evaluate3(13).NextRegionIndex, Is.EqualTo(0), "순환 예고 = 숲");
+
+            RegionTimelineState next = Evaluate3(14);
+            Assert.That(next.RegionIndex, Is.EqualTo(0), "숲 복귀 (기획서 §4.5)");
+            Assert.That(next.DayInRegion, Is.EqualTo(1));
+            Assert.That(next.CycleNumber, Is.EqualTo(1), "두 번째 바퀴 — 난이도 보너스 가산 축");
+        }
     }
 }

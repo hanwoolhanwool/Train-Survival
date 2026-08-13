@@ -149,6 +149,58 @@ namespace Game.Tests.EditMode
                 "빈 칸 없음 → 전량 실패 (호출자가 복사본을 버려 재료가 보존된다)");
         }
 
+        // ── M7 1차 — 요리·보존식 레시피 회귀 (기획서 §4.3 소금 절임·§7.3) ──
+
+        private static CraftingLogic.IngredientView[] PreservedMealIngredients()
+        {
+            // 보존식 레시피 — 식재료 2 + 소금 1 → 보존식 2 (결정 ② — 고스택 비축형).
+            return new[]
+            {
+                new CraftingLogic.IngredientView(ResourceType.RawFood, 2),
+                new CraftingLogic.IngredientView(ResourceType.Salt, 1),
+            };
+        }
+
+        [Test]
+        public void 보존식은_식재료와_소금을_차감하고_2개를_적재한다()
+        {
+            HotbarSlotView[] slots = CreateSlots();
+            slots[1] = new HotbarSlotView(HotbarItemType.Resource, 3, ResourceType.RawFood);
+            slots[2] = new HotbarSlotView(HotbarItemType.Resource, 2, ResourceType.Salt);
+
+            // 스택 10 = 결정 ② — 일반 요리(5) 대비 2배로 "창고 슬롯당 끼니 수"를 키운다.
+            Assert.That(CraftingLogic.TryCraft(slots, PreservedMealIngredients(),
+                ResourceType.PreservedMeal, 2, 10), Is.True);
+
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.RawFood), Is.EqualTo(1));
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.Salt), Is.EqualTo(1));
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.PreservedMeal), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void 소금이_없으면_보존식은_전량_실패한다()
+        {
+            HotbarSlotView[] slots = CreateSlots();
+            slots[1] = new HotbarSlotView(HotbarItemType.Resource, 5, ResourceType.RawFood);
+
+            Assert.That(CraftingLogic.TryCraft(slots, PreservedMealIngredients(),
+                ResourceType.PreservedMeal, 2, 10), Is.False, "사막에서 소금을 챙겨 왔는가가 비축 효율을 가른다");
+            Assert.That(slots[1].Count, Is.EqualTo(5), "실패 시 식재료 무변경 — 원자성");
+        }
+
+        [Test]
+        public void 밥은_벼_2개를_차감하고_2개를_적재한다()
+        {
+            HotbarSlotView[] slots = CreateSlots();
+            slots[1] = new HotbarSlotView(HotbarItemType.Resource, 2, ResourceType.Rice);
+
+            var ingredients = new[] { new CraftingLogic.IngredientView(ResourceType.Rice, 2) };
+
+            Assert.That(CraftingLogic.TryCraft(slots, ingredients, ResourceType.CookedRice, 2, StackSize), Is.True);
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.Rice), Is.EqualTo(0));
+            Assert.That(HotbarLogic.CountResource(slots, ResourceType.CookedRice), Is.EqualTo(2));
+        }
+
         [Test]
         public void 무효_무기_산출_종류는_실패한다()
         {
