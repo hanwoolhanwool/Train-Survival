@@ -218,6 +218,13 @@ namespace Game.Gameplay.Player
         [Rpc(SendTo.Server)]
         private void ReviveServerRpc()
         {
+            // 종단 가드 (M6 3차 결정 ②): 게임오버 확정 후에는 진행 중이던 소유자 부활
+            // 코루틴이 도착해도 무시한다 — 전멸이 뒤집히지 않는다.
+            if (ServiceLocator.TryGet(out Session.GameOverMonitor gameOver) && gameOver.IsGameOver)
+            {
+                return;
+            }
+
             if (_settings != null)
             {
                 _health.Value = _settings.MaxHealth;

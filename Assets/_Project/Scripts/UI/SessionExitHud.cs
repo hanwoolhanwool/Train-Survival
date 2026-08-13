@@ -23,6 +23,7 @@ namespace Game.UI
         private bool _craftingOpen;
         private bool _storageOpen;
         private bool _bundleOpen;
+        private bool _gameOver;
 
         private void OnEnable()
         {
@@ -30,6 +31,7 @@ namespace Game.UI
             EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingToggled);
             EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Subscribe(OnStorageToggled);
             EventBus<Gameplay.Train.BundlePanelToggledLocalEvent>.Subscribe(OnBundleToggled);
+            EventBus<Gameplay.Session.GameOverEvent>.Subscribe(OnGameOver);
         }
 
         private void OnDisable()
@@ -38,10 +40,17 @@ namespace Game.UI
             EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingToggled);
             EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStorageToggled);
             EventBus<Gameplay.Train.BundlePanelToggledLocalEvent>.Unsubscribe(OnBundleToggled);
+            EventBus<Gameplay.Session.GameOverEvent>.Unsubscribe(OnGameOver);
         }
 
         private void Update()
         {
+            // 게임오버 중에는 Esc 메뉴를 억제한다 — 화면은 GameOverHud가 소유한다 (M6 3차).
+            if (_gameOver)
+            {
+                return;
+            }
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame || !IsSessionActive())
             {
@@ -83,8 +92,21 @@ namespace Game.UI
             _bundleOpen = evt.IsOpen;
         }
 
+        private void OnGameOver(Gameplay.Session.GameOverEvent evt)
+        {
+            // 복제 값(GameOverMonitor)이 아닌 로컬 플래그로 기억한다 — 호스트가 먼저 나가
+            // 세션이 내려간 뒤에도 게임오버 화면이 세션 종료 오버레이로 바뀌지 않게.
+            _gameOver = true;
+            SetMenuOpen(false);
+        }
+
         private void OnGUI()
         {
+            if (_gameOver)
+            {
+                return;
+            }
+
             if (!IsSessionActive())
             {
                 DrawSessionEndedOverlay();

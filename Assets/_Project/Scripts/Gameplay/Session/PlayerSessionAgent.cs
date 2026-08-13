@@ -95,6 +95,13 @@ namespace Game.Gameplay.Session
                 NetworkManager.ServerTime.Time);
             Debug.Log($"[PlayerSessionAgent] 재접속 복원 적용: client={OwnerClientId} "
                 + $"respawnPending={snapshot.RespawnPending}");
+
+            // 복원으로 부활 대기가 재개됐을 수 있다 — 전멸 재평가 (M6 3차 §2.2 트리거 ⓓ,
+            // 스폰~복원 1프레임 창 동안 초기 지급 상태로 보이던 것의 보정).
+            if (ServiceLocator.TryGet(out GameOverMonitor gameOver))
+            {
+                gameOver.ServerReevaluate();
+            }
         }
 
         private bool TryGetToken(out string token)

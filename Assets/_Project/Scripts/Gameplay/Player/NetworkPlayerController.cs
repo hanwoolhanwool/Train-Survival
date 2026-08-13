@@ -478,6 +478,15 @@ namespace Game.Gameplay.Player
             _respawning = true;
             yield return new WaitForSeconds(delaySeconds);
 
+            // 종단 가드 (M6 3차 결정 ② — H5 재검): 대기 중 게임오버가 확정되면 부활을 중단한다.
+            // 서버 가드(Revive·RespawnComplete 무시)만으로는 부족하다 — 카운트다운·이동 입력이
+            // 소유자 로컬(_respawning)이라, 여기서 끊지 않으면 소유자만 되살아나 움직인다.
+            // _respawning을 유지해 입력 정지도 계속된다 (게임오버 화면이 복귀를 담당).
+            if (ServiceLocator.TryGet(out Session.GameOverMonitor gameOver) && gameOver.IsGameOver)
+            {
+                yield break;
+            }
+
             TeleportTo(respawnPosition);
             _horizontalVelocity = Vector3.zero;
             _verticalSpeed = 0f;
@@ -489,6 +498,13 @@ namespace Game.Gameplay.Player
         [Rpc(SendTo.Server)]
         private void RespawnCompleteServerRpc()
         {
+            // 종단 가드 (M6 3차 결정 ②): 게임오버 확정 후에는 부활 완료를 무시한다 —
+            // PlayerHealth.ReviveServerRpc의 가드와 짝이다.
+            if (ServiceLocator.TryGet(out Session.GameOverMonitor gameOver) && gameOver.IsGameOver)
+            {
+                return;
+            }
+
             _respawnPending.Value = false;
         }
 
