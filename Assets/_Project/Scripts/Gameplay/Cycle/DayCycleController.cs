@@ -60,12 +60,32 @@ namespace Game.Gameplay.Cycle
 
             if (IsServer)
             {
-                _totalSeconds.Value += Time.deltaTime;
+                ServerAccumulate();
             }
 
             HandleDebugPhaseInput();
 
             EvaluateAndPublish();
+        }
+
+        /// <summary>
+        /// 호스트 누적 시간 가산 — 새벽 보류(M7 2차 결정 ④)가 걸려 있으면 밤 끝 경계 직전에서 멈춘다.
+        /// 보류는 <b>새 복제 상태를 만들지 않는다</b>: 각 피어는 평소처럼 복제된 누적 시간에서
+        /// 같은 밤을 유도하므로 후발 접속도 자동으로 같은 상태가 된다.
+        /// </summary>
+        private void ServerAccumulate()
+        {
+            bool holding = ServiceLocator.TryGet(out INightHoldGate gate) && gate.IsHoldingNight;
+
+            float previous = _totalSeconds.Value;
+            float next = NightHoldMath.ClampAccumulation(
+                previous, previous + Time.deltaTime,
+                _settings.DayDurationSeconds, _settings.NightDurationSeconds, holding);
+
+            if (!Mathf.Approximately(next, previous))
+            {
+                _totalSeconds.Value = next;
+            }
         }
 
         // ── 디버그: 숫자패드로 국면 즉시 전환 (테스트용) ──────────────────────
