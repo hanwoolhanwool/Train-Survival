@@ -434,14 +434,17 @@ namespace Game.Gameplay.Player
             {
                 _respawnPending.Value = true;
 
+                // 대기 시간은 전투 사망과 같은 Day 비례 계산 (M6 3차 결정 ① — 일원화).
+                float delaySeconds = _health != null ? _health.ServerComputeRespawnDelaySeconds() : 5f;
+
                 // 사망 확정 시각 기록 (M6 1차 결정 ⑦) — 재접속 시 잔여 대기 계산의 근거.
                 if (_health != null)
                 {
-                    _health.ServerRecordDeath(_trainLayout.RespawnDelaySeconds);
+                    _health.ServerRecordDeath(delaySeconds);
                 }
 
                 NotifyFellBehindRpc(OwnerClientId);
-                BeginRespawnOwnerRpc(_trainLayout.RespawnPosition, _trainLayout.RespawnDelaySeconds);
+                BeginRespawnOwnerRpc(_trainLayout.RespawnPosition, delaySeconds);
             }
         }
 

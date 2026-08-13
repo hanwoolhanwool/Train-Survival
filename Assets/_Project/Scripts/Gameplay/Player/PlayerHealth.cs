@@ -124,8 +124,7 @@ namespace Game.Gameplay.Player
         {
             _serverDead = true;
 
-            int dayNumber = ServiceLocator.TryGet(out IDayCycleService cycle) ? cycle.DayNumber : 1;
-            float delay = _settings.GetRespawnDelaySeconds(dayNumber);
+            float delay = ServerComputeRespawnDelaySeconds();
             Vector3 respawnPosition = _trainLayout != null
                 ? _trainLayout.RespawnPosition
                 : new Vector3(0f, 4f, 0f);
@@ -133,6 +132,21 @@ namespace Game.Gameplay.Player
             ServerRecordDeath(delay);
             NotifyDiedRpc(OwnerClientId);
             BeginRespawnOwnerRpc(respawnPosition, delay);
+        }
+
+        /// <summary>
+        /// 현재 Day 기준 부활 대기 시간 — 서버 전용. 이탈 사망 경로(<see cref="NetworkPlayerController"/>)도
+        /// 이 계산을 쓴다 (M6 3차 결정 ① — 사망 원인과 무관하게 대기 규칙은 하나다).
+        /// </summary>
+        public float ServerComputeRespawnDelaySeconds()
+        {
+            if (_settings == null)
+            {
+                return 5f;
+            }
+
+            int dayNumber = ServiceLocator.TryGet(out IDayCycleService cycle) ? cycle.DayNumber : 1;
+            return _settings.GetRespawnDelaySeconds(dayNumber);
         }
 
         /// <summary>

@@ -23,7 +23,6 @@ namespace Game.Gameplay.Train
         [Header("낙하·이탈 규칙 (§4.2)")]
         [SerializeField, Min(1f)] private float _fallBehindWarningMeters = 30f;
         [SerializeField, Min(1f)] private float _fallBehindDeathMeters = 40f;
-        [SerializeField, Min(0f)] private float _respawnDelaySeconds = 5f;
 
         public int CarCount => _carCount;
 
@@ -70,8 +69,6 @@ namespace Game.Gameplay.Train
 
         /// <summary>후미 기준 사망 확정 Z (§4.2 — 40 m 이상 뒤처지면 사망).</summary>
         public float DeathZ => RearZ - _fallBehindDeathMeters;
-
-        public float RespawnDelaySeconds => _respawnDelaySeconds;
 
         /// <summary>부활 지점 — 후미 칸 지붕 (§4.2).</summary>
         public Vector3 RespawnPosition => new Vector3(0f, _deckHeight + 1f, RearZ + _carLength * 0.5f);
