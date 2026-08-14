@@ -16,8 +16,9 @@ namespace Game.UI
     /// </summary>
     public sealed class InventoryHud : MonoBehaviour
     {
-        private const float SlotSize = 52f;
-        private const float SlotGap = 6f;
+        // 창 치수는 제작 창과 공유한다 (M7 3차 검증 W3-b — 둘이 나란히 떠야 한다).
+        private const float SlotSize = HudLayout.SlotSize;
+        private const float SlotGap = HudLayout.SlotGap;
 
         /// <summary>
         /// 캐릭터 상태 영역의 높이 — 헤더 + 상태 3줄(체력·체온·허기) + 버리기 안내 1줄이
@@ -633,9 +634,9 @@ namespace Game.UI
             float panelHeight = 34f + 20f + SlotSize + 16f + 20f + bagRows * stride + 12f
                 + 20f + SlotSize + 16f + StatusAreaHeight + 8f;
 
-            var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
+            var rect = new Rect(HudLayout.InventoryPanelX, HudLayout.CenteredY(panelHeight),
                 panelWidth, panelHeight);
-            GUI.Box(rect, "인벤토리 / 캐릭터 상태 [I 닫기] — 드래그로 재배치 · 패널 밖 드롭 = 버리기");
+            GUI.Box(rect, "인벤토리 / 캐릭터 상태 [I·Tab 닫기] — 드래그로 재배치 · 패널 밖 드롭 = 버리기");
 
             float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
             float cursorY = rect.y + 34f;

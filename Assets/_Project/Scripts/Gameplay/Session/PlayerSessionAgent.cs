@@ -23,6 +23,40 @@ namespace Game.Gameplay.Session
         // 초기 지급 상태로 보관 중인 진짜 스냅샷을 덮어쓰지 않기 위해.
         private bool _serverRestoreChecked;
 
+        /// <summary>
+        /// 게스트 → 서버 <b>명시적 이탈 통지</b> (잔여 문서 §5 결정 ⑤-b) — 소유자에서 호출한다.
+        ///
+        /// <para>⑤-a(셧다운 완료 후 씬 로드)만으로는 부족하다는 것이 M7 3차 재검증에서 실측됐다:
+        /// 클라이언트의 로컬 셧다운은 트랜스포트 정리 타이밍에 좌우돼 이탈 통지가 유실될 수 있고,
+        /// 그러면 호스트는 접속 타임아웃(30초)까지 유령을 붙든다. RPC는 <b>일반 메시지 경로</b>라
+        /// 셧다운 절차와 경합하지 않으므로 결정적이다.</para>
+        ///
+        /// <para>서버가 <c>DisconnectClient</c>로 끊어 주면 despawn이 그 자리에서 일어나
+        /// <see cref="OnNetworkDespawn"/>의 스냅샷 캡처까지 확정적으로 완료된다.</para>
+        /// </summary>
+        public void RequestLeaveSession()
+        {
+            // 호스트는 자신을 끊을 수 없다 — 호스트 이탈은 세션 종료라 셧다운 경로가 담당한다.
+            if (IsOwner && IsSpawned && !IsServer)
+            {
+                LeaveSessionServerRpc();
+            }
+        }
+
+        [Rpc(SendTo.Server)]
+        private void LeaveSessionServerRpc(RpcParams rpcParams = default)
+        {
+            NetworkManager manager = NetworkManager;
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            if (manager == null || !manager.IsServer || senderClientId == NetworkManager.ServerClientId)
+            {
+                return;
+            }
+
+            Debug.Log($"[PlayerSessionAgent] 이탈 통지 수신 — client={senderClientId} 연결을 정리합니다.");
+            manager.DisconnectClient(senderClientId, "left session");
+        }
+
         public override void OnNetworkSpawn()
         {
             if (!IsServer)

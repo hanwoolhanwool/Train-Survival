@@ -27,28 +27,62 @@ namespace Game.UI
         /// <summary>셧다운 완료를 기다리는 상한 (초). 정상 경로는 1~2프레임이면 끝난다.</summary>
         private const float ShutdownTimeoutSeconds = 2f;
 
-        /// <summary>세션 종료를 기다린 뒤 메인 씬을 로드한다. 세션이 없으면 즉시 로드한다.</summary>
+        /// <summary>서버가 이탈 통지를 받아 연결을 끊어 주기를 기다리는 상한 (초).</summary>
+        private const float LeaveAckSeconds = 1f;
+
+        /// <summary>
+        /// 세션을 정리한 뒤 메인 씬을 로드한다. 세션이 없으면 즉시 로드한다.
+        /// 절차는 <b>⑤-b → ⑤-a</b> 2단이다 — 게스트는 서버에 먼저 알리고(결정적),
+        /// 그래도 남아 있으면 로컬 셧다운으로 마무리한다(호스트이거나 통지가 실패한 경우).
+        /// </summary>
         public static IEnumerator ShutdownThenLoadMain(string mainSceneName)
         {
             if (ServiceLocator.TryGet(out INetworkSessionService session) && session.IsSessionActive)
             {
-                session.Shutdown();
-
-                // 대기 중에는 timeScale이 0일 수 있으므로 실시간으로 잰다.
-                float deadline = Time.realtimeSinceStartup + ShutdownTimeoutSeconds;
-                while (session.IsSessionActive && Time.realtimeSinceStartup < deadline)
+                // ⑤-b — 게스트는 서버에 명시적으로 알린다. 서버가 끊어 주는 경로가
+                // despawn → 스냅샷 캡처를 확정적으로 태운다 (M7 3차 재검증 W1-a 실패 대응).
+                if (TryNotifyServer())
                 {
-                    yield return null;
+                    yield return WaitWhileActive(session, LeaveAckSeconds);
+                }
+
+                // ⑤-a — 아직 살아 있으면(호스트이거나 통지 실패) 로컬 셧다운 후 완료를 기다린다.
+                // NGO의 Shutdown은 지연 셧다운이라 같은 프레임에 씬을 로드하면 이탈 통지가
+                // 전송 전에 트랜스포트와 함께 정리된다.
+                if (session.IsSessionActive)
+                {
+                    session.Shutdown();
+                    yield return WaitWhileActive(session, ShutdownTimeoutSeconds);
                 }
 
                 if (session.IsSessionActive)
                 {
-                    Debug.LogWarning("[SessionExitFlow] 셧다운이 제때 끝나지 않았습니다 — "
+                    Debug.LogWarning("[SessionExitFlow] 세션 정리가 제때 끝나지 않았습니다 — "
                         + "메인 화면 복귀는 그대로 진행합니다(호스트에 유령이 남을 수 있음).");
                 }
             }
 
             SceneManager.LoadScene(mainSceneName);
+        }
+
+        /// <summary>세션이 내려갈 때까지, 늦어도 상한까지 기다린다. timeScale 0에서도 흐르도록 실시간으로 잰다.</summary>
+        private static IEnumerator WaitWhileActive(INetworkSessionService session, float timeoutSeconds)
+        {
+            float deadline = Time.realtimeSinceStartup + timeoutSeconds;
+            while (session.IsSessionActive && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+        }
+
+        /// <summary>
+        /// 게스트라면 서버에 이탈을 알린다 (⑤-b). 호스트·비접속·플레이어 오브젝트 부재면 false —
+        /// 그 경우 호출부가 로컬 셧다운으로 넘어간다.
+        /// UI는 Netcode를 참조하지 않으므로 실제 발신은 Gameplay 쪽 경계가 담당한다.
+        /// </summary>
+        private static bool TryNotifyServer()
+        {
+            return Gameplay.Session.SessionLeaveNotifier.TryNotifyServer();
         }
     }
 }
