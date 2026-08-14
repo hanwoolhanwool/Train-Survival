@@ -71,5 +71,36 @@ namespace Game.Tests.EditMode
             Assert.That(FuelMath.ComputeConsumptionPerSecond(0.5f, -1f, 2), Is.EqualTo(0.5f).Within(0.001f));
             Assert.That(FuelMath.ComputeConsumptionPerSecond(0.5f, 0.15f, -3), Is.EqualTo(0.5f).Within(0.001f));
         }
+
+        // ── 연료를 태우는 건축물 (M7 3차 강화 난방로 — 결정 ③-ⓑ) ────────────────
+
+        [Test]
+        public void 강화_난방로가_없으면_주행_소모와_완전히_같다()
+        {
+            // 무회귀 — 기존 3지역은 이 건축물 자체가 없으므로 소모율이 한 톨도 달라지지 않는다.
+            float driving = FuelMath.ComputeConsumptionPerSecond(0.5f, 0.15f, 2);
+
+            Assert.That(FuelMath.AddStructureConsumption(driving, 0.6f, 0), Is.EqualTo(driving));
+        }
+
+        [Test]
+        public void 강화_난방로는_수만큼_주행_연료를_더_태운다()
+        {
+            // "난방을 켜 두면 주행 연료가 준다" — 북극의 트레이드오프 (기획서 §7.1과 같은 축).
+            float driving = FuelMath.ComputeConsumptionPerSecond(0.5f, 0.15f, 2);
+
+            Assert.That(FuelMath.AddStructureConsumption(driving, 0.6f, 1),
+                Is.EqualTo(1.4f).Within(0.001f), "1기 = 주행(0.8) + 0.6");
+            Assert.That(FuelMath.AddStructureConsumption(driving, 0.6f, 2),
+                Is.EqualTo(2f).Within(0.001f), "2기 = 주행의 2.5배");
+        }
+
+        [Test]
+        public void 건축물_소모율도_음수_입력이_방어된다()
+        {
+            Assert.That(FuelMath.AddStructureConsumption(-1f, 0.6f, 1), Is.EqualTo(0.6f).Within(0.001f));
+            Assert.That(FuelMath.AddStructureConsumption(0.8f, -1f, 1), Is.EqualTo(0.8f).Within(0.001f));
+            Assert.That(FuelMath.AddStructureConsumption(0.8f, 0.6f, -2), Is.EqualTo(0.8f).Within(0.001f));
+        }
     }
 }

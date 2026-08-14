@@ -230,6 +230,21 @@ namespace Game.Gameplay.Train
             return false;
         }
 
+        public int CountStructures(StructureKind kind)
+        {
+            int count = 0;
+            for (int i = 0; i < _structures.Count; i++)
+            {
+                StructureState structure = _structures[i];
+                if (structure.Kind == kind && TrainStateLogic.IsStructureAlive(structure))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         public float GetEjectOffset(int index)
         {
             if (index < 0 || index >= _ejectOffsets.Count)

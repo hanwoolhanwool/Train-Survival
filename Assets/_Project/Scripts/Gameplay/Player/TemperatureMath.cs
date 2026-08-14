@@ -93,6 +93,40 @@ namespace Game.Gameplay.Player
         }
 
         /// <summary>
+        /// 난방기 위 수렴 목표에 <b>지역 한파 페널티</b>를 반영한다 (M7 3차 결정 ③-ⓐ).
+        /// 지금까지 난방칸은 환경과 무관한 완전 안전지대였다 — 북극(-32 ℃)에서도 그러면
+        /// "난방칸에 들어가면 끝"이 되므로, 환경 온도가 쾌적 하단 아래로 내려간 만큼 목표를 끌어내린다.
+        ///
+        /// <para><b>단열이 페널티를 완화한다</b> — 계수는 환경 축과 같은 합산 단열(장비 + 요리 보온)이고
+        /// 같은 클램프[−1, 0.9]를 통과한다. 음수 계수는 여기서도 역효과로 성립한다(페널티 확대).
+        /// 즉 북극 난방칸은 맨몸이면 경고대, 방한 세트를 갖추면 쾌적이 된다.</para>
+        ///
+        /// <para><paramref name="negatesColdPenalty"/> = 연료가 살아 있는 <b>강화 난방로</b>(결정 ③-ⓑ).
+        /// 연료를 태우는 동안은 페널티가 0이 되어 완전한 안전지대이고, 연료가 떨어지면 이 인자가
+        /// false로 돌아가 일반 난방기와 같아진다 — 별도의 고장 상태를 만들지 않는다.</para>
+        ///
+        /// <para>기존 3지역은 환경 온도가 쾌적 하단 위이거나 근처라 페널티가 0에 가깝다 — 무회귀.</para>
+        /// </summary>
+        public static float ResolveHeaterTarget(
+            float baseTarget, float ambient, float coldInsulation, float penaltyPerDegree,
+            bool negatesColdPenalty, in TemperatureCurve curve)
+        {
+            if (negatesColdPenalty)
+            {
+                return baseTarget;
+            }
+
+            float deficit = curve.ComfortMin - ambient;
+            if (deficit <= 0f)
+            {
+                return baseTarget;
+            }
+
+            float relief = 1f - EquipmentClamp(coldInsulation);
+            return baseTarget - deficit * Mathf.Max(0f, penaltyPerDegree) * relief;
+        }
+
+        /// <summary>
         /// 난방기 위의 체온 한 스텝 (M5 7차 2차 — 국면별 목표 수렴). 난방기의 화력과 바깥 추위가
         /// 평형을 이루는 목표 온도(밤 36 / 낮 37 ℃ 제안)로 <b>양방향 수렴</b>한다 — 아래에서는
         /// 회복 속도로 데우고, 위에서는 하향 속도로 천천히 식는다 (스튜 온기 존중 — 같은 비대칭).

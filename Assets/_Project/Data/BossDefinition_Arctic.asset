@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 542ec26194bf50944ac794f305837426, type: 3}
+  m_Name: BossDefinition_Arctic
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.BossDefinition
+  _displayName: "설원의 파수꾼"
+  _prefab: {fileID: 7305000000000000001, guid: 7a2c9e1b3d4f5061829304a5b6c7d805, type: 3}
+  _maxHealth: 1300
+  _contactDamage: 20
+  _attackRange: 4
+  _attackInterval: 1.5
+  _moveSpeed: 5.4
+  _chaseSpeedMargin: 0.6
+  _avoidProbeDistance: 4
+  _chargeCooldownSeconds: 8
+  _chargeTelegraphSeconds: 1.1
+  _chargeDurationSeconds: 1.8
+  _chargeRecoverSeconds: 1.8
+  _chargeSpeed: 20
+  _chargeDamage: 32
+  _chargeHitRadius: 3
+  _phaseHealthThresholds:
+  - 0.7
+  - 0.35
+  _phaseSpeedBonusPerPhase: 0.12
+  _phaseCooldownScalePerPhase: 0.75
+  _signaturePattern: 2
+  _signatureUnlockPhaseIndex: 0
+  _signatureIntervalSeconds: 5
+  _signatureCount: 1
+  _signatureVariantIndex: -1
+  _signatureMaxAlive: 6
+  _projectileFlightSeconds: 1.6
+  _projectileImpactRadius: 3.5
+  _projectileDamage: 24
+  _projectileViewPrefab: {fileID: 7304000000000000005, guid: 7a2c9e1b3d4f5061829304a5b6c7d804,
+    type: 3}
+  _drops:
+  - _type: 10
+    _count: 3
+  _syncHz: 15
+  _interpolationDelaySeconds: 0.15

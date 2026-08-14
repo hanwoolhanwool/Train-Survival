@@ -1,8 +1,10 @@
 using Game.Core.Events;
 using Game.Core.Pooling;
+using Game.Core.Services;
 using Game.Gameplay.Combat;
 using Game.Gameplay.Crafting;
 using Game.Gameplay.Player;
+using Game.Gameplay.Region;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -73,6 +75,26 @@ namespace Game.Gameplay.Harpoon
 
         /// <summary>현재 등급의 수치 묶음 — 사거리·릴 속도·페널티·무게 상한.</summary>
         private HarpoonSettings.Tier CurrentTier => _settings.GetTier(Tier);
+
+        /// <summary>
+        /// 날씨를 반영한 실효 사거리 (M7 3차 폭설 — 기획서 §7.4). 훅이 <b>실제로 나는 거리</b>이므로
+        /// 조준·발사·코스메틱 사본이 모두 이 값을 쓴다. 날씨 상태는 복제되므로 전 피어가 같은 값을 얻는다.
+        /// <b>서버 그랩 검증은 축소 전 등급 사거리를 쓴다</b> — 그 검증은 등급 상한을 지키는 부정 방지
+        /// 게이트라, 날씨 전환 프레임에 이미 날아간 훅의 정당한 그랩이 거부되지 않게 한다.
+        /// </summary>
+        private float EffectiveMaxRange
+        {
+            get
+            {
+                float range = CurrentTier.MaxRange;
+                if (ServiceLocator.TryGet(out IWeatherService weather) && weather.ActiveWeather != null)
+                {
+                    range *= weather.ActiveWeather.HarpoonRangeMultiplier;
+                }
+
+                return range;
+            }
+        }
 
         /// <summary>서버 전용 — 등급 확정 (제작대 승급). 범위 밖이면 무시한다.</summary>
         public void ServerSetTier(int tier)
@@ -268,7 +290,7 @@ namespace Game.Gameplay.Harpoon
             _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
             _activeProjectile.Launch(
                 origin, direction,
-                _settings.ProjectileSpeed, _settings.ProjectileRadius, CurrentTier.MaxRange,
+                _settings.ProjectileSpeed, _settings.ProjectileRadius, EffectiveMaxRange,
                 transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld,
                 OnProjectileHit, OnProjectileMiss);
         }
@@ -284,7 +306,7 @@ namespace Game.Gameplay.Harpoon
             Vector3 aimForward = _aimSource != null ? _aimSource.forward : transform.forward;
 
             Vector3 aimPoint = WeaponRaycast.ResolveAimPoint(
-                aimOrigin, aimForward, CurrentTier.MaxRange, transform.root);
+                aimOrigin, aimForward, EffectiveMaxRange, transform.root);
 
             return HarpoonAimMath.ResolveFireDirection(muzzleOrigin, aimPoint, aimForward);
         }
@@ -684,7 +706,7 @@ namespace Game.Gameplay.Harpoon
             DiscardActiveProjectile();
             _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
             _activeProjectile.LaunchCosmetic(
-                origin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, CurrentTier.MaxRange,
+                origin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, EffectiveMaxRange,
                 transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld);
         }
 

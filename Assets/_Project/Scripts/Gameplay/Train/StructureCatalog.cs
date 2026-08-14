@@ -30,6 +30,10 @@ namespace Game.Gameplay.Train
             [Tooltip("난방 제공 — 아래에 선 플레이어의 추위를 완화한다.")]
             [SerializeField] private bool _providesHeat;
 
+            [Tooltip("난방을 유지하기 위해 태우는 초당 열차 연료 (M7 3차 강화 난방로). " +
+                "0 = 연료를 쓰지 않는 난방(기존 난방기). 0보다 크고 연료가 남아 있으면 지역 한파 페널티가 사라진다.")]
+            [SerializeField, Min(0f)] private float _heaterFuelPerSecond;
+
             public StructureKind Kind => _kind;
 
             public string DisplayName => _displayName;
@@ -41,6 +45,9 @@ namespace Game.Gameplay.Train
             public bool ProvidesShade => _providesShade;
 
             public bool ProvidesHeat => _providesHeat;
+
+            /// <summary>난방 유지에 태우는 초당 연료 (M7 3차). 0 = 연료를 쓰지 않는다.</summary>
+            public float HeaterFuelPerSecond => _heaterFuelPerSecond;
         }
 
         [Tooltip("종류별 정의 — Kind 값으로 식별하므로 배열 순서는 자유다(설치 UI의 순환 순서로만 쓰인다).")]
@@ -48,6 +55,22 @@ namespace Game.Gameplay.Train
 
         /// <summary>설치 UI가 순환할 수 있는 종류 수 — 등재된 엔트리 수.</summary>
         public int EntryCount => _entries != null ? _entries.Length : 0;
+
+        /// <summary>
+        /// 등재 순서 <paramref name="index"/>의 종류 — 카탈로그 <b>전체를 훑어야 하는</b> 소비자용
+        /// 열거면 (M7 3차 연료 소모 합산). 소비자가 특정 종류를 이름으로 알지 않아도 되게 한다.
+        /// </summary>
+        public bool TryGetKindAt(int index, out StructureKind kind)
+        {
+            if (_entries == null || index < 0 || index >= _entries.Length || _entries[index] == null)
+            {
+                kind = default;
+                return false;
+            }
+
+            kind = _entries[index].Kind;
+            return true;
+        }
 
         public string GetDisplayName(StructureKind kind)
         {
@@ -79,6 +102,16 @@ namespace Game.Gameplay.Train
         {
             Entry entry = Find(kind);
             return entry != null && entry.ProvidesHeat;
+        }
+
+        /// <summary>
+        /// 난방 유지에 태우는 초당 연료 (M7 3차). 0 = 연료를 쓰지 않는 난방 — 미등재 종류도 0이라
+        /// 기존 난방기·돔이 무수정으로 통과한다 (스탬피드 확률·보스 정의와 같은 소급 규약).
+        /// </summary>
+        public float GetHeaterFuelPerSecond(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null ? entry.HeaterFuelPerSecond : 0f;
         }
 
         /// <summary>

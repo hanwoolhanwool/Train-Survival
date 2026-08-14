@@ -64,7 +64,8 @@ namespace Game.Gameplay.Session
                 GetComponent<PlayerHealth>(),
                 GetComponent<PlayerHunger>(),
                 GetComponent<PlayerTemperature>(),
-                GetComponent<NetworkPlayerController>());
+                GetComponent<NetworkPlayerController>(),
+                GetComponent<PlayerFrostbite>());
             PlayerSessionRegistry.GetOrRegister().Store(token, snapshot);
             Debug.Log($"[PlayerSessionAgent] 끊김 스냅샷 캡처: client={OwnerClientId}");
         }
@@ -92,7 +93,8 @@ namespace Game.Gameplay.Session
                 GetComponent<PlayerHunger>(),
                 GetComponent<PlayerTemperature>(),
                 GetComponent<NetworkPlayerController>(),
-                NetworkManager.ServerTime.Time);
+                NetworkManager.ServerTime.Time,
+                GetComponent<PlayerFrostbite>());
             Debug.Log($"[PlayerSessionAgent] 재접속 복원 적용: client={OwnerClientId} "
                 + $"respawnPending={snapshot.RespawnPending}");
 

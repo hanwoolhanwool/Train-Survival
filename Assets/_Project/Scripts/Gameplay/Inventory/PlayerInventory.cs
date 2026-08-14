@@ -288,6 +288,20 @@ namespace Game.Gameplay.Inventory
             return EquipmentLogic.GetDamageMultiplier(total, _equipmentCatalog.DamageReductionCap);
         }
 
+        /// <summary>
+        /// <b>한 부위</b>의 추위 단열 계수 (M7 3차 — 부위별 동상). 합산·클램프를 거치지 않은 날값이다:
+        /// 동상은 "어느 부위를 비웠는가"가 진행 속도를 갈라야 하므로 부위를 뭉개면 안 된다.
+        /// </summary>
+        public float GetEquippedColdInsulation(int partIndex)
+        {
+            if (_equipmentCatalog == null || partIndex < 0 || partIndex >= _equipment.Count)
+            {
+                return 0f;
+            }
+
+            return _equipmentCatalog.GetColdInsulation(_equipment[partIndex].ItemType);
+        }
+
         /// <summary>착용 부위 합산 단열 계수 (클램프 반영) — 체온 경로(PlayerTemperature)가 쓴다.</summary>
         public void GetEquippedInsulation(out float cold, out float heat)
         {

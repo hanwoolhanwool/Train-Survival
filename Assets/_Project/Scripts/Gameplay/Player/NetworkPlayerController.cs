@@ -40,6 +40,7 @@ namespace Game.Gameplay.Player
 
         private CharacterController _characterController;
         private PlayerHealth _health;
+        private IMoveSpeedModifier[] _speedModifiers;
         private Vector3 _horizontalVelocity;
         private float _verticalSpeed;
         private float _pitch;
@@ -90,6 +91,27 @@ namespace Game.Gameplay.Player
         {
             _characterController = GetComponent<CharacterController>();
             _health = GetComponent<PlayerHealth>();
+            _speedModifiers = GetComponents<IMoveSpeedModifier>();
+        }
+
+        /// <summary>
+        /// 상태 축들이 건 이동속도 배율의 곱 (M7 3차 — 동상이 첫 사용처). 여기서는 <b>배율만</b> 본다:
+        /// 어떤 축이 왜 걸었는지는 <see cref="IMoveSpeedModifier"/> 구현이 안다.
+        /// </summary>
+        private float ResolveSpeedMultiplier()
+        {
+            if (_speedModifiers == null || _speedModifiers.Length == 0)
+            {
+                return 1f;
+            }
+
+            float multiplier = 1f;
+            for (int i = 0; i < _speedModifiers.Length; i++)
+            {
+                multiplier *= Mathf.Max(0f, _speedModifiers[i].MoveSpeedMultiplier);
+            }
+
+            return multiplier;
         }
 
         public override void OnNetworkSpawn()
@@ -271,7 +293,7 @@ namespace Game.Gameplay.Player
                 wishDirection.Normalize();
             }
 
-            float targetSpeed = run ? _settings.RunSpeed : _settings.WalkSpeed;
+            float targetSpeed = (run ? _settings.RunSpeed : _settings.WalkSpeed) * ResolveSpeedMultiplier();
 
             // 스트리밍 타일 지면은 이음새·회수 순간 isGrounded가 깜빡인다 — 코요테 유예로 접지 상태를 유지해
             // 순간 공중 제어 전환(느려짐)·수직 튐을 막는다.

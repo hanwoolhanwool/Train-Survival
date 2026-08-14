@@ -120,5 +120,31 @@ namespace Game.Tests.EditMode
             Assert.That(EquipmentLogic.ClampBodyWarmth(1.5f), Is.EqualTo(1f), "겹쳐 입어도 경고 임계 밑 안전선");
             Assert.That(EquipmentLogic.ClampBodyWarmth(-0.5f), Is.EqualTo(0f), "체온 상향에 역효과는 없다");
         }
+
+        // ── 방한 세트 4부위 (M7 3차 §2.6) ─────────────────────────────────
+
+        [Test]
+        public void 방한_세트_풀셋은_단열_상한에_정확히_닿는다()
+        {
+            // 후드 0.2 + 파카 0.4 + 바지 0.2 + 부츠 0.15 = 0.95 → 상한 0.9.
+            // "4부위를 다 갖춰야 북극 밤을 견딘다"가 수치로 성립한다 (계획 §1).
+            Assert.That(EquipmentLogic.ClampInsulation(0.2f + 0.4f + 0.2f + 0.15f), Is.EqualTo(0.9f));
+        }
+
+        [Test]
+        public void 한_부위라도_비면_단열이_상한에_못_미친다()
+        {
+            Assert.That(EquipmentLogic.ClampInsulation(0.4f + 0.2f + 0.15f), Is.EqualTo(0.75f).Within(0.001f),
+                "머리를 비우면 0.75");
+            Assert.That(EquipmentLogic.ClampInsulation(0.2f + 0.2f + 0.15f), Is.EqualTo(0.55f).Within(0.001f),
+                "상체를 비우면 0.55 — 손실이 가장 크다");
+        }
+
+        [Test]
+        public void 방한_세트_체온_상향은_상한에_정확히_닿는다()
+        {
+            // 0.2 + 0.4 + 0.25 + 0.15 = 1.0 — 36.5 + 1.0 = 37.5 로 고온 경고(38) 밑에 머문다.
+            Assert.That(EquipmentLogic.ClampBodyWarmth(0.2f + 0.4f + 0.25f + 0.15f), Is.EqualTo(1f));
+        }
     }
 }

@@ -49,6 +49,18 @@ namespace Game.Gameplay.Inventory
         /// </summary>
         BossCore = 10,
 
+        /// <summary>얼음 — 북극 (M7 3차, 기획서 §4.4). 비연료·비건자재. 정수 지점에서 식수가 된다.</summary>
+        Ice = 11,
+
+        /// <summary>희귀 금속 — 북극 유적 (M7 3차). 비연료·비건자재. 방한 세트 4부위의 공통 재료다.</summary>
+        RareMetal = 12,
+
+        /// <summary>
+        /// 유적 부품 — 북극 유적 (M7 3차 결정 ④). 비연료·비건자재, 스택 5로 희소.
+        /// 보스 핵과 같은 규약으로 획득·보관까지만 성립하고, 소비처(궤도 도약 기관)는 5차에서 연결한다.
+        /// </summary>
+        RelicPart = 13,
+
         /// <summary>권총탄 — 제작품 (고철 + 화약 원료).</summary>
         RevolverAmmo = 16,
 
@@ -69,5 +81,14 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>보존식 — 화덕 요리 (M7 1차, 기획서 §4.3 소금 절임). 고스택 비축형 — 북극행 식량.</summary>
         PreservedMeal = 22,
+
+        /// <summary>
+        /// 식수 — 정수 지점 제작품 (M7 3차 결정 ①, 기획서 §4.4 "얼음은 정화 장치로 식수화").
+        /// 갈증 스탯을 만들지 않고 <b>요리 재료</b>로 닫는다 — 북극 보온식의 필수 재료다.
+        /// </summary>
+        PurifiedWater = 23,
+
+        /// <summary>온차 — 화덕 요리 (M7 3차). 식수 기반 북극 보온식 — 허기 소량 + 즉시 체온 + 보온 대.</summary>
+        WarmingTea = 24,
     }
 }

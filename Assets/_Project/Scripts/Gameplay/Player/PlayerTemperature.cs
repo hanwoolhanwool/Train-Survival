@@ -39,6 +39,12 @@ namespace Game.Gameplay.Player
         /// 재접속 스냅샷 캡처(M6 1차)는 이 값을 쓴다. 서버에서만 유효.</summary>
         public float ServerTemperature => _serverTemperature;
 
+        /// <summary>
+        /// 서버 전용 — 직전 스텝에 난방칸 위였는가 (M7 3차). 동상 축이 전신 완화 입력으로 읽는다.
+        /// 칸·건축물 판정을 두 컴포넌트가 각자 다시 하지 않게 하는 조회면이다.
+        /// </summary>
+        public bool ServerOnHeater { get; private set; }
+
         private void Awake()
         {
             _health = GetComponent<PlayerHealth>();
@@ -128,21 +134,29 @@ namespace Game.Gameplay.Player
                 _serverTemperature = _settings.NormalBodyTemperature;
                 _temperature.Value = _serverTemperature;
                 _pendingDamage = 0f;
+                ServerOnHeater = false;
                 return;
             }
 
             // 보온 장비 체온 상향 (M5 7차) — 쾌적 환경의 수렴점을 밀어 올린 곡선으로 표류·회복한다.
             float bodyWarmth = _inventory != null ? _inventory.GetEquippedBodyWarmth() : 0f;
             TemperatureCurve curve = _settings.ToCurve(bodyWarmth);
-            ResolveShelter(out bool hasShade, out bool hasHeat);
+            ResolveShelter(out bool hasShade, out bool hasHeat, out bool negatesColdPenalty);
+            ResolveInsulation(out float cold, out float heat);
+            ServerOnHeater = hasHeat;
 
             if (hasHeat)
             {
                 // 난방기 위 (M5 7차 2차 재설계) — 환경 완화가 아니라 국면별 목표 온도로 직접
                 // 수렴한다 (밤 36 / 낮 37). 환경·단열 축은 건너뛴다 — 난방기의 화력이 체온을 붙든다.
-                float heaterTarget = IsNightPhase()
+                // M7 3차: 그 목표가 지역 한파 페널티를 받고 단열이 그것을 완화한다 (결정 ③).
+                float baseTarget = IsNightPhase()
                     ? _settings.HeaterTargetNight
                     : _settings.HeaterTargetDay;
+                float heaterTarget = TemperatureMath.ResolveHeaterTarget(
+                    baseTarget, GetRegionAmbient(curve), cold,
+                    _settings.HeaterColdPenaltyPerDegree, negatesColdPenalty, curve);
+
                 _serverTemperature = TemperatureMath.StepOnHeater(
                     _serverTemperature, heaterTarget, curve, Time.deltaTime);
             }
@@ -153,14 +167,6 @@ namespace Game.Gameplay.Player
                 // 장비 단열 (기획서 §6.3, M5 3차) — 건축물 다음 층으로 적용한다. 음수 계수 = 역효과.
                 if (_inventory != null)
                 {
-                    _inventory.GetEquippedInsulation(out float cold, out float heat);
-
-                    // 요리 보온 버프 (M5 4차) — 장비 합산에 가산하고 같은 클램프[−1, 0.9]를 통과한다.
-                    if (_buffs != null)
-                    {
-                        cold += _buffs.ServerColdInsulationBonus;
-                    }
-
                     ambient = TemperatureMath.ApplyInsulation(ambient, cold, heat, curve);
                 }
 
@@ -181,7 +187,10 @@ namespace Game.Gameplay.Player
             return ServiceLocator.TryGet(out IDayCycleService cycle) && cycle.Phase == DayPhase.Night;
         }
 
-        /// <summary>현재 지역·국면의 환경 온도. 지역 데이터가 없으면 쾌적대 중심으로 둔다(무해).</summary>
+        /// <summary>
+        /// 현재 지역·국면의 환경 온도. 지역 데이터가 없으면 쾌적대 중심으로 둔다(무해).
+        /// 진행 중인 날씨의 온도 오프셋(M7 3차 혹한파)을 가산한다 — 기본 0이라 기존 날씨는 무영향이다.
+        /// </summary>
         private float GetRegionAmbient(in TemperatureCurve curve)
         {
             if (!ServiceLocator.TryGet(out IRegionService region) || region.CurrentRegion == null)
@@ -189,9 +198,44 @@ namespace Game.Gameplay.Player
                 return curve.ComfortCenter;
             }
 
-            return IsNightPhase()
+            float ambient = IsNightPhase()
                 ? region.CurrentRegion.NightAmbientTemperature
                 : region.CurrentRegion.DayAmbientTemperature;
+
+            return ambient + GetWeatherTemperatureOffset();
+        }
+
+        /// <summary>진행 중인 날씨의 환경 온도 오프셋 (M7 3차). 맑거나 서비스가 없으면 0.</summary>
+        private static float GetWeatherTemperatureOffset()
+        {
+            if (!ServiceLocator.TryGet(out IWeatherService weather) || weather.ActiveWeather == null)
+            {
+                return 0f;
+            }
+
+            return weather.ActiveWeather.AmbientTemperatureOffset;
+        }
+
+        /// <summary>
+        /// 합산 단열 계수 (장비 + 요리 보온 버프) — 환경 완화와 난방기 한파 페널티 완화가 <b>같은 값</b>을
+        /// 쓴다 (M7 3차). 버프가 바깥에서만 듣고 난방칸에서는 듣지 않는 비대칭을 만들지 않는다.
+        /// 클램프[−1, 0.9]는 소비처(<see cref="TemperatureMath"/>)가 통과시킨다.
+        /// </summary>
+        private void ResolveInsulation(out float cold, out float heat)
+        {
+            cold = 0f;
+            heat = 0f;
+
+            if (_inventory != null)
+            {
+                _inventory.GetEquippedInsulation(out cold, out heat);
+            }
+
+            // 요리 보온 버프 (M5 4차) — 장비 합산에 가산하고 같은 클램프[−1, 0.9]를 통과한다.
+            if (_buffs != null)
+            {
+                cold += _buffs.ServerColdInsulationBonus;
+            }
         }
 
         /// <summary>
@@ -199,11 +243,13 @@ namespace Game.Gameplay.Player
         /// 난방(추위 완화)을 구분해 알려준다 (M5 3차 — 건축물 종류화, 효과는 카탈로그 데이터).
         /// 판단 기준은 <b>건축물의 존재</b>이므로 칸이 편성에서 이탈했는지는 보지 않는다
         /// (이탈 칸에 고립된 플레이어가 체온으로 이중 처벌받지 않게 한다). 파괴된 건축물은 제외.
+        /// <paramref name="negatesColdPenalty"/> = 연료가 살아 있는 강화 난방로 위인가 (M7 3차 결정 ③-ⓑ).
         /// </summary>
-        private void ResolveShelter(out bool hasShade, out bool hasHeat)
+        private void ResolveShelter(out bool hasShade, out bool hasHeat, out bool negatesColdPenalty)
         {
             hasShade = false;
             hasHeat = false;
+            negatesColdPenalty = false;
 
             if (_trainLayout == null || _structureCatalog == null
                 || !ServiceLocator.TryGet(out ITrainState train))
@@ -239,6 +285,14 @@ namespace Game.Gameplay.Player
 
             hasShade = _structureCatalog.ProvidesShade(structure.Kind);
             hasHeat = _structureCatalog.ProvidesHeat(structure.Kind);
+
+            // 강화 난방로 (M7 3차 결정 ③-ⓑ) — "연료를 태우는 난방"이고 탱크에 연료가 남아 있을 때만
+            // 한파 페널티가 사라진다. 연료가 떨어지면 이 조건이 무너져 일반 난방기와 같아진다
+            // (별도 고장 상태 없음). 종류를 이름으로 알지 않고 카탈로그의 소모율로 판별한다.
+            negatesColdPenalty = hasHeat
+                && _structureCatalog.GetHeaterFuelPerSecond(structure.Kind) > 0f
+                && ServiceLocator.TryGet(out World.IFuelService fuel)
+                && fuel.Fuel > 0f;
         }
 
         /// <summary>

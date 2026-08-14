@@ -29,6 +29,12 @@ namespace Game.Gameplay.Session
 
         public readonly float Temperature;
 
+        /// <summary>
+        /// 부위별 동상 단계 비트팩 (M7 3차) — 버프가 의도적으로 제외된 것과 달리 동상은
+        /// <b>누적 상태</b>라 복원한다. 재접속으로 동상이 지워지면 "잠깐 나갔다 오면 낫는다"가 된다.
+        /// </summary>
+        public readonly byte FrostbiteStages;
+
         /// <summary>끊김 시점에 부활 대기 중이었나 (전투 사망·이탈 사망 통합) —
         /// true면 스탯 복원은 생략된다 (결정 ② — 부활 시 기존 경로가 스탯을 초기화한다).</summary>
         public readonly bool RespawnPending;
@@ -47,7 +53,7 @@ namespace Game.Gameplay.Session
             HotbarSlotView[] slots, HotbarSlotView[] equipment, int harpoonTier,
             float health, float hunger, float temperature,
             bool respawnPending, double deathServerTime, float respawnDelaySeconds,
-            Vector3 position = default)
+            Vector3 position = default, byte frostbiteStages = 0)
         {
             Slots = slots;
             Equipment = equipment;
@@ -59,6 +65,7 @@ namespace Game.Gameplay.Session
             DeathServerTime = deathServerTime;
             RespawnDelaySeconds = respawnDelaySeconds;
             Position = position;
+            FrostbiteStages = frostbiteStages;
         }
 
         /// <summary>

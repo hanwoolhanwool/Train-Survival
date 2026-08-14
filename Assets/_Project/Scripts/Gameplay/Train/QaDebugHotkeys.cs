@@ -401,6 +401,10 @@ namespace Game.Gameplay.Train
                 // M7 1차 — 벼·소금 지급으로 밥(벼 2)·보존식(식재료 2 + 소금 1) 요리 루프를 채집 없이 검증한다.
                 inventory.ServerTryAdd(ResourceType.Rice, 4);
                 inventory.ServerTryAdd(ResourceType.Salt, 2);
+                // M7 3차 — 북극은 채집 자체가 희소(스폰 간격 ×2.5)해 방한 세트·정수 사슬 검증이 오래 걸린다.
+                // 얼음 6(정수 2회) + 희귀 금속 5(세트 4부위 정확히 한 벌)를 지급해 채집 없이 시험할 수 있게 한다.
+                inventory.ServerTryAdd(ResourceType.Ice, 6);
+                inventory.ServerTryAdd(ResourceType.RareMetal, 5);
             }
         }
 

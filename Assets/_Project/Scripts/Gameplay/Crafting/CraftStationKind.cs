@@ -11,5 +11,8 @@ namespace Game.Gameplay.Crafting
 
         /// <summary>화덕 건축물 — 요리 레시피 전용. 기관차 지점으로는 만들 수 없다.</summary>
         Campfire = 1,
+
+        /// <summary>정수기 건축물 — 얼음 정화 전용 (M7 3차 결정 ①). 화덕과 같은 규약.</summary>
+        Purifier = 2,
     }
 }

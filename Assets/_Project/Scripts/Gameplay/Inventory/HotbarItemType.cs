@@ -43,6 +43,21 @@ namespace Game.Gameplay.Inventory
         /// (세션 한정 — 재접속 인벤토리 복원은 M6 이월과 같은 한계).
         /// </summary>
         Bundle = 13,
+
+        // ── 방한 세트 (기획서 §4.4 북극, M7 3차) — 4부위를 다 갖춰야 북극 밤을 견딘다.
+        //    단열 합 0.95가 상한 0.9에 닿으므로 "한 부위라도 비면 부족"이 수치로 성립한다 ──
+
+        /// <summary>모피 후드 (머리) — <b>머리 슬롯 최초의 보온 장비</b>. 고철 투구와 방어/보온의 선택이 생긴다.</summary>
+        FurHood = 14,
+
+        /// <summary>방한 파카 (상체) — 세트의 중심. 단열 대 + 사막 낮 역효과 대.</summary>
+        WinterParka = 15,
+
+        /// <summary>방한 바지 (하체) — 단열 중.</summary>
+        WinterPants = 16,
+
+        /// <summary>방한 부츠 (신발) — 단열 소.</summary>
+        WinterBoots = 17,
     }
 
     /// <summary>

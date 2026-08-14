@@ -22,6 +22,13 @@ namespace Game.Gameplay.Train
         /// <summary>인덱스 칸 위 건축물 슬롯 상태를 읽는다(인덱스 = 칸 인덱스). 범위 밖이면 false.</summary>
         bool TryGetStructure(int index, out StructureState structure);
 
+        /// <summary>
+        /// 살아 있는(설치됨 + 체력 &gt; 0) 해당 종류 건축물의 수 (M7 3차 — 강화 난방로 연료 소모).
+        /// 연료 축(<see cref="Game.Gameplay.World.FuelTank"/>)이 건축물 배열을 직접 훑지 않게 하는 경계다.
+        /// 이탈 칸 위의 것도 센다 — 난방은 이탈 칸에서도 동작하므로 연료도 그만큼 든다.
+        /// </summary>
+        int CountStructures(StructureKind kind);
+
         /// <summary>이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m). 붙어 있거나 범위 밖이면 0.
         /// 서버는 권위 시뮬 값을, 클라이언트는 복제 계단을 숨긴 표시 보간 값을 돌려준다(표현·잡기 게이트 용도 —
         /// 잡기 확정 등 권위 판정은 서버에서 다시 검증된다).</summary>

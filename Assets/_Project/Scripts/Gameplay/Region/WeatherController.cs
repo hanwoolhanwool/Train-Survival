@@ -144,22 +144,21 @@ namespace Game.Gameplay.Region
                 return;
             }
 
-            // 지역 진입 첫날은 날씨를 걸지 않는다 — 지형조차 아직 도착하지 않은 시점이라
-            // 전환 연출과 폭풍이 겹쳐 읽힌다 (2026-08-03 검증 피드백).
-            if (state.DayInRegion <= 1)
-            {
-                return;
-            }
-
             RegionDefinition definition = _regionSettings.GetRegion(state.RegionIndex);
-            if (definition == null || definition.WeatherCount <= 0
-                || UnityEngine.Random.value > definition.WeatherChancePerDay)
+            if (definition == null)
             {
                 return;
             }
 
-            int weatherIndex = UnityEngine.Random.Range(0, definition.WeatherCount);
-            WeatherDefinition weather = definition.GetWeather(weatherIndex);
+            // 발생·종류 판정은 순수 함수가 한다 (M7 3차) — 지역 첫날 제외·확률·균등 추첨이
+            // 한자리에 모여 EditMode로 고정된다. 난수는 호스트가 주입하고 결과만 복제한다.
+            int weatherIndex = WeatherRoll.Evaluate(
+                state.DayInRegion, definition.WeatherCount, definition.WeatherChancePerDay,
+                UnityEngine.Random.value, UnityEngine.Random.value);
+
+            WeatherDefinition weather = weatherIndex == WeatherRoll.Clear
+                ? null
+                : definition.GetWeather(weatherIndex);
             if (weather == null)
             {
                 return;
@@ -175,7 +174,8 @@ namespace Game.Gameplay.Region
             ApplyScrollMultiplier(weather.ScrollSpeedMultiplier);
 
             Debug.Log($"[WeatherController] 날씨 시작: {weather.DisplayName} " +
-                $"({_serverRemainingSeconds:F0}s, 속도 ×{weather.ScrollSpeedMultiplier:F2})");
+                $"({_serverRemainingSeconds:F0}s, 속도 ×{weather.ScrollSpeedMultiplier:F2}, " +
+                $"온도 {weather.AmbientTemperatureOffset:+0.#;-0.#;0}℃, 집게 ×{weather.HarpoonRangeMultiplier:F2})");
         }
 
         private void ServerClearWeather()

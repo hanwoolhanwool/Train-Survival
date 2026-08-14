@@ -50,6 +50,40 @@ namespace Game.Gameplay.Player
             "(M5 7차 2차 — 사용자 요청 낮 37).")]
         [SerializeField] private float _heaterTargetDay = 37f;
 
+        [Tooltip("환경 온도가 쾌적 하단을 1℃ 밑돌 때마다 난방기 수렴 목표가 내려가는 양 (℃, M7 3차 결정 ③). " +
+            "합산 단열이 이 페널티를 완화하고, 강화 난방로는 연료를 태우는 동안 페널티를 지운다. " +
+            "0.04 = 북극 밤(−32 ℃) 맨몸에서 목표 34.3 ℃ — 경고대에는 들어가되 피해 임계는 면한다.")]
+        [SerializeField, Min(0f)] private float _heaterColdPenaltyPerDegree = 0.04f;
+
+        [Header("부위별 동상 (M7 3차 — 기획서 §4.4 북극)")]
+        [Tooltip("맨 부위·완화 없음일 때의 초당 진행도. 0.02 = 저온 경고대에서 50초에 중증.")]
+        [SerializeField, Min(0f)] private float _frostbiteProgressPerSecond = 0.02f;
+
+        [Tooltip("체온이 저온 경고 임계 위로 돌아왔을 때의 초당 회복량.")]
+        [SerializeField, Min(0f)] private float _frostbiteRecoveryPerSecond = 0.05f;
+
+        [Tooltip("그 부위 장비의 추위 단열 1당 진행 저항 가산 — 클수록 '부위를 갖췄는가'가 크게 갈린다. " +
+            "4 = 방한 파카(0.4) 착용 부위가 맨 부위의 2.6배 느리다.")]
+        [SerializeField, Min(0f)] private float _frostbiteInsulationWeight = 4f;
+
+        [Tooltip("전신 완화(요리 보온 버프 + 난방칸) 1당 진행 저항 가산 — 네 부위 모두에 적용된다.")]
+        [SerializeField, Min(0f)] private float _frostbiteMitigationWeight = 3f;
+
+        [Tooltip("난방칸 위에 있을 때의 전신 완화량 — 요리 보온 버프와 같은 축에 합산된다.")]
+        [SerializeField, Min(0f)] private float _frostbiteHeaterMitigation = 0.5f;
+
+        [Tooltip("경증 진입 진행도.")]
+        [SerializeField, Min(0f)] private float _frostbiteMildThreshold = 0.4f;
+
+        [Tooltip("중증 진입 진행도 (= 진행도 상한).")]
+        [SerializeField, Min(0f)] private float _frostbiteSevereThreshold = 1f;
+
+        [Tooltip("네 부위 단계 합계 1당 이동속도 배율 감소량 (합계 최대 8).")]
+        [SerializeField, Min(0f)] private float _frostbiteMoveSpeedPenaltyPerStage = 0.05f;
+
+        [Tooltip("이동속도 배율 하한 — 전 부위 중증이어도 이 밑으로는 내려가지 않는다(이동 불가 방지).")]
+        [SerializeField, Range(0.1f, 1f)] private float _frostbiteMinMoveSpeedMultiplier = 0.6f;
+
         [Header("즉시 체온 상승 (M5 5차 — 따뜻한 음식 섭취)")]
         [Tooltip("음식의 즉시 체온 상승이 넘지 못하는 체온 상한(℃). 기본 = 고온 경고 임계 — " +
             "사막 낮에 스튜를 먹어 더위 피해를 입는 역효과를 만들지 않는다.")]
@@ -80,6 +114,26 @@ namespace Game.Gameplay.Player
 
         /// <summary>낮 난방기 수렴 체온 (℃).</summary>
         public float HeaterTargetDay => _heaterTargetDay;
+
+        /// <summary>난방기 한파 페널티 계수 (℃/℃, M7 3차) — 적용은 <see cref="TemperatureMath.ResolveHeaterTarget"/>.</summary>
+        public float HeaterColdPenaltyPerDegree => _heaterColdPenaltyPerDegree;
+
+        /// <summary>난방칸 위의 전신 동상 완화량 (M7 3차) — 요리 보온 버프와 같은 축에 합산된다.</summary>
+        public float FrostbiteHeaterMitigation => _frostbiteHeaterMitigation;
+
+        /// <summary>
+        /// 순수 로직(<see cref="FrostbiteMath"/>)에 넘길 동상 곡선 — 진행 임계는 체온 곡선의
+        /// 저온 경고 임계를 그대로 쓴다 (HUD 경고와 동상 진행이 같은 선에서 시작한다).
+        /// </summary>
+        public FrostbiteCurve ToFrostbiteCurve()
+        {
+            return new FrostbiteCurve(
+                _coldWarnThreshold,
+                _frostbiteProgressPerSecond, _frostbiteRecoveryPerSecond,
+                _frostbiteInsulationWeight, _frostbiteMitigationWeight,
+                _frostbiteMildThreshold, _frostbiteSevereThreshold,
+                _frostbiteMoveSpeedPenaltyPerStage, _frostbiteMinMoveSpeedMultiplier);
+        }
 
         /// <summary>순수 로직(<see cref="TemperatureMath"/>)에 넘길 곡선으로 변환한다.</summary>
         public TemperatureCurve ToCurve()

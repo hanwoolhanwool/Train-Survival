@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84fb8a448d024464e880623d9d66669b, type: 3}
+  m_Name: Region_Arctic
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionDefinition
+  _displayName: "북극"
+  _dayCount: 3
+  _waveCountMultiplier: 1.7
+  _monsterHealthMultiplier: 1.5
+  _dayAmbientTemperature: -18
+  _nightAmbientTemperature: -32
+  _weathers:
+  - {fileID: 11400000, guid: 7c3d1e5a8b4f42609d2e7a1c5f8b3046, type: 2}
+  - {fileID: 11400000, guid: 2f9b6d4c1a8e4357b0c9e2d7f4a15683, type: 2}
+  _weatherChancePerDay: 0.7
+  _stampedeChancePerDay: 0
+  _bossDefinition: {fileID: 11400000, guid: 6b1f0a5c4d3e42f0a9c7b8d1e2f30404, type: 2}
+  _terrainTilePrefab: {fileID: 4483235474033511132, guid: c8b2f5417d3e4a90b1c6d8e2f3a40517, type: 3}
+  _resourceSpawns:
+  - _type: 11
+    _weight: 0.45
+  - _type: 12
+    _weight: 0.3
+  - _type: 13
+    _weight: 0.15
+  - _type: 3
+    _weight: 0.1
+  _resourcePrefab: {fileID: 0}
+  _resourceSpawnIntervalMultiplier: 2.5

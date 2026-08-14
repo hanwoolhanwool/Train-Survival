@@ -25,10 +25,21 @@ namespace Game.Gameplay.Crafting
         [Tooltip("제작대를 '쳐다봤다'고 볼 시선 정렬 하한 (카메라 전방·제작대 방향 내적).")]
         [SerializeField, Range(0f, 1f)] private float _lookDotThreshold = 0.8f;
 
+        /// <summary>
+        /// 판정 대상 지점 종류 — <see cref="CraftStationKind"/>에 종류를 늘리면 여기 한 줄만 추가한다
+        /// (M7 3차 정수기 편입 시 일반화). 매 프레임 종류별 근접을 갱신하고, 레시피 필터가 조회한다.
+        /// </summary>
+        private static readonly CraftStationKind[] StationKinds =
+        {
+            CraftStationKind.Workbench,
+            CraftStationKind.Campfire,
+            CraftStationKind.Purifier,
+        };
+
+        private readonly bool[] _stationInRange = new bool[StationKinds.Length];
+
         private bool _localInRange;
         private bool _panelOpen;
-        private bool _workbenchInRange;
-        private bool _campfireInRange;
 
         // 로컬 플레이어의 집게 등급·상한 (M5 5차) — 승급 레시피 목록 필터에 쓴다. 0 = 아직 모름.
         private int _localHarpoonTier;
@@ -56,13 +67,27 @@ namespace Game.Gameplay.Crafting
                 return false;
             }
 
-            bool stationReady = recipe.Station == CraftStationKind.Campfire ? _campfireInRange : _workbenchInRange;
+            bool stationReady = IsStationInRange(recipe.Station);
             if (!stationReady || !recipe.IsHarpoonTierOutput)
             {
                 return stationReady;
             }
 
             return IsNextHarpoonTier(recipe, _localHarpoonTier, _localHarpoonMaxTier);
+        }
+
+        /// <summary>지점 종류가 로컬 플레이어 근처인가 — 미등재 종류는 항상 false(레시피가 목록에서 빠진다).</summary>
+        private bool IsStationInRange(CraftStationKind kind)
+        {
+            for (int i = 0; i < StationKinds.Length; i++)
+            {
+                if (StationKinds[i] == kind)
+                {
+                    return _stationInRange[i];
+                }
+            }
+
+            return false;
         }
 
         /// <summary>승급이 성립하는가 — 목표가 "현재 + 1"이고 데이터 상한 안일 때만 (단계 건너뛰기 금지).</summary>
@@ -111,8 +136,7 @@ namespace Game.Gameplay.Crafting
             NetworkObject localPlayer = Player.LocalInteraction.GetLocalPlayerObject();
             if (localPlayer == null)
             {
-                _workbenchInRange = false;
-                _campfireInRange = false;
+                System.Array.Clear(_stationInRange, 0, _stationInRange.Length);
                 _localHarpoonTier = 0;
                 _localHarpoonMaxTier = 0;
                 SetLocalInRange(false);
@@ -128,13 +152,15 @@ namespace Game.Gameplay.Crafting
             // 지점 종류별 판정 (M5 4차) — 어느 한 종류라도 근처면 창이 열리고,
             // 종류별 범위 플래그는 레시피 필터(IsRecipeAvailable)가 쓴다.
             Vector3 playerPosition = localPlayer.transform.position;
-            bool workbenchReady = ResolveStation(
-                localPlayer, playerPosition, CraftStationKind.Workbench, out _workbenchInRange);
-            bool campfireReady = ResolveStation(
-                localPlayer, playerPosition, CraftStationKind.Campfire, out _campfireInRange);
-
-            bool inRange = _workbenchInRange || _campfireInRange;
-            bool ready = workbenchReady || campfireReady;
+            bool inRange = false;
+            bool ready = false;
+            for (int i = 0; i < StationKinds.Length; i++)
+            {
+                // |= 는 단락하지 않는다 — 앞 종류가 참이어도 모든 종류의 근접 플래그가 갱신된다.
+                ready |= ResolveStation(localPlayer, playerPosition, StationKinds[i], out bool near);
+                _stationInRange[i] = near;
+                inRange |= near;
+            }
 
             // 범위를 벗어나면 창을 닫는다 — 열림 상태 안내는 창이 대신하므로 프롬프트는 끈다.
             if (!inRange)
@@ -168,6 +194,23 @@ namespace Game.Gameplay.Crafting
             if (_panelOpen && recipeIndex >= 0 && recipeIndex < RecipeCount)
             {
                 RequestCraftServerRpc(recipeIndex);
+            }
+        }
+
+        /// <summary>
+        /// 제작 지점 종류 → 그 지점을 제공하는 건축물 종류. 제작대만 기관차 고정 지점이 추가로 유효하다
+        /// (<see cref="TryGetNearestCraftPoint"/>) — 나머지는 건축물이 있어야만 성립한다.
+        /// </summary>
+        private static Train.StructureKind ResolveStructureKind(CraftStationKind kind)
+        {
+            switch (kind)
+            {
+                case CraftStationKind.Campfire:
+                    return Train.StructureKind.Campfire;
+                case CraftStationKind.Purifier:
+                    return Train.StructureKind.Purifier;
+                default:
+                    return Train.StructureKind.Workbench;
             }
         }
 
@@ -206,9 +249,7 @@ namespace Game.Gameplay.Crafting
                 return found;
             }
 
-            Train.StructureKind structureKind = kind == CraftStationKind.Campfire
-                ? Train.StructureKind.Campfire
-                : Train.StructureKind.Workbench;
+            Train.StructureKind structureKind = ResolveStructureKind(kind);
 
             for (int i = 0; i < train.CarCount; i++)
             {

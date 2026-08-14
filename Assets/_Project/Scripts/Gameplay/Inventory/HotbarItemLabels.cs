@@ -41,6 +41,14 @@ namespace Game.Gameplay.Inventory
                     return "누비 바지";
                 case HotbarItemType.DesertBoots:
                     return "사막 장화";
+                case HotbarItemType.FurHood:
+                    return "모피 후드";
+                case HotbarItemType.WinterParka:
+                    return "방한 파카";
+                case HotbarItemType.WinterPants:
+                    return "방한 바지";
+                case HotbarItemType.WinterBoots:
+                    return "방한 부츠";
                 case HotbarItemType.Bundle:
                     return "보따리\n[좌클릭 풀기]";
                 default:

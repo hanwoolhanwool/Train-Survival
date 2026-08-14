@@ -12,7 +12,8 @@ namespace Game.Gameplay.Session
     {
         public static PlayerStateSnapshot Capture(
             PlayerInventory inventory, HarpoonController harpoon, PlayerHealth health,
-            PlayerHunger hunger, PlayerTemperature temperature, NetworkPlayerController controller)
+            PlayerHunger hunger, PlayerTemperature temperature, NetworkPlayerController controller,
+            PlayerFrostbite frostbite = null)
         {
             // 부활 대기 = 두 사망 경로의 통합 (M5 4차 D5·D10과 같은 계약) — 전투 사망(_serverDead)과
             // 체력을 거치지 않는 이탈 사망(IsRespawnPending)을 모두 본다.
@@ -29,7 +30,8 @@ namespace Game.Gameplay.Session
                 respawnPending,
                 health != null ? health.ServerDeathTime : 0d,
                 health != null ? health.ServerRespawnDelaySeconds : 0f,
-                controller != null ? controller.transform.position : default);
+                controller != null ? controller.transform.position : default,
+                frostbite != null ? frostbite.PackedStages : (byte)0);
         }
 
         /// <summary>
@@ -42,7 +44,7 @@ namespace Game.Gameplay.Session
             in PlayerStateSnapshot snapshot,
             PlayerInventory inventory, HarpoonController harpoon, PlayerHealth health,
             PlayerHunger hunger, PlayerTemperature temperature, NetworkPlayerController controller,
-            double serverTimeNow)
+            double serverTimeNow, PlayerFrostbite frostbite = null)
         {
             if (inventory != null)
             {
@@ -78,6 +80,11 @@ namespace Game.Gameplay.Session
             if (temperature != null)
             {
                 temperature.ServerSetTemperature(snapshot.Temperature);
+            }
+
+            if (frostbite != null)
+            {
+                frostbite.ServerRestoreStages(snapshot.FrostbiteStages);
             }
 
             if (controller != null)

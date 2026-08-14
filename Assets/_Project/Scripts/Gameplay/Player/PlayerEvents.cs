@@ -173,4 +173,31 @@ namespace Game.Gameplay.Player
             Stress = stress;
         }
     }
+
+    /// <summary>
+    /// 권위 이벤트 — 부위별 동상 단계 변경 (기획서 §4.4, M7 3차). <b>단계가 바뀔 때만</b> 발행된다
+    /// (진행도는 서버 전용이라 매 프레임 발행할 값이 없다). 화면 결빙 오버레이와 동상 HUD가
+    /// 자기 플레이어로 걸러 구독한다 — 둘 다 상태를 소유하지 않고 이 이벤트만 받아 그린다.
+    /// </summary>
+    public readonly struct PlayerFrostbiteChangedEvent
+    {
+        public readonly ulong ClientId;
+
+        /// <summary>이 피어에서 자기 플레이어의 동상인가 (HUD·오버레이 필터용).</summary>
+        public readonly bool IsLocalPlayer;
+
+        /// <summary>부위 4개 × 2비트 비트팩 — 부위별 단계는 <see cref="FrostbiteMath.Unpack"/>으로 꺼낸다.</summary>
+        public readonly byte PackedStages;
+
+        /// <summary>네 부위 단계 합계 (0~8) — 이동속도 배율과 화면 결빙 강도의 공통 입력.</summary>
+        public readonly int StageSum;
+
+        public PlayerFrostbiteChangedEvent(ulong clientId, bool isLocalPlayer, byte packedStages)
+        {
+            ClientId = clientId;
+            IsLocalPlayer = isLocalPlayer;
+            PackedStages = packedStages;
+            StageSum = FrostbiteMath.SumStages(packedStages);
+        }
+    }
 }

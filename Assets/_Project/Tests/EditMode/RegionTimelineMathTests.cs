@@ -218,5 +218,62 @@ namespace Game.Tests.EditMode
             Assert.That(Evaluate3(5).IsReinforcedNight, Is.False, "숲 마지막 밤과 겹치지 않는다");
             Assert.That(Evaluate3(6).IsReinforcedNight, Is.False, "사막 첫날과 겹치지 않는다");
         }
+
+        // ── 4지역 편성 — 북극 편입 (M7 3차) ─────────────────────────────────
+
+        /// <summary>숲 5 → 사막 4 → 대초원 4 → 북극 3 = 한 바퀴 16일 (계획 §1 밸런스 표).</summary>
+        private static readonly int[] FourRegions = { 5, 4, 4, 3 };
+
+        private static RegionTimelineState Evaluate4(int dayNumber)
+        {
+            return RegionTimelineMath.Evaluate(dayNumber, FourRegions, ForecastLeadDays, true);
+        }
+
+        [Test]
+        public void 북극은_Day14에_시작해_Day16에_끝난다()
+        {
+            Assert.That(Evaluate4(13).RegionIndex, Is.EqualTo(2), "Day 13 = 대초원 마지막 날");
+            Assert.That(Evaluate4(13).IsFinalDayOfRegion, Is.True);
+
+            RegionTimelineState first = Evaluate4(14);
+            Assert.That(first.RegionIndex, Is.EqualTo(3), "Day 14 = 북극 진입");
+            Assert.That(first.DayInRegion, Is.EqualTo(1));
+            Assert.That(first.RegionDayCount, Is.EqualTo(3));
+            Assert.That(first.CycleNumber, Is.EqualTo(0));
+
+            RegionTimelineState last = Evaluate4(16);
+            Assert.That(last.RegionIndex, Is.EqualTo(3));
+            Assert.That(last.DayInRegion, Is.EqualTo(3));
+            Assert.That(last.IsFinalDayOfRegion, Is.True, "북극 보스가 서는 밤");
+        }
+
+        [Test]
+        public void 북극_다음은_한_바퀴_돈_숲이다()
+        {
+            RegionTimelineState state = Evaluate4(17);
+
+            Assert.That(state.RegionIndex, Is.EqualTo(0));
+            Assert.That(state.DayInRegion, Is.EqualTo(1));
+            Assert.That(state.CycleNumber, Is.EqualTo(1), "재순환 난이도 가산이 붙는 바퀴");
+            Assert.That(Evaluate4(16).NextRegionIndex, Is.EqualTo(0), "북극 마지막 날의 예고 대상 = 숲");
+        }
+
+        [Test]
+        public void 북극_예고는_대초원_마지막_이틀에_뜬다()
+        {
+            Assert.That(Evaluate4(11).IsForecastWindow, Is.False);
+            Assert.That(Evaluate4(12).IsForecastWindow, Is.True);
+            Assert.That(Evaluate4(12).NextRegionIndex, Is.EqualTo(3), "예고 대상 = 북극");
+            Assert.That(Evaluate4(13).NextRegionIndex, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void 북극_강화_밤은_2일차_하나뿐이다()
+        {
+            // 3일 지역 → 첫날도 마지막 날도 아닌 유일한 날 (2차 결정 ⑥).
+            Assert.That(Evaluate4(14).IsReinforcedNight, Is.False, "진입 당일");
+            Assert.That(Evaluate4(15).IsReinforcedNight, Is.True, "북극 2일차");
+            Assert.That(Evaluate4(16).IsReinforcedNight, Is.False, "보스 밤과 겹치지 않는다");
+        }
     }
 }

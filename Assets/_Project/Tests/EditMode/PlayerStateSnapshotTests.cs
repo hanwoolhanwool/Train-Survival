@@ -116,5 +116,39 @@ namespace Game.Tests.EditMode
 
             Assert.That(snapshot.GetRemainingRespawnSeconds(250d), Is.EqualTo(45f).Within(0.0001f));
         }
+
+        // ── 부위별 동상 복원 (M7 3차) ─────────────────────────────────────
+
+        [Test]
+        public void 동상_단계가_스냅샷을_왕복한다()
+        {
+            // 버프가 스냅샷에서 의도적으로 제외된 것과 달리 동상은 누적 상태라 복원해야 한다 —
+            // 지워지면 "잠깐 나갔다 오면 낫는다"가 성립해 버린다.
+            byte packed = Game.Gameplay.Player.FrostbiteMath.Pack(
+                Game.Gameplay.Player.FrostbiteStage.Severe,
+                Game.Gameplay.Player.FrostbiteStage.None,
+                Game.Gameplay.Player.FrostbiteStage.Mild,
+                Game.Gameplay.Player.FrostbiteStage.Severe);
+
+            var snapshot = new PlayerStateSnapshot(
+                new HotbarSlotView[0], new HotbarSlotView[0], harpoonTier: 1,
+                health: 80f, hunger: 50f, temperature: 34.5f,
+                respawnPending: false, deathServerTime: 0d, respawnDelaySeconds: 0f,
+                position: default, frostbiteStages: packed);
+
+            Assert.That(snapshot.FrostbiteStages, Is.EqualTo(packed));
+            Assert.That(
+                Game.Gameplay.Player.FrostbiteMath.SumStages(snapshot.FrostbiteStages),
+                Is.EqualTo(5));
+        }
+
+        [Test]
+        public void 동상_인자를_생략하면_기본이_동상_없음이다()
+        {
+            // 무회귀 — M6 1차의 기존 호출부(인자 9개)가 그대로 컴파일되고 동상 0으로 남는다.
+            PlayerStateSnapshot snapshot = MakeSnapshot(new HotbarSlotView[0]);
+
+            Assert.That(snapshot.FrostbiteStages, Is.EqualTo(0));
+        }
     }
 }

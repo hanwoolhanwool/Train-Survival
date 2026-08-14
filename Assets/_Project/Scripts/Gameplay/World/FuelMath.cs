@@ -21,6 +21,18 @@ namespace Game.Gameplay.World
                 + Mathf.Max(0f, perCarPerSecond) * Mathf.Max(0, attachedCarCount);
         }
 
+        /// <summary>
+        /// 연료를 태우는 건축물(M7 3차 강화 난방로)의 몫을 얹은 초당 소모율 — 주행 소모와 <b>같은 탱크</b>를
+        /// 쓴다. 새 투입구·UI 없이 성립하고, "난방을 켜 두면 주행 연료가 준다"는 압박이 북극과 맞물린다
+        /// (기획서 §7.1 "칸이 늘수록 연료 소모 증가"와 같은 축). 0개면 기존 소모와 완전히 같다 — 무회귀.
+        /// </summary>
+        public static float AddStructureConsumption(
+            float consumptionPerSecond, float perStructurePerSecond, int structureCount)
+        {
+            return Mathf.Max(0f, consumptionPerSecond)
+                + Mathf.Max(0f, perStructurePerSecond) * Mathf.Max(0, structureCount);
+        }
+
         /// <summary>연료 잔량을 충전한다 (최대 저장량 초과 방지).</summary>
         public static float AddFuel(float fuel, float amount, float capacity)
         {

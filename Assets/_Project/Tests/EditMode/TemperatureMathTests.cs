@@ -211,6 +211,103 @@ namespace Game.Tests.EditMode
             Assert.That(settled, Is.EqualTo(37f).Within(0.001f));
         }
 
+        // ── 난방기 한파 페널티 (M7 3차 결정 ③ — 난방 2단 구조) ─────────────────────
+
+        /// <summary>북극 밤 −32 ℃ · 페널티 0.04 ℃/℃ — 계획 §1의 기준 수치.</summary>
+        private const float ArcticNight = -32f;
+
+        private const float ColdPenalty = 0.04f;
+
+        [Test]
+        public void 기존_3지역에서는_난방기_목표가_그대로다()
+        {
+            // 무회귀 고정 — 숲 밤 5 / 사막 밤 2 / 대초원 밤 2 ℃는 쾌적 하단(10) 근처라
+            // 페널티가 붙어도 목표가 경고대(35)에 닿지 않는다. 낮은 아예 페널티 0이다.
+            TemperatureCurve curve = Curve();
+
+            float forestNight = TemperatureMath.ResolveHeaterTarget(36f, 5f, 0f, ColdPenalty, false, curve);
+            float desertNight = TemperatureMath.ResolveHeaterTarget(36f, 2f, 0f, ColdPenalty, false, curve);
+            float desertDay = TemperatureMath.ResolveHeaterTarget(37f, 45f, 0f, ColdPenalty, false, curve);
+
+            Assert.That(forestNight, Is.EqualTo(36f - 0.2f).Within(0.001f), "숲 밤 = 5 ℃ 미달 × 0.04");
+            Assert.That(desertNight, Is.EqualTo(36f - 0.32f).Within(0.001f), "사막 밤 = 8 ℃ 미달 × 0.04");
+            Assert.That(desertDay, Is.EqualTo(37f), "쾌적 하단 위에서는 페널티가 없다");
+            Assert.That(forestNight, Is.GreaterThan(curve.ColdWarnThreshold), "경고대에 들어가지 않는다");
+            Assert.That(desertNight, Is.GreaterThan(curve.ColdWarnThreshold), "경고대에 들어가지 않는다");
+        }
+
+        [Test]
+        public void 북극_밤_난방칸은_맨몸이면_경고대에_들어가되_피해는_면한다()
+        {
+            // 계획 §1 — 목표 36 − (10 − (−32)) × 0.04 = 34.32. 경고(35) 미만, 피해(34) 초과.
+            TemperatureCurve curve = Curve();
+
+            float target = TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, 0f, ColdPenalty, false, curve);
+
+            Assert.That(target, Is.EqualTo(34.32f).Within(0.001f));
+            Assert.That(target, Is.LessThan(curve.ColdWarnThreshold), "동상이 진행되는 경고대");
+            Assert.That(target, Is.GreaterThan(curve.ColdDamageThreshold), "체력 피해는 없다");
+        }
+
+        [Test]
+        public void 방한_세트를_갖추면_북극_난방칸이_쾌적해진다()
+        {
+            // 세트 합 0.95 → 클램프 0.9 → 페널티 × 0.1 = 0.168 → 목표 35.83 (경고대 밖).
+            TemperatureCurve curve = Curve();
+
+            float target = TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, 0.95f, ColdPenalty, false, curve);
+
+            Assert.That(target, Is.EqualTo(36f - 0.168f).Within(0.001f));
+            Assert.That(target, Is.GreaterThan(curve.ColdWarnThreshold), "'난방칸 + 옷'이라야 쾌적하다");
+        }
+
+        [Test]
+        public void 부분_착용은_페널티를_비례해서만_줄인다()
+        {
+            // 파카만(0.4) — 완화가 절반을 조금 넘지만 여전히 경고대다. "한 벌을 다 갖춰야 한다".
+            TemperatureCurve curve = Curve();
+
+            float target = TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, 0.4f, ColdPenalty, false, curve);
+
+            Assert.That(target, Is.EqualTo(36f - 1.68f * 0.6f).Within(0.001f));
+            Assert.That(target, Is.LessThan(curve.ColdWarnThreshold), "부분 착용으로는 경고대를 벗어나지 못한다");
+        }
+
+        [Test]
+        public void 음수_단열은_난방기_페널티도_키운다()
+        {
+            // 사막 로브(−) 차림으로 북극에 오면 난방칸에서도 더 빨리 식는다 — 역효과 규약의 일관성.
+            TemperatureCurve curve = Curve();
+
+            float worsened = TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, -0.5f, ColdPenalty, false, curve);
+
+            Assert.That(worsened, Is.EqualTo(36f - 1.68f * 1.5f).Within(0.001f));
+            Assert.That(worsened, Is.LessThan(
+                TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, 0f, ColdPenalty, false, curve)));
+        }
+
+        [Test]
+        public void 연료가_살아_있는_강화_난방로는_페널티가_0이다()
+        {
+            // 결정 ③-ⓑ — 연료를 태우는 동안은 맨몸으로도 완전한 안전지대다.
+            TemperatureCurve curve = Curve();
+
+            float fueled = TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, 0f, ColdPenalty, true, curve);
+            float depleted = TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, 0f, ColdPenalty, false, curve);
+
+            Assert.That(fueled, Is.EqualTo(36f), "연료가 있으면 목표가 그대로");
+            Assert.That(depleted, Is.LessThan(fueled), "떨어지면 일반 난방기와 같아진다");
+        }
+
+        [Test]
+        public void 페널티_계수가_0이면_기존_동작과_같다()
+        {
+            // 에셋에서 축을 끌 수 있어야 한다 (M4 규약 — 수치는 전부 데이터).
+            Assert.That(
+                TemperatureMath.ResolveHeaterTarget(36f, ArcticNight, 0f, 0f, false, Curve()),
+                Is.EqualTo(36f));
+        }
+
         [Test]
         public void 사막_밤_2도_노숙은_피해_임계까지_내려간다()
         {

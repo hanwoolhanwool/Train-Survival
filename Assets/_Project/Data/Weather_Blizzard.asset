@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d22eb499477e5e949bdaac7164d591f7, type: 3}
+  m_Name: Weather_Blizzard
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.WeatherDefinition
+  _displayName: "폭설"
+  _minDurationSeconds: 45
+  _maxDurationSeconds: 90
+  _scrollSpeedMultiplier: 0.7
+  _fogColor: {r: 0.86, g: 0.9, b: 0.95, a: 1}
+  _fogDensity: 0.05
+  _ambientTemperatureOffset: 0
+  _harpoonRangeMultiplier: 0.55

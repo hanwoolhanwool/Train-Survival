@@ -25,6 +25,15 @@ namespace Game.Gameplay.Region
         [SerializeField] private Color _fogColor = new Color(0.76f, 0.65f, 0.42f, 1f);
         [SerializeField, Min(0f)] private float _fogDensity = 0.035f;
 
+        [Header("체온·집게 개입 (M7 3차 — 혹한파·폭설)")]
+        [Tooltip("지역 환경 온도에 가산할 오프셋(℃). 음수 = 더 춥다(혹한파). 기본 0 = 개입 없음 — " +
+            "기존 날씨 에셋이 무수정으로 통과한다.")]
+        [SerializeField] private float _ambientTemperatureOffset;
+
+        [Tooltip("집게 사거리에 곱하는 배율 (기획서 §7.4 — 폭설은 시야와 함께 사거리를 줄인다). " +
+            "기본 1 = 개입 없음.")]
+        [SerializeField, Range(0.1f, 1f)] private float _harpoonRangeMultiplier = 1f;
+
         public string DisplayName => _displayName;
 
         public float ScrollSpeedMultiplier => _scrollSpeedMultiplier;
@@ -32,6 +41,12 @@ namespace Game.Gameplay.Region
         public Color FogColor => _fogColor;
 
         public float FogDensity => _fogDensity;
+
+        /// <summary>환경 온도 가산 오프셋 (M7 3차 혹한파). 0 = 개입 없음.</summary>
+        public float AmbientTemperatureOffset => _ambientTemperatureOffset;
+
+        /// <summary>집게 사거리 배율 (M7 3차 폭설). 1 = 개입 없음.</summary>
+        public float HarpoonRangeMultiplier => _harpoonRangeMultiplier;
 
         /// <summary>발생 시 지속 시간을 무작위로 뽑는다 (호스트 전용 — 결과는 복제로 전파된다).</summary>
         public float RollDurationSeconds()
