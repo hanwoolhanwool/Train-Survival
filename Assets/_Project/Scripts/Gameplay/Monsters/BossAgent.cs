@@ -96,6 +96,11 @@ namespace Game.Gameplay.Monsters
             else
             {
                 _snapshotBuffer.Clear();
+
+                // 스폰 위치를 첫 스냅샷으로 심는다 (웨이브 개체와 같은 이유) — 없으면 첫
+                // 동기화가 올 때까지 보간 표본이 0개라 등장 순간 위치가 튄다.
+                _snapshotBuffer.AddSnapshot(_syncedPosition.Value, _syncedYaw.Value, Time.timeAsDouble);
+
                 _syncedPosition.OnValueChanged += OnSyncedPositionChanged;
             }
 

@@ -201,11 +201,23 @@ namespace Game.Gameplay.World
             }
 
             float distance = scroll.TraveledDistance;
+            float originLateral = Mathf.Abs(dropOrigin.x);
+
+            // 이미 선로변 밖에서 떨어진 것(사냥한 몬스터·보스)은 그 자리 옆에 남는다 —
+            // 측면을 새로 추첨하면 반대편 20 m에 떨어져 "드랍이 없다"로 보인다.
+            // 열차 폭 안에서 버린 것만 기존처럼 선로변 대역으로 밀어낸다 (갑판 밑에 깔리지 않게).
+            bool keepOrigin = originLateral >= _settings.MinLateralOffset;
+            float side = keepOrigin
+                ? Mathf.Sign(dropOrigin.x)
+                : (Random.value < 0.5f ? -1f : 1f);
+
             for (int i = 0; i < count; i++)
             {
-                // 버린 사람 옆 선로변 — 주기 스폰과 같은 측면 대역에, 수량만큼 앞뒤로 산포한다.
-                float lateral = Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset);
-                float side = Random.value < 0.5f ? -1f : 1f;
+                float lateral = keepOrigin
+                    ? Mathf.Clamp(originLateral + Random.Range(-1.5f, 1.5f),
+                        _settings.MinLateralOffset, _settings.MaxLateralOffset)
+                    : Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset);
+
                 var spawnPosition = new Vector3(
                     side * lateral, _settings.SpawnHeight, dropOrigin.z + Random.Range(-2f, 2f));
 

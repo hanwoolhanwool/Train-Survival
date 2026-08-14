@@ -163,6 +163,12 @@ namespace Game.Gameplay.Monsters
             else
             {
                 _snapshotBuffer.Clear();
+
+                // 스폰 위치를 첫 스냅샷으로 심는다 — 없으면 첫 동기화(최대 1/SyncHz초)까지
+                // 보간 표본이 0개라 개체가 스폰 지점에 붙었다가 튄다. 연속 유입되는
+                // 스탬피드 무리에서 이 공백이 "생성 시 떨림"으로 누적돼 보였다.
+                _snapshotBuffer.AddSnapshot(_syncedPosition.Value, _syncedYaw.Value, Time.timeAsDouble);
+
                 _syncedPosition.OnValueChanged += OnSyncedPositionChanged;
             }
         }

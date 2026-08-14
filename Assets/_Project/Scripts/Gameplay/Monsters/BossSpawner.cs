@@ -154,6 +154,30 @@ namespace Game.Gameplay.Monsters
             }
         }
 
+        /// <summary>
+        /// QA 즉시 처치 (넘패드 <c>.</c>) — 보스전을 끝까지 치르지 않고 <b>처치 이후</b>를 검증하는 수단이다
+        /// (드랍·새벽 보류 해제·HUD 종료·처치 배너). 정상 사망 경로(<see cref="BossHealth.ApplyDamage"/>)를
+        /// 그대로 타므로 결과가 실제 처치와 같다 — 별도 우회로를 만들지 않는다.
+        /// </summary>
+        public void ServerKillBossForQa(ulong killerClientId)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            if (_boss == null || !_boss.IsSpawned || !_boss.IsAlive)
+            {
+                Debug.Log("[BossSpawner] QA 처치 무효: 살아 있는 보스가 없습니다.");
+                return;
+            }
+
+            string label = _bossDefinition == null ? "보스" : _bossDefinition.DisplayName;
+            Debug.Log($"[BossSpawner] QA 즉시 처치: {label}");
+
+            _boss.ApplyDamage(float.MaxValue, killerClientId);
+        }
+
         private bool ServerSpawnBoss(BossDefinition definition, float healthMultiplier, bool holdsNight)
         {
             if (definition.Prefab == null)

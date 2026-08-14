@@ -26,6 +26,8 @@ namespace Game.Gameplay.Train
     ///   파지·투척·즉사 존 검증을 몬스터 1마리로 통제한다.
     /// - 숫자패드 / : 현재 지역 보스 즉시 소환(M7 2차). 밤·웨이브와 무관하게 1기를 세운다 —
     ///   숫자패드 5(웨이브 토글)와 조합하면 보스 단독 격리가 된다. <b>새벽 보류에는 걸리지 않는다.</b>
+    /// - 숫자패드 . : 지역 보스 즉시 처치(M7 2차). 보스전을 치르지 않고 <b>처치 이후</b>를 검증한다 —
+    ///   보스 핵 드랍·새벽 보류 해제·HUD 종료·처치 배너.
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
     /// </summary>
     public sealed class QaDebugHotkeys : NetworkBehaviour
@@ -35,7 +37,7 @@ namespace Game.Gameplay.Train
         private const float SelfDamage = 20f;
         private const float SingleMonsterSpawnDistance = 10f;
 
-        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩, * = 몬스터 단건 스폰, / = 지역 보스 소환. QA 전용이므로 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩, * = 몬스터 단건 스폰, / = 지역 보스 소환, . = 지역 보스 즉시 처치. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
 
         // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 6의 데미지 대상 선택에 쓴다.
@@ -136,6 +138,29 @@ namespace Game.Gameplay.Train
             {
                 RequestSpawnBossServerRpc();
             }
+
+            if (keyboard.numpadPeriodKey.wasPressedThisFrame)
+            {
+                RequestKillBossServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// 지역 보스 즉시 처치 (M7 2차 검증) — 보스전을 끝까지 치르지 않고 <b>처치 이후</b>를 본다:
+        /// 보스 핵 드랍·새벽 보류 해제·HUD 종료·처치 배너. 정상 사망 경로를 그대로 타므로
+        /// 결과가 실제 처치와 같다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestKillBossServerRpc(RpcParams rpcParams = default)
+        {
+            if (!ServiceLocator.TryGet(out Cycle.INightHoldGate gate)
+                || !(gate is Monsters.BossSpawner spawner))
+            {
+                Debug.Log("[QaDebugHotkeys] 보스 처치 무효: 보스 스포너가 없다");
+                return;
+            }
+
+            spawner.ServerKillBossForQa(rpcParams.Receive.SenderClientId);
         }
 
         /// <summary>
