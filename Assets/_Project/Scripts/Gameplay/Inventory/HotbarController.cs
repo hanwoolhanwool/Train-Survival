@@ -55,6 +55,13 @@ namespace Game.Gameplay.Inventory
         /// <summary>UI(I 창·세션 메뉴·제작 창·창고 창·보따리 창)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
         public bool IsPanelOpen => _panelOpen || _sessionMenuOpen || _craftingOpen || _storageOpen || _bundleOpen;
 
+        /// <summary>
+        /// 제작 창 열기(E)를 막아야 할 다른 UI가 열려 있는가 (M7 3차 검증 개선).
+        /// <b>인벤토리 창은 제외한다</b> — 제작 창과 인벤토리는 함께 열리는 짝이라 서로를 막지 않는다.
+        /// 제작 창 자신도 제외한다 (E는 토글이다).
+        /// </summary>
+        public bool IsCraftBlockingPanelOpen => _sessionMenuOpen || _storageOpen || _bundleOpen;
+
         private void Awake()
         {
             _inventory = GetComponent<PlayerInventory>();

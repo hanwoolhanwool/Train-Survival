@@ -4,7 +4,6 @@ using Game.Gameplay.Player;
 using Game.Systems.Networking;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 namespace Game.UI
 {
@@ -24,6 +23,9 @@ namespace Game.UI
         private bool _storageOpen;
         private bool _bundleOpen;
         private bool _gameOver;
+
+        /// <summary>이탈 절차가 진행 중인가 — 셧다운을 기다리는 동안 버튼이 다시 눌리는 것을 막는다.</summary>
+        private bool _leaving;
 
         private void OnEnable()
         {
@@ -181,17 +183,21 @@ namespace Game.UI
             EventBus<SessionMenuToggledLocalEvent>.Publish(new SessionMenuToggledLocalEvent(open));
         }
 
-        /// <summary>로컬 세션을 내리고 Main 씬으로 돌아간다 — NGO 씬 관리는 세션과 함께 죽으므로 일반 씬 로드를 쓴다.</summary>
+        /// <summary>
+        /// 로컬 세션을 내리고 Main 씬으로 돌아간다 — NGO 씬 관리는 세션과 함께 죽으므로 일반 씬 로드를 쓴다.
+        /// <b>셧다운 완료를 기다린 뒤</b> 로드한다 (잔여 문서 §5 ⑤-a) — 같은 프레임에 로드하면
+        /// 이탈 통지가 전송 전에 잘려 호스트에 유령이 남는다. 절차는 <see cref="SessionExitFlow"/>.
+        /// </summary>
         private void LeaveToMain()
         {
-            SetMenuOpen(false);
-
-            if (ServiceLocator.TryGet(out INetworkSessionService session))
+            if (_leaving)
             {
-                session.Shutdown();
+                return;
             }
 
-            SceneManager.LoadScene(MainSceneName);
+            _leaving = true;
+            SetMenuOpen(false);
+            StartCoroutine(SessionExitFlow.ShutdownThenLoadMain(MainSceneName));
         }
     }
 }

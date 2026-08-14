@@ -23,14 +23,21 @@ namespace Game.Systems.Networking
             return _clientIdByToken.TryGetValue(token, out clientId);
         }
 
-        /// <summary>승인 시 매핑을 기록한다. 같은 토큰의 이전 clientId 매핑은 최신 접속으로 대체된다.</summary>
+        /// <summary>
+        /// 승인 시 매핑을 기록한다. 토큰 → clientId는 최신 접속으로 대체되지만,
+        /// <b>이전 clientId → 토큰 매핑은 지우지 않는다</b>.
+        ///
+        /// <para>지우면 재접속 시 아이템이 사라진다 (M7 3차 검증 발견): 유령 연결을 킥하는
+        /// 경로(<see cref="NgoNetworkSessionService"/> 중복 토큰 처리)는 <c>DisconnectClient</c> 직후
+        /// 이 메서드를 부르는데, 킥당한 쪽의 despawn이 그보다 늦게 처리되면
+        /// <see cref="Game.Gameplay.Session.PlayerStateSnapshotOps"/>의 캡처가 토큰을 찾지 못해
+        /// <b>스냅샷이 통째로 유실</b>된다. 그 결과 새 접속은 복원할 것이 없어 초기 지급 상태가 된다.</para>
+        ///
+        /// <para>남은 매핑은 세션당 접속 수만큼이고(슬롯 상한 4인 × 재접속 횟수) clientId는 NGO에서
+        /// 재사용되지 않으므로 오염되지 않는다 — <see cref="Clear"/>가 세션 경계에서 비운다.</para>
+        /// </summary>
         public void Record(ulong clientId, string token)
         {
-            if (_clientIdByToken.TryGetValue(token, out ulong previousClientId))
-            {
-                _tokenByClientId.Remove(previousClientId);
-            }
-
             _tokenByClientId[clientId] = token;
             _clientIdByToken[token] = clientId;
         }

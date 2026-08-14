@@ -1,10 +1,7 @@
 using Game.Core.Events;
-using Game.Core.Services;
 using Game.Gameplay.Player;
 using Game.Gameplay.Session;
-using Game.Systems.Networking;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Game.UI
 {
@@ -22,6 +19,9 @@ namespace Game.UI
         private bool _visible;
         private int _dayReached;
         private float _elapsedSeconds;
+
+        /// <summary>이탈 절차가 진행 중인가 — 셧다운을 기다리는 동안 버튼이 다시 눌리는 것을 막는다.</summary>
+        private bool _leaving;
 
         private void OnEnable()
         {
@@ -68,14 +68,19 @@ namespace Game.UI
         }
 
         /// <summary>로컬 세션을 내리고 Main 씬으로 — <see cref="SessionExitHud"/>의 복귀 경로와 동일하다.</summary>
+        /// <summary>
+        /// 세션을 내리고 메인으로 — <b>셧다운 완료를 기다린 뒤</b> 로드한다 (잔여 문서 §5 ⑤-a).
+        /// 같은 프레임에 로드하면 이탈 통지가 전송 전에 잘려 호스트에 유령이 남는다.
+        /// </summary>
         private void LeaveToMain()
         {
-            if (ServiceLocator.TryGet(out INetworkSessionService session))
+            if (_leaving)
             {
-                session.Shutdown();
+                return;
             }
 
-            SceneManager.LoadScene(MainSceneName);
+            _leaving = true;
+            StartCoroutine(SessionExitFlow.ShutdownThenLoadMain(MainSceneName));
         }
     }
 }

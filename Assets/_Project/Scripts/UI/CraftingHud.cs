@@ -96,8 +96,10 @@ namespace Game.UI
 
             // 패널 높이 상한 = 화면 높이의 70 % — 목록이 넘치면 스크롤이 받는다 (5차 1차 검증 차단 원인).
             float panelHeight = Mathf.Min(48f + contentHeight, Screen.height * 0.7f);
-            var rect = new Rect(Screen.width * 0.5f - 190f, Screen.height * 0.5f - panelHeight * 0.5f, 380f, panelHeight);
-            GUI.Box(rect, "— 제작 (E 닫기) —");
+            // 좌측 상단 고정 — 제작 창이 열리면 인벤토리가 화면 가운데에 함께 열리므로(M7 3차 검증
+            // 개선 요청) 중앙을 비워 준다. 재료를 보면서 제작할 수 있게 하는 배치다.
+            var rect = new Rect(24f, 24f, 380f, panelHeight);
+            GUI.Box(rect, "— 제작 (E·I·Tab·Esc 닫기) —");
 
             // 재료 판정은 순수 로직과 같은 뷰로 계산한다 — 표시와 요청 가능 여부가 항상 일치.
             var slots = new HotbarSlotView[hotbar.SlotCount];

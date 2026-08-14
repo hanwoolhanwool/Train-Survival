@@ -47,6 +47,10 @@ namespace Game.UI
         private bool _panelOpen;
         private int _dragFromIndex = -1;
 
+        // 제작 창 (M7 3차 검증 개선) — 제작 창이 열리면 인벤토리도 함께 열려 재료를 보며 만들 수 있다.
+        // 제작 창의 소유자는 CraftingStation이므로 여기서는 열림 여부만 미러링한다.
+        private bool _craftingOpen;
+
         // 공유 창고 (M5 3차) — 드래그 출처가 창고인지, 어느 칸의 창고가 열려 있는지.
         private bool _dragFromStorage;
         private bool _storagePromptInRange;
@@ -80,6 +84,7 @@ namespace Game.UI
             EventBus<StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Subscribe(OnBundlePrompt);
             EventBus<BundlePanelToggledLocalEvent>.Subscribe(OnBundlePanelToggled);
+            EventBus<Game.Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
             EventBus<Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent>.Subscribe(OnHarpoonTierChanged);
         }
@@ -97,6 +102,7 @@ namespace Game.UI
             EventBus<StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Unsubscribe(OnBundlePrompt);
             EventBus<BundlePanelToggledLocalEvent>.Unsubscribe(OnBundlePanelToggled);
+            EventBus<Game.Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
             EventBus<Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent>.Unsubscribe(OnHarpoonTierChanged);
         }
@@ -215,24 +221,59 @@ namespace Game.UI
         /// <summary>Esc의 닫기 요청 (M5 4차) — I 창만 여기서 닫는다 (창고·제작 창은 각자의 소유자가 닫는다).</summary>
         private void OnUiCloseRequested(UiCloseRequestedLocalEvent evt)
         {
-            if (_panelOpen)
-            {
-                _panelOpen = false;
-                _dragFromIndex = -1;
-                EventBus<InventoryPanelToggledLocalEvent>.Publish(new InventoryPanelToggledLocalEvent(false));
-            }
+            SetPanelOpen(false);
+        }
+
+        /// <summary>
+        /// 제작 창 토글을 따라 인벤토리도 함께 여닫는다 (M7 3차 검증 개선) — 제작 창은 좌측 상단,
+        /// 인벤토리는 화면 중앙이라 겹치지 않고, <b>재료를 보면서 제작</b>할 수 있다.
+        /// 제작 창의 상태는 <see cref="Game.Gameplay.Crafting.CraftingStation"/>이 소유하므로
+        /// 여기서는 미러링만 한다 (UI는 상태를 소유하지 않는다).
+        /// </summary>
+        private void OnCraftingPanelToggled(Game.Gameplay.Crafting.CraftingPanelToggledLocalEvent evt)
+        {
+            _craftingOpen = evt.IsOpen;
+            SetPanelOpen(evt.IsOpen);
         }
 
         private void Update()
         {
-            // 창고·보따리 창이 열려 있는 동안 I키는 무시한다 — 두 창이 이미 개인 인벤토리를 포함한다.
+            // 창고·보따리 창이 열려 있는 동안 토글 키는 무시한다 — 두 창이 이미 개인 인벤토리를 포함한다.
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.iKey.wasPressedThisFrame && _storageOpenCar < 0 && !_bundleOpen)
+            if (keyboard == null || _storageOpenCar >= 0 || _bundleOpen)
             {
-                _panelOpen = !_panelOpen;
-                _dragFromIndex = -1;
-                EventBus<InventoryPanelToggledLocalEvent>.Publish(new InventoryPanelToggledLocalEvent(_panelOpen));
+                return;
             }
+
+            // I와 Tab이 같은 토글이다 (M7 3차 검증 개선). Tab으로 제작대를 열지는 않는다 —
+            // 제작 창 열기는 E(제작 지점 근접 + 시선)만의 몫이다.
+            if (!keyboard.iKey.wasPressedThisFrame && !keyboard.tabKey.wasPressedThisFrame)
+            {
+                return;
+            }
+
+            // 제작 창과 함께 열려 있으면 <b>둘 다</b> 닫는다 — Esc와 같은 경로로 보내
+            // 제작 창의 소유자(CraftingStation)가 자기 상태를 닫게 한다.
+            if (_craftingOpen)
+            {
+                EventBus<UiCloseRequestedLocalEvent>.Publish(default);
+                return;
+            }
+
+            SetPanelOpen(!_panelOpen);
+        }
+
+        /// <summary>인벤토리 창 표시 상태 — 바뀔 때만 이벤트를 발행한다(무기 게이트·Esc 우선순위 입력).</summary>
+        private void SetPanelOpen(bool open)
+        {
+            if (_panelOpen == open)
+            {
+                return;
+            }
+
+            _panelOpen = open;
+            _dragFromIndex = -1;
+            EventBus<InventoryPanelToggledLocalEvent>.Publish(new InventoryPanelToggledLocalEvent(open));
         }
 
         private void OnGUI()

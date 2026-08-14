@@ -170,8 +170,10 @@ namespace Game.Gameplay.Crafting
 
             SetLocalInRange(ready && !_panelOpen);
 
+            // 인벤토리 창은 제작을 막지 않는다 (M7 3차 검증 개선) — 제작 창과 함께 열리는 짝이다.
+            // 막는 것은 개인 인벤토리를 이미 품은 창(창고·보따리)과 세션 메뉴뿐이다.
             HotbarController hotbar = localPlayer.GetComponent<HotbarController>();
-            bool otherUiOpen = hotbar != null && hotbar.IsPanelOpen && !_panelOpen;
+            bool otherUiOpen = hotbar != null && hotbar.IsCraftBlockingPanelOpen;
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.eKey.wasPressedThisFrame || otherUiOpen)
