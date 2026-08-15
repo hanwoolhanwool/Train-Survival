@@ -73,10 +73,17 @@ namespace Game.Gameplay.Train
         /// <summary>부활 지점 — 후미 칸 지붕 (§4.2).</summary>
         public Vector3 RespawnPosition => new Vector3(0f, _deckHeight + 1f, RearZ + _carLength * 0.5f);
 
-        /// <summary>접속 순서별 초기 스폰 지점 — 기관차 지붕에서 뒤로 나열.</summary>
+        /// <summary>
+        /// 스폰이 올라서는 편성 인덱스 — 0은 기관차다. 기관차는 걸어 다닐 지붕이 아니라 차체가
+        /// 통째로 선 형상이라 그 위에 세우면 플레이어가 모델 안에 묻힌다 (M8 아트 패스).
+        /// 그래서 첫 화차 갑판에 세운다.
+        /// </summary>
+        private const int SpawnCarIndex = 1;
+
+        /// <summary>접속 순서별 초기 스폰 지점 — 첫 화차 갑판에서 뒤로 2 m 간격 나열.</summary>
         public Vector3 GetSpawnPosition(int playerIndex)
         {
-            return new Vector3(0f, _deckHeight + 1f, FrontZ - _carLength * 0.5f - playerIndex * 2f);
+            return new Vector3(0f, _deckHeight + 1f, CarCenterZ(SpawnCarIndex) - playerIndex * 2f);
         }
     }
 }
