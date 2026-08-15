@@ -14,21 +14,29 @@ namespace Game.Systems.Networking
     /// </remarks>
     public static class GameplaySceneRoute
     {
-        /// <summary>기본 인게임 씬 — 빌드·CI·일반 플레이가 쓰는 편성.</summary>
+        /// <summary>프리미티브 편성 씬 — 아트 패스 이전의 기준 씬.</summary>
         public const string Default = "Game";
 
         /// <summary>M8 아트 패스 검증 씬 — 프리미티브 대신 실제 모델을 얹은 같은 편성.</summary>
         public const string ArtTest = "Game_ArtTest";
 
-        private static string _current = Default;
+        /// <summary>
+        /// 이번 실행이 처음 들어갈 인게임 씬. M8 아트 패스 동안은 아트 검증 씬이 작업 씬이라
+        /// 여기를 시작점으로 둔다 — <see cref="Default"/> 쪽은 칸 규격이 TrainLayoutSettings와
+        /// 어긋난 채 남아 있어(칸 중심 z 3 m·갑판 0.35 m) 그대로 들어가면 판정과 시각이 따로 논다.
+        /// 아트 패스가 끝나 두 씬이 다시 맞으면 이 값만 <see cref="Default"/>로 되돌리면 된다.
+        /// </summary>
+        private const string Startup = ArtTest;
+
+        private static string _current = Startup;
 
         /// <summary>호스트가 이번에 로드할(또는 로드한) 인게임 씬 이름.</summary>
         public static string Current => _current;
 
-        /// <summary>메뉴에서 시작 대상 씬을 고른다 — 알 수 없는 이름이면 기본 씬으로 되돌린다.</summary>
+        /// <summary>메뉴에서 시작 대상 씬을 고른다 — 알 수 없는 이름이면 시작 씬으로 되돌린다.</summary>
         public static void Select(string sceneName)
         {
-            _current = IsGameplayScene(sceneName) ? sceneName : Default;
+            _current = IsGameplayScene(sceneName) ? sceneName : Startup;
         }
 
         /// <summary>이 씬 이름이 인게임 씬인가 — 호스트·클라이언트 양쪽에서 유효한 판정.</summary>
