@@ -13,13 +13,12 @@ namespace Game.UI
     /// </summary>
     public sealed class MainMenuController : MonoBehaviour
     {
-        private const string GameSceneName = "Game";
         private const string DefaultAddress = "127.0.0.1";
         private const ushort DefaultPort = 7777;
 
         private void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(40f, 40f, 320f, 240f));
+            GUILayout.BeginArea(new Rect(40f, 40f, 320f, 300f));
             GUILayout.Label("<b>Train Survival — 집게 수직 슬라이스</b>");
 
             if (!ServiceLocator.TryGet(out INetworkSessionService session))
@@ -36,6 +35,8 @@ namespace Game.UI
                 return;
             }
 
+            DrawSceneSelector();
+
             if (ActiveTransportMode.IsSteam)
             {
                 DrawSteamMenu(session);
@@ -48,13 +49,26 @@ namespace Game.UI
             GUILayout.EndArea();
         }
 
+        /// <summary>
+        /// 시작할 인게임 씬 선택 — 기본 편성(Game)과 아트 검증 편성(Game_ArtTest)을 오간다.
+        /// 씬 이름은 호스트만 고르고, 클라이언트는 NGO 씬 동기화로 따라온다.
+        /// </summary>
+        private static void DrawSceneSelector()
+        {
+            GUILayout.Label($"인게임 씬: <b>{GameplaySceneRoute.Current}</b>");
+            if (GUILayout.Button($"→ {GameplaySceneRoute.Other} (으)로 전환"))
+            {
+                GameplaySceneRoute.Select(GameplaySceneRoute.Other);
+            }
+        }
+
         private static void DrawDirectMenu(INetworkSessionService session)
         {
             if (GUILayout.Button("호스트 시작 (혼자여도 호스트 세션)", GUILayout.Height(40f)))
             {
                 if (session.StartHost())
                 {
-                    session.LoadGameplayScene(GameSceneName);
+                    session.LoadGameplayScene(GameplaySceneRoute.Current);
                 }
             }
 
@@ -77,7 +91,7 @@ namespace Game.UI
                 if (session.StartHost())
                 {
                     lobby.CreateLobby();
-                    session.LoadGameplayScene(GameSceneName);
+                    session.LoadGameplayScene(GameplaySceneRoute.Current);
                 }
             }
 

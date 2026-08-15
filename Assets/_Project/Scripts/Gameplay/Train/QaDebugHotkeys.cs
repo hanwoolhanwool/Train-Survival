@@ -4,12 +4,13 @@ using Game.Systems.Networking;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace Game.Gameplay.Train
 {
     /// <summary>
     /// QA 테스트용 디버그 핫키 (릴리스에서는 <see cref="_enableQaKeys"/>를 끈다).
-    /// - 숫자패드 + : 게임 재시작(Game 씬 재로드, 호스트 권위로 편성·웨이브·사이클 초기화).
+    /// - 숫자패드 + : 게임 재시작(지금 돌고 있는 인게임 씬 재로드, 호스트 권위로 편성·웨이브·사이클 초기화).
     /// - 숫자패드 7 : 현재 표적 가능한(후미) 연결부 1개 파괴(후방 연쇄 이탈 테스트).
     /// - 숫자패드 8 : 칸 1칸 무료 건설 — 빈 슬롯(파괴·소실) 재건 우선, 없으면 후미 증설(비용 경로는 건설 포트로 검증).
     /// - 숫자패드 9 : 요청자에게 자원 지급(건자재·제작 재료·식재료 — 증설 비용·연료 투입·요리 테스트).
@@ -32,7 +33,6 @@ namespace Game.Gameplay.Train
     /// </summary>
     public sealed class QaDebugHotkeys : NetworkBehaviour
     {
-        private const string GameplaySceneName = "Game";
         private const float SampleDamage = 30f;
         private const float SelfDamage = 20f;
         private const float SingleMonsterSpawnDistance = 10f;
@@ -337,13 +337,21 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>게임 재시작 — 호스트가 Game 씬을 단일 모드로 재로드해 모든 네트워크 상태를 초기화한다.</summary>
+        /// <summary>
+        /// 게임 재시작 — 호스트가 인게임 씬을 단일 모드로 재로드해 모든 네트워크 상태를 초기화한다.
+        /// 재시작은 <b>지금 돌고 있는 씬</b>을 다시 올린다 — 아트 검증 씬에서 재시작했는데 기본 씬으로
+        /// 튀어 나가지 않게, 호스트가 고른 값(<see cref="GameplaySceneRoute.Current"/>)보다
+        /// 실제 활성 씬을 우선한다.
+        /// </summary>
         [Rpc(SendTo.Server, RequireOwnership = false)]
         private void RequestRestartServerRpc()
         {
             if (ServiceLocator.TryGet(out INetworkSessionService session))
             {
-                session.LoadGameplayScene(GameplaySceneName);
+                string active = SceneManager.GetActiveScene().name;
+                session.LoadGameplayScene(GameplaySceneRoute.IsGameplayScene(active)
+                    ? active
+                    : GameplaySceneRoute.Current);
             }
         }
 

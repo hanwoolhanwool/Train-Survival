@@ -4,6 +4,7 @@ using Game.Core.Services;
 using Game.Gameplay.Inventory;
 using Game.Gameplay.Train;
 using Game.Gameplay.World;
+using Game.Systems.Networking;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -29,8 +30,6 @@ namespace Game.Gameplay.Player
 
         private readonly NetworkVariable<PlayerMovementState> _movementState =
             new NetworkVariable<PlayerMovementState>(PlayerMovementState.Normal);
-
-        private const string GameplaySceneName = "Game";
 
         // 접지 프로브에서 최근접 정적 면과 칸 지붕을 '같은 평면'으로 간주하는 높이 차(m) —
         // 승차 램프 상단이 지붕보다 최대 ~15cm 높게 겹치는 저작 여유를 흡수한다.
@@ -218,7 +217,10 @@ namespace Game.Gameplay.Player
 
             if (_needsInitialPlacement)
             {
-                if (SceneManager.GetActiveScene().name != GameplaySceneName)
+                // 인게임 씬이 실제로 올라오기 전(메뉴 씬에서 스폰이 먼저 도착)에는 배치를 보류한다.
+                // 씬 이름을 상수와 직접 비교하면 아트 검증 씬에서 배치가 영원히 보류되므로
+                // 인게임 씬 집합으로 판정한다 — 클라이언트도 같은 판정을 쓴다.
+                if (!GameplaySceneRoute.IsGameplayScene(SceneManager.GetActiveScene().name))
                 {
                     return;
                 }
