@@ -53,6 +53,10 @@ Transform:
   - {fileID: 2479519262619146647}
   - {fileID: 4661500455886736420}
   - {fileID: 5566001122334455602}
+  - {fileID: 5566001122334455702}
+  - {fileID: 5566001122334455711}
+  - {fileID: 5566001122334455721}
+  - {fileID: 5566001122334455731}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &2849575303564196019
@@ -968,6 +972,328 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &5566001122334455701
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5566001122334455702}
+  - component: {fileID: 5566001122334455703}
+  m_Layer: 0
+  m_Name: HammerPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5566001122334455702
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455701}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.07436109, y: -0.11472205, z: 0.8138046, w: 0.5648285}
+  m_LocalPosition: {x: 0.3, y: 1.44, z: 0.56}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5566001122334455705}
+  m_Father: {fileID: 7534862156400754249}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5566001122334455703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bbdbfda4a03542dfc4152813d1d48d4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.RepairHammerView
+--- !u!1001 &5566001122334455704
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5566001122334455702}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 0ce535d18c6faed274c9c57b85c8286d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0ce535d18c6faed274c9c57b85c8286d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0ce535d18c6faed274c9c57b85c8286d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 0ce535d18c6faed274c9c57b85c8286d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 3506c6a005a0177a7353eeac019b97a8, type: 2}
+    - target: {fileID: 919132149155446097, guid: 0ce535d18c6faed274c9c57b85c8286d, type: 3}
+      propertyPath: m_Name
+      value: Weapon_RepairHammer
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0ce535d18c6faed274c9c57b85c8286d, type: 3}
+--- !u!4 &5566001122334455705 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0ce535d18c6faed274c9c57b85c8286d, type: 3}
+  m_PrefabInstance: {fileID: 5566001122334455704}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5566001122334455710
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5566001122334455711}
+  - component: {fileID: 5566001122334455712}
+  m_Layer: 0
+  m_Name: RevolverPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5566001122334455711
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455710}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0.27, y: 1.3222, z: 0.502}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5566001122334455714}
+  m_Father: {fileID: 7534862156400754249}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &5566001122334455712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455710}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9710775ec2f03089f243848465b66d2f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.GunView
+  _gun: {fileID: 7965373453658798524}
+--- !u!1001 &5566001122334455713
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5566001122334455711}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 82d08fc28be390a4ea53e1aee18b5359, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+--- !u!4 &5566001122334455714 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+  m_PrefabInstance: {fileID: 5566001122334455713}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5566001122334455720
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5566001122334455721}
+  - component: {fileID: 5566001122334455722}
+  m_Layer: 0
+  m_Name: ShotgunPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5566001122334455721
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455720}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0.2567, y: 1.0688, z: 0.6243}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5566001122334455724}
+  m_Father: {fileID: 7534862156400754249}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &5566001122334455722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9710775ec2f03089f243848465b66d2f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.GunView
+  _gun: {fileID: 8811223344556677001}
+--- !u!1001 &5566001122334455723
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5566001122334455721}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: b071c9fb2d00a0c4eab1e8b1515b4180, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+--- !u!4 &5566001122334455724 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+  m_PrefabInstance: {fileID: 5566001122334455723}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5566001122334455730
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5566001122334455731}
+  - component: {fileID: 5566001122334455732}
+  m_Layer: 0
+  m_Name: HarpoonPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5566001122334455731
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455730}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0.3588, y: 0.9995, z: 0.7767}
+  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5566001122334455734}
+  m_Father: {fileID: 7534862156400754249}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &5566001122334455732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566001122334455730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5155ec08e5a90d54d9fa28b5ed0aff38, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Harpoon.HarpoonView
+--- !u!1001 &5566001122334455733
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5566001122334455731}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 140efaed5cc8d1f449a9ab7689b6df05, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 140efaed5cc8d1f449a9ab7689b6df05, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 140efaed5cc8d1f449a9ab7689b6df05, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 140efaed5cc8d1f449a9ab7689b6df05, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 51285f469924a1d4a87b5a41496b04ee, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 140efaed5cc8d1f449a9ab7689b6df05, type: 3}
+--- !u!4 &5566001122334455734 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 140efaed5cc8d1f449a9ab7689b6df05, type: 3}
+  m_PrefabInstance: {fileID: 5566001122334455733}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &6600112233445566001
 MonoBehaviour:
   m_ObjectHideFlags: 0
