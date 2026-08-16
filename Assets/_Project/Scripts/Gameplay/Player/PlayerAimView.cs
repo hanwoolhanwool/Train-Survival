@@ -128,17 +128,19 @@ namespace Game.Gameplay.Player
                 _headBone = animator.GetBoneTransform(HumanBodyBones.Head);
             }
 
+            // 기본 보정 각을 더한다 — 클립이 리타게팅 편향으로 항상 고개를 숙이고 있어(피치 0에서
+            // 바닥을 봄), 보정 없이는 시선 공유의 기준점 자체가 어긋난다.
             Vector3 right = transform.right;
             if (_chestBone != null)
             {
-                _chestBone.rotation =
-                    Quaternion.AngleAxis(_currentPitch * _settings.ChestPitchWeight, right) * _chestBone.rotation;
+                float chestAngle = _settings.ChestPitchOffsetDegrees + _currentPitch * _settings.ChestPitchWeight;
+                _chestBone.rotation = Quaternion.AngleAxis(chestAngle, right) * _chestBone.rotation;
             }
 
             if (_headBone != null)
             {
-                _headBone.rotation =
-                    Quaternion.AngleAxis(_currentPitch * _settings.HeadPitchWeight, right) * _headBone.rotation;
+                float headAngle = _settings.HeadPitchOffsetDegrees + _currentPitch * _settings.HeadPitchWeight;
+                _headBone.rotation = Quaternion.AngleAxis(headAngle, right) * _headBone.rotation;
             }
         }
     }

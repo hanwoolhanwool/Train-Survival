@@ -25,6 +25,8 @@ namespace Game.Gameplay.Player
         [SerializeField, Min(0f)] private float _pitchSmoothingHalfLifeSeconds = 0.08f;
         [SerializeField, Range(0f, 1f)] private float _chestPitchWeight = 0.35f;
         [SerializeField, Range(0f, 1f)] private float _headPitchWeight = 0.45f;
+        [SerializeField, Range(-45f, 45f)] private float _chestPitchOffsetDegrees = -6f;
+        [SerializeField, Range(-45f, 45f)] private float _headPitchOffsetDegrees = -22f;
 
         [Header("4인 색 구분 (MaterialPropertyBlock)")]
         [SerializeField] private Color[] _playerColors =
@@ -67,6 +69,15 @@ namespace Game.Gameplay.Player
 
         /// <summary>머리 본에 얹는 피치 비율.</summary>
         public float HeadPitchWeight => _headPitchWeight;
+
+        /// <summary>가슴 기본 보정 각 (도, −가 위로) — 리타게팅 상체 숙임 편향 상쇄.</summary>
+        public float ChestPitchOffsetDegrees => _chestPitchOffsetDegrees;
+
+        /// <summary>
+        /// 머리 기본 보정 각 (도, −가 위로) — 표준 인체 프리셋을 치비 비율에 리타게팅하며 생긴
+        /// 고개 숙임 편향(판정 §2.4.6)을 상쇄해, 피치 0에서 시선이 수평이 되게 한다.
+        /// </summary>
+        public float HeadPitchOffsetDegrees => _headPitchOffsetDegrees;
 
         /// <summary>스폰 순번 → 몸체 틴트 색 (순번 % 길이). 텍스처 위에 곱해진다.</summary>
         public Color GetPlayerColor(int visualSlot)
