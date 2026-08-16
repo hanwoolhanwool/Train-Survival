@@ -1,0 +1,115 @@
+using Unity.Netcode;
+using UnityEngine;
+
+namespace Game.Gameplay.Player
+{
+    /// <summary>
+    /// 캐릭터 외형 선택 + 4인 색 구분 — 표현 전용 (M8 1차 §0-8 · §2.4).
+    /// 호스트가 스폰 순번을 확정·복제하면 각 피어가 같은 규칙으로 모델(Girl/Man 교대)과
+    /// 틴트 색을 로컬 적용한다. 색은 머티리얼 인스턴스 분기 대신
+    /// <see cref="MaterialPropertyBlock"/>으로 칠한다 (SRP Batcher 규약 — M8 1차 §2.4).
+    /// 소유자 자신의 몸은 1인칭 카메라를 가리므로 그림자만 남긴다.
+    /// </summary>
+    public sealed class PlayerCharacterView : NetworkBehaviour
+    {
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+
+        [SerializeField] private PlayerAnimationSettings _settings;
+        [SerializeField] private GameObject _girlModel;
+        [SerializeField] private GameObject _manModel;
+        [SerializeField] private Animator _girlAnimator;
+        [SerializeField] private Animator _manAnimator;
+        [SerializeField] private SkinnedMeshRenderer _girlRenderer;
+        [SerializeField] private SkinnedMeshRenderer _manRenderer;
+
+        /// <summary>
+        /// 시각 슬롯 = 접속자 목록 내 순번 — 호스트 확정, 전 피어 복제.
+        /// clientId를 그대로 쓰면 재접속마다 커져 색·모델이 계속 바뀐다
+        /// (<see cref="NetworkPlayerController"/>의 스폰 순번과 같은 근거 — M6 1차 §0 소규모 5).
+        /// </summary>
+        private readonly NetworkVariable<int> _visualSlot = new NetworkVariable<int>();
+
+        /// <summary>현재 켜져 있는 모델의 Animator — <see cref="PlayerAnimationDriver"/>가 구동한다.</summary>
+        public Animator ActiveAnimator { get; private set; }
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsServer)
+            {
+                _visualSlot.Value = ResolveVisualSlot();
+            }
+
+            _visualSlot.OnValueChanged += OnVisualSlotChanged;
+            Apply(_visualSlot.Value);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            _visualSlot.OnValueChanged -= OnVisualSlotChanged;
+        }
+
+        private void OnVisualSlotChanged(int previous, int current)
+        {
+            Apply(current);
+        }
+
+        private void Apply(int slot)
+        {
+            bool useGirl = slot % 2 == 0;
+            if (_girlModel != null)
+            {
+                _girlModel.SetActive(useGirl);
+            }
+
+            if (_manModel != null)
+            {
+                _manModel.SetActive(!useGirl);
+            }
+
+            ActiveAnimator = useGirl ? _girlAnimator : _manAnimator;
+
+            SkinnedMeshRenderer renderer = useGirl ? _girlRenderer : _manRenderer;
+            if (renderer != null)
+            {
+                if (_settings != null)
+                {
+                    var block = new MaterialPropertyBlock();
+                    renderer.GetPropertyBlock(block);
+                    block.SetColor(BaseColorId, _settings.GetPlayerColor(slot));
+                    renderer.SetPropertyBlock(block);
+                }
+
+                // 1인칭 시점: 자기 몸체가 카메라(y 1.6)를 가리므로 메시는 숨기고 그림자만 남긴다.
+                renderer.shadowCastingMode = IsOwner
+                    ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
+                    : UnityEngine.Rendering.ShadowCastingMode.On;
+            }
+
+            // 소유자는 상시 갱신한다 — ShadowsOnly 렌더러는 화면 밖 판정이 나기 쉬워
+            // CullUpdateTransforms(프리팹 기본)와 겹치면 본 갱신이 멈춰 그림자가 끊긴다
+            // (1회차 검증 버벅임 원인 ②). 원격은 실제로 보일 때만 갱신하면 된다.
+            Animator animator = ActiveAnimator;
+            if (animator != null)
+            {
+                animator.cullingMode = IsOwner
+                    ? AnimatorCullingMode.AlwaysAnimate
+                    : AnimatorCullingMode.CullUpdateTransforms;
+            }
+        }
+
+        /// <summary>현재 접속자 목록에서의 위치 — 스폰 승인 직전 AddClient가 끝나 목록에 있다.</summary>
+        private int ResolveVisualSlot()
+        {
+            var ids = NetworkManager.ConnectedClientsIds;
+            for (int i = 0; i < ids.Count; i++)
+            {
+                if (ids[i] == OwnerClientId)
+                {
+                    return i;
+                }
+            }
+
+            return ids.Count;
+        }
+    }
+}
