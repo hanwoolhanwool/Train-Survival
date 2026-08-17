@@ -68,10 +68,11 @@ namespace Game.Gameplay.Player
 
             // 포즈 클립이 자세를 맡는 만큼 IK를 비운다 (업그레이드 계획 C축 §2.1) —
             // 클립 반입 전에는 잔여 가중치가 1이라 A안과 동일하게 IK 단독으로 동작한다.
-            float residual = pose.IkResidualWeight;
-            ApplyHand(AvatarIKGoal.RightHand, WeaponHoldMath.BlendIkWithPose(_rightWeight, residual),
+            ApplyHand(AvatarIKGoal.RightHand,
+                WeaponHoldMath.BlendIkWithPose(_rightWeight, pose.IkResidualWeight),
                 pose.RightHandLocalPosition, pose.RightHandLocalRotation);
-            ApplyHand(AvatarIKGoal.LeftHand, WeaponHoldMath.BlendIkWithPose(_leftWeight, residual),
+            ApplyHand(AvatarIKGoal.LeftHand,
+                WeaponHoldMath.BlendIkWithPose(_leftWeight, pose.LeftIkResidualWeight),
                 pose.LeftHandLocalPosition, pose.LeftHandLocalRotation);
         }
 

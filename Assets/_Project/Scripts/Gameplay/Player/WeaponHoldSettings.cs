@@ -62,6 +62,9 @@ namespace Game.Gameplay.Player
             [Tooltip("포즈 클립이 자세를 담당할 때 남기는 IK 비율 — 클립이 없으면 1(IK 단독).")]
             [SerializeField, Range(0f, 1f)] private float _ikResidualWeight = 1f;
 
+            [Tooltip("왼손 전용 IK 비율 — 무기를 쥔 오른손과 달리 왼손은 총열에 붙어야 해서 더 높다.")]
+            [SerializeField, Range(0f, 1f)] private float _leftIkResidualWeight = 1f;
+
             public HotbarItemType ItemType => _itemType;
             public Vector3 SocketLocalPosition => _socketLocalPosition;
             public Quaternion SocketLocalRotation => Quaternion.Euler(_socketLocalEulerAngles);
@@ -81,6 +84,12 @@ namespace Game.Gameplay.Player
             /// 합성 규약(업그레이드 계획 §2.1). 클립 반입 전에는 1이라 A안과 동일하게 동작한다.
             /// </summary>
             public float IkResidualWeight => _ikResidualWeight;
+
+            /// <summary>
+            /// 왼손 IK 잔여 비율 — 오른손은 무기가 소켓으로 이미 붙어 있어 클립에 맡겨도 되지만,
+            /// <b>왼손은 무기 총열까지 가야 그립이 성립</b>하므로 별도로 더 높게 둔다.
+            /// </summary>
+            public float LeftIkResidualWeight => _leftIkResidualWeight;
         }
 
         [SerializeField] private Entry[] _entries;
