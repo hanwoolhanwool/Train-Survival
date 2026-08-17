@@ -56,6 +56,7 @@ namespace Game.Gameplay.Debugging
         private GameObject _girlModel;
         private GameObject _manModel;
         private Animator _activeAnimator;
+        private SkinnedMeshRenderer _activeCharacterRenderer;
         private bool _useGirl = true;
 
         private LocomotionTier _tier = LocomotionTier.Idle;
@@ -227,9 +228,13 @@ namespace Game.Gameplay.Debugging
 
             GameObject model = useGirl ? _girlModel : _manModel;
             _activeAnimator = model != null ? model.GetComponent<Animator>() : null;
+            _activeCharacterRenderer = model != null
+                ? model.GetComponentInChildren<SkinnedMeshRenderer>(includeInactive: true)
+                : null;
             _cachedBoneAnimator = null;
             _chestBone = null;
             _headBone = null;
+            ApplyCharacterVisibility();
 
             if (_activeAnimator == null)
             {
@@ -395,6 +400,25 @@ namespace Game.Gameplay.Debugging
                 // FP 동안 궤도 카메라의 LateUpdate 재배치를 멈춰 조작권을 넘긴다.
                 _orbitCamera.enabled = !fp;
             }
+
+            ApplyCharacterVisibility();
+        }
+
+        /// <summary>
+        /// FP 모드에서는 자기 몸을 그림자만 남긴다 — 본편 소유자와 같은 처리
+        /// (<see cref="PlayerCharacterView"/>의 IsOwner 분기). 몸이 카메라(y 1.6)를 가리면
+        /// 뷰모델이 실제로 어떻게 보이는지 판정할 수 없다.
+        /// </summary>
+        private void ApplyCharacterVisibility()
+        {
+            if (_activeCharacterRenderer == null)
+            {
+                return;
+            }
+
+            _activeCharacterRenderer.shadowCastingMode = _fpCamera
+                ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
+                : UnityEngine.Rendering.ShadowCastingMode.On;
         }
 
         // ── dirty·리셋·저장 (계획 §4-⑤) ──────────────────────────
