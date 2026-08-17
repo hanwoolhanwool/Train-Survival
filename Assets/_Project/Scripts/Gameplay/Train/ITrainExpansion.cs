@@ -3,7 +3,7 @@ namespace Game.Gameplay.Train
     /// <summary>
     /// 칸·건축물 건설 계약 (개발 가이드 §M3 — 칸 증설/연결, 기획서 §7.1).
     /// 칸은 첫 빈 슬롯(파괴·소실)을 재건하고, 빈 슬롯이 없으면 후미에 증설한다(상한 = 씬 예비 슬롯 수).
-    /// 건축물은 살아 붙은 확장 칸 위에 1개씩 설치한다 (자유 다중 설치는 M5 확장).
+    /// 건축물은 칸 바닥 그리드의 빈 셀 묶음 위에 다중 설치한다 (건축 개편 1차 — 칸당 1슬롯 폐지).
     /// 판정(Can*)은 복제 상태 기반이라 전 피어에서 동일하고, 확정(ServerTry*)은 호스트 전용이다.
     /// <see cref="Game.Core.Services.ServiceLocator"/>에 등록된다.
     /// </summary>
@@ -30,10 +30,14 @@ namespace Game.Gameplay.Train
         /// </summary>
         bool ServerTryBuildCar();
 
-        /// <summary>이 칸 위에 건축물을 설치할 수 있는지 — 칸 건재 + 살아 있는 건축물 없음(기관차 제외).</summary>
-        bool CanBuildStructure(int carIndex);
+        /// <summary>
+        /// 이 자리(칸·셀·회전)에 건축물을 설치할 수 있는지 (건축 개편 1차 — 계획서 §2.3) —
+        /// 칸 건재(기관차 제외) + 설치 가능 종류 + 점유 셀 전부 그리드 내부·비점유.
+        /// 복제 상태 기반이라 전 피어 동일 — 프리뷰와 호스트 확정이 같은 판정을 쓴다.
+        /// </summary>
+        bool CanPlaceStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind);
 
-        /// <summary>칸 위에 지정 종류의 건축물 1개를 설치한다. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
-        bool ServerTryBuildStructure(int carIndex, StructureKind kind);
+        /// <summary>지정 자리에 건축물 1개를 설치한다. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
+        bool ServerTryBuildStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind);
     }
 }

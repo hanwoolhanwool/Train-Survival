@@ -280,108 +280,7 @@ namespace Game.Tests.EditMode
             Assert.That(couplings[2].Broken, Is.True);
         }
 
-        // ── 칸 위 건축물 (§M3 — 설치·개별 파괴) ──────────────────
-
-        /// <summary>3칸 편성 + 빈 건축물 슬롯에 2번 칸 건축물을 설치한 기본 상황.</summary>
-        private static void BuildTrainWithStructure(out CarState[] cars, out StructureState[] structures)
-        {
-            cars = BuildTrain(3);
-            structures = TrainStateLogic.BuildInitialStructures(3);
-            TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f);
-        }
-
-        [Test]
-        public void 초기_건축물_슬롯은_모두_빈_슬롯이다()
-        {
-            StructureState[] structures = TrainStateLogic.BuildInitialStructures(3);
-
-            Assert.That(structures.Length, Is.EqualTo(3));
-            for (int i = 0; i < structures.Length; i++)
-            {
-                Assert.That(structures[i].Present, Is.False, "건축물은 설치로만 생긴다");
-            }
-        }
-
-        [Test]
-        public void 건축물_설치는_살아_붙은_확장_칸의_빈_슬롯만_가능하다()
-        {
-            CarState[] cars = BuildTrain(3);
-            StructureState[] structures = TrainStateLogic.BuildInitialStructures(3);
-
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 0, StructureKind.Dome, 50f), Is.False, "기관차 위에는 설치 불가");
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f), Is.True);
-            Assert.That(structures[2].Present, Is.True);
-            Assert.That(structures[2].Health, Is.EqualTo(50f));
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f), Is.False, "살아 있는 건축물 위에 중복 설치 불가");
-
-            TrainStateLogic.DetachFrom(cars, 1);
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 1, StructureKind.Dome, 50f), Is.False, "이탈 칸에는 설치 불가");
-        }
-
-        [Test]
-        public void 파괴된_건축물_자리에는_새로_지을_수_있다()
-        {
-            BuildTrainWithStructure(out CarState[] cars, out StructureState[] structures);
-            TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f);
-            Assert.That(TrainStateLogic.IsStructureAlive(structures[2]), Is.False);
-
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f), Is.True);
-            Assert.That(structures[2].Health, Is.EqualTo(50f));
-        }
-
-        [Test]
-        public void 건축물은_설치한_종류를_보존한다()
-        {
-            CarState[] cars = BuildTrain(3);
-            StructureState[] structures = TrainStateLogic.BuildInitialStructures(3);
-
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 1, StructureKind.Heater, 40f), Is.True);
-            Assert.That(structures[1].Kind, Is.EqualTo(StructureKind.Heater));
-            Assert.That(structures[1].MaxHealth, Is.EqualTo(40f), "종류별 체력이 그대로 들어간다");
-
-            // 데미지를 입어도 종류는 유지된다.
-            TrainStateLogic.ApplyStructureDamage(structures, cars, 1, 10f);
-            Assert.That(structures[1].Kind, Is.EqualTo(StructureKind.Heater));
-        }
-
-        [Test]
-        public void 파괴된_건축물_자리에_다른_종류를_지을_수_있다()
-        {
-            BuildTrainWithStructure(out CarState[] cars, out StructureState[] structures);
-            TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f);
-
-            Assert.That(TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Storage, 60f), Is.True);
-            Assert.That(structures[2].Kind, Is.EqualTo(StructureKind.Storage), "자리의 이전 종류에 구속되지 않는다");
-            Assert.That(structures[2].MaxHealth, Is.EqualTo(60f));
-        }
-
-        [Test]
-        public void 건축물_데미지는_체력을_줄이고_0에서_파괴된다()
-        {
-            BuildTrainWithStructure(out CarState[] cars, out StructureState[] structures);
-
-            Assert.That(TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 20f),
-                Is.EqualTo(CarDamageResult.Damaged));
-            Assert.That(structures[2].Health, Is.EqualTo(30f).Within(0.001f));
-
-            Assert.That(TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f),
-                Is.EqualTo(CarDamageResult.Destroyed));
-            Assert.That(structures[2].Health, Is.EqualTo(0f));
-            Assert.That(TrainStateLogic.IsStructureAlive(structures[2]), Is.False);
-        }
-
-        [Test]
-        public void 건축물_없는_칸과_이탈_칸의_건축물_데미지는_무시된다()
-        {
-            BuildTrainWithStructure(out CarState[] cars, out StructureState[] structures);
-
-            Assert.That(TrainStateLogic.ApplyStructureDamage(structures, cars, 1, 10f),
-                Is.EqualTo(CarDamageResult.Ignored), "건축물 없는 칸");
-
-            TrainStateLogic.DetachFrom(cars, 2);
-            Assert.That(TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 10f),
-                Is.EqualTo(CarDamageResult.Ignored), "이탈 칸 위 건축물은 별도 표적이 아니다");
-        }
+        // 칸 위 건축물(설치·개별 파괴·수리)은 그리드 개편(건축 개편 1차)으로 StructureGridLogicTests가 검증한다.
 
         // ── 수리 (§M3 — 수리 망치. 파괴·이탈된 부위는 되살릴 수 없다) ──────────────────
 
@@ -431,22 +330,6 @@ namespace Game.Tests.EditMode
             Assert.That(TrainStateLogic.RepairCoupling(couplings, cars, 1, 10f), Is.False, "끊긴 연결부는 재결합 미결 — 수리 불가");
         }
 
-        [Test]
-        public void 건축물_수리는_손상분만_회복하고_파괴된_건축물은_불가다()
-        {
-            BuildTrainWithStructure(out CarState[] cars, out StructureState[] structures);
-            TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 20f);
-
-            Assert.That(TrainStateLogic.RepairStructure(structures, cars, 2, 5f), Is.True);
-            Assert.That(structures[2].Health, Is.EqualTo(35f).Within(0.001f));
-
-            Assert.That(TrainStateLogic.RepairStructure(structures, cars, 2, 999f), Is.True);
-            Assert.That(structures[2].Health, Is.EqualTo(50f), "만피 초과 금지");
-
-            TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f);
-            Assert.That(TrainStateLogic.RepairStructure(structures, cars, 2, 10f), Is.False, "파괴된 건축물은 수리 아닌 재설치 대상");
-        }
-
         // ── 칸 건설 (§M3 — 빈 슬롯 재건 우선, 없으면 후미 증설) ──────────────────
 
         private static float[] ZeroOffsets(int count)
@@ -491,27 +374,23 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void 슬롯_재건은_칸을_되살리고_앞_연결부를_복구하며_건축물_잔해를_지운다()
+        public void 슬롯_재건은_칸을_되살리고_앞_연결부를_복구한다()
         {
             CarState[] cars = BuildTrain(4);
             CouplingState[] couplings = TrainStateLogic.BuildInitialCouplings(4, 60f);
-            StructureState[] structures = TrainStateLogic.BuildInitialStructures(4);
-            TrainStateLogic.BuildStructure(structures, cars, 2, StructureKind.Dome, 50f);
 
-            // 칸2 파괴 → 연결부 1·2 절단, 칸3 이탈, 건축물 잔해(체력 0) 존재.
-            TrainStateLogic.ApplyStructureDamage(structures, cars, 2, 999f);
+            // 칸2 파괴 → 연결부 1·2 절단, 칸3 이탈. (건축물 잔해 제거는 TrainState가 그리드 리스트에서 확정한다.)
             TrainStateLogic.DestroyAndDetach(cars, 2);
             TrainStateLogic.BreakCoupling(couplings, 1);
             TrainStateLogic.BreakCoupling(couplings, 2);
 
-            TrainStateLogic.RebuildSlot(cars, couplings, structures, 2, 100f, 60f);
+            TrainStateLogic.RebuildSlot(cars, couplings, 2, 100f, 60f);
 
             Assert.That(TrainStateLogic.IsCarPresent(cars[2]), Is.True);
             Assert.That(cars[2].Health, Is.EqualTo(100f));
             Assert.That(couplings[1].Broken, Is.False, "앞 연결부(칸1-칸2) 복구");
             Assert.That(couplings[1].Health, Is.EqualTo(60f));
             Assert.That(couplings[2].Broken, Is.True, "뒤 칸(3)이 아직 없으므로 뒤 연결부는 끊긴 채 유지");
-            Assert.That(structures[2].Present, Is.False, "옛 건축물 잔해는 함께 사라진다");
         }
 
         // ── 이탈 칸 재결합 (손잡이-이탈저항 스펙 §4.1) ──────────────────

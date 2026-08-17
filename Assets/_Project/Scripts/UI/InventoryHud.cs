@@ -45,6 +45,7 @@ namespace Game.UI
         private CarBuildAimLocalEvent _carBuildAim;
         private CarRecoupleAimLocalEvent _carRecoupleAim;
         private HammerTargetLocalEvent _hammerTarget;
+        private StructurePlaceAimLocalEvent _structurePlaceAim;
         private bool _panelOpen;
         private int _dragFromIndex = -1;
 
@@ -81,6 +82,7 @@ namespace Game.UI
             EventBus<CarBuildAimLocalEvent>.Subscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Subscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
+            EventBus<StructurePlaceAimLocalEvent>.Subscribe(OnStructurePlaceAim);
             EventBus<StoragePromptLocalEvent>.Subscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Subscribe(OnBundlePrompt);
@@ -99,6 +101,7 @@ namespace Game.UI
             EventBus<CarBuildAimLocalEvent>.Unsubscribe(OnCarBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Unsubscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
+            EventBus<StructurePlaceAimLocalEvent>.Unsubscribe(OnStructurePlaceAim);
             EventBus<StoragePromptLocalEvent>.Unsubscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Unsubscribe(OnBundlePrompt);
@@ -181,6 +184,11 @@ namespace Game.UI
         private void OnCarBuildAim(CarBuildAimLocalEvent evt)
         {
             _carBuildAim = evt;
+        }
+
+        private void OnStructurePlaceAim(StructurePlaceAimLocalEvent evt)
+        {
+            _structurePlaceAim = evt;
         }
 
         private void OnCarRecoupleAim(CarRecoupleAimLocalEvent evt)
@@ -498,7 +506,10 @@ namespace Game.UI
                     partName = $"연결부 #{_hammerTarget.Index}";
                     break;
                 case TrainPartKind.Structure:
-                    partName = $"건축물 (#{_hammerTarget.Index}번 칸)";
+                    // 다중 설치 (건축 개편 1차) — Index는 칸이 아니라 항목 Id이므로 종류명으로 부른다.
+                    partName = _structureCatalog != null
+                        ? _structureCatalog.GetDisplayName(_hammerTarget.TargetStructureKind)
+                        : _hammerTarget.TargetStructureKind.ToString();
                     break;
                 default:
                     partName = _hammerTarget.Index == 0 ? "기관차" : $"칸 #{_hammerTarget.Index}";
@@ -521,9 +532,19 @@ namespace Game.UI
                 string structureName = _structureCatalog != null
                     ? _structureCatalog.GetDisplayName(_hammerTarget.SelectedStructureKind)
                     : _hammerTarget.SelectedStructureKind.ToString();
-                action += _hammerTarget.CanAffordStructure
-                    ? $" — 우클릭 {structureName} 설치 (소모: {BuildSpendPreview(hotbar, _hammerTarget.StructureCost)}) [R] 종류 변경"
-                    : $" — <color=red>{structureName} 설치 자원 부족 ({BuildShortagePrompt(hotbar, _hammerTarget.StructureCost)})</color> [R] 종류 변경";
+                if (!_hammerTarget.CanAffordStructure)
+                {
+                    action += $" — <color=red>{structureName} 설치 자원 부족 ({BuildShortagePrompt(hotbar, _hammerTarget.StructureCost)})</color> [R] 종류 변경";
+                }
+                else if (_structurePlaceAim.Aiming && _structurePlaceAim.Occupied)
+                {
+                    // 자리 점유 안내 (건축 개편 1차 — 칸 건설과 같은 규약: 테두리 안이 비어야 지어진다).
+                    action += " — <color=red>자리에 사람·몬스터가 있어 설치할 수 없다</color> [R] 종류 변경";
+                }
+                else
+                {
+                    action += $" — 우클릭 {structureName} 설치 (소모: {BuildSpendPreview(hotbar, _hammerTarget.StructureCost)}) [R] 종류 변경";
+                }
             }
 
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth

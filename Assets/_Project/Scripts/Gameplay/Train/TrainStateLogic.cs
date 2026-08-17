@@ -252,81 +252,8 @@ namespace Game.Gameplay.Train
             return true;
         }
 
-        // ── 칸 위 건축물 (기획서 §9 — 칸 위의 각 건축물도 개별 파괴 가능) ──────────────────
-
-        /// <summary>건축물이 존재하고 파괴되지 않았는지(표현·공격·수리 대상).</summary>
-        public static bool IsStructureAlive(StructureState structure)
-        {
-            return structure.Present && structure.Health > 0f;
-        }
-
-        /// <summary>초기 건축물 배열을 만든다(인덱스 = 칸 인덱스 1:1) — 전부 빈 슬롯. 건축물은 설치로만 생긴다.</summary>
-        public static StructureState[] BuildInitialStructures(int carCount)
-        {
-            return carCount > 0 ? new StructureState[carCount] : Array.Empty<StructureState>();
-        }
-
-        /// <summary>
-        /// 이 칸에 건축물을 설치할 수 있는지 — 칸이 편성에 살아 붙어 있고(기관차 제외),
-        /// 살아 있는 건축물이 아직 없어야 한다. 파괴된 건축물 자리에는 새로 지을 수 있다.
-        /// </summary>
-        public static bool CanBuildStructureAt(StructureState[] structures, CarState[] cars, int index)
-        {
-            if (structures == null || cars == null
-                || index < 0 || index >= structures.Length || index >= cars.Length)
-            {
-                return false;
-            }
-
-            return IsCarPresent(cars[index]) && IsDestructible(cars[index].Type)
-                && !IsStructureAlive(structures[index]);
-        }
-
-        /// <summary>칸 위에 건축물을 설치한다 — 지정 종류·최대 체력으로 시작. 설치 불가 자리면 false.</summary>
-        public static bool BuildStructure(
-            StructureState[] structures, CarState[] cars, int index, StructureKind kind, float maxHealth)
-        {
-            if (!CanBuildStructureAt(structures, cars, index))
-            {
-                return false;
-            }
-
-            structures[index] = new StructureState
-            {
-                Present = true,
-                Kind = kind,
-                Health = maxHealth,
-                MaxHealth = maxHealth,
-            };
-            return true;
-        }
-
-        /// <summary>
-        /// 건축물 하나에 데미지를 적용한다. 칸이 편성에 살아 붙어 있고 건축물이 살아 있을 때만 유효하다
-        /// (이탈·파괴된 칸 위의 건축물은 칸과 운명을 같이하므로 별도 표적이 아니다).
-        /// </summary>
-        public static CarDamageResult ApplyStructureDamage(
-            StructureState[] structures, CarState[] cars, int index, float amount)
-        {
-            if (structures == null || cars == null || amount <= 0f
-                || index < 0 || index >= structures.Length || index >= cars.Length)
-            {
-                return CarDamageResult.Ignored;
-            }
-
-            if (!IsCarPresent(cars[index]) || !IsStructureAlive(structures[index]))
-            {
-                return CarDamageResult.Ignored;
-            }
-
-            StructureState structure = structures[index];
-            structure.Health = Mathf.Max(0f, structure.Health - amount);
-            structures[index] = structure;
-
-            return structure.Health <= 0f ? CarDamageResult.Destroyed : CarDamageResult.Damaged;
-        }
-
         // ── 수리 (기획서 §9 — 수리 망치. 파괴·이탈된 부위의 복구(재결합)는 미결이라 불가) ──────────────────
+        // 칸 위 건축물의 설치·피해·수리 판정은 그리드 개편(건축 개편 1차)으로 StructureGridLogic에 있다.
 
         /// <summary>
         /// 칸을 수리한다 — 편성에 살아 붙어 있고 만피가 아닐 때만. 기관차는 파괴 불가(체력 무한)라 수리 대상이 아니다.
@@ -368,31 +295,6 @@ namespace Game.Gameplay.Train
             return true;
         }
 
-        /// <summary>건축물을 수리한다 — 칸이 살아 붙어 있고 건축물이 살아 있을 때만. 파괴된 건축물 재건은 M5(건설) 범위.</summary>
-        public static bool RepairStructure(StructureState[] structures, CarState[] cars, int index, float amount)
-        {
-            if (structures == null || cars == null || amount <= 0f
-                || index < 0 || index >= structures.Length || index >= cars.Length)
-            {
-                return false;
-            }
-
-            if (!IsCarPresent(cars[index]) || !IsStructureAlive(structures[index]))
-            {
-                return false;
-            }
-
-            StructureState structure = structures[index];
-            if (structure.Health >= structure.MaxHealth)
-            {
-                return false;
-            }
-
-            structure.Health = Mathf.Min(structure.MaxHealth, structure.Health + amount);
-            structures[index] = structure;
-            return true;
-        }
-
         // ── 칸 건설 (개발 가이드 §M3 — 칸 증설/연결, 기획서 §7.1) ──────────────────
 
         /// <summary>
@@ -423,8 +325,11 @@ namespace Game.Gameplay.Train
             return cars.Length < maxCarCount ? cars.Length : -1;
         }
 
-        /// <summary>슬롯 하나를 새 확장 칸으로 재건한다 — 칸을 최대 체력·연결 상태로 되살리고 앞 연결부를 복구한다.</summary>
-        public static void RebuildSlot(CarState[] cars, CouplingState[] couplings, StructureState[] structures,
+        /// <summary>
+        /// 슬롯 하나를 새 확장 칸으로 재건한다 — 칸을 최대 체력·연결 상태로 되살리고 앞 연결부를 복구한다.
+        /// 옛 건축물 잔해 제거(그리드 항목)는 호출부(TrainState)가 리스트에서 함께 확정한다.
+        /// </summary>
+        public static void RebuildSlot(CarState[] cars, CouplingState[] couplings,
             int index, float carMaxHealth, float couplingMaxHealth)
         {
             cars[index] = new CarState
@@ -444,12 +349,6 @@ namespace Game.Gameplay.Train
                     MaxHealth = couplingMaxHealth,
                     Broken = false,
                 };
-            }
-
-            // 옛 건축물 잔해는 함께 사라진다 — 새 칸은 빈 슬롯으로 시작한다.
-            if (structures != null && index < structures.Length)
-            {
-                structures[index] = default;
             }
         }
 

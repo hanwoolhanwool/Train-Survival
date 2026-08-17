@@ -1,14 +1,15 @@
 namespace Game.Gameplay.Train
 {
     /// <summary>
-    /// 칸 위 건축물의 종류 (M5 3차 — StructureState 종류화). 칸의 개성은 종류가 아니라
+    /// 칸 위 건축물의 종류 (M5 3차 — 건축물 종류화). 칸의 개성은 종류가 아니라
     /// 칸 위 건축물이 만든다는 M3 결정의 실현부다.
-    /// 값은 <see cref="StructureState"/>에 byte로 직렬화되므로 한 번 배정한 값은 바꾸지 않는다
+    /// 값은 <see cref="StructureEntry"/>에 byte로 직렬화되므로 한 번 배정한 값은 바꾸지 않는다
     /// (<see cref="Game.Gameplay.Inventory.ResourceType"/>과 같은 규약).
     /// </summary>
     public enum StructureKind : byte
     {
-        /// <summary>온실 돔 — 그늘(더위 완화)을 제공하는 기본 건축물. default(StructureState)와 일치하도록 0.</summary>
+        /// <summary>온실 돔 — 그늘(더위 완화) 건축물. 통행 차단 문제로 설치 목록에서 제외
+        /// (건축 개편 1차, 계획서 §1.2 — 카탈로그 설치 가능 플래그). 직렬화 규약상 값 0은 유지한다.</summary>
         Dome = 0,
 
         /// <summary>난방기 — 추위를 완화한다 (사막 밤·M7 북극 대비).</summary>

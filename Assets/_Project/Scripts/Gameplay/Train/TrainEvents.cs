@@ -98,28 +98,58 @@ namespace Game.Gameplay.Train
         }
     }
 
-    /// <summary>한 칸 위 건축물의 상태가 바뀜(체력) — 건축물 표현(StructureView)이 구독한다.</summary>
-    public readonly struct StructureStateChangedEvent
+    /// <summary>건축물 그리드 리스트 변화의 종류 (건축 개편 1차) — 뷰 스포너·표현이 반응 방식을 고른다.</summary>
+    public enum StructureListChange : byte
     {
-        public readonly int Index;
+        /// <summary>항목 추가(설치·후발 복제).</summary>
+        Added,
 
-        public readonly StructureState State;
+        /// <summary>항목 값 갱신(체력 변화 등).</summary>
+        Updated,
 
-        public StructureStateChangedEvent(int index, StructureState state)
+        /// <summary>항목 제거(파괴·철거·칸 소멸).</summary>
+        Removed,
+
+        /// <summary>목록 전체 재설정 — 구독자는 전체 재구성한다.</summary>
+        Reset,
+    }
+
+    /// <summary>
+    /// 건축물 그리드 항목이 바뀜 (건축 개편 1차) — 호스트 변이가 NetworkList에 반영될 때 모든 피어에서
+    /// 발행된다(권위 이벤트). 뷰 스포너가 Added/Removed/Reset으로 실물 스폰·회수를,
+    /// 각 StructureView가 Updated로 표현 갱신을 맡는다.
+    /// </summary>
+    public readonly struct StructureEntryChangedEvent
+    {
+        public readonly StructureListChange Change;
+
+        /// <summary>대상 항목 — Removed면 제거된 항목의 마지막 값, Reset이면 default.</summary>
+        public readonly StructureEntry Entry;
+
+        public StructureEntryChangedEvent(StructureListChange change, StructureEntry entry)
         {
-            Index = index;
-            State = state;
+            Change = change;
+            Entry = entry;
         }
     }
 
     /// <summary>칸 위 건축물이 파괴됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3, 기획서 §9).</summary>
     public readonly struct StructureDestroyedEvent
     {
-        public readonly int Index;
+        /// <summary>파괴된 항목의 서버 발급 Id.</summary>
+        public readonly int StructureId;
 
-        public StructureDestroyedEvent(int index)
+        /// <summary>얹혀 있던 칸 인덱스 — HUD 배너용.</summary>
+        public readonly int CarIndex;
+
+        /// <summary>파괴된 건축물 종류 — HUD가 종류명을 표시한다.</summary>
+        public readonly StructureKind Kind;
+
+        public StructureDestroyedEvent(int structureId, int carIndex, StructureKind kind)
         {
-            Index = index;
+            StructureId = structureId;
+            CarIndex = carIndex;
+            Kind = kind;
         }
     }
 
@@ -155,18 +185,17 @@ namespace Game.Gameplay.Train
         }
     }
 
-    /// <summary>칸 위에 건축물이 설치됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3).</summary>
+    /// <summary>
+    /// 칸 위에 건축물이 설치됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3).
+    /// 페이로드는 확정된 그리드 항목 전체 (건축 개편 1차 — 계획서 §2.4).
+    /// </summary>
     public readonly struct StructureBuiltEvent
     {
-        public readonly int Index;
+        public readonly StructureEntry Entry;
 
-        /// <summary>설치된 건축물 종류 (M5 3차) — HUD 배너가 종류명을 표시한다.</summary>
-        public readonly StructureKind Kind;
-
-        public StructureBuiltEvent(int index, StructureKind kind)
+        public StructureBuiltEvent(StructureEntry entry)
         {
-            Index = index;
-            Kind = kind;
+            Entry = entry;
         }
     }
 
@@ -246,7 +275,11 @@ namespace Game.Gameplay.Train
 
         public readonly TrainPartKind Kind;
 
+        /// <summary>부위 식별 — 칸·연결부는 편성 인덱스, 건축물은 그리드 항목 Id (건축 개편 1차).</summary>
         public readonly int Index;
+
+        /// <summary>겨눈 건축물의 종류 — Kind가 Structure일 때만 유효 (HUD가 종류명을 표시한다).</summary>
+        public readonly StructureKind TargetStructureKind;
 
         public readonly float Health;
 
@@ -267,6 +300,7 @@ namespace Game.Gameplay.Train
         public readonly bool CanAffordStructure;
 
         public HammerTargetLocalEvent(bool hasTarget, TrainPartKind kind, int index,
+            StructureKind targetStructureKind,
             float health, float maxHealth, bool canRepair,
             bool canBuildStructure, StructureKind selectedStructureKind,
             int structureCost, bool canAffordStructure)
@@ -274,6 +308,7 @@ namespace Game.Gameplay.Train
             HasTarget = hasTarget;
             Kind = kind;
             Index = index;
+            TargetStructureKind = targetStructureKind;
             Health = health;
             MaxHealth = maxHealth;
             CanRepair = canRepair;
@@ -281,6 +316,66 @@ namespace Game.Gameplay.Train
             SelectedStructureKind = selectedStructureKind;
             StructureCost = structureCost;
             CanAffordStructure = canAffordStructure;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 망치로 칸 갑판 위 건축물 설치 자리를 겨눈 상태 (건축 개편 1차 — 계획서 §2.4).
+    /// 점유 셀 영역 프리뷰(<see cref="CarBuildGhostView"/>)가 초록(가능)/빨강(불가)으로 그린다.
+    /// 조준 성립·셀 좌표·회전·판정이 바뀔 때마다 발행된다.
+    /// </summary>
+    public readonly struct StructurePlaceAimLocalEvent
+    {
+        public readonly bool Aiming;
+
+        public readonly int CarIndex;
+
+        /// <summary>점유 영역 좌하단 셀 (고정 예약 좌표계 — StructureGridLogic).</summary>
+        public readonly int CellX;
+
+        public readonly int CellZ;
+
+        /// <summary>설치 회전 0~3 (Q/E) — 점유 스왑·실물 yaw에 반영된다.</summary>
+        public readonly int Rotation;
+
+        /// <summary>설치하려는 종류 (R 순환 선택).</summary>
+        public readonly StructureKind Kind;
+
+        public readonly int Cost;
+
+        public readonly bool CanAfford;
+
+        /// <summary>그리드 판정(셀 내부·비점유·칸 생존)을 통과했는지.</summary>
+        public readonly bool CanPlace;
+
+        /// <summary>설치 자리에 플레이어·몬스터가 들어와 있는지 — 있으면 그 위에 지을 수 없다 (칸 건설과 같은 규약).</summary>
+        public readonly bool Occupied;
+
+        /// <summary>점유 셀 영역의 월드 중심 — 프리뷰 박스용.</summary>
+        public readonly UnityEngine.Vector3 GhostCenter;
+
+        /// <summary>점유 셀 영역의 크기(폭·높이·길이) — 프리뷰 박스용.</summary>
+        public readonly UnityEngine.Vector3 GhostSize;
+
+        /// <summary>지금 우클릭으로 실제로 지어지는지.</summary>
+        public bool CanBuild => CanAfford && CanPlace && !Occupied;
+
+        public StructurePlaceAimLocalEvent(bool aiming, int carIndex, int cellX, int cellZ, int rotation,
+            StructureKind kind, int cost, bool canAfford, bool canPlace, bool occupied,
+            UnityEngine.Vector3 ghostCenter, UnityEngine.Vector3 ghostSize)
+        {
+            Aiming = aiming;
+            CarIndex = carIndex;
+            CellX = cellX;
+            CellZ = cellZ;
+            Rotation = rotation;
+            Kind = kind;
+            Cost = cost;
+            CanAfford = canAfford;
+            CanPlace = canPlace;
+            Occupied = occupied;
+            GhostCenter = ghostCenter;
+            GhostSize = ghostSize;
         }
     }
 

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Game.Gameplay.Train
 {
     /// <summary>
-    /// 건축물 종류별 정의 카탈로그 (M5 3차 — StructureState 종류화). 표시명·체력·비용과
+    /// 건축물 종류별 정의 카탈로그 (M5 3차 — 건축물 종류화). 표시명·체력·비용과
     /// 체온 효과(그늘/난방)를 데이터로 분리해, 종류별 역할이 에셋 수정만으로 조정되게 한다
     /// (<see cref="Game.Gameplay.Inventory.ResourceCatalog"/>와 같은 "enum 값 식별 + 폴백" 규약).
     /// </summary>
@@ -34,6 +34,25 @@ namespace Game.Gameplay.Train
                 "0 = 연료를 쓰지 않는 난방(기존 난방기). 0보다 크고 연료가 남아 있으면 지역 한파 페널티가 사라진다.")]
             [SerializeField, Min(0f)] private float _heaterFuelPerSecond;
 
+            [Header("건축 그리드 (건축 개편 1차)")]
+            [Tooltip("점유 가로 셀 수 (회전 0 기준) — 그리드 설치의 발자국.")]
+            [SerializeField, Min(1)] private int _footprintWidth = 1;
+
+            [Tooltip("점유 세로 셀 수 (회전 0 기준).")]
+            [SerializeField, Min(1)] private int _footprintLength = 1;
+
+            [Tooltip("설치 목록에 노출되는지 — 끄면 R 순환에서 빠지고 설치가 기각된다 (돔 제외용, 계획서 §1.2). " +
+                "enum 값·기존 항목은 유지된다.")]
+            [SerializeField] private bool _placeable = true;
+
+            [Tooltip("철거 시 반환되는 자원 종류 (건축 개편 2차 — 결정 ⑧). 초기값 전부 목재.")]
+            [SerializeField] private Game.Gameplay.Inventory.ResourceType _refundResource
+                = Game.Gameplay.Inventory.ResourceType.Wood;
+
+            [Tooltip("건축물 실물 프리팹 — 루트에 StructureView + BoxCollider, NetworkObject 없음 (계획서 §2.6). " +
+                "각 피어가 리스트 동기화로 PoolManager 로컬 스폰한다.")]
+            [SerializeField] private GameObject _viewPrefab;
+
             public StructureKind Kind => _kind;
 
             public string DisplayName => _displayName;
@@ -48,6 +67,21 @@ namespace Game.Gameplay.Train
 
             /// <summary>난방 유지에 태우는 초당 연료 (M7 3차). 0 = 연료를 쓰지 않는다.</summary>
             public float HeaterFuelPerSecond => _heaterFuelPerSecond;
+
+            /// <summary>점유 가로 셀 수 (회전 0 기준) — 0 이하 직렬화 잔재는 1로 보정한다.</summary>
+            public int FootprintWidth => Mathf.Max(1, _footprintWidth);
+
+            /// <summary>점유 세로 셀 수 (회전 0 기준).</summary>
+            public int FootprintLength => Mathf.Max(1, _footprintLength);
+
+            /// <summary>설치 목록 노출 여부 — false면 R 순환 제외 + 설치 기각 (돔).</summary>
+            public bool Placeable => _placeable;
+
+            /// <summary>철거 반환 자원 종류 (2차 — 결정 ⑧).</summary>
+            public Game.Gameplay.Inventory.ResourceType RefundResource => _refundResource;
+
+            /// <summary>건축물 실물 프리팹 (계획서 §2.6) — 없으면 뷰 스폰을 건너뛴다.</summary>
+            public GameObject ViewPrefab => _viewPrefab;
         }
 
         [Tooltip("종류별 정의 — Kind 값으로 식별하므로 배열 순서는 자유다(설치 UI의 순환 순서로만 쓰인다).")]
@@ -114,26 +148,67 @@ namespace Game.Gameplay.Train
             return entry != null ? entry.HeaterFuelPerSecond : 0f;
         }
 
+        /// <summary>점유 면적 (회전 0 기준, 셀 수) — 미등재 종류는 1×1 (설치 자체는 Placeable이 거른다).</summary>
+        public void GetFootprint(StructureKind kind, out int width, out int length)
+        {
+            Entry entry = Find(kind);
+            width = entry != null ? entry.FootprintWidth : 1;
+            length = entry != null ? entry.FootprintLength : 1;
+        }
+
+        /// <summary>설치 목록 노출 여부 — 미등재 종류는 설치 불가 (조작된 종류 값 방어).</summary>
+        public bool IsPlaceable(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null && entry.Placeable;
+        }
+
+        /// <summary>철거 반환 자원 종류 (2차 — 결정 ⑧). 미등재면 목재.</summary>
+        public Game.Gameplay.Inventory.ResourceType GetRefundResource(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null ? entry.RefundResource : Game.Gameplay.Inventory.ResourceType.Wood;
+        }
+
+        /// <summary>건축물 실물 프리팹 (계획서 §2.6) — 미등재·미지정이면 null.</summary>
+        public GameObject GetViewPrefab(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null ? entry.ViewPrefab : null;
+        }
+
         /// <summary>
-        /// 설치 UI의 종류 순환(R 키) — 등재 순서 기준 다음 엔트리의 종류. 현재 종류가 미등재면 첫 엔트리.
+        /// 설치 UI의 종류 순환(R 키) — 등재 순서 기준 다음 <b>설치 가능</b> 엔트리의 종류
+        /// (설치 불가 플래그가 꺼진 종류(돔)는 건너뛴다 — 계획서 §2.2). 현재 종류가 미등재면 첫 설치 가능 엔트리.
+        /// 설치 가능한 종류가 하나도 없으면 현재 값을 그대로 돌려준다.
         /// </summary>
-        public StructureKind NextKind(StructureKind current)
+        public StructureKind NextPlaceableKind(StructureKind current)
         {
             if (_entries == null || _entries.Length == 0)
             {
                 return current;
             }
 
+            int start = 0;
             for (int i = 0; i < _entries.Length; i++)
             {
                 if (_entries[i] != null && _entries[i].Kind == current)
                 {
-                    Entry next = _entries[(i + 1) % _entries.Length];
-                    return next != null ? next.Kind : current;
+                    start = i + 1;
+                    break;
                 }
             }
 
-            return _entries[0] != null ? _entries[0].Kind : current;
+            for (int step = 0; step < _entries.Length; step++)
+            {
+                Entry candidate = _entries[(start + step) % _entries.Length];
+                if (candidate != null && candidate.Placeable)
+                {
+                    return candidate.Kind;
+                }
+            }
+
+            return current;
         }
 
         private Entry Find(StructureKind kind)

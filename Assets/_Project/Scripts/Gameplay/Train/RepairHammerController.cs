@@ -12,13 +12,15 @@ namespace Game.Gameplay.Train
 {
     /// <summary>
     /// 수리 망치 (기획서 §9 — 수리 망치로 수리. §M3). 좌클릭 홀드 = 겨눈 부위 수리,
-    /// 우클릭 = 겨눈 칸에 건축물 설치(자원 소모, R 키로 종류 순환 — M5 3차 종류화),
+    /// 우클릭 = 겨눈 칸 갑판의 <b>그리드 셀</b>에 건축물 설치 (건축 개편 1차 — 계획서 §2.4:
+    /// hit 지점을 셀로 스냅, Q/E 90° 회전, R 키로 설치 가능 종류 순환, 자원 소모),
     /// 건설 지점(재건 슬롯·후미 연결부)을 겨누면 우클릭 = 칸 건설(M3 피드백 — 건설 포트의 망치 통합),
     /// 슬롯까지 끌어온 이탈 칸의 앞 연결 지점을 겨누면 우클릭 = 재결합(손잡이-이탈저항 스펙 §4.1).
     /// 파이프라인은 리볼버와 동일 구조: 소유자 로컬 레이캐스트로 부위(칸·연결부·건축물)를 식별해
-    /// 호스트에 보고 → 호스트가 거리 재검증 후 수리·설치·건설을 확정 → 상태 복제로 전 피어 반영.
-    /// 겨눈 부위와 체력은 <see cref="HammerTargetLocalEvent"/>로 발행해 조준 HUD가 그린다(수리 과정 가시화).
-    /// 열차 부위는 NetworkObject가 아니므로 (부위 종류, 인덱스)로 식별한다. Player 프리팹에 부착한다.
+    /// 호스트에 보고 → 호스트가 거리 재검증 후 같은 순수 판정으로 확정 → 상태 복제로 전 피어 반영.
+    /// 겨눈 부위와 체력은 <see cref="HammerTargetLocalEvent"/>로, 설치 자리는
+    /// <see cref="StructurePlaceAimLocalEvent"/>로 발행해 조준 HUD·프리뷰가 그린다.
+    /// 열차 부위는 NetworkObject가 아니므로 (부위 종류, 인덱스 — 건축물은 항목 Id)로 식별한다. Player 프리팹에 부착한다.
     /// </summary>
     public sealed class RepairHammerController : NetworkBehaviour
     {
@@ -35,18 +37,29 @@ namespace Game.Gameplay.Train
 
         private float _nextSwingTime;
 
+        [Tooltip("건축물 설치 프리뷰 테두리의 높이(m) — 점유 셀 영역 표시용.")]
+        [SerializeField, Min(0.2f)] private float _structureGhostHeight = 1.2f;
+
         // 마지막으로 HUD에 알린 조준 상태 — 바뀔 때만 다시 발행한다.
         private bool _sentHasTarget;
         private TrainPartKind _sentKind;
         private int _sentIndex;
+        private StructureKind _sentTargetStructureKind;
         private float _sentHealth;
         private bool _sentCanRepair;
         private bool _sentCanBuild;
         private bool _sentAfford;
         private StructureKind _sentStructureKind;
 
-        // 설치할 건축물 종류 — R 키 순환으로 고르는 로컬 선택 (M5 3차 종류화). 확정은 RPC 페이로드로 보낸다.
+        // 설치할 건축물 종류 — R 키 순환으로 고르는 로컬 선택 (설치 가능 종류만 — 돔 제외). 확정은 RPC 페이로드로 보낸다.
         private StructureKind _selectedStructureKind = StructureKind.Dome;
+        private bool _selectionInitialized;
+
+        // 설치 프리뷰 회전 (건축 개편 1차 — Q/E, 0~3 × 90°). 종류 변경·망치 해제 시 0으로 리셋한다.
+        private int _previewRotation;
+
+        // 마지막으로 알린 건축물 설치 조준 상태 — 바뀔 때만 다시 발행한다.
+        private StructurePlaceAimLocalEvent _sentPlaceAim;
 
         // 마지막으로 알린 칸 건설 조준 상태 — 바뀔 때만 다시 발행한다.
         private bool _sentBuildAiming;
@@ -87,9 +100,11 @@ namespace Game.Gameplay.Train
             // 사망~부활 사이에는 수리·설치·건설 입력을 닫는다 (M5 3차 발견 버그 — 사망 중 건설 가능).
             if (!InputEnabled || (_health != null && !_health.IsAlive))
             {
+                _previewRotation = 0;
                 PublishNoTarget();
                 PublishBuildAim(false, -1, 0, false, false);
                 PublishRecoupleAim(false, -1, 0, RecouplePrompt.None, 0f);
+                PublishNoPlaceAim();
                 return;
             }
 
@@ -114,6 +129,7 @@ namespace Game.Gameplay.Train
             {
                 PublishRecoupleAim(true, recoupleCar, recoupleCost, recouplePrompt, remaining);
                 PublishBuildAim(false, -1, 0, false, false);
+                PublishNoPlaceAim();
                 PublishNoTarget();
 
                 Mouse recoupleMouse = Mouse.current;
@@ -133,6 +149,7 @@ namespace Game.Gameplay.Train
                 out int buildSlot, out int buildCost, out bool buildAfford, out bool buildOccupied))
             {
                 PublishBuildAim(true, buildSlot, buildCost, buildAfford, buildOccupied);
+                PublishNoPlaceAim();
                 PublishNoTarget();
 
                 Mouse buildMouse = Mouse.current;
@@ -157,35 +174,38 @@ namespace Game.Gameplay.Train
 
             if (!hasHit || !ServiceLocator.TryGet(out ITrainState train))
             {
+                PublishNoPlaceAim();
                 PublishNoTarget();
                 return;
             }
 
             // 편성에 없는 부위(증설 예비 슬롯의 칸·연결부)는 표적이 아니다 — 짓기 전 부위의 체력이 뜨면 안 된다.
             if (!ReadPartState(train, kind, index,
-                out float health, out float maxHealth, out bool canRepair))
+                out float health, out float maxHealth, out bool canRepair, out StructureKind targetStructureKind))
             {
+                PublishNoPlaceAim();
                 PublishNoTarget();
                 return;
             }
 
-            bool hasExpansion = ServiceLocator.TryGet(out ITrainExpansion expansion);
-            bool canBuild = hasExpansion && kind == TrainPartKind.Car && expansion.CanBuildStructure(index);
-
-            // 설치 종류 순환 (R 키) — 설치 가능한 칸을 겨눌 때만 의미가 있다. 망치 활성 중에는
-            // 총기 입력이 닫혀 있어 재장전 키와 충돌하지 않는다.
-            Keyboard keyboard = Keyboard.current;
-            if (canBuild && keyboard != null && keyboard.rKey.wasPressedThisFrame && _structureCatalog != null)
+            // 건축물 설치 조준 (건축 개편 1차) — 칸 갑판을 겨눌 때만 셀 스냅·회전·프리뷰가 성립한다.
+            int cellX = 0;
+            int cellZ = 0;
+            bool placeAfford = false;
+            bool placeOccupied = false;
+            bool canBuild = kind == TrainPartKind.Car
+                && TryUpdatePlacementAim(train, index, hit.point,
+                    out cellX, out cellZ, out placeAfford, out placeOccupied);
+            if (!canBuild)
             {
-                _selectedStructureKind = _structureCatalog.NextKind(_selectedStructureKind);
+                PublishNoPlaceAim();
             }
 
+            bool hasExpansion = ServiceLocator.TryGet(out ITrainExpansion expansion);
             int structureCost = hasExpansion ? expansion.GetStructureBuildCost(_selectedStructureKind) : 0;
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
-            bool afford = inventory != null && inventory.Count >= structureCost;
 
-            PublishTarget(kind, index, health, maxHealth, canRepair, canBuild,
-                _selectedStructureKind, structureCost, afford);
+            PublishTarget(kind, index, targetStructureKind, health, maxHealth, canRepair, canBuild,
+                _selectedStructureKind, structureCost, placeAfford);
 
             Mouse mouse = Mouse.current;
             if (mouse == null)
@@ -199,9 +219,106 @@ namespace Game.Gameplay.Train
                 RequestRepairServerRpc(kind, index, hit.point);
             }
 
-            if (mouse.rightButton.wasPressedThisFrame && canBuild && afford)
+            if (mouse.rightButton.wasPressedThisFrame && canBuild && placeAfford && !placeOccupied)
             {
-                RequestBuildStructureServerRpc(index, hit.point, _selectedStructureKind);
+                RequestBuildStructureServerRpc(index, cellX, cellZ, _previewRotation, _selectedStructureKind);
+            }
+        }
+
+        /// <summary>
+        /// 건축물 설치 조준 갱신 (건축 개편 1차 — 계획서 §2.4) — 갑판 hit 지점을 셀로 스냅하고
+        /// R(설치 가능 종류 순환)·Q/E(90° 회전) 입력을 반영해 프리뷰 이벤트를 발행한다.
+        /// 반환 = 지금 우클릭으로 설치가 성립하는지(그리드 판정 통과).
+        /// </summary>
+        private bool TryUpdatePlacementAim(ITrainState train, int carIndex, Vector3 hitPoint,
+            out int cellX, out int cellZ, out bool afford, out bool occupied)
+        {
+            cellX = 0;
+            cellZ = 0;
+            afford = false;
+            occupied = false;
+
+            if (_layoutSettings == null || _structureCatalog == null
+                || !ServiceLocator.TryGet(out ITrainExpansion expansion))
+            {
+                return false;
+            }
+
+            // 갑판 위를 겨눠야 설치다 — 칸 옆면·하부 조준은 수리 전용 (낙하 판정과 같은 여유 폭).
+            if (hitPoint.y < _layoutSettings.DeckHeight - 0.5f)
+            {
+                return false;
+            }
+
+            EnsurePlaceableSelection();
+
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                // 종류 순환 (R) — 설치 가능 종류만 돈다(돔 제외). 망치 활성 중에는 총기 입력이 닫혀
+                // 있어 재장전 키와 충돌하지 않는다. 종류가 바뀌면 회전은 0으로 리셋한다.
+                if (keyboard.rKey.wasPressedThisFrame)
+                {
+                    _selectedStructureKind = _structureCatalog.NextPlaceableKind(_selectedStructureKind);
+                    _previewRotation = 0;
+                }
+
+                // 설치 회전 (Q/E — 90° 단위, 계획서 §0-2). 프리뷰에 즉시 반영된다.
+                if (keyboard.qKey.wasPressedThisFrame)
+                {
+                    _previewRotation = (_previewRotation + 3) & 3;
+                }
+
+                if (keyboard.eKey.wasPressedThisFrame)
+                {
+                    _previewRotation = (_previewRotation + 1) & 3;
+                }
+            }
+
+            _structureCatalog.GetFootprint(_selectedStructureKind, out int width, out int length);
+            StructureGridLogic.RotatedFootprint(width, length, _previewRotation,
+                out int rotatedWidth, out int rotatedLength);
+
+            float cellSize = _layoutSettings.StructureCellSize;
+            float centerZ = _layoutSettings.CarCenterZ(carIndex, train.GetEjectOffset(carIndex));
+            if (!StructureGridLogic.TryWorldToPlacementCell(hitPoint.x, hitPoint.z, centerZ,
+                _layoutSettings.CarWidth, _layoutSettings.CarLength, cellSize,
+                rotatedWidth, rotatedLength, out cellX, out cellZ))
+            {
+                return false;
+            }
+
+            bool canPlace = expansion.CanPlaceStructure(carIndex, cellX, cellZ, _previewRotation, _selectedStructureKind);
+
+            int cost = expansion.GetStructureBuildCost(_selectedStructureKind);
+            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            afford = inventory != null && inventory.Count >= cost;
+
+            StructureGridLogic.CellRegionCenterWorld(cellX, cellZ, rotatedWidth, rotatedLength,
+                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, cellSize,
+                out float ghostX, out float ghostZ);
+            var ghostCenter = new Vector3(ghostX, _layoutSettings.DeckHeight + _structureGhostHeight * 0.5f, ghostZ);
+            var ghostSize = new Vector3(rotatedWidth * cellSize, _structureGhostHeight, rotatedLength * cellSize);
+
+            // 자리 점유 판정 — 프리뷰 테두리와 같은 상자다 (칸 건설과 같은 규약: 테두리 안이 비어야 지어진다).
+            occupied = IsVolumeOccupied(ghostCenter, ghostSize);
+
+            PublishPlaceAim(new StructurePlaceAimLocalEvent(true, carIndex, cellX, cellZ, _previewRotation,
+                _selectedStructureKind, cost, afford, canPlace, occupied, ghostCenter, ghostSize));
+
+            return canPlace;
+        }
+
+        /// <summary>초기 선택(돔)이 설치 불가가 된 개편 이후를 흡수한다 — 첫 조준 때 설치 가능 종류로 옮긴다.</summary>
+        private void EnsurePlaceableSelection()
+        {
+            if (!_selectionInitialized)
+            {
+                _selectionInitialized = true;
+                if (!_structureCatalog.IsPlaceable(_selectedStructureKind))
+                {
+                    _selectedStructureKind = _structureCatalog.NextPlaceableKind(_selectedStructureKind);
+                }
             }
         }
 
@@ -294,6 +411,15 @@ namespace Game.Gameplay.Train
                 _layoutSettings.DeckHeight, _layoutSettings.CarLength,
                 out Vector3 center, out Vector3 size);
 
+            return IsVolumeOccupied(center, size);
+        }
+
+        /// <summary>
+        /// 상자 부피 안에 플레이어·몬스터가 들어와 있는지 — 칸 건설·건축물 설치가 같은 판정을 쓴다
+        /// (초록 테두리 안이 비어야 지어진다). 소유자 조준(안내·프리뷰)과 호스트 확정이 같은 함수를 쓴다.
+        /// </summary>
+        private bool IsVolumeOccupied(Vector3 center, Vector3 size)
+        {
             int count = Physics.OverlapBoxNonAlloc(center, size * 0.5f, _occupancyBuffer,
                 Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
@@ -315,14 +441,15 @@ namespace Game.Gameplay.Train
             return false;
         }
 
-        /// <summary>맞은 콜라이더에서 열차 부위를 식별한다 — 건축물은 칸의 자식이라 먼저 검사한다.</summary>
+        /// <summary>맞은 콜라이더에서 열차 부위를 식별한다 — 건축물은 칸의 자식이라 먼저 검사한다.
+        /// 건축물의 식별자는 그리드 항목 Id다 (건축 개편 1차).</summary>
         private static bool TryResolvePart(RaycastHit hit, out TrainPartKind kind, out int index)
         {
             StructureView structure = hit.collider.GetComponentInParent<StructureView>();
             if (structure != null)
             {
                 kind = TrainPartKind.Structure;
-                index = structure.CarIndex;
+                index = structure.StructureId;
                 return true;
             }
 
@@ -352,11 +479,12 @@ namespace Game.Gameplay.Train
         /// 그 부위가 편성에 존재할 때만 true — 아직 짓지 않은 예비 슬롯의 칸·연결부는 false다.
         /// </summary>
         private static bool ReadPartState(ITrainState train, TrainPartKind kind, int index,
-            out float health, out float maxHealth, out bool canRepair)
+            out float health, out float maxHealth, out bool canRepair, out StructureKind targetStructureKind)
         {
             health = 0f;
             maxHealth = 0f;
             canRepair = false;
+            targetStructureKind = default;
 
             switch (kind)
             {
@@ -387,13 +515,16 @@ namespace Game.Gameplay.Train
                     return false;
 
                 case TrainPartKind.Structure:
-                    if (train.TryGetStructure(index, out StructureState structure))
+                    // index = 그리드 항목 Id (건축 개편 1차) — 파괴되면 항목이 사라져 자연히 false다.
+                    if (train.TryGetStructureById(index, out StructureEntry entry))
                     {
-                        health = structure.Health;
-                        maxHealth = structure.MaxHealth;
-                        canRepair = TrainStateLogic.IsStructureAlive(structure)
-                            && structure.Health < structure.MaxHealth
-                            && train.TryGetCar(index, out CarState owner) && TrainStateLogic.IsCarPresent(owner);
+                        health = entry.Health;
+                        maxHealth = entry.MaxHealth;
+                        targetStructureKind = entry.Kind;
+                        canRepair = StructureGridLogic.IsAlive(entry)
+                            && entry.Health < entry.MaxHealth
+                            && train.TryGetCar(entry.CarIndex, out CarState owner)
+                            && TrainStateLogic.IsCarPresent(owner);
                         return true;
                     }
 
@@ -421,13 +552,15 @@ namespace Game.Gameplay.Train
 
             _sentHasTarget = false;
             EventBus<HammerTargetLocalEvent>.Publish(new HammerTargetLocalEvent(
-                false, default, -1, 0f, 0f, false, false, default, 0, false));
+                false, default, -1, default, 0f, 0f, false, false, default, 0, false));
         }
 
-        private void PublishTarget(TrainPartKind kind, int index, float health, float maxHealth,
+        private void PublishTarget(TrainPartKind kind, int index, StructureKind targetStructureKind,
+            float health, float maxHealth,
             bool canRepair, bool canBuild, StructureKind structureKind, int structureCost, bool afford)
         {
             bool unchanged = _sentHasTarget && _sentKind == kind && _sentIndex == index
+                && _sentTargetStructureKind == targetStructureKind
                 && Mathf.Approximately(_sentHealth, health)
                 && _sentCanRepair == canRepair && _sentCanBuild == canBuild && _sentAfford == afford
                 && _sentStructureKind == structureKind;
@@ -439,14 +572,43 @@ namespace Game.Gameplay.Train
             _sentHasTarget = true;
             _sentKind = kind;
             _sentIndex = index;
+            _sentTargetStructureKind = targetStructureKind;
             _sentHealth = health;
             _sentCanRepair = canRepair;
             _sentCanBuild = canBuild;
             _sentAfford = afford;
             _sentStructureKind = structureKind;
             EventBus<HammerTargetLocalEvent>.Publish(new HammerTargetLocalEvent(
-                true, kind, index, health, maxHealth, canRepair, canBuild,
+                true, kind, index, targetStructureKind, health, maxHealth, canRepair, canBuild,
                 structureKind, structureCost, afford));
+        }
+
+        /// <summary>설치 조준 프리뷰 발행 — 셀·회전·판정이 바뀔 때만 다시 발행한다.</summary>
+        private void PublishPlaceAim(StructurePlaceAimLocalEvent evt)
+        {
+            bool unchanged = _sentPlaceAim.Aiming == evt.Aiming
+                && _sentPlaceAim.CarIndex == evt.CarIndex
+                && _sentPlaceAim.CellX == evt.CellX && _sentPlaceAim.CellZ == evt.CellZ
+                && _sentPlaceAim.Rotation == evt.Rotation && _sentPlaceAim.Kind == evt.Kind
+                && _sentPlaceAim.CanAfford == evt.CanAfford && _sentPlaceAim.CanPlace == evt.CanPlace
+                && _sentPlaceAim.Occupied == evt.Occupied
+                && _sentPlaceAim.GhostCenter == evt.GhostCenter;
+            if (unchanged)
+            {
+                return;
+            }
+
+            _sentPlaceAim = evt;
+            EventBus<StructurePlaceAimLocalEvent>.Publish(evt);
+        }
+
+        private void PublishNoPlaceAim()
+        {
+            if (_sentPlaceAim.Aiming)
+            {
+                PublishPlaceAim(new StructurePlaceAimLocalEvent(
+                    false, -1, 0, 0, 0, default, 0, false, false, false, default, default));
+            }
         }
 
         private void PublishBuildAim(bool aiming, int slot, int cost, bool afford, bool occupied)
@@ -520,15 +682,44 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>건축물 설치 — (자원 차감 + 설치)를 원자적으로 확정하고, 설치 실패 시 자원을 되돌린다.</summary>
+        /// <summary>
+        /// 건축물 설치 (건축 개편 1차) — 호스트가 생존·사거리를 재검증하고 프리뷰와 같은 순수 판정
+        /// (<see cref="ITrainExpansion.CanPlaceStructure"/>)을 다시 통과시킨 뒤
+        /// (자원 차감 + 설치)를 원자적으로 확정한다. 설치 실패 시 자원을 되돌린다.
+        /// 조작된 셀·종류 값은 그리드 판정·카탈로그 재검증에서 기각된다.
+        /// </summary>
         [Rpc(SendTo.Server)]
-        private void RequestBuildStructureServerRpc(
-            int carIndex, Vector3 hitPoint, StructureKind structureKind, RpcParams rpcParams = default)
+        private void RequestBuildStructureServerRpc(int carIndex, int cellX, int cellZ, int rotation,
+            StructureKind structureKind, RpcParams rpcParams = default)
         {
-            // 종류·비용은 호스트가 카탈로그로 재검증한다 — 조작된 종류 값도 카탈로그 폴백 비용으로 계산될 뿐이다.
-            if (_settings == null || !IsSenderAlive() || !IsWithinRange(hitPoint)
+            if (_settings == null || _layoutSettings == null || _structureCatalog == null
+                || !IsSenderAlive()
                 || !ServiceLocator.TryGet(out ITrainExpansion expansion)
-                || !expansion.CanBuildStructure(carIndex))
+                || !ServiceLocator.TryGet(out ITrainState train)
+                || !expansion.CanPlaceStructure(carIndex, cellX, cellZ, rotation, structureKind))
+            {
+                return;
+            }
+
+            // 거리 재검증 — 프리뷰·뷰 스폰과 같은 점유 영역 중심 기준 (권위 이탈 오프셋 반영).
+            _structureCatalog.GetFootprint(structureKind, out int width, out int length);
+            StructureGridLogic.RotatedFootprint(width, length, rotation, out int rotatedWidth, out int rotatedLength);
+            float centerZ = _layoutSettings.CarCenterZ(carIndex, train.GetEjectOffset(carIndex));
+            StructureGridLogic.CellRegionCenterWorld(cellX, cellZ, rotatedWidth, rotatedLength,
+                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
+                out float worldX, out float worldZ);
+            if (!IsWithinRange(new Vector3(worldX, _layoutSettings.DeckHeight, worldZ)))
+            {
+                return;
+            }
+
+            // 자리 점유 재검증 — 프리뷰와 같은 상자 판정 (칸 건설 확정과 같은 규약).
+            float cellSize = _layoutSettings.StructureCellSize;
+            var volumeCenter = new Vector3(
+                worldX, _layoutSettings.DeckHeight + _structureGhostHeight * 0.5f, worldZ);
+            var volumeSize = new Vector3(
+                rotatedWidth * cellSize, _structureGhostHeight, rotatedLength * cellSize);
+            if (IsVolumeOccupied(volumeCenter, volumeSize))
             {
                 return;
             }
@@ -536,7 +727,7 @@ namespace Game.Gameplay.Train
             // 건자재 차감과 건설을 원자적으로 확정한다 — 건설 실패 시 차감도 반영되지 않는다.
             IResourceInventory inventory = GetComponent<IResourceInventory>();
             inventory?.ServerTrySpend(expansion.GetStructureBuildCost(structureKind),
-                () => expansion.ServerTryBuildStructure(carIndex, structureKind));
+                () => expansion.ServerTryBuildStructure(carIndex, cellX, cellZ, rotation, structureKind));
         }
 
         /// <summary>

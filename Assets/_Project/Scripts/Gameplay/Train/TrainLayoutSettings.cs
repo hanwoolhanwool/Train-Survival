@@ -16,6 +16,10 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(1f)] private float _deckHeight = 3f;
         [SerializeField, Min(0f)] private float _couplingGap = 1.5f;
 
+        [Header("건축 그리드 (건축 개편 1차 — 결정 ①)")]
+        [Tooltip("건축 그리드 정사각 셀 한 변(m) — 1.0이면 폭 4.6 m 칸에서 4열 × 15행(60셀)이 나온다.")]
+        [SerializeField, Min(0.25f)] private float _structureCellSize = 1f;
+
         [Header("열차 하부 즉사 존 (M5 6차)")]
         [Tooltip("이 높이(y) 이하 + 열차 발자국 안이면 견인·파지·기절 몬스터가 즉사한다. 0 = 존 비활성.")]
         [SerializeField, Min(0f)] private float _wheelKillHeight = 1.2f;
@@ -33,6 +37,9 @@ namespace Game.Gameplay.Train
         public float DeckHeight => _deckHeight;
 
         public float CouplingGap => _couplingGap;
+
+        /// <summary>건축 그리드 정사각 셀 한 변(m) — 건축 개편 1차 결정 ①.</summary>
+        public float StructureCellSize => _structureCellSize;
 
         /// <summary>열차 하부 즉사 존의 높이 상한 (M5 6차). 0 = 비활성.</summary>
         public float WheelKillHeight => _wheelKillHeight;

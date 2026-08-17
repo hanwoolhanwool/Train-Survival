@@ -4,12 +4,12 @@ using UnityEngine;
 namespace Game.Gameplay.Train
 {
     /// <summary>
-    /// 칸 건설·재결합 프리뷰 (M3 피드백 — 건설 포트의 망치 통합, 손잡이-이탈저항 스펙 §4.1).
-    /// 망치로 건설 지점을 겨누면 지어질 칸 부피를, 이탈 칸의 재결합 지점을 겨누면 이어질 연결부 자리를
-    /// 초록 테두리(와이어 박스)로 보여줘 무엇이 일어날지 즉시 알 수 있게 한다.
-    /// 건설 테두리 안은 곧 자리 점유 판정 영역이라, 붉은 테두리 안에 사람·몬스터가 서 있으면 왜 막혔는지 바로 보인다.
-    /// 로컬 표현 전용 — 상태를 소유하지 않고 두 조준 이벤트(<see cref="CarBuildAimLocalEvent"/>,
-    /// <see cref="CarRecoupleAimLocalEvent"/>) 구독으로만 그린다.
+    /// 칸 건설·재결합·건축물 설치 프리뷰 (M3 피드백 — 건설 포트의 망치 통합, 손잡이-이탈저항 스펙 §4.1,
+    /// 건축 개편 1차 §2.4). 망치로 건설 지점을 겨누면 지어질 칸 부피를, 이탈 칸의 재결합 지점을 겨누면
+    /// 이어질 연결부 자리를, 칸 갑판을 겨누면 건축물이 점유할 셀 영역을
+    /// 초록(가능)/빨강(불가) 테두리(와이어 박스)로 보여줘 무엇이 일어날지 즉시 알 수 있게 한다.
+    /// 로컬 표현 전용 — 상태를 소유하지 않고 조준 이벤트(<see cref="CarBuildAimLocalEvent"/>,
+    /// <see cref="CarRecoupleAimLocalEvent"/>, <see cref="StructurePlaceAimLocalEvent"/>) 구독으로만 그린다.
     /// </summary>
     [RequireComponent(typeof(LineRenderer))]
     public sealed class CarBuildGhostView : MonoBehaviour
@@ -39,6 +39,7 @@ namespace Game.Gameplay.Train
         // (한쪽의 '조준 해제'가 다른 쪽의 프리뷰를 지우지 않게).
         private CarBuildAimLocalEvent _buildAim;
         private CarRecoupleAimLocalEvent _recoupleAim;
+        private StructurePlaceAimLocalEvent _structureAim;
 
         private void Awake()
         {
@@ -57,12 +58,14 @@ namespace Game.Gameplay.Train
         {
             EventBus<CarBuildAimLocalEvent>.Subscribe(OnBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Subscribe(OnRecoupleAim);
+            EventBus<StructurePlaceAimLocalEvent>.Subscribe(OnStructureAim);
         }
 
         private void OnDisable()
         {
             EventBus<CarBuildAimLocalEvent>.Unsubscribe(OnBuildAim);
             EventBus<CarRecoupleAimLocalEvent>.Unsubscribe(OnRecoupleAim);
+            EventBus<StructurePlaceAimLocalEvent>.Unsubscribe(OnStructureAim);
             _line.enabled = false;
         }
 
@@ -78,7 +81,13 @@ namespace Game.Gameplay.Train
             Redraw();
         }
 
-        /// <summary>재결합 조준이 먼저다 — 망치의 우클릭 우선순위와 같은 순서로 그린다.</summary>
+        private void OnStructureAim(StructurePlaceAimLocalEvent evt)
+        {
+            _structureAim = evt;
+            Redraw();
+        }
+
+        /// <summary>재결합 &gt; 칸 건설 &gt; 건축물 설치 — 망치의 우클릭 우선순위와 같은 순서로 그린다.</summary>
         private void Redraw()
         {
             if (_recoupleAim.Aiming)
@@ -90,6 +99,12 @@ namespace Game.Gameplay.Train
             if (_buildAim.Aiming)
             {
                 DrawBox(_buildAim.GhostCenter, _buildAim.GhostSize, _buildAim.CanBuild);
+                return;
+            }
+
+            if (_structureAim.Aiming)
+            {
+                DrawBox(_structureAim.GhostCenter, _structureAim.GhostSize, _structureAim.CanBuild);
                 return;
             }
 

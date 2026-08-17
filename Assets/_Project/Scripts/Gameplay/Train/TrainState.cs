@@ -30,8 +30,12 @@ namespace Game.Gameplay.Train
         private readonly NetworkList<CarState> _cars = new NetworkList<CarState>();
         private readonly NetworkList<CouplingState> _couplings = new NetworkList<CouplingState>();
 
-        // 칸 위 붙박이 건축물 — 인덱스 = 칸 인덱스 1:1 (기획서 §9 — 건축물 개별 파괴).
-        private readonly NetworkList<StructureState> _structures = new NetworkList<StructureState>();
+        // 칸 위 건축물 — 그리드 평탄 리스트 (건축 개편 1차, 결정 ③). 항목 존재 = 설치됨이고,
+        // 이탈 칸의 항목도 carIndex로 남아 상태가 보존된다(재결합 시 무변경 복원 — ServerTryRecouple 규약).
+        private readonly NetworkList<StructureEntry> _structures = new NetworkList<StructureEntry>();
+
+        // 호스트 전용 — 건축물 Id 발급 일련번호 (1부터, 0 = 무효). 철거·피해 RPC의 안정 참조 키.
+        private ushort _nextStructureId = 1;
 
         // 이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m) — 호스트가 시뮬레이션해 복제한다(손잡이-이탈저항 스펙 §6).
         private readonly NetworkList<float> _ejectOffsets = new NetworkList<float>();
@@ -189,9 +193,9 @@ namespace Game.Gameplay.Train
             ServerApplyCouplingDamage(couplingIndex, amount);
         }
 
-        void ITrainDamageSink.ApplyStructureDamage(int carIndex, float amount)
+        void ITrainDamageSink.ApplyStructureDamage(int structureId, float amount)
         {
-            ServerApplyStructureDamage(carIndex, amount);
+            ServerApplyStructureDamage(structureId, amount);
         }
 
         public bool TryGetCar(int index, out CarState car)
@@ -218,15 +222,35 @@ namespace Game.Gameplay.Train
             return false;
         }
 
-        public bool TryGetStructure(int index, out StructureState structure)
+        public int StructureCount => _structures.Count;
+
+        public bool TryGetStructureAt(int listIndex, out StructureEntry entry)
         {
-            if (index >= 0 && index < _structures.Count)
+            if (listIndex >= 0 && listIndex < _structures.Count)
             {
-                structure = _structures[index];
+                entry = _structures[listIndex];
                 return true;
             }
 
-            structure = default;
+            entry = default;
+            return false;
+        }
+
+        public bool TryGetStructureById(int structureId, out StructureEntry entry)
+        {
+            if (structureId > 0)
+            {
+                for (int i = 0; i < _structures.Count; i++)
+                {
+                    if (_structures[i].Id == structureId)
+                    {
+                        entry = _structures[i];
+                        return true;
+                    }
+                }
+            }
+
+            entry = default;
             return false;
         }
 
@@ -235,14 +259,45 @@ namespace Game.Gameplay.Train
             int count = 0;
             for (int i = 0; i < _structures.Count; i++)
             {
-                StructureState structure = _structures[i];
-                if (structure.Kind == kind && TrainStateLogic.IsStructureAlive(structure))
+                StructureEntry entry = _structures[i];
+                if (entry.Kind == kind && StructureGridLogic.IsAlive(entry))
                 {
                     count++;
                 }
             }
 
             return count;
+        }
+
+        /// <summary>
+        /// 월드 지점이 살아 있는 칸 위 건축물의 점유 영역 안인가 — 몬스터 관통 방지(계획서 §2.10).
+        /// 그리드 점유 조회(복제 데이터)라 서버 시뮬레이션에서 물리 쿼리 없이 판정된다.
+        /// </summary>
+        public bool IsStructureBlockingAt(Vector3 position, float padding)
+        {
+            if (_layoutSettings == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _structures.Count; i++)
+            {
+                StructureEntry entry = _structures[i];
+                if (!StructureGridLogic.IsAlive(entry)
+                    || !TryGetCar(entry.CarIndex, out CarState car) || car.Health <= 0f)
+                {
+                    continue;
+                }
+
+                float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, GetEjectOffset(entry.CarIndex));
+                if (StructureGridLogic.IsWorldPointOnEntry(entry, position.x, position.z, padding,
+                    centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public float GetEjectOffset(int index)
@@ -419,6 +474,7 @@ namespace Game.Gameplay.Train
             // 칸 파괴 = 칸 위 건축물도 함께 소멸 — 창고였다면 내용물이 보따리로 지상에 떨어진다
             // (M5 8차 — 갑판이 사라지므로 지상 낙하. deckAlive는 복제 전 상태라 호출 문맥이 넘긴다).
             ServerDropStorageAsBundleIfPresent(index, deckAlive: false);
+            ServerRemoveStructuresOnCar(index);
 
             // 파괴된 칸에 닿은 앞뒤 연결부를 끊는다 (뒤 연결부는 칸이 마지막이면 없다).
             var brokenCouplings = new List<int>(2);
@@ -481,8 +537,12 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>칸 위 건축물에 데미지를 적용한다 — 칸과 달리 연쇄가 없어 건축물 하나만 원자적으로 갱신된다(기획서 §9).</summary>
-        public void ServerApplyStructureDamage(int index, float amount)
+        /// <summary>
+        /// 칸 위 건축물에 데미지를 적용한다 — 대상은 그리드 항목 Id (건축 개편 1차 — 안정 참조).
+        /// 파괴되면 항목을 리스트에서 제거한다 — 그 자리에 새로 지을 수 있다. 몬스터 파괴는
+        /// 자원 반환 경로를 타지 않는다 (요구사항 — 창고 보따리 배출만 예외).
+        /// </summary>
+        public void ServerApplyStructureDamage(int structureId, float amount)
         {
             if (!IsServer)
             {
@@ -490,25 +550,53 @@ namespace Game.Gameplay.Train
             }
 
             CarState[] cars = SnapshotCars();
-            StructureState[] structures = SnapshotStructures();
-            CarDamageResult result = TrainStateLogic.ApplyStructureDamage(structures, cars, index, amount);
+            StructureEntry[] structures = SnapshotStructures();
+            if (!StructureGridLogic.TryFindById(structures, structureId, out int entryIndex))
+            {
+                return;
+            }
+
+            CarDamageResult result = StructureGridLogic.ApplyDamage(structures, cars, entryIndex, amount);
             if (result == CarDamageResult.Ignored)
             {
                 return;
             }
 
-            WriteBackStructures(structures);
-
-            if (result == CarDamageResult.Destroyed)
+            if (result != CarDamageResult.Destroyed)
             {
-                // 창고 파괴 = 내용물이 보따리로 그 칸 갑판 위에 떨어진다 (M5 8차 — 칸은 살아 있다).
-                // Kind는 파괴 후에도 남으므로 스냅샷에서 읽는다.
-                if (structures[index].Kind == StructureKind.Storage)
+                if (!_structures[entryIndex].Equals(structures[entryIndex]))
                 {
-                    ServerDropStorageAsBundleIfPresent(index, deckAlive: true);
+                    _structures[entryIndex] = structures[entryIndex];
                 }
 
-                BroadcastStructureDestroyedRpc(index);
+                return;
+            }
+
+            StructureEntry destroyed = structures[entryIndex];
+
+            // 창고 파괴 = 내용물이 보따리로 그 칸 갑판 위에 떨어진다 (M5 8차 — 칸은 살아 있다).
+            // 1차에서는 저장 블록이 여전히 칸 인덱스 규약이다 (칸당 창고 1개 임시 가드 — 계획서 §3).
+            if (destroyed.Kind == StructureKind.Storage)
+            {
+                ServerDropStorageAsBundleIfPresent(destroyed.CarIndex, deckAlive: true);
+            }
+
+            _structures.RemoveAt(entryIndex);
+            BroadcastStructureDestroyedRpc(destroyed.Id, destroyed.CarIndex, destroyed.Kind);
+        }
+
+        /// <summary>
+        /// 칸 위 건축물 항목을 전부 제거한다 — 칸 파괴·슬롯 재건(잔해 제거) 확정 지점에서 호출한다(서버).
+        /// 이탈은 제거가 아니다 — 항목이 carIndex로 남아 재결합 시 그대로 복원된다.
+        /// </summary>
+        private void ServerRemoveStructuresOnCar(int carIndex)
+        {
+            for (int i = _structures.Count - 1; i >= 0; i--)
+            {
+                if (_structures[i].CarIndex == carIndex)
+                {
+                    _structures.RemoveAt(i);
+                }
             }
         }
 
@@ -576,14 +664,20 @@ namespace Game.Gameplay.Train
 
                 case TrainPartKind.Structure:
                 {
+                    // 건축물의 index는 그리드 항목 Id다 (건축 개편 1차 — 부위 식별 규약).
                     CarState[] cars = SnapshotCars();
-                    StructureState[] structures = SnapshotStructures();
-                    if (!TrainStateLogic.RepairStructure(structures, cars, index, amount))
+                    StructureEntry[] structures = SnapshotStructures();
+                    if (!StructureGridLogic.TryFindById(structures, index, out int entryIndex)
+                        || !StructureGridLogic.Repair(structures, cars, entryIndex, amount))
                     {
                         return false;
                     }
 
-                    WriteBackStructures(structures);
+                    if (!_structures[entryIndex].Equals(structures[entryIndex]))
+                    {
+                        _structures[entryIndex] = structures[entryIndex];
+                    }
+
                     return true;
                 }
 
@@ -633,7 +727,7 @@ namespace Game.Gameplay.Train
 
             if (slot == _cars.Count)
             {
-                // 후미 증설 — 칸·연결부·건축물 슬롯·이탈 오프셋을 함께 늘린다.
+                // 후미 증설 — 칸·연결부·이탈 오프셋을 함께 늘린다 (건축물 그리드는 칸 수와 무관한 평탄 리스트).
                 _cars.Add(new CarState
                 {
                     Type = CarType.Standard,
@@ -647,7 +741,6 @@ namespace Game.Gameplay.Train
                     MaxHealth = couplingMax,
                     Broken = false,
                 });
-                _structures.Add(default);
                 _ejectOffsets.Add(0f);
                 _grabberCountsSync.Add(0);
 
@@ -660,14 +753,14 @@ namespace Game.Gameplay.Train
                 // 빈 슬롯 재건 — 순수 로직으로 스냅샷을 고쳐 일괄 되쓴다.
                 CarState[] cars = SnapshotCars();
                 CouplingState[] couplings = SnapshotCouplings();
-                StructureState[] structures = SnapshotStructures();
-                TrainStateLogic.RebuildSlot(cars, couplings, structures, slot, carMax, couplingMax);
+                TrainStateLogic.RebuildSlot(cars, couplings, slot, carMax, couplingMax);
 
                 WriteBackCars(cars);
                 WriteBackCouplings(couplings);
-                WriteBackStructures(structures);
 
-                // 재건은 잔해 제거 — 그 자리 창고 내용물도 남아 있을 이유가 없다 (파괴 시점 소실의 안전망).
+                // 재건은 잔해 제거 — 옛 건축물 항목(소실 칸의 보존분)과 그 자리 창고 내용물도
+                // 남아 있을 이유가 없다 (파괴 시점 소실의 안전망).
+                ServerRemoveStructuresOnCar(slot);
                 ServerClearStorageIfPresent(slot);
 
                 ResetEjectSimulation(slot);
@@ -677,29 +770,48 @@ namespace Game.Gameplay.Train
             return true;
         }
 
-        public bool CanBuildStructure(int carIndex)
+        public bool CanPlaceStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind)
         {
-            return TrainStateLogic.CanBuildStructureAt(SnapshotStructures(), SnapshotCars(), carIndex);
+            if (_layoutSettings == null || _structureCatalog == null)
+            {
+                return false;
+            }
+
+            _structureCatalog.GetFootprint(kind, out int width, out int length);
+            return StructureGridLogic.CanPlace(SnapshotStructures(), SnapshotCars(), carIndex,
+                cellX, cellZ, rotation, kind, width, length, _structureCatalog.IsPlaceable(kind),
+                _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize);
         }
 
-        /// <summary>칸 위에 지정 종류의 건축물 1개를 설치한다 — 종류별 최대 체력(카탈로그)으로 시작, 파괴된 자리에는 새로 지을 수 있다.</summary>
-        public bool ServerTryBuildStructure(int carIndex, StructureKind kind)
+        /// <summary>
+        /// 지정 자리(칸·셀·회전)에 건축물 1개를 설치한다 (건축 개편 1차) — 프리뷰와 같은 순수 판정을
+        /// 다시 통과해야 확정된다. 종류별 최대 체력·점유 면적은 설치 시점 카탈로그 값을 항목에 싣는다.
+        /// </summary>
+        public bool ServerTryBuildStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind)
         {
-            if (!IsServer)
+            if (!IsServer || !CanPlaceStructure(carIndex, cellX, cellZ, rotation, kind))
             {
                 return false;
             }
 
-            CarState[] cars = SnapshotCars();
-            StructureState[] structures = SnapshotStructures();
-            float structureMax = _structureCatalog != null ? _structureCatalog.GetMaxHealth(kind, 1f) : 1f;
-            if (!TrainStateLogic.BuildStructure(structures, cars, carIndex, kind, structureMax))
+            _structureCatalog.GetFootprint(kind, out int width, out int length);
+            float structureMax = _structureCatalog.GetMaxHealth(kind, 1f);
+            var entry = new StructureEntry
             {
-                return false;
-            }
+                Id = _nextStructureId++,
+                CarIndex = (byte)carIndex,
+                CellX = (byte)cellX,
+                CellZ = (byte)cellZ,
+                Rotation = (byte)(rotation & 3),
+                Kind = kind,
+                FootprintWidth = (byte)width,
+                FootprintLength = (byte)length,
+                Health = structureMax,
+                MaxHealth = structureMax,
+            };
 
-            WriteBackStructures(structures);
-            BroadcastStructureBuiltRpc(carIndex, kind);
+            _structures.Add(entry);
+            BroadcastStructureBuiltRpc(entry);
             return true;
         }
 
@@ -829,12 +941,9 @@ namespace Game.Gameplay.Train
                 _couplings.Add(couplings[i]);
             }
 
-            // 건축물 슬롯은 전부 빈 상태로 시작한다 — 건축물은 설치(수리 망치 우클릭)로만 생긴다.
-            StructureState[] structures = TrainStateLogic.BuildInitialStructures(count);
-            for (int i = 0; i < structures.Length; i++)
-            {
-                _structures.Add(structures[i]);
-            }
+            // 건축물 그리드는 빈 리스트로 시작한다 — 건축물은 설치(수리 망치 우클릭)로만 생긴다.
+            // Id 발급도 새 판 기준으로 되감는다 (재시작 = 씬 재로드 경로).
+            _nextStructureId = 1;
 
             _ejectOffsets.Clear();
             _grabberCountsSync.Clear();
@@ -1028,9 +1137,9 @@ namespace Game.Gameplay.Train
             return snapshot;
         }
 
-        private StructureState[] SnapshotStructures()
+        private StructureEntry[] SnapshotStructures()
         {
-            var snapshot = new StructureState[_structures.Count];
+            var snapshot = new StructureEntry[_structures.Count];
             for (int i = 0; i < _structures.Count; i++)
             {
                 snapshot[i] = _structures[i];
@@ -1061,17 +1170,6 @@ namespace Game.Gameplay.Train
             }
         }
 
-        private void WriteBackStructures(StructureState[] snapshot)
-        {
-            for (int i = 0; i < snapshot.Length && i < _structures.Count; i++)
-            {
-                if (!_structures[i].Equals(snapshot[i]))
-                {
-                    _structures[i] = snapshot[i];
-                }
-            }
-        }
-
         private void OnCarsChanged(NetworkListEvent<CarState> change)
         {
             if (change.Type == NetworkListEvent<CarState>.EventType.Value
@@ -1090,12 +1188,32 @@ namespace Game.Gameplay.Train
             }
         }
 
-        private void OnStructuresChanged(NetworkListEvent<StructureState> change)
+        private void OnStructuresChanged(NetworkListEvent<StructureEntry> change)
         {
-            if (change.Type == NetworkListEvent<StructureState>.EventType.Value
-                || change.Type == NetworkListEvent<StructureState>.EventType.Add)
+            switch (change.Type)
             {
-                EventBus<StructureStateChangedEvent>.Publish(new StructureStateChangedEvent(change.Index, change.Value));
+                case NetworkListEvent<StructureEntry>.EventType.Add:
+                case NetworkListEvent<StructureEntry>.EventType.Insert:
+                    EventBus<StructureEntryChangedEvent>.Publish(
+                        new StructureEntryChangedEvent(StructureListChange.Added, change.Value));
+                    break;
+
+                case NetworkListEvent<StructureEntry>.EventType.Value:
+                    EventBus<StructureEntryChangedEvent>.Publish(
+                        new StructureEntryChangedEvent(StructureListChange.Updated, change.Value));
+                    break;
+
+                case NetworkListEvent<StructureEntry>.EventType.Remove:
+                case NetworkListEvent<StructureEntry>.EventType.RemoveAt:
+                    EventBus<StructureEntryChangedEvent>.Publish(
+                        new StructureEntryChangedEvent(StructureListChange.Removed, change.Value));
+                    break;
+
+                default:
+                    // Clear·Full 등 목록 전체 변화 — 구독자는 리스트 전체를 다시 훑는다.
+                    EventBus<StructureEntryChangedEvent>.Publish(
+                        new StructureEntryChangedEvent(StructureListChange.Reset, default));
+                    break;
             }
         }
 
@@ -1120,15 +1238,15 @@ namespace Game.Gameplay.Train
         }
 
         [Rpc(SendTo.Everyone)]
-        private void BroadcastStructureDestroyedRpc(int index)
+        private void BroadcastStructureDestroyedRpc(int structureId, int carIndex, StructureKind kind)
         {
-            EventBus<StructureDestroyedEvent>.Publish(new StructureDestroyedEvent(index));
+            EventBus<StructureDestroyedEvent>.Publish(new StructureDestroyedEvent(structureId, carIndex, kind));
         }
 
         [Rpc(SendTo.Everyone)]
-        private void BroadcastStructureBuiltRpc(int index, StructureKind kind)
+        private void BroadcastStructureBuiltRpc(StructureEntry entry)
         {
-            EventBus<StructureBuiltEvent>.Publish(new StructureBuiltEvent(index, kind));
+            EventBus<StructureBuiltEvent>.Publish(new StructureBuiltEvent(entry));
         }
 
         [Rpc(SendTo.Everyone)]

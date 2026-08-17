@@ -276,23 +276,28 @@ namespace Game.Gameplay.Player
                 return;
             }
 
-            // 부서진 건축물은 효과가 없다 — Present만으로는 파괴된 자리도 통과하므로 체력까지 본다.
-            if (!train.TryGetStructure(carIndex, out StructureState structure)
-                || !structure.Present || structure.Health <= 0f)
+            // 다중 설치 (건축 개편 1차 — 계획서 §2.7): 칸 위에 그늘/난방 제공 건축물이 <b>하나라도</b>
+            // 있으면 효과가 성립한다. 효과 범위는 칸 단위 boolean 유지 (계획서 §5 — 의식적 선택).
+            bool fuelAlive = ServiceLocator.TryGet(out World.IFuelService fuel) && fuel.Fuel > 0f;
+            for (int i = 0; i < train.StructureCount; i++)
             {
-                return;
+                if (!train.TryGetStructureAt(i, out Train.StructureEntry entry)
+                    || entry.CarIndex != carIndex || entry.Health <= 0f)
+                {
+                    continue;
+                }
+
+                hasShade |= _structureCatalog.ProvidesShade(entry.Kind);
+                bool entryHeat = _structureCatalog.ProvidesHeat(entry.Kind);
+                hasHeat |= entryHeat;
+
+                // 강화 난방로 (M7 3차 결정 ③-ⓑ) — "연료를 태우는 난방"이고 탱크에 연료가 남아 있을 때만
+                // 한파 페널티가 사라진다. 연료가 떨어지면 이 조건이 무너져 일반 난방기와 같아진다
+                // (별도 고장 상태 없음). 종류를 이름으로 알지 않고 카탈로그의 소모율로 판별한다.
+                negatesColdPenalty |= entryHeat
+                    && _structureCatalog.GetHeaterFuelPerSecond(entry.Kind) > 0f
+                    && fuelAlive;
             }
-
-            hasShade = _structureCatalog.ProvidesShade(structure.Kind);
-            hasHeat = _structureCatalog.ProvidesHeat(structure.Kind);
-
-            // 강화 난방로 (M7 3차 결정 ③-ⓑ) — "연료를 태우는 난방"이고 탱크에 연료가 남아 있을 때만
-            // 한파 페널티가 사라진다. 연료가 떨어지면 이 조건이 무너져 일반 난방기와 같아진다
-            // (별도 고장 상태 없음). 종류를 이름으로 알지 않고 카탈로그의 소모율로 판별한다.
-            negatesColdPenalty = hasHeat
-                && _structureCatalog.GetHeaterFuelPerSecond(structure.Kind) > 0f
-                && ServiceLocator.TryGet(out World.IFuelService fuel)
-                && fuel.Fuel > 0f;
         }
 
         /// <summary>

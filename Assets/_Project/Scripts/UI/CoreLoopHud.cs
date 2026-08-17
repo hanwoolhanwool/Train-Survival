@@ -218,16 +218,19 @@ namespace Game.UI
 
         private void OnStructureDestroyed(StructureDestroyedEvent evt)
         {
-            _trainAlertText = $"<color=red>건축물 파괴! (#{evt.Index}번 칸)</color>";
+            string name = _structureCatalog != null
+                ? _structureCatalog.GetDisplayName(evt.Kind)
+                : "건축물";
+            _trainAlertText = $"<color=red>{name} 파괴! (#{evt.CarIndex}번 칸)</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
         private void OnStructureBuilt(StructureBuiltEvent evt)
         {
             string name = _structureCatalog != null
-                ? _structureCatalog.GetDisplayName(evt.Kind)
+                ? _structureCatalog.GetDisplayName(evt.Entry.Kind)
                 : "건축물";
-            _trainAlertText = $"<color=lime>{name} 설치! (#{evt.Index}번 칸)</color>";
+            _trainAlertText = $"<color=lime>{name} 설치! (#{evt.Entry.CarIndex}번 칸)</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 

@@ -227,9 +227,10 @@ namespace Game.Gameplay.Crafting
         }
 
         /// <summary>
-        /// 위치에서 가장 가까운 유효 제작 지점 (M5 3차 — 제작 지점 다중, 4차 — 종류 분리).
-        /// 제작대 종류는 기관차 고정 지점이 항상 유효하고 제작대 건축물 칸이 추가된다.
-        /// 화덕 종류는 화덕 건축물이 살아 있는 칸(파괴 아님 — 이탈은 허용)만 유효하다.
+        /// 위치에서 가장 가까운 유효 제작 지점 (M5 3차 — 제작 지점 다중, 건축 개편 1차 — 결정 ⑨:
+        /// 판정 대상 = 그리드 상태에서 가장 가까운 제작 계열 건축물의 <b>점유 영역 중심</b>).
+        /// 제작대 종류는 기관차 고정 지점이 항상 유효하고 제작대 건축물들이 추가된다.
+        /// 화덕·정수기 종류는 해당 건축물이 살아 있어야만(칸 파괴 아님 — 이탈은 허용) 유효하다.
         /// 로컬 근접·시선 판정과 서버 거리 재검증이 이 함수 하나를 공유한다.
         /// </summary>
         private bool TryGetNearestCraftPoint(Vector3 position, CraftStationKind kind, out Vector3 point)
@@ -253,23 +254,28 @@ namespace Game.Gameplay.Crafting
 
             Train.StructureKind structureKind = ResolveStructureKind(kind);
 
-            for (int i = 0; i < train.CarCount; i++)
+            for (int i = 0; i < train.StructureCount; i++)
             {
-                if (!train.TryGetStructure(i, out Train.StructureState structure)
-                    || !structure.Present || structure.Kind != structureKind
-                    || structure.Health <= 0f
-                    || !train.TryGetCar(i, out Train.CarState car) || car.Health <= 0f)
+                if (!train.TryGetStructureAt(i, out Train.StructureEntry entry)
+                    || entry.Kind != structureKind || entry.Health <= 0f
+                    || !train.TryGetCar(entry.CarIndex, out Train.CarState car) || car.Health <= 0f)
                 {
                     continue;
                 }
 
-                float z = _layoutSettings.CarCenterZ(i, train.GetEjectOffset(i));
-                var carPoint = new Vector3(0f, _layoutSettings.DeckHeight, z);
-                float sqr = (position - carPoint).sqrMagnitude;
+                float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, train.GetEjectOffset(entry.CarIndex));
+                Train.StructureGridLogic.RotatedFootprint(entry.FootprintWidth, entry.FootprintLength,
+                    entry.Rotation, out int rotatedWidth, out int rotatedLength);
+                Train.StructureGridLogic.CellRegionCenterWorld(entry.CellX, entry.CellZ,
+                    rotatedWidth, rotatedLength, centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength,
+                    _layoutSettings.StructureCellSize, out float worldX, out float worldZ);
+
+                var structurePoint = new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
+                float sqr = (position - structurePoint).sqrMagnitude;
                 if (sqr < bestSqr)
                 {
                     bestSqr = sqr;
-                    point = carPoint;
+                    point = structurePoint;
                     found = true;
                 }
             }

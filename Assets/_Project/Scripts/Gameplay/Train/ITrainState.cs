@@ -19,15 +19,29 @@ namespace Game.Gameplay.Train
         /// <summary>인덱스의 연결부 상태를 읽는다. 범위 밖이면 false.</summary>
         bool TryGetCoupling(int index, out CouplingState coupling);
 
-        /// <summary>인덱스 칸 위 건축물 슬롯 상태를 읽는다(인덱스 = 칸 인덱스). 범위 밖이면 false.</summary>
-        bool TryGetStructure(int index, out StructureState structure);
+        /// <summary>건축물 그리드 항목 수 (건축 개편 1차) — 소비처는 이 수만큼 <see cref="TryGetStructureAt"/>로 훑는다.</summary>
+        int StructureCount { get; }
+
+        /// <summary>리스트 순서 <paramref name="listIndex"/>의 건축물 항목을 읽는다. 범위 밖이면 false.
+        /// 리스트 인덱스는 제거로 재배열되므로 보관하지 말고, 식별은 <see cref="StructureEntry.Id"/>로 한다.</summary>
+        bool TryGetStructureAt(int listIndex, out StructureEntry entry);
+
+        /// <summary>서버 발급 Id로 건축물 항목을 읽는다 — 철거·피해·수리·HUD의 안정 참조. 없으면 false.</summary>
+        bool TryGetStructureById(int structureId, out StructureEntry entry);
 
         /// <summary>
         /// 살아 있는(설치됨 + 체력 &gt; 0) 해당 종류 건축물의 수 (M7 3차 — 강화 난방로 연료 소모).
-        /// 연료 축(<see cref="Game.Gameplay.World.FuelTank"/>)이 건축물 배열을 직접 훑지 않게 하는 경계다.
+        /// 연료 축(<see cref="Game.Gameplay.World.FuelTank"/>)이 건축물 목록을 직접 훑지 않게 하는 경계다.
         /// 이탈 칸 위의 것도 센다 — 난방은 이탈 칸에서도 동작하므로 연료도 그만큼 든다.
         /// </summary>
         int CountStructures(StructureKind kind);
+
+        /// <summary>
+        /// 월드 지점이 살아 있는 칸 위 건축물의 점유 영역(여유 <paramref name="padding"/> 포함) 안인가 —
+        /// 몬스터 관통 방지 최소 구현(건축 개편 1차, 계획서 §2.10)의 이동 차단 판정.
+        /// 그리드 점유 조회(복제 데이터)라 물리 쿼리 비용이 없다.
+        /// </summary>
+        bool IsStructureBlockingAt(UnityEngine.Vector3 position, float padding);
 
         /// <summary>이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m). 붙어 있거나 범위 밖이면 0.
         /// 서버는 권위 시뮬 값을, 클라이언트는 복제 계단을 숨긴 표시 보간 값을 돌려준다(표현·잡기 게이트 용도 —

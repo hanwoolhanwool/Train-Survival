@@ -28,6 +28,10 @@ namespace Game.Gameplay.Monsters
 
         private const float Gravity = 25f;
 
+        // 갑판 위 건축물 관통 금지 판정의 몸 반경 여유(m) — 건축 개편 1차 §2.10 최소 구현.
+        // 이동 AI 재설계(회피·경로)는 이월이라 상수로 둔다.
+        private const float StructureBlockPadding = 0.3f;
+
         private readonly NetworkVariable<Vector3> _syncedPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<float> _syncedYaw = new NetworkVariable<float>();
 
@@ -247,6 +251,18 @@ namespace Game.Gameplay.Monsters
 
                     TryBeginDeckLeap(target);
                 }
+            }
+
+            // 관통 금지 (건축 개편 1차 — 계획서 §2.10 최소 구현): 갑판 위 이동 후 위치가 건축물 점유
+            // 셀과 겹치면 수평 이동을 취소한다. 판정은 물리 쿼리가 아니라 그리드 점유 조회(복제 데이터)다.
+            // 막힌 몬스터는 별도 AI 없이도 성립한다 — 건축물이 타깃 등록소에 있으므로 길을 막은
+            // 건축물이 곧 최근접 타깃이 되어 "막히면 부순다"가 자연 발생한다.
+            if (onDeck && horizontalVelocity.sqrMagnitude > 0f
+                && ServiceLocator.TryGet(out ITrainState trainState)
+                && trainState.IsStructureBlockingAt(
+                    transform.position + horizontalVelocity * Time.deltaTime, StructureBlockPadding))
+            {
+                horizontalVelocity = Vector3.zero;
             }
 
             ApplyVerticalMotion(onDeck);

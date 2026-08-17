@@ -471,12 +471,12 @@ namespace Game.Gameplay.Train
                 }
             }
 
-            for (int i = train.CarCount - 1; i >= 0; i--)
+            // 건축물 폴백 — 그리드 목록의 마지막 살아 있는 항목 (건축 개편 1차 — Id로 지목한다).
+            for (int i = train.StructureCount - 1; i >= 0; i--)
             {
-                if (train.TryGetStructure(i, out StructureState structure)
-                    && TrainStateLogic.IsStructureAlive(structure))
+                if (train.TryGetStructureAt(i, out StructureEntry entry) && StructureGridLogic.IsAlive(entry))
                 {
-                    sink.ApplyStructureDamage(i, SampleDamage);
+                    sink.ApplyStructureDamage(entry.Id, SampleDamage);
                     break;
                 }
             }
