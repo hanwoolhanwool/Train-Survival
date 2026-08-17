@@ -78,6 +78,79 @@ namespace Game.Tests.EditMode
             Assert.That(ViewLabMath.SpeedForTier(LocomotionTier.Run, WalkSpeed, RunSpeed), Is.EqualTo(RunSpeed));
         }
 
+        // ── 좌우 손 지정 (미러링) ──
+
+        [Test]
+        public void 손_판정은_로컬X_부호를_따른다()
+        {
+            // RevolverPivot 0.27 / HarpoonPivot 0.3588 = 오른팔, MeleePivot 0 = 중앙.
+            Assert.That(ViewLabMath.ResolveHand(0.27f), Is.EqualTo(PivotHand.Right));
+            Assert.That(ViewLabMath.ResolveHand(-0.3588f), Is.EqualTo(PivotHand.Left));
+            Assert.That(ViewLabMath.ResolveHand(0f), Is.EqualTo(PivotHand.Center));
+        }
+
+        [Test]
+        public void 중앙_판정_폭은_최소_넛지보다_좁다()
+        {
+            // 미세 스텝 0.005로 한 번만 밀어도 손이 정해져야 한다.
+            Assert.That(ViewLabMath.ResolveHand(0.005f), Is.EqualTo(PivotHand.Right));
+            Assert.That(ViewLabMath.ResolveHand(-0.005f), Is.EqualTo(PivotHand.Left));
+        }
+
+        [Test]
+        public void 미러_위치는_X만_뒤집는다()
+        {
+            Vector3 mirrored = ViewLabMath.MirrorPosition(new Vector3(0.3588f, -0.6005f, 0.7767f));
+            Assert.That(mirrored.x, Is.EqualTo(-0.3588f).Within(1e-6f));
+            Assert.That(mirrored.y, Is.EqualTo(-0.6005f).Within(1e-6f));
+            Assert.That(mirrored.z, Is.EqualTo(0.7767f).Within(1e-6f));
+        }
+
+        [Test]
+        public void 미러_위치는_손을_반대편으로_옮긴다()
+        {
+            Vector3 right = new Vector3(0.27f, -0.2778f, 0.502f);
+            Vector3 left = ViewLabMath.MirrorPosition(right);
+            Assert.That(ViewLabMath.ResolveHand(right.x), Is.EqualTo(PivotHand.Right));
+            Assert.That(ViewLabMath.ResolveHand(left.x), Is.EqualTo(PivotHand.Left));
+        }
+
+        [Test]
+        public void 미러_회전은_반사_행렬과_같은_결과를_낸다()
+        {
+            // M·R·M (M = diag(-1,1,1))과 일치하는지 임의 벡터로 확인 — 공식 유도의 실증.
+            Quaternion rotation = Quaternion.Euler(15.71f, -0.51f, 110.41f);   // HammerPivot 실측값
+            Quaternion mirrored = ViewLabMath.MirrorRotation(rotation);
+
+            foreach (Vector3 v in new[] { Vector3.right, Vector3.up, Vector3.forward, new Vector3(0.3f, -0.7f, 0.6f) })
+            {
+                Vector3 expected = Mirror(rotation * Mirror(v));
+                Assert.That((mirrored * v - expected).magnitude, Is.LessThan(1e-4f),
+                    $"벡터 {v}에서 미러 회전이 반사 행렬과 어긋났다");
+            }
+        }
+
+        [Test]
+        public void 미러_회전을_두_번_하면_원래대로_돌아온다()
+        {
+            Quaternion rotation = Quaternion.Euler(15.71f, -0.51f, 110.41f);
+            Quaternion round = ViewLabMath.MirrorRotation(ViewLabMath.MirrorRotation(rotation));
+            Assert.That(Quaternion.Angle(rotation, round), Is.LessThan(1e-3f));
+        }
+
+        [Test]
+        public void Y축_180도_회전은_미러링해도_그대로다()
+        {
+            // 총기 3종의 초기 회전 — 좌우 대칭 자세라 미러 후에도 같아야 한다.
+            Quaternion yaw180 = Quaternion.Euler(0f, 180f, 0f);
+            Assert.That(Quaternion.Angle(ViewLabMath.MirrorRotation(yaw180), yaw180), Is.LessThan(1e-3f));
+        }
+
+        private static Vector3 Mirror(Vector3 v)
+        {
+            return new Vector3(-v.x, v.y, v.z);
+        }
+
         // ── dirty 판정 ──
 
         [Test]

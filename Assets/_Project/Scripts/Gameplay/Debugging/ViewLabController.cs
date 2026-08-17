@@ -290,6 +290,26 @@ namespace Game.Gameplay.Debugging
             RefreshFields();
         }
 
+        /// <summary>
+        /// 피벗을 반대 손으로 옮긴다 — 위치·회전을 YZ 평면 기준으로 미러링한다 (스케일은 유지).
+        /// 손을 별도 값으로 들고 있지 않으므로 미러링 자체가 곧 지정이고, 결과는 다른 조정과
+        /// 똑같이 dirty로 잡혀 프리팹 저장에 실린다.
+        /// 메시는 뒤집지 않는다 — 음수 스케일은 노멀·컬링을 깨뜨린다. 좌우 비대칭 모델은
+        /// 미러 결과를 출발점 삼아 사람이 마저 맞춘다.
+        /// </summary>
+        private void SetPivotHand(Transform pivot, PivotHand hand)
+        {
+            PivotHand current = ViewLabMath.ResolveHand(pivot.localPosition.x);
+            if (current == hand || current == PivotHand.Center)
+            {
+                return;
+            }
+
+            pivot.localPosition = ViewLabMath.MirrorPosition(pivot.localPosition);
+            pivot.localRotation = ViewLabMath.MirrorRotation(pivot.localRotation);
+            RefreshFields();
+        }
+
         private void SetPivotVisible(int index, bool visible)
         {
             Renderer[] renderers = _pivotRenderers[index];
@@ -603,11 +623,25 @@ namespace Game.Gameplay.Debugging
             RefreshFields();
         }
 
+        private static string HandLabel(PivotHand hand)
+        {
+            switch (hand)
+            {
+                case PivotHand.Right:
+                    return "오른팔";
+                case PivotHand.Left:
+                    return "왼팔";
+                default:
+                    return "중앙";
+            }
+        }
+
         private void RefreshHud()
         {
             Transform pivot = CurrentPivot;
             string adjust = pivot != null
-                ? $"{pivot.name}  pos{pivot.localPosition:F3}  rot{pivot.localEulerAngles:F1}  scale{pivot.localScale:F2}"
+                ? $"{pivot.name}  {HandLabel(ViewLabMath.ResolveHand(pivot.localPosition.x))}"
+                  + $"  pos{pivot.localPosition:F3}  rot{pivot.localEulerAngles:F1}  scale{pivot.localScale:F2}"
                 : "(AimPivot 아래 피벗 없음)";
             string dirtyMark = _dirty ? "  ● 미저장 변경 — Stop 전에 저장!" : "";
 
@@ -728,6 +762,7 @@ namespace Game.Gameplay.Debugging
             }
 
             GUILayout.Label($"── 조정  {pivot.name} ──");
+            DrawHandRow(pivot);
 
             GUILayout.BeginHorizontal();
             if (ToggleButton(_fineStep ? "미세 스텝 ON" : "미세 스텝 OFF", _fineStep))
@@ -784,6 +819,31 @@ namespace Game.Gameplay.Debugging
             {
                 ApplyFields(pivot);
             }
+        }
+
+        /// <summary>좌우 손 지정 — 누르면 위치·회전이 미러링된다.</summary>
+        private void DrawHandRow(Transform pivot)
+        {
+            PivotHand hand = ViewLabMath.ResolveHand(pivot.localPosition.x);
+            if (hand == PivotHand.Center)
+            {
+                GUILayout.Label("손: 중앙 (X=0) — 좌우가 같아 지정 대상이 아니다");
+                return;
+            }
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("손", GUILayout.Width(28f));
+            if (ToggleButton("오른팔", hand == PivotHand.Right))
+            {
+                SetPivotHand(pivot, PivotHand.Right);
+            }
+
+            if (ToggleButton("왼팔", hand == PivotHand.Left))
+            {
+                SetPivotHand(pivot, PivotHand.Left);
+            }
+
+            GUILayout.EndHorizontal();
         }
 
         /// <summary>수치 입력 3칸 (pos 또는 rot).</summary>
