@@ -133,6 +133,26 @@ namespace Game.Gameplay.Train
         }
     }
 
+    /// <summary>
+    /// 칸 위 건축물이 철거됨 (건축 개편 2차 — 결정 ④·⑤: 망치 X 홀드, 자원 50% 반환) —
+    /// 호스트 확정 후 전 피어에서 발행되는 authored 이벤트. 몬스터 파괴(무반환)와 구분된다.
+    /// </summary>
+    public readonly struct StructureDemolishedEvent
+    {
+        public readonly int StructureId;
+
+        public readonly int CarIndex;
+
+        public readonly StructureKind Kind;
+
+        public StructureDemolishedEvent(int structureId, int carIndex, StructureKind kind)
+        {
+            StructureId = structureId;
+            CarIndex = carIndex;
+            Kind = kind;
+        }
+    }
+
     /// <summary>칸 위 건축물이 파괴됨 — 호스트 확정 후 전 피어에서 발행되는 authored 이벤트(§M3, 기획서 §9).</summary>
     public readonly struct StructureDestroyedEvent
     {
@@ -200,37 +220,38 @@ namespace Game.Gameplay.Train
     }
 
     /// <summary>
-    /// 로컬 표현 이벤트 — 공유 창고 칸에 근접해 열 수 있는 상태 (M5 3차). HUD의 "E — 창고" 안내용.
+    /// 로컬 표현 이벤트 — 공유 창고 실물에 근접해 열 수 있는 상태 (M5 3차, 건축 개편 2차 —
+    /// 식별 = 건축물 Id). HUD의 "E — 창고" 안내용.
     /// </summary>
     public readonly struct StoragePromptLocalEvent
     {
         public readonly bool IsInRange;
 
-        /// <summary>대상 창고가 있는 칸 인덱스 — 범위 밖이면 -1.</summary>
-        public readonly int CarIndex;
+        /// <summary>대상 창고의 건축물 Id — 범위 밖이면 -1.</summary>
+        public readonly int StorageId;
 
-        public StoragePromptLocalEvent(bool isInRange, int carIndex)
+        public StoragePromptLocalEvent(bool isInRange, int storageId)
         {
             IsInRange = isInRange;
-            CarIndex = carIndex;
+            StorageId = storageId;
         }
     }
 
     /// <summary>
-    /// 로컬 표현 이벤트 — 공유 창고 창 토글 (M5 3차). I 창과 같은 규약으로
-    /// 열려 있는 동안 시점 회전·무기 입력이 정지된다.
+    /// 로컬 표현 이벤트 — 공유 창고 창 토글 (M5 3차, 건축 개편 2차 — 식별 = 건축물 Id).
+    /// I 창과 같은 규약으로 열려 있는 동안 시점 회전·무기 입력이 정지된다.
     /// </summary>
     public readonly struct StoragePanelToggledLocalEvent
     {
         public readonly bool IsOpen;
 
-        /// <summary>연 창고의 칸 인덱스 — 닫힘이면 -1.</summary>
-        public readonly int CarIndex;
+        /// <summary>연 창고의 건축물 Id — 닫힘이면 -1.</summary>
+        public readonly int StorageId;
 
-        public StoragePanelToggledLocalEvent(bool isOpen, int carIndex)
+        public StoragePanelToggledLocalEvent(bool isOpen, int storageId)
         {
             IsOpen = isOpen;
-            CarIndex = carIndex;
+            StorageId = storageId;
         }
     }
 
@@ -299,11 +320,21 @@ namespace Game.Gameplay.Train
         /// <summary>설치 비용을 지불할 자원이 있는지.</summary>
         public readonly bool CanAffordStructure;
 
+        /// <summary>지금 X 홀드로 철거할 수 있는지 — 건축물 표적 + 칸 생존 (건축 개편 2차, 결정 ④).</summary>
+        public readonly bool CanDemolish;
+
+        /// <summary>철거 반환량 — floor(건설 비용 × 반환 비율). HUD "반환: N개" 안내용.</summary>
+        public readonly int DemolishRefund;
+
+        /// <summary>X 홀드 게이지 진행도 0~1 — 0이면 홀드 중이 아니다.</summary>
+        public readonly float DemolishProgress;
+
         public HammerTargetLocalEvent(bool hasTarget, TrainPartKind kind, int index,
             StructureKind targetStructureKind,
             float health, float maxHealth, bool canRepair,
             bool canBuildStructure, StructureKind selectedStructureKind,
-            int structureCost, bool canAffordStructure)
+            int structureCost, bool canAffordStructure,
+            bool canDemolish, int demolishRefund, float demolishProgress)
         {
             HasTarget = hasTarget;
             Kind = kind;
@@ -316,6 +347,9 @@ namespace Game.Gameplay.Train
             SelectedStructureKind = selectedStructureKind;
             StructureCost = structureCost;
             CanAffordStructure = canAffordStructure;
+            CanDemolish = canDemolish;
+            DemolishRefund = demolishRefund;
+            DemolishProgress = demolishProgress;
         }
     }
 

@@ -24,6 +24,11 @@ namespace Game.Gameplay.Train
             "경제적 유인을 준다(손잡이-이탈저항 스펙 §4.1).")]
         [SerializeField, Min(0)] private int _recoupleCost = 2;
 
+        [Header("건축물 철거 (건축 개편 2차 — 결정 ⑤)")]
+        [Tooltip("망치 X 홀드 철거 시 건설 비용 대비 반환 비율 — 반환량 = floor(비용 × 비율). " +
+            "반환 자원 종류는 StructureCatalog가 정한다.")]
+        [SerializeField, Range(0f, 1f)] private float _demolishRefundRatio = 0.5f;
+
         public int MaxCarCount => _maxCarCount;
 
         public int CarBuildCost => _carBuildCost;
@@ -31,5 +36,8 @@ namespace Game.Gameplay.Train
         public int StructureBuildCost => _structureBuildCost;
 
         public int RecoupleCost => _recoupleCost;
+
+        /// <summary>철거 반환 비율 (건축 개편 2차 — 결정 ⑤). 반환량 = floor(건설 비용 × 이 값).</summary>
+        public float DemolishRefundRatio => _demolishRefundRatio;
     }
 }

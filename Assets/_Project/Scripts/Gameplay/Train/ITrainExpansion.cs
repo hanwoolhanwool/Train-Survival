@@ -39,5 +39,18 @@ namespace Game.Gameplay.Train
 
         /// <summary>지정 자리에 건축물 1개를 설치한다. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
         bool ServerTryBuildStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind);
+
+        /// <summary>
+        /// 이 종류의 건축물 철거 시 반환되는 자원 수 (건축 개편 2차 — 결정 ⑤) —
+        /// floor(건설 비용 × 반환 비율). 자원 종류는 StructureCatalog가 정한다.
+        /// </summary>
+        int GetStructureDemolishRefund(StructureKind kind);
+
+        /// <summary>
+        /// 건축물 하나를 철거한다 (건축 개편 2차 — 결정 ④) — 창고면 내용물을 보따리로 배출한 뒤
+        /// 항목을 제거한다. 반환 자원 지급은 호출부(망치 RPC)의 몫이다 — 제거된 항목을 돌려준다.
+        /// 서버 전용 — 클라이언트 호출은 항상 false.
+        /// </summary>
+        bool ServerTryDemolishStructure(int structureId, out StructureEntry removed);
     }
 }

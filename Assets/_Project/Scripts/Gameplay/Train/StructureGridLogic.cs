@@ -141,7 +141,7 @@ namespace Game.Gameplay.Train
         /// <summary>
         /// 이 자리에 건축물을 설치할 수 있는지 — 칸 생존(기관차 제외) + 설치 가능 플래그 +
         /// 점유 셀 전부 그리드 내부·비점유. 소유자 프리뷰와 호스트 확정이 같은 판정을 쓴다.
-        /// 창고는 저장 모델 개편(2차) 전까지 칸당 1개로 제한한다 — 2차에서 이 가드만 걷어낸다 (계획서 §3 1차).
+        /// 창고 다중 설치 허용 (건축 개편 2차 — 결정 ⑦: 저장 블록이 건축물 Id 기반이라 칸당 제한이 없다).
         /// </summary>
         public static bool CanPlace(StructureEntry[] entries, CarState[] cars, int carIndex,
             int cellX, int cellZ, int rotation, StructureKind kind,
@@ -156,12 +156,6 @@ namespace Game.Gameplay.Train
 
             CarState car = cars[carIndex];
             if (!TrainStateLogic.IsCarPresent(car) || !TrainStateLogic.IsDestructible(car.Type))
-            {
-                return false;
-            }
-
-            // 창고 임시 가드 (1차) — TrainStorage의 "저장 블록 = 칸 인덱스" 규약이 유지되는 동안만.
-            if (kind == StructureKind.Storage && HasKindOnCar(entries, carIndex, StructureKind.Storage))
             {
                 return false;
             }
@@ -199,23 +193,25 @@ namespace Game.Gameplay.Train
             return false;
         }
 
-        /// <summary>칸 위에 해당 종류 항목이 있는지 — 1차 창고 가드·종류별 기능 조회용.</summary>
-        public static bool HasKindOnCar(StructureEntry[] entries, int carIndex, StructureKind kind)
+        /// <summary>
+        /// 항목을 철거할 수 있는지 (건축 개편 2차 — 결정 ④) — 살아 있고 칸이 편성에 살아 붙어
+        /// 있어야 한다 (이탈 칸 위 철거 불가 — 피해 규칙과 같은 게이트).
+        /// </summary>
+        public static bool CanDemolish(StructureEntry[] entries, CarState[] cars, int entryIndex)
         {
-            if (entries == null)
-            {
-                return false;
-            }
+            return entries != null && cars != null
+                && entryIndex >= 0 && entryIndex < entries.Length
+                && IsAlive(entries[entryIndex])
+                && entries[entryIndex].CarIndex < cars.Length
+                && TrainStateLogic.IsCarPresent(cars[entries[entryIndex].CarIndex]);
+        }
 
-            for (int i = 0; i < entries.Length; i++)
-            {
-                if (entries[i].CarIndex == carIndex && entries[i].Kind == kind && IsAlive(entries[i]))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+        /// <summary>철거 반환량 (결정 ⑤) — floor(건설 비용 × 반환 비율). 예: 비용 3 → 1, 4 → 2, 7 → 3 (비율 0.5).</summary>
+        public static int RefundAmount(int buildCost, float refundRatio)
+        {
+            return buildCost > 0 && refundRatio > 0f
+                ? Mathf.FloorToInt(buildCost * Mathf.Clamp01(refundRatio))
+                : 0;
         }
 
         /// <summary>

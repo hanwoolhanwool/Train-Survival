@@ -70,6 +70,7 @@ namespace Game.UI
             EventBus<CarsDetachedEvent>.Subscribe(OnCarsDetached);
             EventBus<CarDestroyedEvent>.Subscribe(OnCarDestroyed);
             EventBus<StructureDestroyedEvent>.Subscribe(OnStructureDestroyed);
+            EventBus<StructureDemolishedEvent>.Subscribe(OnStructureDemolished);
             EventBus<StructureBuiltEvent>.Subscribe(OnStructureBuilt);
             EventBus<CarBuiltEvent>.Subscribe(OnCarBuilt);
         }
@@ -92,6 +93,7 @@ namespace Game.UI
             EventBus<CarsDetachedEvent>.Unsubscribe(OnCarsDetached);
             EventBus<CarDestroyedEvent>.Unsubscribe(OnCarDestroyed);
             EventBus<StructureDestroyedEvent>.Unsubscribe(OnStructureDestroyed);
+            EventBus<StructureDemolishedEvent>.Unsubscribe(OnStructureDemolished);
             EventBus<StructureBuiltEvent>.Unsubscribe(OnStructureBuilt);
             EventBus<CarBuiltEvent>.Unsubscribe(OnCarBuilt);
         }
@@ -222,6 +224,15 @@ namespace Game.UI
                 ? _structureCatalog.GetDisplayName(evt.Kind)
                 : "건축물";
             _trainAlertText = $"<color=red>{name} 파괴! (#{evt.CarIndex}번 칸)</color>";
+            _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
+        }
+
+        private void OnStructureDemolished(StructureDemolishedEvent evt)
+        {
+            string name = _structureCatalog != null
+                ? _structureCatalog.GetDisplayName(evt.Kind)
+                : "건축물";
+            _trainAlertText = $"<color=yellow>{name} 철거 (#{evt.CarIndex}번 칸)</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 

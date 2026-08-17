@@ -217,16 +217,43 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void 창고는_저장_모델_개편_전까지_칸당_1개다()
+        public void 창고도_한_칸에_여러_개_설치할_수_있다()
         {
+            // 건축 개편 2차 (결정 ⑦) — 저장 블록이 건축물 Id 기반이라 1차의 칸당 1개 가드가 해제됐다.
             CarState[] cars = BuildTrain(3);
             StructureEntry[] entries = { MakeEntry(1, 1, 2, 0, kind: StructureKind.Storage, width: 2) };
 
             Assert.That(CanPlace(entries, cars, 1, 2, 5, kind: StructureKind.Storage, width: 2),
-                Is.False, "1차 임시 가드 — 같은 칸 두 번째 창고 기각 (2차에서 해제)");
-            Assert.That(CanPlace(entries, cars, 2, 2, 5, kind: StructureKind.Storage, width: 2),
-                Is.True, "다른 칸에는 허용 (다중 창고 자체는 확정 ⑦)");
-            Assert.That(CanPlace(entries, cars, 1, 2, 5), Is.True, "같은 칸이라도 다른 종류는 무관");
+                Is.True, "같은 칸 두 번째 창고 — 빈 셀이면 허용");
+            Assert.That(CanPlace(entries, cars, 1, 2, 0, kind: StructureKind.Storage, width: 2),
+                Is.False, "셀 겹침은 여전히 기각 — 제한은 그리드 점유뿐");
+        }
+
+        // ── 철거 (건축 개편 2차 — 결정 ④·⑤) ──────────────────
+
+        [Test]
+        public void 철거_반환량은_비용의_절반_내림이다()
+        {
+            // 확정 예시 (§1.1): 화덕 3 → 1, 창고 4 → 2, 강화 난방로 7 → 3.
+            Assert.That(StructureGridLogic.RefundAmount(3, 0.5f), Is.EqualTo(1));
+            Assert.That(StructureGridLogic.RefundAmount(4, 0.5f), Is.EqualTo(2));
+            Assert.That(StructureGridLogic.RefundAmount(7, 0.5f), Is.EqualTo(3));
+            Assert.That(StructureGridLogic.RefundAmount(0, 0.5f), Is.EqualTo(0));
+            Assert.That(StructureGridLogic.RefundAmount(5, 0f), Is.EqualTo(0), "비율 0 = 무반환");
+        }
+
+        [Test]
+        public void 철거는_살아_붙은_칸_위_건축물만_가능하다()
+        {
+            CarState[] cars = BuildTrain(3);
+            StructureEntry[] entries = { MakeEntry(1, 2, 2, 0) };
+
+            Assert.That(StructureGridLogic.CanDemolish(entries, cars, 0), Is.True);
+
+            TrainStateLogic.DetachFrom(cars, 2);
+            Assert.That(StructureGridLogic.CanDemolish(entries, cars, 0), Is.False,
+                "이탈 칸 위는 철거 불가 — 피해 규칙과 같은 게이트");
+            Assert.That(StructureGridLogic.CanDemolish(entries, cars, 1), Is.False, "범위 밖");
         }
 
         [Test]

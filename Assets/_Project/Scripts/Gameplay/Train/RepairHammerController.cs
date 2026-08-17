@@ -50,6 +50,9 @@ namespace Game.Gameplay.Train
         private bool _sentCanBuild;
         private bool _sentAfford;
         private StructureKind _sentStructureKind;
+        private bool _sentCanDemolish;
+        private int _sentDemolishRefund;
+        private float _sentDemolishProgress;
 
         // 설치할 건축물 종류 — R 키 순환으로 고르는 로컬 선택 (설치 가능 종류만 — 돔 제외). 확정은 RPC 페이로드로 보낸다.
         private StructureKind _selectedStructureKind = StructureKind.Dome;
@@ -57,6 +60,13 @@ namespace Game.Gameplay.Train
 
         // 설치 프리뷰 회전 (건축 개편 1차 — Q/E, 0~3 × 90°). 종류 변경·망치 해제 시 0으로 리셋한다.
         private int _previewRotation;
+
+        // X 홀드 철거 게이지 (건축 개편 2차 — 결정 ④). 표적이 바뀌거나 키를 놓으면 리셋한다.
+        private float _demolishHoldTime;
+        private int _demolishTargetId = -1;
+
+        // 게이지 진행도는 매 프레임 미세하게 변하므로, 이 이하 변화로는 HUD 이벤트를 다시 발행하지 않는다.
+        private const float DemolishProgressStep = 0.02f;
 
         // 마지막으로 알린 건축물 설치 조준 상태 — 바뀔 때만 다시 발행한다.
         private StructurePlaceAimLocalEvent _sentPlaceAim;
@@ -101,6 +111,7 @@ namespace Game.Gameplay.Train
             if (!InputEnabled || (_health != null && !_health.IsAlive))
             {
                 _previewRotation = 0;
+                ResetDemolishHold();
                 PublishNoTarget();
                 PublishBuildAim(false, -1, 0, false, false);
                 PublishRecoupleAim(false, -1, 0, RecouplePrompt.None, 0f);
@@ -174,15 +185,17 @@ namespace Game.Gameplay.Train
 
             if (!hasHit || !ServiceLocator.TryGet(out ITrainState train))
             {
+                ResetDemolishHold();
                 PublishNoPlaceAim();
                 PublishNoTarget();
                 return;
             }
 
             // 편성에 없는 부위(증설 예비 슬롯의 칸·연결부)는 표적이 아니다 — 짓기 전 부위의 체력이 뜨면 안 된다.
-            if (!ReadPartState(train, kind, index,
-                out float health, out float maxHealth, out bool canRepair, out StructureKind targetStructureKind))
+            if (!ReadPartState(train, kind, index, out float health, out float maxHealth,
+                out bool canRepair, out bool canDemolish, out StructureKind targetStructureKind))
             {
+                ResetDemolishHold();
                 PublishNoPlaceAim();
                 PublishNoTarget();
                 return;
@@ -204,8 +217,14 @@ namespace Game.Gameplay.Train
             bool hasExpansion = ServiceLocator.TryGet(out ITrainExpansion expansion);
             int structureCost = hasExpansion ? expansion.GetStructureBuildCost(_selectedStructureKind) : 0;
 
+            // X 홀드 철거 (건축 개편 2차 — 결정 ④): 게이지 충족 시 RPC를 쏘고 리셋한다.
+            canDemolish = canDemolish && hasExpansion;
+            int demolishRefund = canDemolish ? expansion.GetStructureDemolishRefund(targetStructureKind) : 0;
+            float demolishProgress = UpdateDemolishHold(kind, index, canDemolish);
+
             PublishTarget(kind, index, targetStructureKind, health, maxHealth, canRepair, canBuild,
-                _selectedStructureKind, structureCost, placeAfford);
+                _selectedStructureKind, structureCost, placeAfford,
+                canDemolish, demolishRefund, demolishProgress);
 
             Mouse mouse = Mouse.current;
             if (mouse == null)
@@ -307,6 +326,45 @@ namespace Game.Gameplay.Train
                 _selectedStructureKind, cost, afford, canPlace, occupied, ghostCenter, ghostSize));
 
             return canPlace;
+        }
+
+        /// <summary>
+        /// X 홀드 게이지 갱신 (건축 개편 2차 — 결정 ④: 짧은 홀드 + 게이지로 오철거 방지).
+        /// 표적이 바뀌거나 키를 놓으면 리셋하고, 충족 시 철거 요청을 쏜다. 반환 = 진행도 0~1.
+        /// </summary>
+        private float UpdateDemolishHold(TrainPartKind kind, int index, bool canDemolish)
+        {
+            Keyboard keyboard = Keyboard.current;
+            bool holding = canDemolish && kind == TrainPartKind.Structure
+                && keyboard != null && keyboard.xKey.isPressed;
+            if (!holding)
+            {
+                ResetDemolishHold();
+                return 0f;
+            }
+
+            if (_demolishTargetId != index)
+            {
+                _demolishTargetId = index;
+                _demolishHoldTime = 0f;
+            }
+
+            _demolishHoldTime += Time.deltaTime;
+            float holdSeconds = _settings.DemolishHoldSeconds;
+            if (_demolishHoldTime >= holdSeconds)
+            {
+                RequestDemolishStructureServerRpc(index);
+                ResetDemolishHold();
+                return 0f;
+            }
+
+            return Mathf.Clamp01(_demolishHoldTime / holdSeconds);
+        }
+
+        private void ResetDemolishHold()
+        {
+            _demolishHoldTime = 0f;
+            _demolishTargetId = -1;
         }
 
         /// <summary>초기 선택(돔)이 설치 불가가 된 개편 이후를 흡수한다 — 첫 조준 때 설치 가능 종류로 옮긴다.</summary>
@@ -479,11 +537,13 @@ namespace Game.Gameplay.Train
         /// 그 부위가 편성에 존재할 때만 true — 아직 짓지 않은 예비 슬롯의 칸·연결부는 false다.
         /// </summary>
         private static bool ReadPartState(ITrainState train, TrainPartKind kind, int index,
-            out float health, out float maxHealth, out bool canRepair, out StructureKind targetStructureKind)
+            out float health, out float maxHealth, out bool canRepair, out bool canDemolish,
+            out StructureKind targetStructureKind)
         {
             health = 0f;
             maxHealth = 0f;
             canRepair = false;
+            canDemolish = false;
             targetStructureKind = default;
 
             switch (kind)
@@ -521,10 +581,13 @@ namespace Game.Gameplay.Train
                         health = entry.Health;
                         maxHealth = entry.MaxHealth;
                         targetStructureKind = entry.Kind;
-                        canRepair = StructureGridLogic.IsAlive(entry)
-                            && entry.Health < entry.MaxHealth
-                            && train.TryGetCar(entry.CarIndex, out CarState owner)
+                        bool carPresent = train.TryGetCar(entry.CarIndex, out CarState owner)
                             && TrainStateLogic.IsCarPresent(owner);
+                        canRepair = StructureGridLogic.IsAlive(entry)
+                            && entry.Health < entry.MaxHealth && carPresent;
+
+                        // 철거 게이트 (건축 개편 2차) — 피해 규칙과 같이 이탈 칸 위는 불가.
+                        canDemolish = StructureGridLogic.IsAlive(entry) && carPresent;
                         return true;
                     }
 
@@ -552,18 +615,22 @@ namespace Game.Gameplay.Train
 
             _sentHasTarget = false;
             EventBus<HammerTargetLocalEvent>.Publish(new HammerTargetLocalEvent(
-                false, default, -1, default, 0f, 0f, false, false, default, 0, false));
+                false, default, -1, default, 0f, 0f, false, false, default, 0, false,
+                false, 0, 0f));
         }
 
         private void PublishTarget(TrainPartKind kind, int index, StructureKind targetStructureKind,
             float health, float maxHealth,
-            bool canRepair, bool canBuild, StructureKind structureKind, int structureCost, bool afford)
+            bool canRepair, bool canBuild, StructureKind structureKind, int structureCost, bool afford,
+            bool canDemolish, int demolishRefund, float demolishProgress)
         {
             bool unchanged = _sentHasTarget && _sentKind == kind && _sentIndex == index
                 && _sentTargetStructureKind == targetStructureKind
                 && Mathf.Approximately(_sentHealth, health)
                 && _sentCanRepair == canRepair && _sentCanBuild == canBuild && _sentAfford == afford
-                && _sentStructureKind == structureKind;
+                && _sentStructureKind == structureKind
+                && _sentCanDemolish == canDemolish && _sentDemolishRefund == demolishRefund
+                && Mathf.Abs(_sentDemolishProgress - demolishProgress) < DemolishProgressStep;
             if (unchanged)
             {
                 return;
@@ -578,9 +645,12 @@ namespace Game.Gameplay.Train
             _sentCanBuild = canBuild;
             _sentAfford = afford;
             _sentStructureKind = structureKind;
+            _sentCanDemolish = canDemolish;
+            _sentDemolishRefund = demolishRefund;
+            _sentDemolishProgress = demolishProgress;
             EventBus<HammerTargetLocalEvent>.Publish(new HammerTargetLocalEvent(
                 true, kind, index, targetStructureKind, health, maxHealth, canRepair, canBuild,
-                structureKind, structureCost, afford));
+                structureKind, structureCost, afford, canDemolish, demolishRefund, demolishProgress));
         }
 
         /// <summary>설치 조준 프리뷰 발행 — 셀·회전·판정이 바뀔 때만 다시 발행한다.</summary>
@@ -728,6 +798,69 @@ namespace Game.Gameplay.Train
             IResourceInventory inventory = GetComponent<IResourceInventory>();
             inventory?.ServerTrySpend(expansion.GetStructureBuildCost(structureKind),
                 () => expansion.ServerTryBuildStructure(carIndex, cellX, cellZ, rotation, structureKind));
+        }
+
+        /// <summary>
+        /// 건축물 철거 (건축 개편 2차 — 결정 ④·⑤·⑧): 호스트가 생존·사거리를 재검증하고 철거를
+        /// 확정한 뒤 반환을 처리한다 — 반환량 floor(비용 × 비율), 자원 종류는 카탈로그. 1개씩
+        /// 가방에 수납하고(부분 수납), 잔여는 보따리 하나로 철거 자리 갑판에 배출한다 (§1.1 —
+        /// 가방 여유가 있으면 보따리가 생기지 않는다. 자원 소실 0).
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        private void RequestDemolishStructureServerRpc(int structureId, RpcParams rpcParams = default)
+        {
+            if (_settings == null || _layoutSettings == null || _structureCatalog == null
+                || !IsSenderAlive()
+                || !ServiceLocator.TryGet(out ITrainExpansion expansion)
+                || !ServiceLocator.TryGet(out ITrainState train)
+                || !train.TryGetStructureById(structureId, out StructureEntry entry))
+            {
+                return;
+            }
+
+            Vector3 point = StructureWorldCenter(train, entry);
+            if (!IsWithinRange(point))
+            {
+                return;
+            }
+
+            if (!expansion.ServerTryDemolishStructure(structureId, out StructureEntry removed))
+            {
+                return;
+            }
+
+            // 반환 — 몬스터 파괴 경로(ServerApplyStructureDamage)는 이 코드를 지나지 않는다 (무반환 규칙).
+            int refund = expansion.GetStructureDemolishRefund(removed.Kind);
+            ResourceType refundResource = _structureCatalog.GetRefundResource(removed.Kind);
+            IResourceInventory inventory = GetComponent<IResourceInventory>();
+
+            int accepted = 0;
+            while (accepted < refund && inventory != null && inventory.ServerTryAdd(refundResource, 1))
+            {
+                accepted++;
+            }
+
+            int remainder = refund - accepted;
+            if (remainder > 0 && ServiceLocator.TryGet(out World.IStorageBundleSpawner spawner))
+            {
+                var contents = new[]
+                {
+                    new HotbarSlotView(HotbarItemType.Resource, remainder, refundResource),
+                };
+                spawner.ServerSpawnResting(contents, point);
+            }
+        }
+
+        /// <summary>건축물 점유 영역 중심의 월드 좌표 — 철거 거리 검증·반환 보따리 스폰이 같은 지점을 쓴다.</summary>
+        private Vector3 StructureWorldCenter(ITrainState train, StructureEntry entry)
+        {
+            float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, train.GetEjectOffset(entry.CarIndex));
+            StructureGridLogic.RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
+                out int rotatedWidth, out int rotatedLength);
+            StructureGridLogic.CellRegionCenterWorld(entry.CellX, entry.CellZ, rotatedWidth, rotatedLength,
+                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
+                out float worldX, out float worldZ);
+            return new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
         }
 
         /// <summary>

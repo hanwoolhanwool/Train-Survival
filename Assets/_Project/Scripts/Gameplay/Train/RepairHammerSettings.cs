@@ -16,6 +16,10 @@ namespace Game.Gameplay.Train
         [Tooltip("타격 간격(초) — 좌클릭 홀드 시 이 간격으로 반복 타격한다.")]
         [SerializeField, Min(0.05f)] private float _hitInterval = 0.5f;
 
+        [Header("철거 (건축 개편 2차 — 결정 ④)")]
+        [Tooltip("X 홀드 철거 성립 시간(초) — 짧은 홀드 + 게이지로 전투 중 오철거를 막는다.")]
+        [SerializeField, Min(0.1f)] private float _demolishHoldSeconds = 0.5f;
+
         [Header("사거리")]
         [Tooltip("수리 가능 거리(m) — 근접 도구이므로 짧게 잡는다.")]
         [SerializeField, Min(0.5f)] private float _maxRange = 4f;
@@ -26,6 +30,9 @@ namespace Game.Gameplay.Train
         public float RepairPerHit => _repairPerHit;
 
         public float HitInterval => _hitInterval;
+
+        /// <summary>X 홀드 철거 성립 시간(초) — 건축 개편 2차 결정 ④.</summary>
+        public float DemolishHoldSeconds => _demolishHoldSeconds;
 
         public float MaxRange => _maxRange;
 

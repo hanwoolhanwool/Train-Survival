@@ -53,11 +53,11 @@ namespace Game.UI
         // 제작 창의 소유자는 CraftingStation이므로 여기서는 열림 여부만 미러링한다.
         private bool _craftingOpen;
 
-        // 공유 창고 (M5 3차) — 드래그 출처가 창고인지, 어느 칸의 창고가 열려 있는지.
+        // 공유 창고 (M5 3차, 건축 개편 2차 — 식별 = 건축물 Id) — 드래그 출처가 창고인지, 어느 창고가 열려 있는지.
         private bool _dragFromStorage;
         private bool _storagePromptInRange;
-        private int _storagePromptCar = -1;
-        private int _storageOpenCar = -1;
+        private int _storagePromptId = -1;
+        private int _storageOpenId = -1;
 
         // 창고 보따리 (M5 8차) — 창고 창과 같은 규약. 열린 보따리는 NetworkObjectId로 식별한다.
         private bool _dragFromBundle;
@@ -204,12 +204,12 @@ namespace Game.UI
         private void OnStoragePrompt(StoragePromptLocalEvent evt)
         {
             _storagePromptInRange = evt.IsInRange;
-            _storagePromptCar = evt.CarIndex;
+            _storagePromptId = evt.StorageId;
         }
 
         private void OnStoragePanelToggled(StoragePanelToggledLocalEvent evt)
         {
-            _storageOpenCar = evt.IsOpen ? evt.CarIndex : -1;
+            _storageOpenId = evt.IsOpen ? evt.StorageId : -1;
             _dragFromIndex = -1;
             _dragFromStorage = false;
         }
@@ -249,7 +249,7 @@ namespace Game.UI
         {
             // 창고·보따리 창이 열려 있는 동안 토글 키는 무시한다 — 두 창이 이미 개인 인벤토리를 포함한다.
             Keyboard keyboard = Keyboard.current;
-            if (keyboard == null || _storageOpenCar >= 0 || _bundleOpen)
+            if (keyboard == null || _storageOpenId >= 0 || _bundleOpen)
             {
                 return;
             }
@@ -304,7 +304,7 @@ namespace Game.UI
             {
                 DrawBundlePanel(hotbar);
             }
-            else if (_storageOpenCar >= 0)
+            else if (_storageOpenId >= 0)
             {
                 DrawStoragePanel(hotbar);
             }
@@ -317,19 +317,20 @@ namespace Game.UI
         /// <summary>공유 창고 접근 안내 — 창고 칸 근접 + 시선에서 표시한다 (M5 3차).</summary>
         private void DrawStoragePrompt()
         {
-            if (!_storagePromptInRange || _panelOpen || _storageOpenCar >= 0)
+            if (!_storagePromptInRange || _panelOpen || _storageOpenId >= 0)
             {
                 return;
             }
 
+            // 다중 창고 (건축 개편 2차) — 조준(최근접 + 시선)한 그 창고가 열린다. Id는 내부 식별자라 노출하지 않는다.
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.66f, 300f, 24f),
-                $"<color=yellow>E — 공유 창고 (#{_storagePromptCar}번 칸)</color>");
+                "<color=yellow>E — 공유 창고</color>");
         }
 
         /// <summary>보따리 접근 안내 (M5 8차) — 근접 + 시선에서 표시한다 (창고와 같은 규약).</summary>
         private void DrawBundlePrompt()
         {
-            if (!_bundlePromptInRange || _panelOpen || _bundleOpen || _storageOpenCar >= 0)
+            if (!_bundlePromptInRange || _panelOpen || _bundleOpen || _storageOpenId >= 0)
             {
                 return;
             }
@@ -545,6 +546,17 @@ namespace Game.UI
                 {
                     action += $" — 우클릭 {structureName} 설치 (소모: {BuildSpendPreview(hotbar, _hammerTarget.StructureCost)}) [R] 종류 변경";
                 }
+            }
+
+            // X 홀드 철거 안내 (건축 개편 2차 — 결정 ④·⑤): 반환량과 홀드 게이지를 함께 보여준다.
+            if (_hammerTarget.CanDemolish)
+            {
+                string refundName = _catalog != null && _structureCatalog != null
+                    ? _catalog.GetDisplayName(_structureCatalog.GetRefundResource(_hammerTarget.TargetStructureKind))
+                    : "자원";
+                action += _hammerTarget.DemolishProgress > 0f
+                    ? $" — <color=orange>철거 중… {_hammerTarget.DemolishProgress * 100f:F0}%</color>"
+                    : $" — [X 홀드] 철거 (반환: {refundName} {_hammerTarget.DemolishRefund})";
             }
 
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth
@@ -819,7 +831,7 @@ namespace Game.UI
 
             var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
                 panelWidth, panelHeight);
-            GUI.Box(rect, $"공유 창고 (#{_storageOpenCar}번 칸) [E 닫기] — 드래그로 이동");
+            GUI.Box(rect, "공유 창고 [E 닫기] — 드래그로 이동");
 
             float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
             float cursorY = rect.y + 34f;
@@ -845,10 +857,10 @@ namespace Game.UI
             {
                 var slotRect = new Rect(
                     gridX + i % columns * stride, storageStartY + i / columns * stride, SlotSize, SlotSize);
-                GUI.Box(slotRect, GetSlotLabel(storage.GetSlot(_storageOpenCar, i), hotbar.StackSize));
+                GUI.Box(slotRect, GetSlotLabel(storage.GetSlot(_storageOpenId, i), hotbar.StackSize));
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
-                    && !storage.GetSlot(_storageOpenCar, i).IsEmpty)
+                    && !storage.GetSlot(_storageOpenId, i).IsEmpty)
                 {
                     _dragFromIndex = i;
                     _dragFromStorage = true;
@@ -858,7 +870,7 @@ namespace Game.UI
                     && _dragFromIndex >= 0)
                 {
                     byte from = _dragFromStorage ? ITrainStorage.ContainerStorage : ITrainStorage.ContainerInventory;
-                    storage.RequestTransfer(_storageOpenCar, from, _dragFromIndex, ITrainStorage.ContainerStorage, i);
+                    storage.RequestTransfer(_storageOpenId, from, _dragFromIndex, ITrainStorage.ContainerStorage, i);
                     _dragFromIndex = -1;
                     _dragFromStorage = false;
                     current.Use();
@@ -883,7 +895,7 @@ namespace Game.UI
                 {
                     if (_dragFromStorage)
                     {
-                        storage.RequestTransfer(_storageOpenCar,
+                        storage.RequestTransfer(_storageOpenId,
                             ITrainStorage.ContainerStorage, _dragFromIndex, ITrainStorage.ContainerInventory, i);
                     }
                     else if (_dragFromIndex != i)
@@ -915,7 +927,7 @@ namespace Game.UI
                 var dragRect = new Rect(current.mousePosition.x - SlotSize * 0.5f,
                     current.mousePosition.y - SlotSize * 0.5f, SlotSize, SlotSize);
                 HotbarSlotView dragSlot = _dragFromStorage
-                    ? storage.GetSlot(_storageOpenCar, _dragFromIndex)
+                    ? storage.GetSlot(_storageOpenId, _dragFromIndex)
                     : hotbar.GetSlot(_dragFromIndex);
                 GUI.Box(dragRect, GetSlotLabel(dragSlot, hotbar.StackSize));
             }

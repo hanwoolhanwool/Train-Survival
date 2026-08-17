@@ -472,8 +472,8 @@ namespace Game.Gameplay.Train
             int[] detached = TrainStateLogic.DestroyAndDetach(cars, index);
 
             // 칸 파괴 = 칸 위 건축물도 함께 소멸 — 창고였다면 내용물이 보따리로 지상에 떨어진다
-            // (M5 8차 — 갑판이 사라지므로 지상 낙하. deckAlive는 복제 전 상태라 호출 문맥이 넘긴다).
-            ServerDropStorageAsBundleIfPresent(index, deckAlive: false);
+            // (M5 8차 — 갑판이 사라지므로 지상 낙하). 블록 해제는 항목 제거 전에 — 배출 위치가 항목에서 나온다.
+            ServerReleaseStorageBlocksOnCar(index, StorageReleaseMode.GroundBundle);
             ServerRemoveStructuresOnCar(index);
 
             // 파괴된 칸에 닿은 앞뒤 연결부를 끊는다 (뒤 연결부는 칸이 마지막이면 없다).
@@ -574,11 +574,11 @@ namespace Game.Gameplay.Train
 
             StructureEntry destroyed = structures[entryIndex];
 
-            // 창고 파괴 = 내용물이 보따리로 그 칸 갑판 위에 떨어진다 (M5 8차 — 칸은 살아 있다).
-            // 1차에서는 저장 블록이 여전히 칸 인덱스 규약이다 (칸당 창고 1개 임시 가드 — 계획서 §3).
-            if (destroyed.Kind == StructureKind.Storage)
+            // 창고 파괴 = 내용물이 보따리로 그 자리 갑판 위에 떨어진다 (M5 8차 — 칸은 살아 있다).
+            // 몬스터 파괴는 자원 반환 경로를 타지 않는다 — 보따리 배출만 예외 (요구사항).
+            if (destroyed.Kind == StructureKind.Storage && ServiceLocator.TryGet(out ITrainStorage storage))
             {
-                ServerDropStorageAsBundleIfPresent(destroyed.CarIndex, deckAlive: true);
+                storage.ServerReleaseBlock(destroyed.Id, StorageReleaseMode.DeckBundle);
             }
 
             _structures.RemoveAt(entryIndex);
@@ -588,6 +588,8 @@ namespace Game.Gameplay.Train
         /// <summary>
         /// 칸 위 건축물 항목을 전부 제거한다 — 칸 파괴·슬롯 재건(잔해 제거) 확정 지점에서 호출한다(서버).
         /// 이탈은 제거가 아니다 — 항목이 carIndex로 남아 재결합 시 그대로 복원된다.
+        /// 창고 블록 해제(<see cref="ServerReleaseStorageBlocksOnCar"/>)를 먼저 호출해야 한다 —
+        /// 배출 위치·블록 매핑이 항목에서 나온다.
         /// </summary>
         private void ServerRemoveStructuresOnCar(int carIndex)
         {
@@ -601,28 +603,23 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
-        /// 창고 내용물 소실 — 슬롯 재건(안전망) 확정 지점에서 명시 호출한다. 파괴 시점에 이미
-        /// 보따리가 나왔으므로 여기서 또 내면 이중 생성이다 (M5 8차 착수 전 결정 — 소실 유지).
-        /// 이벤트 구독이 아닌 직접 호출이라 누락 지점이 코드 리뷰에서 드러난다. 이탈은 소실이 아니다(재결합 보존).
+        /// 칸 위 창고 건축물들의 저장 블록을 해제한다 (건축 개편 2차 §2.8) — 칸 파괴(지상 투척)·
+        /// 슬롯 재건(소실) 확정 지점에서 항목 제거 <b>전에</b> 호출한다(서버).
         /// </summary>
-        private void ServerClearStorageIfPresent(int index)
+        private void ServerReleaseStorageBlocksOnCar(int carIndex, StorageReleaseMode mode)
         {
-            if (ServiceLocator.TryGet(out ITrainStorage storage))
+            if (!ServiceLocator.TryGet(out ITrainStorage storage))
             {
-                storage.ServerClearStorage(index);
+                return;
             }
-        }
 
-        /// <summary>
-        /// 창고 내용물을 보따리로 내놓는다 (M5 8차) — 파괴 확정 지점(건축물 파괴 = 갑판 휴지 ·
-        /// 칸 파괴 = 지상 낙하)에서 명시 호출한다. deckAlive는 호출 문맥이 넘긴다 —
-        /// 칸 파괴 경로는 WriteBackCars 전이라 복제 상태(IsDeckAlive)로 판정할 수 없다.
-        /// </summary>
-        private void ServerDropStorageAsBundleIfPresent(int index, bool deckAlive)
-        {
-            if (ServiceLocator.TryGet(out ITrainStorage storage))
+            for (int i = 0; i < _structures.Count; i++)
             {
-                storage.ServerDropStorageAsBundle(index, deckAlive);
+                StructureEntry entry = _structures[i];
+                if (entry.CarIndex == carIndex && entry.Kind == StructureKind.Storage)
+                {
+                    storage.ServerReleaseBlock(entry.Id, mode);
+                }
             }
         }
 
@@ -758,10 +755,10 @@ namespace Game.Gameplay.Train
                 WriteBackCars(cars);
                 WriteBackCouplings(couplings);
 
-                // 재건은 잔해 제거 — 옛 건축물 항목(소실 칸의 보존분)과 그 자리 창고 내용물도
-                // 남아 있을 이유가 없다 (파괴 시점 소실의 안전망).
+                // 재건은 잔해 제거 — 옛 건축물 항목(소실 칸의 보존분)과 그 창고 블록도 남아 있을
+                // 이유가 없다. 소실이므로 보따리 없이 비운다 (블록 해제가 항목 제거보다 먼저).
+                ServerReleaseStorageBlocksOnCar(slot, StorageReleaseMode.Discard);
                 ServerRemoveStructuresOnCar(slot);
-                ServerClearStorageIfPresent(slot);
 
                 ResetEjectSimulation(slot);
             }
@@ -811,7 +808,54 @@ namespace Game.Gameplay.Train
             };
 
             _structures.Add(entry);
+
+            // 창고 설치 = 저장 블록 할당 (건축 개편 2차 §2.8 — 블록 = 건축물 Id).
+            if (kind == StructureKind.Storage && ServiceLocator.TryGet(out ITrainStorage storage))
+            {
+                storage.ServerAllocateBlock(entry.Id);
+            }
+
             BroadcastStructureBuiltRpc(entry);
+            return true;
+        }
+
+        public int GetStructureDemolishRefund(StructureKind kind)
+        {
+            float ratio = _expansionSettings != null ? _expansionSettings.DemolishRefundRatio : 0f;
+            return StructureGridLogic.RefundAmount(GetStructureBuildCost(kind), ratio);
+        }
+
+        /// <summary>
+        /// 건축물 철거 (건축 개편 2차 — 결정 ④·⑤): 창고면 내용물을 그 자리 갑판 보따리로 배출한 뒤
+        /// 항목을 제거한다. 반환 자원 지급은 호출부(망치 RPC)가 이어서 확정한다.
+        /// </summary>
+        public bool ServerTryDemolishStructure(int structureId, out StructureEntry removed)
+        {
+            removed = default;
+            if (!IsServer)
+            {
+                return false;
+            }
+
+            CarState[] cars = SnapshotCars();
+            StructureEntry[] structures = SnapshotStructures();
+            if (!StructureGridLogic.TryFindById(structures, structureId, out int entryIndex)
+                || !StructureGridLogic.CanDemolish(structures, cars, entryIndex))
+            {
+                return false;
+            }
+
+            removed = structures[entryIndex];
+
+            // 창고 철거 — 내용물 보따리와 반환 자원 보따리는 별개로 스폰된다 (§2.5 — 묶으면
+            // 해체 UI가 혼합 목록이 되어 혼란). 블록 해제는 항목 제거 전에.
+            if (removed.Kind == StructureKind.Storage && ServiceLocator.TryGet(out ITrainStorage storage))
+            {
+                storage.ServerReleaseBlock(removed.Id, StorageReleaseMode.DeckBundle);
+            }
+
+            _structures.RemoveAt(entryIndex);
+            BroadcastStructureDemolishedRpc(removed.Id, removed.CarIndex, removed.Kind);
             return true;
         }
 
@@ -1241,6 +1285,12 @@ namespace Game.Gameplay.Train
         private void BroadcastStructureDestroyedRpc(int structureId, int carIndex, StructureKind kind)
         {
             EventBus<StructureDestroyedEvent>.Publish(new StructureDestroyedEvent(structureId, carIndex, kind));
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastStructureDemolishedRpc(int structureId, int carIndex, StructureKind kind)
+        {
+            EventBus<StructureDemolishedEvent>.Publish(new StructureDemolishedEvent(structureId, carIndex, kind));
         }
 
         [Rpc(SendTo.Everyone)]
