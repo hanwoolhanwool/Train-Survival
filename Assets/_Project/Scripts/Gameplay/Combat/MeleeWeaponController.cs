@@ -17,8 +17,11 @@ namespace Game.Gameplay.Combat
         [SerializeField] private MeleeSettings _settings;
         [SerializeField] private Transform _aimSource;
 
-        [Tooltip("스윙 표현 피벗 (M5 8차) — 비면 스윙을 그리지 않는다.")]
+        [Tooltip("FP 스윙 표현 피벗 (M5 8차) — 비면 스윙을 그리지 않는다.")]
         [SerializeField] private MeleeSwingView _swingView;
+
+        [Tooltip("TP 상체 스윙 (파지 품질 계획 C4) — 비면 원격 화면에 스윙 모션이 없다.")]
+        [SerializeField] private Player.PlayerCharacterView _characterView;
 
         private float _nextSwingTime;
 
@@ -88,16 +91,46 @@ namespace Game.Gameplay.Combat
         /// <summary>스윙 코스메틱 (판정 무변) — 호 궤적 트윈 + 표면에 닿았으면 타격 이펙트.</summary>
         private void PlaySwingCosmetics(bool surfaceHit, Vector3 hitPoint, Vector3 hitNormal)
         {
-            if (_swingView != null)
+            // 호 궤적 트윈은 FP 뷰모델 전용 — TP 손의 마체테와 이중 표시되므로 소유자만 재생한다
+            // (무기 손 파지 계획 §0 수용된 회귀).
+            if (IsOwner && _swingView != null)
             {
                 _swingView.PlaySwing();
             }
+
+            // TP 상체 스윙은 전 피어 — 원격 화면의 스윙 모션을 여기서 복구한다 (품질 계획 C4).
+            // 소유자에게도 재생한다: 자기 그림자에 스윙이 비친다.
+            PlayTpSwing();
 
             if (surfaceHit && _settings != null && _settings.ImpactEffectPrefab != null)
             {
                 ImpactEffectView impact = PoolManager.Spawn(
                     _settings.ImpactEffectPrefab, hitPoint, Quaternion.identity);
                 impact.Play(hitPoint, hitNormal);
+            }
+        }
+
+        /// <summary>
+        /// 활성 모델(Girl/Man)의 Hold 레이어에 스윙 1발 — 모델 교대를 매번 따라가야 하므로
+        /// 컴포넌트를 캐시하지 않고 그때의 <see cref="Player.PlayerCharacterView.ActiveAnimator"/>에서 찾는다.
+        /// </summary>
+        private void PlayTpSwing()
+        {
+            if (_characterView == null)
+            {
+                return;
+            }
+
+            Animator animator = _characterView.ActiveAnimator;
+            if (animator == null)
+            {
+                return;
+            }
+
+            var driver = animator.GetComponent<Player.WeaponHoldPoseDriver>();
+            if (driver != null)
+            {
+                driver.PlaySwing();
             }
         }
 
