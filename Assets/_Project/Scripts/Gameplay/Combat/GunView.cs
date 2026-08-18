@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Game.Gameplay.Combat
 {
@@ -26,6 +27,15 @@ namespace Game.Gameplay.Combat
         {
             _viewMode = GetComponentInParent<Player.IPlayerViewMode>();
             _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+
+            // 화면 전용 뷰모델은 그림자를 만들지 않는다 — 그림자는 손에 쥔 TP 월드모델이 낸다
+            // (<see cref="Player.HeldWeaponSocket"/>가 소유자에게 ShadowsOnly로 켠다).
+            // 둘 다 그림자를 만들면 무기 그림자가 두 개로 보인다.
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                _renderers[i].shadowCastingMode = ShadowCastingMode.Off;
+            }
+
             _visible = true;
             SetVisible(false);
         }

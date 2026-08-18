@@ -40,6 +40,14 @@ namespace Game.Gameplay.Combat
             _baseRotation = transform.localRotation;
             if (_blade != null)
             {
+                // 화면 전용 칼날은 그림자를 만들지 않는다 — 그림자는 손에 쥔 TP 월드모델이 낸다.
+                // 둘 다 만들면 스윙 중에 칼날 그림자가 두 개로 보인다.
+                Renderer[] renderers = _blade.GetComponentsInChildren<Renderer>(includeInactive: true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+
                 _blade.SetActive(false);
             }
         }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Game.Gameplay.Harpoon
 {
@@ -25,6 +26,14 @@ namespace Game.Gameplay.Harpoon
             _controller = GetComponentInParent<HarpoonController>();
             _viewMode = GetComponentInParent<Game.Gameplay.Player.IPlayerViewMode>();
             _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+
+            // 화면 전용 뷰모델은 그림자를 만들지 않는다 — 그림자는 손에 쥔 TP 월드모델이 낸다.
+            // 둘 다 만들면 무기 그림자가 두 개로 보인다.
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                _renderers[i].shadowCastingMode = ShadowCastingMode.Off;
+            }
+
             _visible = true;
             SetVisible(false);
         }
