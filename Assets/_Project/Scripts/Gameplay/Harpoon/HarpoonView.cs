@@ -16,14 +16,14 @@ namespace Game.Gameplay.Harpoon
     public sealed class HarpoonView : MonoBehaviour
     {
         private HarpoonController _controller;
-        private Game.Gameplay.Player.PlayerViewModeController _viewMode;
+        private Game.Gameplay.Player.IPlayerViewMode _viewMode;
         private Renderer[] _renderers;
         private bool _visible;
 
         private void Awake()
         {
             _controller = GetComponentInParent<HarpoonController>();
-            _viewMode = GetComponentInParent<Game.Gameplay.Player.PlayerViewModeController>();
+            _viewMode = GetComponentInParent<Game.Gameplay.Player.IPlayerViewMode>();
             _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
             _visible = true;
             SetVisible(false);

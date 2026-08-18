@@ -18,13 +18,13 @@ namespace Game.Gameplay.Combat
         [Tooltip("이 뷰모델이 표현하는 총기 — 같은 클래스의 총기가 여럿이라 참조로 지정한다.")]
         [SerializeField] private GunController _gun;
 
-        private Player.PlayerViewModeController _viewMode;
+        private Player.IPlayerViewMode _viewMode;
         private Renderer[] _renderers;
         private bool _visible;
 
         private void Awake()
         {
-            _viewMode = GetComponentInParent<Player.PlayerViewModeController>();
+            _viewMode = GetComponentInParent<Player.IPlayerViewMode>();
             _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
             _visible = true;
             SetVisible(false);

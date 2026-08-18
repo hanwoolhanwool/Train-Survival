@@ -6,9 +6,13 @@ using UnityEngine.InputSystem;
 namespace Game.Gameplay.Player
 {
     /// <summary>
-    /// 시점 모드의 단일 출처 (1인칭 통합 시점 전환 계획 §3.1) — <b>상태만 소유하고 아무것도
-    /// 직접 만지지 않는다</b> (SRP). 몸 렌더·카메라 파라미터·파지 프로파일·뷰모델 가시성은
-    /// 각 표현 컴포넌트가 이 값을 읽어 자기 몫을 적용한다 (OCP — 소비자가 늘어도 이 클래스는 무변경).
+    /// 시점 모드의 단일 출처 (1인칭 통합 시점 전환 계획 §3.1) — <b>모드 값을 보유하고 전환 요청을
+    /// 받는 것</b>이 이 클래스의 책임이다. 몸 렌더·머리 은닉·카메라 파라미터·파지 프로파일·뷰모델
+    /// 가시성은 각 표현 컴포넌트가 <see cref="IPlayerViewMode"/>를 읽어 자기 몫을 적용한다
+    /// (SRP·OCP — 소비자가 늘어도 이 클래스는 변하지 않는다).
+    ///
+    /// <para>QA 전환 키(F10)는 <see cref="PlayerViewSettings.DebugToggleEnabled"/>로 끌 수 있는
+    /// 부가 입력이며, 릴리스에서는 그 플래그를 내린다 (<c>QaDebugHotkeys</c>와 같은 규약).</para>
     ///
     /// <para><b>조작 권한이 없는 인스턴스에서는 값이 절대 바뀌지 않는다</b> (<see cref="CanDrive"/>).
     /// 원격 프록시의 컨트롤러는 기본 모드에 머물러 있으므로, 원격 표현은 모드와 무관하게
@@ -17,18 +21,15 @@ namespace Game.Gameplay.Player
     /// <para>네트워크 복제 없음 (기술 확정 ⑥) — 호스트와 클라이언트가 서로 다른 모드로 붙을 수 있고,
     /// 그것이 QA 비교 매트릭스 B·C의 전제다 (§4.3).</para>
     /// </summary>
-    public sealed class PlayerViewModeController : MonoBehaviour
+    public sealed class PlayerViewModeController : MonoBehaviour, IPlayerViewMode
     {
         [SerializeField] private PlayerViewSettings _settings;
 
         private NetworkObject _networkObject;
         private bool _publishedInitial;
 
-        /// <summary>현재 시점 모드 — 표현 컴포넌트가 매 프레임 읽어도 되는 값이다.</summary>
+        /// <inheritdoc/>
         public PlayerViewMode Mode { get; private set; }
-
-        /// <summary>표현 컴포넌트가 함께 참조하는 설정 에셋 (카메라 파라미터·머리 은닉 계수).</summary>
-        public PlayerViewSettings Settings => _settings;
 
         /// <summary>
         /// 이 인스턴스가 이 피어의 조작 대상인가. 네트워크 오브젝트가 없으면(뷰랩·단독 씬) 참으로 본다.
@@ -71,7 +72,7 @@ namespace Game.Gameplay.Player
         }
 
         /// <summary>
-        /// 모드 지정 — 같은 값이면 아무 일도 하지 않는다. 뷰랩·테스트에서도 이 경로로 들어온다
+        /// 모드 지정 — 같은 값이면 아무것도 하지 않는다. 뷰랩·테스트도 이 경로로 들어온다
         /// (전환 처리를 한 곳에 모아 두어야 §4.1의 멱등성을 한 자리에서 보증할 수 있다).
         /// </summary>
         public void SetMode(PlayerViewMode mode)

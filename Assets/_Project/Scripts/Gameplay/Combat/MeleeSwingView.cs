@@ -29,14 +29,14 @@ namespace Game.Gameplay.Combat
         [Tooltip("스윙 내내 유지하는 내리막 피치 — 수평 베기가 살짝 아래로 향한다.")]
         [SerializeField] private float _pitchDeg = 20f;
 
-        private Player.PlayerViewModeController _viewMode;
+        private Player.IPlayerViewMode _viewMode;
         private Quaternion _baseRotation;
         private float _elapsed;
         private bool _playing;
 
         private void Awake()
         {
-            _viewMode = GetComponentInParent<Player.PlayerViewModeController>();
+            _viewMode = GetComponentInParent<Player.IPlayerViewMode>();
             _baseRotation = transform.localRotation;
             if (_blade != null)
             {

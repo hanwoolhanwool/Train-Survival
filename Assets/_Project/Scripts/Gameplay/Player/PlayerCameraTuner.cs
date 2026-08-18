@@ -5,8 +5,8 @@ namespace Game.Gameplay.Player
 {
     /// <summary>
     /// 시점 모드별 카메라 파라미터 적용 (1인칭 통합 시점 전환 계획 §3.4) — 표현 전용.
-    /// 통합 1인칭은 손에 쥔 무기가 카메라 앞 0.5 m 안팎에 오므로 근평면 0.3으로는 그립·개머리판이
-    /// 잘린다. 모드마다 값을 <b>설정 에셋에서 다시 읽어</b> 쓰기 때문에 전환을 반복해도 누적되지 않는다
+    /// 통합 1인칭은 손에 쥔 무기가 카메라 가까이 오므로 근평면 0.3으로는 그립·개머리판이 잘린다.
+    /// 모드마다 값을 <b>설정 에셋에서 다시 읽어</b> 쓰기 때문에 전환을 반복해도 누적되지 않는다
     /// (§4.1 멱등성).
     ///
     /// <para><see cref="Camera"/>와 같은 GameObject(CameraRig/CameraPivot/PlayerCamera)에 붙인다.
@@ -16,13 +16,16 @@ namespace Game.Gameplay.Player
     [RequireComponent(typeof(Camera))]
     public sealed class PlayerCameraTuner : MonoBehaviour
     {
+        [Tooltip("모드별 근평면·시야각·카메라 오프셋 — PlayerViewModeController와 같은 에셋을 물린다.")]
+        [SerializeField] private PlayerViewSettings _settings;
+
         private Camera _camera;
-        private PlayerViewModeController _viewMode;
+        private IPlayerViewMode _viewMode;
 
         private void Awake()
         {
             _camera = GetComponent<Camera>();
-            _viewMode = GetComponentInParent<PlayerViewModeController>();
+            _viewMode = GetComponentInParent<IPlayerViewMode>();
         }
 
         private void OnEnable()
@@ -45,15 +48,14 @@ namespace Game.Gameplay.Player
 
         private void Apply(PlayerViewMode mode)
         {
-            PlayerViewSettings settings = _viewMode != null ? _viewMode.Settings : null;
-            if (settings == null || _camera == null)
+            if (_settings == null || _camera == null)
             {
                 return;
             }
 
-            _camera.nearClipPlane = settings.GetNearClip(mode);
-            _camera.fieldOfView = settings.GetFieldOfView(mode);
-            transform.localPosition = settings.GetCameraLocalOffset(mode);
+            _camera.nearClipPlane = _settings.GetNearClip(mode);
+            _camera.fieldOfView = _settings.GetFieldOfView(mode);
+            transform.localPosition = _settings.GetCameraLocalOffset(mode);
         }
     }
 }

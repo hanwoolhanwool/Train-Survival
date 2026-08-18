@@ -22,7 +22,7 @@ namespace Game.Gameplay.Player
 
         private Animator _animator;
         private PlayerAimView _aim;
-        private PlayerViewModeController _viewMode;
+        private IPlayerViewMode _viewMode;
         private WeaponHoldSettings.Entry _lastEntry;
         private float _rightWeight;
         private float _leftWeight;
@@ -35,7 +35,7 @@ namespace Game.Gameplay.Player
         {
             _animator = GetComponent<Animator>();
             _aim = GetComponentInParent<PlayerAimView>();
-            _viewMode = GetComponentInParent<PlayerViewModeController>();
+            _viewMode = GetComponentInParent<IPlayerViewMode>();
         }
 
         // Girl↔Man 전환으로 모델이 꺼졌다 켜지면 이전 블렌드 잔량이 남지 않게 한다.

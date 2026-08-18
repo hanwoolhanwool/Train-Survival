@@ -30,7 +30,7 @@ namespace Game.Gameplay.Player
 
         private PlayerAimView _aim;
         private PlayerCharacterView _view;
-        private PlayerViewModeController _viewMode;
+        private IPlayerViewMode _viewMode;
         private Animator _cachedAnimator;
         private Transform _socket;
         private Renderer[][] _renderers;
@@ -42,7 +42,7 @@ namespace Game.Gameplay.Player
         {
             _aim = GetComponent<PlayerAimView>();
             _view = GetComponent<PlayerCharacterView>();
-            _viewMode = GetComponent<PlayerViewModeController>();
+            _viewMode = GetComponent<IPlayerViewMode>();
 
             int count = _models != null ? _models.Length : 0;
             _renderers = new Renderer[count][];

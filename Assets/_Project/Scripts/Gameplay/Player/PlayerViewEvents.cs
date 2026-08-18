@@ -9,8 +9,7 @@ namespace Game.Gameplay.Player
     /// 이 이벤트는 언제나 "내 화면"에 대한 것이다.</para>
     ///
     /// <para>구독은 <b>변경 알림</b> 용도다. 초기 상태가 필요한 표현 컴포넌트는 자기 초기화에서
-    /// 컨트롤러의 <see cref="PlayerViewModeController.Mode"/>를 직접 읽는다 — 구독 순서에
-    /// 의존하지 않기 위해서다.</para>
+    /// <see cref="IPlayerViewMode.Mode"/>를 직접 읽는다 — 구독 순서에 의존하지 않기 위해서다.</para>
     /// </summary>
     public readonly struct PlayerViewModeChangedLocalEvent
     {
