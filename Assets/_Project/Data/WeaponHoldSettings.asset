@@ -14,44 +14,71 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.WeaponHoldSettings
   _entries:
   - _itemType: 2
-    _socketLocalPosition: {x: 0.014572355, y: 0.07012288, z: 0.0015279092}
-    _socketLocalEulerAngles: {x: 12.98, y: 159.44, z: 6.68}
+    _socketLocalPosition: {x: 0.0509, y: 0.1121, z: -0.0066}
+    _straightenWrist: 1
+    _rightWristRollDegrees: 90
+    _rightWristBendDegrees: 0
+    _leftWristRollDegrees: 90
+    _leftWristBendDegrees: 0
+    _socketLocalEulerAngles: {x: 348.69, y: 270, z: 342.26}
     _socketLocalScale: {x: 1, y: 1, z: 1}
     _aimPose: 1
     _twoHanded: 0
     _rightHandLocalPosition: {x: 0.378, y: -0.107, z: 0.448}
-    _rightHandLocalEulerAngles: {x: 62.85, y: 125.11, z: 135.34}
+    _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
     _leftHandLocalPosition: {x: 0, y: 0, z: 0}
     _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+    _rightElbowHintLocalPosition: {x: 0.314, y: -0.149, z: 0.248}
+    _rightElbowHintWeight: 1
+    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+    _leftElbowHintWeight: 0
     _pose: 1
-    _ikResidualWeight: 0.4
-    _leftIkResidualWeight: 0.9
+    _ikResidualWeight: 1
+    _leftIkResidualWeight: 1
   - _itemType: 5
-    _socketLocalPosition: {x: 0.15612483, y: -0.023919016, z: 0.06918657}
-    _socketLocalEulerAngles: {x: 351.78, y: 195.07, z: 112.58}
+    _socketLocalPosition: {x: 0.1838, y: 0.1747, z: -0.2503}
+    _straightenWrist: 1
+    _rightWristRollDegrees: 90
+    _rightWristBendDegrees: 0
+    _leftWristRollDegrees: 90
+    _leftWristBendDegrees: 0
+    _socketLocalEulerAngles: {x: 341.09, y: 270, z: 57.57}
     _socketLocalScale: {x: 0.8, y: 0.8, z: 0.8}
     _aimPose: 1
     _twoHanded: 1
     _rightHandLocalPosition: {x: 0, y: -0.143, z: 0.346}
-    _rightHandLocalEulerAngles: {x: 66.9, y: 184.04, z: 297.63}
-    _leftHandLocalPosition: {x: -0.29, y: -0.05, z: 0.53}
-    _leftHandLocalEulerAngles: {x: 45.02, y: 226.35, z: 189.94}
+    _rightHandLocalEulerAngles: {x: 0, y: 212.43, z: 288.91}
+    _leftHandLocalPosition: {x: 0, y: -0.183, z: 0.416}
+    _leftHandLocalEulerAngles: {x: 0, y: 125.16, z: 91.74}
+    _rightElbowHintLocalPosition: {x: 0.17, y: -0.212, z: 0.238}
+    _rightElbowHintWeight: 1
+    _leftElbowHintLocalPosition: {x: -0.118, y: -0.177, z: 0.249}
+    _leftElbowHintWeight: 1
     _pose: 2
-    _ikResidualWeight: 0.4
-    _leftIkResidualWeight: 0.9
+    _ikResidualWeight: 1
+    _leftIkResidualWeight: 1
   - _itemType: 1
-    _socketLocalPosition: {x: 0.025424838, y: 0.20458098, z: 0.017386569}
-    _socketLocalEulerAngles: {x: 12.98, y: 159.44, z: 6.68}
+    _socketLocalPosition: {x: 0.1066, y: 0.1043, z: -0.0043}
+    _straightenWrist: 1
+    _rightWristRollDegrees: 90
+    _rightWristBendDegrees: 0
+    _leftWristRollDegrees: 90
+    _leftWristBendDegrees: 0
+    _socketLocalEulerAngles: {x: 348.69, y: 270, z: 342.26}
     _socketLocalScale: {x: 0.75, y: 0.75, z: 0.75}
     _aimPose: 1
     _twoHanded: 0
     _rightHandLocalPosition: {x: 0.378, y: -0.107, z: 0.448}
-    _rightHandLocalEulerAngles: {x: 62.85, y: 125.11, z: 135.34}
+    _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
     _leftHandLocalPosition: {x: 0, y: 0, z: 0}
     _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+    _rightElbowHintLocalPosition: {x: 0.314, y: -0.149, z: 0.248}
+    _rightElbowHintWeight: 1
+    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+    _leftElbowHintWeight: 0
     _pose: 1
-    _ikResidualWeight: 0.4
-    _leftIkResidualWeight: 0.9
+    _ikResidualWeight: 1
+    _leftIkResidualWeight: 1
   - _itemType: 4
     _socketLocalPosition: {x: 0.113372356, y: 0.101922885, z: -0.08067209}
     _socketLocalEulerAngles: {x: 333.77, y: 265.34, z: 123.98}
@@ -62,6 +89,10 @@ MonoBehaviour:
     _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
     _leftHandLocalPosition: {x: 0, y: 0, z: 0}
     _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+    _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+    _rightElbowHintWeight: 0
+    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+    _leftElbowHintWeight: 0
     _pose: 3
     _ikResidualWeight: 1
     _leftIkResidualWeight: 1
@@ -75,6 +106,10 @@ MonoBehaviour:
     _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
     _leftHandLocalPosition: {x: 0, y: 0, z: 0}
     _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+    _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+    _rightElbowHintWeight: 0
+    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+    _leftElbowHintWeight: 0
     _pose: 3
     _ikResidualWeight: 1
     _leftIkResidualWeight: 1
