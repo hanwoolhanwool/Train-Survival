@@ -19,12 +19,24 @@ namespace Game.Gameplay.Train
         /// <summary>편성에 연결된 상태인지 — false면 연결부 파괴로 이탈해 후미로 떨어져 나간 칸이다.</summary>
         public bool Attached;
 
+        /// <summary>
+        /// 좌측(-X)에 덧댄 판자 열 수 (건축 개편 3차 — 결정 ⑥: 셀 열 단위 증축).
+        /// 상한은 에셋(<see cref="TrainExpansionSettings.MaxPlankColumns"/>)과 좌표계 예약
+        /// (<see cref="StructureGridLogic.MaxPlankColumnsPerSide"/>) 중 작은 쪽이다.
+        /// </summary>
+        public byte LeftPlanks;
+
+        /// <summary>우측(+X)에 덧댄 판자 열 수 — <see cref="LeftPlanks"/>와 같은 규약.</summary>
+        public byte RightPlanks;
+
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref Type);
             serializer.SerializeValue(ref Health);
             serializer.SerializeValue(ref MaxHealth);
             serializer.SerializeValue(ref Attached);
+            serializer.SerializeValue(ref LeftPlanks);
+            serializer.SerializeValue(ref RightPlanks);
         }
 
         public bool Equals(CarState other)
@@ -32,7 +44,9 @@ namespace Game.Gameplay.Train
             return Type == other.Type
                 && Health.Equals(other.Health)
                 && MaxHealth.Equals(other.MaxHealth)
-                && Attached == other.Attached;
+                && Attached == other.Attached
+                && LeftPlanks == other.LeftPlanks
+                && RightPlanks == other.RightPlanks;
         }
     }
 }

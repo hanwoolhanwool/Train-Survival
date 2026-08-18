@@ -189,35 +189,20 @@ namespace Game.Gameplay.Train
             return _carTransforms.TryGetValue(carIndex, out Transform car) ? car : null;
         }
 
-        /// <summary>
-        /// 칸 밑의 스폰 앵커 — 칸의 비균등 보정 스케일을 역보정해 월드 스케일 (1,1,1)·무회전으로 만든
-        /// 런타임 전용 자식이다. 실물이 어느 회전으로 붙어도 부모 스케일에 왜곡되지 않는다.
-        /// </summary>
+        /// <summary>칸 밑의 스폰 앵커 — 스케일 보정 규약은 <see cref="CarViewAnchor"/>가 든다(판자 뷰와 공유).</summary>
         private Transform ResolveCarAnchor(int carIndex)
         {
-            if (_carAnchors.TryGetValue(carIndex, out Transform anchor) && anchor != null)
+            if (_carAnchors.TryGetValue(carIndex, out Transform cached) && cached != null)
             {
-                return anchor;
+                return cached;
             }
 
-            Transform car = ResolveCarTransform(carIndex);
-            if (car == null)
+            Transform anchor = CarViewAnchor.Resolve(ResolveCarTransform(carIndex));
+            if (anchor != null)
             {
-                return null;
+                _carAnchors[carIndex] = anchor;
             }
 
-            anchor = new GameObject("StructureAnchor").transform;
-            anchor.SetParent(car, worldPositionStays: false);
-            anchor.localPosition = Vector3.zero;
-            anchor.localRotation = Quaternion.identity;
-
-            Vector3 lossy = car.lossyScale;
-            anchor.localScale = new Vector3(
-                lossy.x != 0f ? 1f / lossy.x : 1f,
-                lossy.y != 0f ? 1f / lossy.y : 1f,
-                lossy.z != 0f ? 1f / lossy.z : 1f);
-
-            _carAnchors[carIndex] = anchor;
             return anchor;
         }
     }

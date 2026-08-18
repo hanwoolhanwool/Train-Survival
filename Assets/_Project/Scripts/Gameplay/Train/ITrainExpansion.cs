@@ -52,5 +52,38 @@ namespace Game.Gameplay.Train
         /// 서버 전용 — 클라이언트 호출은 항상 false.
         /// </summary>
         bool ServerTryDemolishStructure(int structureId, out StructureEntry removed);
+
+        // ── 판자 증축 (건축 개편 3차 — 결정 ⑥: 셀 열 단위) ──────────────────
+
+        /// <summary>판자 1열 건설에 드는 자원 수.</summary>
+        int PlankBuildCost { get; }
+
+        /// <summary>좌/우 각 최대 판자 열 수 — 프리뷰가 "더 못 붙인다"를 판단하는 상한.</summary>
+        int MaxPlankColumns { get; }
+
+        /// <summary>판자 1열 철거 시 반환되는 자원 수 — floor(판자 비용 × 반환 비율).</summary>
+        int PlankDemolishRefund { get; }
+
+        /// <summary>판자 철거 반환 자원 종류 — 건축물의 종류별 반환 자원(StructureCatalog)에 대응하는 판자 몫.</summary>
+        Game.Gameplay.Inventory.ResourceType PlankRefundResource { get; }
+
+        /// <summary>
+        /// 이 칸 이 쪽에 판자 1열을 더 붙일 수 있는지 — 칸 건재(기관차 제외) + 상한 미만.
+        /// 복제 상태 기반이라 전 피어 동일 — 프리뷰와 호스트 확정이 같은 판정을 쓴다.
+        /// </summary>
+        bool CanBuildPlank(int carIndex, PlankSide side);
+
+        /// <summary>판자 1열을 붙인다. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
+        bool ServerTryBuildPlank(int carIndex, PlankSide side);
+
+        /// <summary>
+        /// 이 칸 이 쪽 가장 바깥 판자 1열을 뜯을 수 있는지 — 그 열 위에 건축물이 있으면 기각
+        /// (계획서 §2.9). 복제 상태 기반이라 전 피어 동일.
+        /// </summary>
+        bool CanRemovePlank(int carIndex, PlankSide side);
+
+        /// <summary>판자 1열을 뜯는다. 반환 자원 지급은 호출부(망치 RPC)의 몫이다.
+        /// 서버 전용 — 클라이언트 호출은 항상 false.</summary>
+        bool ServerTryRemovePlank(int carIndex, PlankSide side);
     }
 }

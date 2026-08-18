@@ -192,6 +192,31 @@ namespace Game.Gameplay.Train
     }
 
     /// <summary>
+    /// 칸의 판자 증축이 바뀜 (건축 개편 3차 — 결정 ⑥) — 호스트 확정 후 전 피어에서 발행되는
+    /// authored 이벤트. 판자 뷰 스포너가 실물 스폰·회수를, HUD가 배너를 맡는다.
+    /// </summary>
+    public readonly struct CarPlanksChangedEvent
+    {
+        public readonly int CarIndex;
+
+        public readonly PlankSide Side;
+
+        /// <summary>변화 후 그 쪽 판자 열 수.</summary>
+        public readonly int Columns;
+
+        /// <summary>true = 증축, false = 철거.</summary>
+        public readonly bool Built;
+
+        public CarPlanksChangedEvent(int carIndex, PlankSide side, int columns, bool built)
+        {
+            CarIndex = carIndex;
+            Side = side;
+            Columns = columns;
+            Built = built;
+        }
+    }
+
+    /// <summary>
     /// 이탈 칸이 편성에 다시 붙음 — 손잡이로 슬롯까지 끌어온 칸의 재결합이 호스트에서 확정된 뒤
     /// 전 피어에서 발행되는 authored 이벤트 (손잡이-이탈저항 스펙 §4.1). 재결합 연출·알림이 구독한다.
     /// </summary>
@@ -408,6 +433,65 @@ namespace Game.Gameplay.Train
             CanAfford = canAfford;
             CanPlace = canPlace;
             Occupied = occupied;
+            GhostCenter = ghostCenter;
+            GhostSize = ghostSize;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 망치로 칸 옆면 판자 열을 겨눈 상태 (건축 개편 3차 — 계획서 §2.9).
+    /// 조준은 갑판 높이 평면을 연장해 잡으므로, 아직 판자가 없어 콜라이더가 없는 자리도 겨눌 수 있다.
+    /// 겨눈 열이 빈 자리면 증축(우클릭), 이미 깔린 판자면 철거(X 홀드) 안내가 된다.
+    /// </summary>
+    public readonly struct PlankAimLocalEvent
+    {
+        public readonly bool Aiming;
+
+        public readonly int CarIndex;
+
+        public readonly PlankSide Side;
+
+        /// <summary>아직 판자가 없는 다음 자리인가 — true면 증축 대상, false면 이미 깔린 판자(철거 대상).</summary>
+        public readonly bool EmptySlot;
+
+        /// <summary>증축 비용 — 빈 자리를 겨눌 때만 유효.</summary>
+        public readonly int Cost;
+
+        public readonly bool CanAfford;
+
+        /// <summary>지금 우클릭으로 판자가 지어지는지 (빈 자리 + 상한 미만 + 자원 충족 + 자리 비었음).</summary>
+        public readonly bool CanBuild;
+
+        /// <summary>철거 반환량 — 이미 깔린 판자를 겨눌 때만 유효.</summary>
+        public readonly int Refund;
+
+        /// <summary>지금 X 홀드로 뜯을 수 있는지 (그 열 위에 건축물이 없어야 한다).</summary>
+        public readonly bool CanRemove;
+
+        /// <summary>X 홀드 게이지 진행도 0~1 — 0이면 홀드 중이 아니다.</summary>
+        public readonly float RemoveProgress;
+
+        /// <summary>판자 열의 월드 중심 — 프리뷰 박스용.</summary>
+        public readonly UnityEngine.Vector3 GhostCenter;
+
+        /// <summary>판자 열의 크기(폭·높이·길이) — 프리뷰 박스용.</summary>
+        public readonly UnityEngine.Vector3 GhostSize;
+
+        public PlankAimLocalEvent(bool aiming, int carIndex, PlankSide side, bool emptySlot,
+            int cost, bool canAfford, bool canBuild,
+            int refund, bool canRemove, float removeProgress,
+            UnityEngine.Vector3 ghostCenter, UnityEngine.Vector3 ghostSize)
+        {
+            Aiming = aiming;
+            CarIndex = carIndex;
+            Side = side;
+            EmptySlot = emptySlot;
+            Cost = cost;
+            CanAfford = canAfford;
+            CanBuild = canBuild;
+            Refund = refund;
+            CanRemove = canRemove;
+            RemoveProgress = removeProgress;
             GhostCenter = ghostCenter;
             GhostSize = ghostSize;
         }

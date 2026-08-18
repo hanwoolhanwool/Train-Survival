@@ -72,5 +72,13 @@ namespace Game.Gameplay.Train
         /// 갑판 위 휴지 노드의 회수 판정에 쓴다 (7차 2차 발견 — 칸이 사라지면 위의 물건도 함께 회수).
         /// </summary>
         bool IsDeckAlive(int carIndex);
+
+        /// <summary>
+        /// 그 위치에서 걸어 나갈 수 있는 갑판 반폭(m) — 판자 증축이 넓힌 폭을 반영한다
+        /// (건축 개편 3차 — 계획서 §2.9 폭 파생 판정). 위치의 Z가 속한 칸의 그 쪽(X 부호) 판자 열을
+        /// 보고, 어느 칸에도 속하지 않으면 칸 실물 반폭을 돌려준다.
+        /// 낙하 판정·몬스터 승차 판정이 칸 폭 상수 대신 이 값을 쓴다.
+        /// </summary>
+        float GetDeckHalfWidthAt(UnityEngine.Vector3 position);
     }
 }

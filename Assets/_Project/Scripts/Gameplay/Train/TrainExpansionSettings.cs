@@ -29,6 +29,18 @@ namespace Game.Gameplay.Train
             "반환 자원 종류는 StructureCatalog가 정한다.")]
         [SerializeField, Range(0f, 1f)] private float _demolishRefundRatio = 0.5f;
 
+        [Header("판자 증축 (건축 개편 3차 — 결정 ⑥)")]
+        [Tooltip("칸 옆면 판자 1열(폭 = 그리드 셀 1칸, 길이 = 칸 전체) 건설에 드는 자원 수.")]
+        [SerializeField, Min(0)] private int _plankBuildCost = 3;
+
+        [Tooltip("좌/우 각각 덧댈 수 있는 최대 판자 열 수 — 좌표계 예약(StructureGridLogic." +
+            "MaxPlankColumnsPerSide)을 넘으면 그 값으로 잘린다.")]
+        [SerializeField, Min(0)] private int _maxPlankColumns = 1;
+
+        [Tooltip("판자 철거 시 반환되는 자원 종류 — 반환량은 건축물과 같은 반환 비율을 쓴다.")]
+        [SerializeField] private Game.Gameplay.Inventory.ResourceType _plankRefundResource
+            = Game.Gameplay.Inventory.ResourceType.Wood;
+
         public int MaxCarCount => _maxCarCount;
 
         public int CarBuildCost => _carBuildCost;
@@ -39,5 +51,14 @@ namespace Game.Gameplay.Train
 
         /// <summary>철거 반환 비율 (건축 개편 2차 — 결정 ⑤). 반환량 = floor(건설 비용 × 이 값).</summary>
         public float DemolishRefundRatio => _demolishRefundRatio;
+
+        /// <summary>판자 1열 건설 비용 (건축 개편 3차 — 결정 ⑥).</summary>
+        public int PlankBuildCost => _plankBuildCost;
+
+        /// <summary>좌/우 각 최대 판자 열 수 — 좌표계 예약 상한으로 클램프한 값.</summary>
+        public int MaxPlankColumns => StructureGridLogic.ClampPlankColumns(_maxPlankColumns);
+
+        /// <summary>판자 철거 반환 자원 종류 (건축 개편 3차).</summary>
+        public Game.Gameplay.Inventory.ResourceType PlankRefundResource => _plankRefundResource;
     }
 }

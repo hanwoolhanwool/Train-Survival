@@ -396,7 +396,7 @@ namespace Game.Gameplay.Monsters
             bool targetOnDeck = IsOnDeck(target.position)
                 || target.position.y >= _trainLayout.DeckHeight - 0.5f
                 || IsWithinTrainFootprint(target.position);
-            float sideDistance = Mathf.Abs(transform.position.x) - _trainLayout.CarWidth * 0.5f;
+            float sideDistance = Mathf.Abs(transform.position.x) - DeckHalfWidth(transform.position);
             bool alongTrain = transform.position.z > _trainLayout.RearZ - 2f &&
                 transform.position.z < _trainLayout.FrontZ + 2f;
 
@@ -447,8 +447,19 @@ namespace Game.Gameplay.Monsters
         private bool IsWithinTrainFootprint(Vector3 position)
         {
             return _trainLayout != null &&
-                Mathf.Abs(position.x) <= _trainLayout.CarWidth * 0.5f + 0.5f &&
+                Mathf.Abs(position.x) <= DeckHalfWidth(position) + 0.5f &&
                 position.z >= _trainLayout.RearZ && position.z <= _trainLayout.FrontZ;
+        }
+
+        /// <summary>
+        /// 그 지점의 갑판 반폭 — 판자 증축이 넓힌 폭을 반영한다 (건축 개편 3차 §2.9 — 판자 위로도
+        /// 기어오를 수 있어야 한다). 편성 상태를 못 읽으면 칸 실물 반폭으로 물러선다.
+        /// </summary>
+        private float DeckHalfWidth(Vector3 position)
+        {
+            return ServiceLocator.TryGet(out ITrainState train)
+                ? train.GetDeckHalfWidthAt(position)
+                : _trainLayout.CarWidth * 0.5f;
         }
 
         private void FaceVelocity(Vector3 horizontalVelocity, Transform target)

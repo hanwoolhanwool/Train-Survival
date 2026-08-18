@@ -360,12 +360,6 @@ namespace Game.Gameplay.Train
                 return false;
             }
 
-            if (!TrainLayoutMath.IsWithinDeckAperture(
-                position, _layoutSettings.CarWidth * 0.5f, _layoutSettings.DeckHeight, DeckApertureMargin))
-            {
-                return false;
-            }
-
             for (int i = 0; i < CarCount; i++)
             {
                 // 파괴된 칸은 갑판이 없다 — 이탈 칸은 갑판이 남아 있으므로 허용한다 (오프셋 반영. 창고 접근과 같은 규약).
@@ -374,7 +368,14 @@ namespace Game.Gameplay.Train
                     continue;
                 }
 
-                if (_layoutSettings.IsZOnCar(position.z, i, GetEjectOffset(i)))
+                if (!_layoutSettings.IsZOnCar(position.z, i, GetEjectOffset(i)))
+                {
+                    continue;
+                }
+
+                // 폭 게이트는 칸별로 본다 — 판자 증축이 칸마다 다르기 때문이다 (건축 개편 3차 §2.9).
+                if (TrainLayoutMath.IsWithinDeckAperture(
+                    position, DeckHalfWidth(car, position.x), _layoutSettings.DeckHeight, DeckApertureMargin))
                 {
                     deckHeight = _layoutSettings.DeckHeight;
                     carIndex = i;
@@ -383,6 +384,33 @@ namespace Game.Gameplay.Train
             }
 
             return false;
+        }
+
+        public float GetDeckHalfWidthAt(Vector3 position)
+        {
+            if (_layoutSettings == null)
+            {
+                return 0f;
+            }
+
+            for (int i = 0; i < CarCount; i++)
+            {
+                if (TryGetCar(i, out CarState car) && car.Health > 0f
+                    && _layoutSettings.IsZOnCar(position.z, i, GetEjectOffset(i)))
+                {
+                    return DeckHalfWidth(car, position.x);
+                }
+            }
+
+            return _layoutSettings.CarWidth * 0.5f;
+        }
+
+        /// <summary>그 칸의 그 쪽(X 부호) 갑판 반폭 — 판자 증축 반영 (건축 개편 3차).</summary>
+        private float DeckHalfWidth(CarState car, float worldX)
+        {
+            int planks = worldX < 0f ? car.LeftPlanks : car.RightPlanks;
+            return PlankGridLogic.DeckHalfWidth(
+                _layoutSettings.CarWidth, _layoutSettings.StructureCellSize, planks);
         }
 
         public bool IsDeckAlive(int carIndex)
@@ -859,6 +887,93 @@ namespace Game.Gameplay.Train
             return true;
         }
 
+        // ── 판자 증축 (건축 개편 3차 — 결정 ⑥: 셀 열 단위) ──────────────────
+
+        public int PlankBuildCost => _expansionSettings != null ? _expansionSettings.PlankBuildCost : 0;
+
+        public int MaxPlankColumns => _expansionSettings != null ? _expansionSettings.MaxPlankColumns : 0;
+
+        public int PlankDemolishRefund
+        {
+            get
+            {
+                float ratio = _expansionSettings != null ? _expansionSettings.DemolishRefundRatio : 0f;
+                return StructureGridLogic.RefundAmount(PlankBuildCost, ratio);
+            }
+        }
+
+        public Game.Gameplay.Inventory.ResourceType PlankRefundResource => _expansionSettings != null
+            ? _expansionSettings.PlankRefundResource
+            : Game.Gameplay.Inventory.ResourceType.Wood;
+
+        public bool CanBuildPlank(int carIndex, PlankSide side)
+        {
+            return PlankGridLogic.CanBuildPlank(SnapshotCars(), carIndex, side, MaxPlankColumns);
+        }
+
+        /// <summary>
+        /// 칸 옆면에 판자 1열을 붙인다 (건축 개편 3차) — 프리뷰와 같은 순수 판정을 다시 통과해야
+        /// 확정된다. 열 수만 늘리면 그리드 유효 열·갑판 폭·판자 뷰가 함께 따라온다.
+        /// </summary>
+        public bool ServerTryBuildPlank(int carIndex, PlankSide side)
+        {
+            if (!IsServer || !CanBuildPlank(carIndex, side))
+            {
+                return false;
+            }
+
+            CarState car = _cars[carIndex];
+            if (side == PlankSide.Left)
+            {
+                car.LeftPlanks++;
+            }
+            else
+            {
+                car.RightPlanks++;
+            }
+
+            _cars[carIndex] = car;
+            BroadcastPlankChangedRpc(carIndex, side, side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks, true);
+            return true;
+        }
+
+        public bool CanRemovePlank(int carIndex, PlankSide side)
+        {
+            if (_layoutSettings == null)
+            {
+                return false;
+            }
+
+            return PlankGridLogic.CanRemovePlank(SnapshotStructures(), SnapshotCars(), carIndex, side,
+                _layoutSettings.CarWidth, _layoutSettings.StructureCellSize);
+        }
+
+        /// <summary>
+        /// 칸 옆면 가장 바깥 판자 1열을 뜯는다 (건축 개편 3차) — 그 열 위에 건축물이 있으면 기각된다
+        /// (계획서 §2.9). 반환 자원 지급은 호출부(망치 RPC)가 이어서 확정한다.
+        /// </summary>
+        public bool ServerTryRemovePlank(int carIndex, PlankSide side)
+        {
+            if (!IsServer || !CanRemovePlank(carIndex, side))
+            {
+                return false;
+            }
+
+            CarState car = _cars[carIndex];
+            if (side == PlankSide.Left)
+            {
+                car.LeftPlanks--;
+            }
+            else
+            {
+                car.RightPlanks--;
+            }
+
+            _cars[carIndex] = car;
+            BroadcastPlankChangedRpc(carIndex, side, side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks, false);
+            return true;
+        }
+
         // ── ITrainRecouple — 이탈 칸 재결합 (손잡이-이탈저항 스펙 §4.1) ──────────
 
         public int RecoupleCost => _expansionSettings != null ? _expansionSettings.RecoupleCost : 0;
@@ -1309,6 +1424,12 @@ namespace Game.Gameplay.Train
         private void BroadcastCarRecoupledRpc(int index)
         {
             EventBus<CarRecoupledEvent>.Publish(new CarRecoupledEvent(index));
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastPlankChangedRpc(int carIndex, PlankSide side, int columns, bool built)
+        {
+            EventBus<CarPlanksChangedEvent>.Publish(new CarPlanksChangedEvent(carIndex, side, columns, built));
         }
     }
 }

@@ -46,6 +46,7 @@ namespace Game.UI
         private CarRecoupleAimLocalEvent _carRecoupleAim;
         private HammerTargetLocalEvent _hammerTarget;
         private StructurePlaceAimLocalEvent _structurePlaceAim;
+        private PlankAimLocalEvent _plankAim;
         private bool _panelOpen;
         private int _dragFromIndex = -1;
 
@@ -83,6 +84,7 @@ namespace Game.UI
             EventBus<CarRecoupleAimLocalEvent>.Subscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
             EventBus<StructurePlaceAimLocalEvent>.Subscribe(OnStructurePlaceAim);
+            EventBus<PlankAimLocalEvent>.Subscribe(OnPlankAim);
             EventBus<StoragePromptLocalEvent>.Subscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Subscribe(OnBundlePrompt);
@@ -102,6 +104,7 @@ namespace Game.UI
             EventBus<CarRecoupleAimLocalEvent>.Unsubscribe(OnCarRecoupleAim);
             EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
             EventBus<StructurePlaceAimLocalEvent>.Unsubscribe(OnStructurePlaceAim);
+            EventBus<PlankAimLocalEvent>.Unsubscribe(OnPlankAim);
             EventBus<StoragePromptLocalEvent>.Unsubscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Unsubscribe(OnBundlePrompt);
@@ -189,6 +192,11 @@ namespace Game.UI
         private void OnStructurePlaceAim(StructurePlaceAimLocalEvent evt)
         {
             _structurePlaceAim = evt;
+        }
+
+        private void OnPlankAim(PlankAimLocalEvent evt)
+        {
+            _plankAim = evt;
         }
 
         private void OnCarRecoupleAim(CarRecoupleAimLocalEvent evt)
@@ -297,6 +305,7 @@ namespace Game.UI
             DrawCarBuildPrompt(hotbar);
             DrawCarRecouplePrompt(hotbar);
             DrawHammerTarget(hotbar);
+            DrawPlankAim(hotbar);
             DrawStoragePrompt();
             DrawBundlePrompt();
 
@@ -564,6 +573,60 @@ namespace Game.UI
                 : "white";
             GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.54f, 400f, 24f),
                 $"<color={color}>{partName}: {healthText}{action}</color>");
+        }
+
+        /// <summary>
+        /// 판자 증축·철거 안내 (건축 개편 3차 — 계획서 §2.9). 망치로 칸 옆 판자 열을 겨눈 동안
+        /// 조준점 위 줄에 무엇이 일어날지 보여준다 — 빈 자리면 우클릭 증축, 이미 깔린 판자면 X 홀드 철거.
+        /// 건축물을 겨눈 X 홀드는 건축물 철거(2차)의 몫이라, 그때는 판자 철거 안내를 감춘다.
+        /// </summary>
+        private void DrawPlankAim(ILocalHotbar hotbar)
+        {
+            if (!_plankAim.Aiming || _panelOpen)
+            {
+                return;
+            }
+
+            string sideName = _plankAim.Side == PlankSide.Left ? "좌측" : "우측";
+            string where = $"칸 #{_plankAim.CarIndex} {sideName} 판자";
+            string action;
+
+            if (_plankAim.EmptySlot)
+            {
+                if (_plankAim.CanBuild)
+                {
+                    action = $"우클릭 증축 (소모: {BuildSpendPreview(hotbar, _plankAim.Cost)})";
+                }
+                else
+                {
+                    action = _plankAim.CanAfford
+                        ? "<color=red>여기엔 판자를 붙일 수 없다</color>"
+                        : $"<color=red>증축 자원 부족 ({BuildShortagePrompt(hotbar, _plankAim.Cost)})</color>";
+                }
+            }
+            else if (_hammerTarget.CanDemolish)
+            {
+                // 판자 위 건축물을 겨누는 중 — X 홀드 의미가 겹치지 않게 판자 안내를 내린다.
+                return;
+            }
+            else if (_plankAim.RemoveProgress > 0f)
+            {
+                action = $"<color=orange>철거 중… {_plankAim.RemoveProgress * 100f:F0}%</color>";
+            }
+            else if (_plankAim.CanRemove)
+            {
+                string refundName = _catalog != null && ServiceLocator.TryGet(out ITrainExpansion expansion)
+                    ? _catalog.GetDisplayName(expansion.PlankRefundResource)
+                    : "자원";
+                action = $"[X 홀드] 철거 (반환: {refundName} {_plankAim.Refund})";
+            }
+            else
+            {
+                action = "<color=red>위에 놓인 건축물을 먼저 철거해야 뜯을 수 있다</color>";
+            }
+
+            GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.50f, 400f, 24f),
+                $"{where} — {action}");
         }
 
         /// <summary>

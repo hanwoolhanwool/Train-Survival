@@ -97,7 +97,7 @@ namespace Game.Tests.EditMode
                         CarCenterZ, CarWidth, CarLength, CellSize, out float worldX, out float worldZ);
 
                     Assert.That(StructureGridLogic.TryWorldToPlacementCell(worldX, worldZ, CarCenterZ,
-                        CarWidth, CarLength, CellSize, 1, 1, out int backX, out int backZ), Is.True);
+                        CarWidth, CarLength, CellSize, 1, 1, 0, 0, out int backX, out int backZ), Is.True);
                     Assert.That((backX, backZ), Is.EqualTo((cellX, cellZ)), $"셀 ({cellX},{cellZ}) 왕복");
                 }
             }
@@ -120,7 +120,7 @@ namespace Game.Tests.EditMode
         {
             // 2×2를 (x=-1, z=-6.5)에 겨눔 — 점유 중심이 커서가 되도록 좌하단 (2,0)으로 스냅.
             Assert.That(StructureGridLogic.TryWorldToPlacementCell(-1f, -6.5f, CarCenterZ,
-                CarWidth, CarLength, CellSize, 2, 2, out int cellX, out int cellZ), Is.True);
+                CarWidth, CarLength, CellSize, 2, 2, 0, 0, out int cellX, out int cellZ), Is.True);
             Assert.That((cellX, cellZ), Is.EqualTo((2, 0)));
         }
 
@@ -130,11 +130,11 @@ namespace Game.Tests.EditMode
             // 폭 4.6 m 중 양옆 0.3 m는 여백 — 여백을 찍어도 클램프로 본체 끝 열에 스냅되므로
             // 점유가 여백에 걸치는 일이 없다 (설치 유효성 자체는 CanPlace의 본체 내부 검사가 지킨다).
             Assert.That(StructureGridLogic.TryWorldToPlacementCell(-2.29f, 0f, CarCenterZ,
-                CarWidth, CarLength, CellSize, 1, 1, out int leftX, out _), Is.True);
+                CarWidth, CarLength, CellSize, 1, 1, 0, 0, out int leftX, out _), Is.True);
             Assert.That(leftX, Is.EqualTo(2), "좌측 여백 → 본체 첫 열");
 
             Assert.That(StructureGridLogic.TryWorldToPlacementCell(2.29f, 0f, CarCenterZ,
-                CarWidth, CarLength, CellSize, 1, 1, out int rightX, out _), Is.True);
+                CarWidth, CarLength, CellSize, 1, 1, 0, 0, out int rightX, out _), Is.True);
             Assert.That(rightX, Is.EqualTo(5), "우측 여백 → 본체 끝 열");
         }
 
@@ -142,7 +142,7 @@ namespace Game.Tests.EditMode
         public void 그리드보다_큰_점유는_변환이_기각된다()
         {
             Assert.That(StructureGridLogic.TryWorldToPlacementCell(0f, 0f, CarCenterZ,
-                CarWidth, CarLength, CellSize, 5, 1, out _, out _), Is.False, "본체 4열 초과");
+                CarWidth, CarLength, CellSize, 5, 1, 0, 0, out _, out _), Is.False, "본체 4열 초과");
         }
 
         // ── 설치 판정 CanPlace (§2.3) ──────────────────
@@ -341,6 +341,107 @@ namespace Game.Tests.EditMode
                 CarCenterZ, CarWidth, CarLength, CellSize), Is.False, "여유 폭 밖 — 통과");
             Assert.That(StructureGridLogic.IsWorldPointOnEntry(entry, -0.5f, 1.5f, 0.3f,
                 CarCenterZ, CarWidth, CarLength, CellSize), Is.False, "행 방향 밖");
+        }
+
+        // ── 판자 증축 (건축 개편 3차 — §2.9, 결정 ⑥) ──────────────────
+
+        /// <summary>판자 열 수를 지정한 칸 배열 — 좌/우 열은 CarState가 들고 있다.</summary>
+        private static CarState[] BuildTrainWithPlanks(int carCount, int carIndex, int left, int right)
+        {
+            CarState[] cars = BuildTrain(carCount);
+            CarState car = cars[carIndex];
+            car.LeftPlanks = (byte)left;
+            car.RightPlanks = (byte)right;
+            cars[carIndex] = car;
+            return cars;
+        }
+
+        [Test]
+        public void 판자_열_수는_좌표계_예약_상한으로_클램프된다()
+        {
+            Assert.That(StructureGridLogic.MaxPlankColumnsPerSide, Is.EqualTo(2), "좌/우 각 2열 고정 예약");
+            Assert.That(StructureGridLogic.ClampPlankColumns(5), Is.EqualTo(2), "예약 초과는 잘린다 — 재색인 방지");
+            Assert.That(StructureGridLogic.ClampPlankColumns(-1), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void 판자_열_좌표는_본체_바깥에_붙어_고정된다()
+        {
+            // 본체 = 열 2~5. 좌측 판자는 1 → 0으로, 우측은 6 → 7로 자란다 (좌측을 나중에 지어도 재색인 없음).
+            Assert.That(StructureGridLogic.PlankColumn(PlankSide.Left, 0, 4), Is.EqualTo(1));
+            Assert.That(StructureGridLogic.PlankColumn(PlankSide.Left, 1, 4), Is.EqualTo(0));
+            Assert.That(StructureGridLogic.PlankColumn(PlankSide.Right, 0, 4), Is.EqualTo(6));
+            Assert.That(StructureGridLogic.PlankColumn(PlankSide.Right, 1, 4), Is.EqualTo(7));
+        }
+
+        [Test]
+        public void 판자_열의_월드_중심은_본체_그리드에_딱_붙는다()
+        {
+            // 본체 폭 4 m가 X=0 중심 → 본체 끝 열 중심 ±1.5, 판자 첫 열 중심 ±2.5.
+            Assert.That(StructureGridLogic.ColumnCenterWorldX(1, 4, CellSize), Is.EqualTo(-2.5f).Within(0.001f));
+            Assert.That(StructureGridLogic.ColumnCenterWorldX(6, 4, CellSize), Is.EqualTo(2.5f).Within(0.001f));
+
+            // 1×1 점유의 셀 중심과 같은 값이어야 한다 — 뷰·프리뷰·설치가 한 지점을 쓴다.
+            StructureGridLogic.CellRegionCenterWorld(1, 0, 1, 1,
+                CarCenterZ, CarWidth, CarLength, CellSize, out float worldX, out _);
+            Assert.That(worldX, Is.EqualTo(-2.5f).Within(0.001f));
+        }
+
+        [Test]
+        public void 월드_X는_판자_열까지_포함해_열로_환산된다()
+        {
+            Assert.That(StructureGridLogic.WorldXToColumn(-1.5f, 4, CellSize), Is.EqualTo(2), "본체 첫 열");
+            Assert.That(StructureGridLogic.WorldXToColumn(1.5f, 4, CellSize), Is.EqualTo(5), "본체 끝 열");
+            Assert.That(StructureGridLogic.WorldXToColumn(-2.5f, 4, CellSize), Is.EqualTo(1), "좌측 판자 첫 열");
+            Assert.That(StructureGridLogic.WorldXToColumn(2.5f, 4, CellSize), Is.EqualTo(6), "우측 판자 첫 열");
+        }
+
+        [Test]
+        public void 판자_위에는_건축물을_설치할_수_있고_판자가_없으면_기각된다()
+        {
+            var entries = new StructureEntry[0];
+            CarState[] plain = BuildTrain(3);
+            CarState[] planked = BuildTrainWithPlanks(3, 1, left: 1, right: 1);
+
+            Assert.That(StructureGridLogic.CanPlace(entries, plain, 1, 1, 0, 0,
+                StructureKind.Campfire, 1, 1, true, CarWidth, CarLength, CellSize), Is.False, "판자 없는 열 1");
+            Assert.That(StructureGridLogic.CanPlace(entries, planked, 1, 1, 0, 0,
+                StructureKind.Campfire, 1, 1, true, CarWidth, CarLength, CellSize), Is.True, "좌측 판자 위");
+            Assert.That(StructureGridLogic.CanPlace(entries, planked, 1, 6, 0, 0,
+                StructureKind.Campfire, 1, 1, true, CarWidth, CarLength, CellSize), Is.True, "우측 판자 위");
+            Assert.That(StructureGridLogic.CanPlace(entries, planked, 1, 0, 0, 0,
+                StructureKind.Campfire, 1, 1, true, CarWidth, CarLength, CellSize), Is.False, "판자 2열째는 아직 없다");
+
+            // 2×1 제작대가 본체 끝 열과 판자 열에 걸쳐 놓이는 것도 성립한다.
+            Assert.That(StructureGridLogic.CanPlace(entries, planked, 1, 5, 0, 0,
+                StructureKind.Workbench, 2, 1, true, CarWidth, CarLength, CellSize), Is.True, "본체 끝 + 판자 걸침");
+        }
+
+        [Test]
+        public void 판자가_있으면_스냅_클램프_범위가_그만큼_넓어진다()
+        {
+            // 판자 없음: 좌측 바깥을 겨눠도 본체 첫 열(2)로 클램프.
+            Assert.That(StructureGridLogic.TryWorldToPlacementCell(-2.6f, 0f, CarCenterZ,
+                CarWidth, CarLength, CellSize, 1, 1, 0, 0, out int plainX, out _), Is.True);
+            Assert.That(plainX, Is.EqualTo(2));
+
+            // 좌측 1열: 판자 열(1)까지 스냅된다.
+            Assert.That(StructureGridLogic.TryWorldToPlacementCell(-2.6f, 0f, CarCenterZ,
+                CarWidth, CarLength, CellSize, 1, 1, 1, 0, out int plankedX, out _), Is.True);
+            Assert.That(plankedX, Is.EqualTo(1));
+
+            // 본체(4열)보다 넓은 5칸 점유도 좌우 판자로 유효 열이 6이 되면 통과한다.
+            Assert.That(StructureGridLogic.TryWorldToPlacementCell(0f, 0f, CarCenterZ,
+                CarWidth, CarLength, CellSize, 5, 1, 0, 0, out _, out _), Is.False, "판자 없이는 기각");
+            Assert.That(StructureGridLogic.TryWorldToPlacementCell(0f, 0f, CarCenterZ,
+                CarWidth, CarLength, CellSize, 5, 1, 1, 1, out _, out _), Is.True, "좌우 1열씩이면 6열");
+        }
+
+        [Test]
+        public void 판자_철거_반환량은_건축물과_같은_비율_규칙을_쓴다()
+        {
+            Assert.That(StructureGridLogic.RefundAmount(3, 0.5f), Is.EqualTo(1), "판자 비용 3 → 1");
+            Assert.That(StructureGridLogic.RefundAmount(4, 0.5f), Is.EqualTo(2));
         }
     }
 }

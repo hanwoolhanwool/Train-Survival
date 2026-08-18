@@ -11,6 +11,10 @@ namespace Game.Gameplay.Train
     /// 예약한다 — 열 0~1 = 좌측 판자(3차), 열 2~5 = 칸 본체(폭 4.6 m 중 4열, 양옆 0.3 m 여백),
     /// 열 6~7 = 우측 판자. 좌측 판자를 나중에 설치해도 기존 항목의 CellX 재색인이 영원히 불필요하다.
     /// 행은 칸 후미(-Z)가 0, 전방(+Z)으로 증가한다.
+    ///
+    /// <b>판자 증축</b> (건축 개편 3차 — 계획서 §2.9, 결정 ⑥): 칸마다 좌/우 판자 열 수
+    /// (<see cref="CarState.LeftPlanks"/>·<see cref="CarState.RightPlanks"/>)가 유효 열 범위를 넓힌다.
+    /// 판자 열은 본체 그리드에 딱 붙으므로 셀 규격이 본체와 같고, 그 위에 건축물을 설치할 수 있다.
     /// </summary>
     public static class StructureGridLogic
     {
@@ -38,6 +42,92 @@ namespace Game.Gameplay.Train
             return cellSize > 0f ? Mathf.Max(1, Mathf.FloorToInt(carLength / cellSize + DivisionEpsilon)) : 1;
         }
 
+        // ── 판자 증축 (건축 개편 3차 — 계획서 §2.9) ──────────────────
+
+        /// <summary>
+        /// 판자 열 수를 좌표계 예약 상한으로 클램프한다 — 에셋 상한(<see cref="TrainExpansionSettings.MaxPlankColumns"/>)이
+        /// <see cref="MaxPlankColumnsPerSide"/>를 넘으면 좌표 재색인이 필요해지므로 여기서 잘라낸다.
+        /// </summary>
+        public static int ClampPlankColumns(int columns)
+        {
+            return Mathf.Clamp(columns, 0, MaxPlankColumnsPerSide);
+        }
+
+        /// <summary>유효 열 범위의 첫 열 — 좌측 판자가 있으면 본체보다 그만큼 왼쪽에서 시작한다.</summary>
+        public static int FirstColumn(int leftPlanks)
+        {
+            return FirstBodyColumn - ClampPlankColumns(leftPlanks);
+        }
+
+        /// <summary>유효 열 수 — 칸 본체 + 좌우 판자 열.</summary>
+        public static int ValidColumns(int bodyColumns, int leftPlanks, int rightPlanks)
+        {
+            return bodyColumns + ClampPlankColumns(leftPlanks) + ClampPlankColumns(rightPlanks);
+        }
+
+        /// <summary>
+        /// 그 쪽 <paramref name="ordinal"/>번째(0 = 본체에 붙은 안쪽) 판자 열의 열 좌표.
+        /// 설치·제거·뷰 배치가 같은 좌표를 쓴다.
+        /// </summary>
+        public static int PlankColumn(PlankSide side, int ordinal, int bodyColumns)
+        {
+            return side == PlankSide.Left
+                ? FirstBodyColumn - 1 - ordinal
+                : FirstBodyColumn + bodyColumns + ordinal;
+        }
+
+        /// <summary>
+        /// 열 하나의 중심 월드 X — 열차는 X=0 고정 주행이라 칸과 무관하게 열 좌표만으로 정해진다.
+        /// 본체·판자 열이 같은 규격이므로 판자 뷰·프리뷰도 이 함수를 쓴다.
+        /// </summary>
+        public static float ColumnCenterWorldX(int cellX, int bodyColumns, float cellSize)
+        {
+            float bodyHalf = bodyColumns * cellSize * 0.5f;
+            return -bodyHalf + (cellX - FirstBodyColumn + 0.5f) * cellSize;
+        }
+
+        /// <summary>
+        /// 월드 X가 놓이는 열 좌표 — 범위 밖(허공)도 그대로 돌려준다. 조준이 본체 밖 판자 자리를
+        /// 가리키는지 판단하는 데 쓴다 (갑판 평면 연장 조준 — 계획서 §2.9 확정).
+        /// </summary>
+        public static int WorldXToColumn(float worldX, int bodyColumns, float cellSize)
+        {
+            if (cellSize <= 0f)
+            {
+                return FirstBodyColumn;
+            }
+
+            float bodyHalf = bodyColumns * cellSize * 0.5f;
+            return FirstBodyColumn + Mathf.FloorToInt((worldX + bodyHalf) / cellSize);
+        }
+
+        /// <summary>그 열(모든 행)에 걸친 건축물이 하나라도 있는지 — 판자 제거 기각 판정.</summary>
+        public static bool ColumnHasStructure(StructureEntry[] entries, int carIndex, int cellX)
+        {
+            if (entries == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                StructureEntry entry = entries[i];
+                if (entry.CarIndex != carIndex)
+                {
+                    continue;
+                }
+
+                RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
+                    out int existingWidth, out _);
+                if (cellX >= entry.CellX && cellX < entry.CellX + existingWidth)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>회전을 반영한 점유 면적 — 홀수 회전(90°·270°)이면 가로·세로가 스왑된다.</summary>
         public static void RotatedFootprint(int width, int length, int rotation, out int rotatedWidth, out int rotatedLength)
         {
@@ -48,13 +138,14 @@ namespace Game.Gameplay.Train
 
         /// <summary>
         /// 월드 좌표(조준 hit 지점)를 점유 영역 좌하단 셀로 스냅한다 — 점유 면적이 커서에 <b>중심 정렬</b>되고,
-        /// 본체 그리드 안으로 클램프된다. 열차는 X=0 고정 주행이므로 X는 월드 그대로, Z만 칸 중심 보정.
-        /// 점유가 그리드보다 크면 false.
+        /// 유효 열(칸 본체 + 그 칸의 판자 열) 안으로 클램프된다. 열차는 X=0 고정 주행이므로 X는 월드
+        /// 그대로, Z만 칸 중심 보정. 점유가 그리드보다 크면 false.
         /// </summary>
         public static bool TryWorldToPlacementCell(
             float worldX, float worldZ, float carCenterZ,
             float carWidth, float carLength, float cellSize,
             int rotatedWidth, int rotatedLength,
+            int leftPlanks, int rightPlanks,
             out int cellX, out int cellZ)
         {
             cellX = 0;
@@ -62,8 +153,10 @@ namespace Game.Gameplay.Train
 
             int bodyColumns = BodyColumns(carWidth, cellSize);
             int rows = Rows(carLength, cellSize);
+            int firstColumn = FirstColumn(leftPlanks);
+            int validColumns = ValidColumns(bodyColumns, leftPlanks, rightPlanks);
             if (cellSize <= 0f || rotatedWidth <= 0 || rotatedLength <= 0
-                || rotatedWidth > bodyColumns || rotatedLength > rows)
+                || rotatedWidth > validColumns || rotatedLength > rows)
             {
                 return false;
             }
@@ -75,7 +168,7 @@ namespace Game.Gameplay.Train
             float rowF = (worldZ - (carCenterZ - rowSpanHalf)) / cellSize;
 
             cellX = Mathf.Clamp(Mathf.RoundToInt(columnF - rotatedWidth * 0.5f),
-                FirstBodyColumn, FirstBodyColumn + bodyColumns - rotatedWidth);
+                firstColumn, firstColumn + validColumns - rotatedWidth);
             cellZ = Mathf.Clamp(Mathf.RoundToInt(rowF - rotatedLength * 0.5f), 0, rows - rotatedLength);
             return true;
         }
@@ -88,22 +181,23 @@ namespace Game.Gameplay.Train
         {
             int bodyColumns = BodyColumns(carWidth, cellSize);
             int rows = Rows(carLength, cellSize);
-            float bodyHalf = bodyColumns * cellSize * 0.5f;
             float rowSpanHalf = rows * cellSize * 0.5f;
 
-            worldX = -bodyHalf + (cellX - FirstBodyColumn) * cellSize + rotatedWidth * cellSize * 0.5f;
+            // 좌하단 셀의 중심에서 점유 폭·길이의 절반만큼 안쪽으로 — 판자 열(본체 밖 음/양 열)도 같은 식이다.
+            worldX = ColumnCenterWorldX(cellX, bodyColumns, cellSize) + (rotatedWidth - 1) * cellSize * 0.5f;
             worldZ = carCenterZ - rowSpanHalf + cellZ * cellSize + rotatedLength * cellSize * 0.5f;
         }
 
         /// <summary>
-        /// 점유 영역이 유효 열·행 안에 온전히 들어가는지 — 1차에서는 유효 열 = 칸 본체뿐이다
-        /// (판자 확장 열은 3차에서 칸별 판자 상태가 이 판정에 들어온다).
+        /// 점유 영역이 유효 열·행 안에 온전히 들어가는지 — 유효 열 = 칸 본체 + 그 칸의 판자 열
+        /// (건축 개편 3차). 판자가 없는 칸은 본체 4열만 유효하다.
         /// </summary>
-        public static bool IsWithinBody(int cellX, int cellZ, int rotatedWidth, int rotatedLength,
-            int bodyColumns, int rows)
+        public static bool IsWithinColumns(int cellX, int cellZ, int rotatedWidth, int rotatedLength,
+            int bodyColumns, int rows, int leftPlanks, int rightPlanks)
         {
-            return cellX >= FirstBodyColumn
-                && cellX + rotatedWidth <= FirstBodyColumn + bodyColumns
+            int firstColumn = FirstColumn(leftPlanks);
+            return cellX >= firstColumn
+                && cellX + rotatedWidth <= firstColumn + ValidColumns(bodyColumns, leftPlanks, rightPlanks)
                 && cellZ >= 0
                 && cellZ + rotatedLength <= rows;
         }
@@ -164,7 +258,8 @@ namespace Game.Gameplay.Train
             int bodyColumns = BodyColumns(carWidth, cellSize);
             int rows = Rows(carLength, cellSize);
 
-            return IsWithinBody(cellX, cellZ, rotatedWidth, rotatedLength, bodyColumns, rows)
+            return IsWithinColumns(cellX, cellZ, rotatedWidth, rotatedLength, bodyColumns, rows,
+                    car.LeftPlanks, car.RightPlanks)
                 && !OverlapsExisting(entries, carIndex, cellX, cellZ, rotatedWidth, rotatedLength);
         }
 
