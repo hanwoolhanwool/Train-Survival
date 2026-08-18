@@ -6332,6 +6332,7 @@ GameObject:
   - component: {fileID: 1704432523}
   - component: {fileID: 1704432524}
   - component: {fileID: 1704432525}
+  - component: {fileID: 1704432526}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -6576,6 +6577,23 @@ MonoBehaviour:
   _summonRadius: 5
   _herdLateralOffset: 7
   _herdSpawnZ: 45
+--- !u!114 &1704432526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f6a3d8e5b2c7940ae3d6f1b8c5a2e74, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Cycle.DayCycleVisualController
+  _settings: {fileID: 11400000, guid: 3e8b1d6f4a2c95708be1d3f6a9c4b275, type: 2}
+  _sunLight: {fileID: 1162375218}
+  _skyboxSource: {fileID: 2100000, guid: 331276a2277feaa459253e3c5c5aa3ad, type: 2}
+  _mode: 1
+  _enableModeToggleKey: 1
 --- !u!1 &1707067726
 GameObject:
   m_ObjectHideFlags: 0

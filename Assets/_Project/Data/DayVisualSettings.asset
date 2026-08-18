@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b7e2c9a1f6d3e8b5c0a7d2f9e4b1c63, type: 3}
+  m_Name: DayVisualSettings
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Cycle.DayVisualSettings
+  _fadeSeconds: 6
+  _dayAmbientSky: {r: 0.55, g: 0.68, b: 0.85, a: 1}
+  _dayAmbientEquator: {r: 0.62, g: 0.6, b: 0.55, a: 1}
+  _dayAmbientGround: {r: 0.3, g: 0.27, b: 0.23, a: 1}
+  _dayAmbientIntensity: 1
+  _nightAmbientSky: {r: 0.17, g: 0.21, b: 0.33, a: 1}
+  _nightAmbientEquator: {r: 0.11, g: 0.13, b: 0.2, a: 1}
+  _nightAmbientGround: {r: 0.05, g: 0.05, b: 0.07, a: 1}
+  _nightAmbientIntensity: 0.45
+  _riseElevation: 10
+  _noonElevation: 80
+  _nightElevation: 8
+  _yawStart: -30
+  _yawEnd: 330
+  _daySunColor: {r: 1, g: 0.957, b: 0.839, a: 1}
+  _daySunIntensity: 1
+  _duskSunColor: {r: 1, g: 0.65, b: 0.36, a: 1}
+  _duskSunIntensity: 0.55
+  _nightSunColor: {r: 0.55, g: 0.62, b: 0.85, a: 1}
+  _nightSunIntensity: 0.3
+  _daySkyTint: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  _daySkyGround: {r: 0.369, g: 0.349, b: 0.341, a: 1}
+  _daySkyAtmosphereThickness: 1
+  _daySkyExposure: 1.3
+  _nightSkyTint: {r: 0.13, g: 0.16, b: 0.28, a: 1}
+  _nightSkyGround: {r: 0.05, g: 0.05, b: 0.07, a: 1}
+  _nightSkyAtmosphereThickness: 0.55
+  _nightSkyExposure: 0.5
+  _minLuminanceGuard: 0.08
