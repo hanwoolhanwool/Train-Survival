@@ -7,18 +7,20 @@ using UnityEngine;
 namespace Game.Tests.EditMode
 {
     /// <summary>
-    /// 파지 설정 <b>에셋 값</b>의 건전성 (1인칭 통합 시점 전환 계획 §1.4 · R2 · R3).
-    /// 순수 로직이 아니라 데이터를 본다 — 자세 튜닝은 사람이 눈으로 하지만, 눈으로는
-    /// "팔이 닿는가"와 "화면에 있는가"를 동시에 가늠하기 어려워 계기가 필요하다.
+    /// 파지 설정 <b>에셋 값</b>의 건전성 (1인칭 통합 시점 전환 계획 §1.4.1 · R2 · R3).
+    /// 순수 로직이 아니라 데이터를 본다 — 자세는 사람이 눈으로 맞추지만, 눈으로는
+    /// "팔이 닿는가"와 "팔꿈치가 어디로 굽는가"를 가늠하기 어려워 계기가 필요하다.
     ///
-    /// <para>고정하는 계약 셋:
-    /// <b>통합 프로파일의 조준 무기는 화면 아래 경계 근처 안에 있다</b> ·
-    /// <b>팔을 다 펴지 않고 닿는다</b> ·
+    /// <para>고정하는 계약 둘: <b>팔을 다 펴지 않고 닿는다</b> ·
     /// <b>팔꿈치 힌트가 어깨보다 아래에 있다</b>.</para>
     ///
-    /// <para>마지막 항목은 1차 검증에서 실제로 터진 결함이다 — FP 힌트를 어깨보다 7 cm 위에
+    /// <para>둘째 항목은 1차 검증에서 실제로 터진 결함이다 — FP 힌트를 어깨보다 7 cm 위에
     /// 두는 바람에 IK가 팔꿈치를 들어올려 <b>팔이 말려 접혔다</b>. 원격 화면은 TP 프로파일을
     /// 쓰므로 멀쩡해 보여, 두 화면을 비교해도 원인이 드러나지 않았다.</para>
+    ///
+    /// <para><b>시야(화면 안에 보이는가)는 여기서 강제하지 않는다.</b> 통합 프로파일의 기준선은
+    /// "원격 화면과 똑같은 자세"이고(§3.3 결정 재정립), 무기를 화면 쪽으로 올릴지는 그 다음
+    /// 문제다. 시야 각도 계산은 <see cref="FirstPersonHoldMath"/>가 제공하며 뷰랩 계기가 쓴다.</para>
     /// </summary>
     public sealed class WeaponHoldSettingsAssetTests
     {
@@ -30,12 +32,6 @@ namespace Game.Tests.EditMode
 
         /// <summary>팔 사용률 상한 — 넘으면 팔꿈치가 펴져 뻣뻣해진다.</summary>
         private const float MaxReachRatio = 0.9f;
-
-        /// <summary>
-        /// 손의 수직각 상한 (도). 하단 경계(FOV 60이면 30°)를 조금 넘어도 된다 —
-        /// §1.4의 배치 원칙이 "손은 화면 하단 경계, 총열이 화면 안으로 뻗는다"이기 때문이다.
-        /// </summary>
-        private const float MaxVerticalDownDegrees = 35f;
 
         /// <summary>카메라 피벗의 루트 로컬 위치 — Player.prefab의 CameraRig/CameraPivot.</summary>
         private static readonly Vector3 CameraPivotLocal = new Vector3(0f, 1.6f, 0f);
@@ -73,11 +69,11 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void 통합_프로파일의_조준_무기는_화면_아래_경계_근처_안에_있다()
+        public void 조준_무기의_손은_카메라_앞쪽에_있다()
         {
+            // 뒤(z ≤ 0)로 넘어가면 어느 각도로도 화면에 담을 수 없다 — 자세가 뒤집힌 신호다.
             WeaponHoldSettings hold = LoadHold();
             PlayerViewSettings view = LoadView();
-            float fov = view.GetFieldOfView(PlayerViewMode.UnifiedFirstPerson);
 
             foreach (HotbarItemType item in AimWeapons)
             {
@@ -88,19 +84,6 @@ namespace Game.Tests.EditMode
                 Vector3 right = CameraLocalOf(hold, view, fp.RightHandLocalPosition);
 
                 Assert.That(right.z, Is.GreaterThan(0f), item + " 오른손이 카메라 뒤에 있다");
-                Assert.That(FirstPersonHoldMath.VerticalDownDegrees(right),
-                    Is.LessThan(MaxVerticalDownDegrees),
-                    item + " 오른손이 화면 아래로 너무 내려갔다 (FOV " + fov + ")");
-
-                if (!entry.TwoHanded)
-                {
-                    continue;
-                }
-
-                Vector3 left = CameraLocalOf(hold, view, fp.LeftHandLocalPosition);
-                Assert.That(FirstPersonHoldMath.VerticalDownDegrees(left),
-                    Is.LessThan(MaxVerticalDownDegrees),
-                    item + " 왼손이 화면 아래로 너무 내려갔다");
             }
         }
 
