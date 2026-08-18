@@ -318,7 +318,7 @@ namespace Game.Gameplay.Train
         {
             float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, GetEjectOffset(entry.CarIndex));
             StructureGridLogic.EntryCenterWorld(entry, centerZ,
-                _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
+                _layoutSettings.CarWidth, _layoutSettings.DeckLength, _layoutSettings.StructureCellSize,
                 out float worldX, out float worldZ);
             return new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
         }
@@ -360,7 +360,7 @@ namespace Game.Gameplay.Train
                 }
 
                 if (StructureGridLogic.IsWorldPointOnEntry(entry, position.x, position.z, padding,
-                    centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize))
+                    centerZ, _layoutSettings.CarWidth, _layoutSettings.DeckLength, _layoutSettings.StructureCellSize))
                 {
                     return true;
                 }
@@ -417,8 +417,11 @@ namespace Game.Gameplay.Train
             return true;
         }
 
-        /// <summary>갑판 낙하 판정의 폭·높이 여유 (m) — PlayerTemperature의 칸 위 판정과 같은 규약.</summary>
-        private const float DeckApertureMargin = 0.5f;
+        /// <summary>
+        /// 갑판 낙하 판정의 <b>세로</b> 여유 (m) — 갑판면 바로 아래까지는 갑판 위로 친다.
+        /// 가로 여유는 없다 (건축 개편 §7): 판자 유무가 갑판 폭을 바꾸므로 실측 반폭만 본다.
+        /// </summary>
+        private const float DeckSurfaceMargin = 0.5f;
 
         public bool TryGetCarAtZ(float worldZ, out int carIndex, out CarState car, out float carCenterZ)
         {
@@ -455,9 +458,12 @@ namespace Game.Gameplay.Train
             deckHeight = 0f;
 
             // 폭 게이트는 칸별로 본다 — 판자 증축이 칸마다 다르기 때문이다 (건축 개편 3차 §2.9).
-            if (!TryGetCarAtZ(position.z, out carIndex, out CarState car, out _)
+            // Z는 칸 길이가 아니라 갑판 유효 길이로 좁힌다 — 앞뒤 끝 행은 콜라이더가 없어 밟을 수
+            // 없으므로, 그 위에 물건이 얹히면 공중에 뜬다 (건축 개편 §7.2).
+            if (!TryGetCarAtZ(position.z, out carIndex, out CarState car, out float carCenterZ)
+                || !_layoutSettings.IsZOnDeck(position.z, carCenterZ)
                 || !TrainLayoutMath.IsWithinDeckAperture(
-                    position, DeckHalfWidth(car, position.x), _layoutSettings.DeckHeight, DeckApertureMargin))
+                    position, DeckHalfWidth(car, position.x), _layoutSettings.DeckHeight, DeckSurfaceMargin))
             {
                 carIndex = -1;
                 return false;
@@ -879,7 +885,7 @@ namespace Game.Gameplay.Train
             _structureCatalog.GetFootprint(kind, out int width, out int length);
             return StructureGridLogic.CanPlace(QueryStructures(), QueryCars(), carIndex,
                 cellX, cellZ, rotation, kind, width, length, _structureCatalog.IsPlaceable(kind),
-                _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize);
+                _layoutSettings.CarWidth, _layoutSettings.DeckLength, _layoutSettings.StructureCellSize);
         }
 
         /// <summary>

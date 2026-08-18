@@ -406,10 +406,20 @@ namespace Game.Gameplay.World
                 // 소실·파괴되면 위의 물건도 함께 회수한다 (7차 2차 발견 — 재건 시 자원이 따라오지 않게).
                 if (node.IsDeckResting)
                 {
-                    if (ServiceLocator.TryGet(out Train.ITrainState train) && !train.IsDeckAlive(node.DeckCarIndex))
+                    if (ServiceLocator.TryGet(out Train.ITrainState train))
                     {
-                        node.NetworkObject.Despawn(true);
-                        RemovalBuffer.Add(node);
+                        if (!train.IsDeckAlive(node.DeckCarIndex))
+                        {
+                            node.NetworkObject.Despawn(true);
+                            RemovalBuffer.Add(node);
+                            continue;
+                        }
+
+                        // 칸은 살아 있는데 발밑 갑판만 사라진 경우 — 판자 철거가 유일한 경로다
+                        // (건축 개편 §7). 칸 소실과 달리 물건은 남기고 지면으로 떨어뜨린다.
+                        // 여기서 보는 이유: 판자 열 수는 CarState 복제로만 바뀌므로 별도 통지가 없고,
+                        // 휴지 노드는 어차피 매 프레임 이 루프를 돈다 (칸 소실 검사와 같은 비용대).
+                        node.ServerDropIfDeckLost(train);
                     }
 
                     continue;

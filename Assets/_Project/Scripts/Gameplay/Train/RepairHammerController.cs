@@ -331,7 +331,7 @@ namespace Game.Gameplay.Train
             // 유효 열은 그 칸의 판자 증축을 반영한다 (건축 개편 3차) — 판자 위에도 지을 수 있다.
             train.TryGetCar(carIndex, out CarState aimedCar);
             if (!StructureGridLogic.TryWorldToPlacementCell(hitPoint.x, hitPoint.z, centerZ,
-                _layoutSettings.CarWidth, _layoutSettings.CarLength, cellSize,
+                _layoutSettings.CarWidth, _layoutSettings.DeckLength, cellSize,
                 rotatedWidth, rotatedLength, aimedCar.LeftPlanks, aimedCar.RightPlanks,
                 out cellX, out cellZ))
             {
@@ -408,7 +408,7 @@ namespace Game.Gameplay.Train
             }
 
             PlankAimLogic.ColumnVolume(previewColumn, bodyColumns,
-                StructureGridLogic.Rows(_layoutSettings.CarLength, cellSize),
+                StructureGridLogic.Rows(_layoutSettings.DeckLength, cellSize),
                 centerZ, cellSize, _layoutSettings.DeckHeight, _settings.GhostHeight,
                 out Vector3 ghostCenter, out Vector3 ghostSize);
 
@@ -434,7 +434,7 @@ namespace Game.Gameplay.Train
         {
             float cellSize = _layoutSettings.StructureCellSize;
             StructureGridLogic.CellRegionCenterWorld(cellX, cellZ, rotatedWidth, rotatedLength,
-                carCenterZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, cellSize,
+                carCenterZ, _layoutSettings.CarWidth, _layoutSettings.DeckLength, cellSize,
                 out float worldX, out float worldZ);
 
             float ghostHeight = _settings.GhostHeight;

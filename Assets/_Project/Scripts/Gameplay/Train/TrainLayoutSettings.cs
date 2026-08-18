@@ -17,8 +17,12 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(0f)] private float _couplingGap = 1.5f;
 
         [Header("건축 그리드 (건축 개편 1차 — 결정 ①)")]
-        [Tooltip("건축 그리드 정사각 셀 한 변(m) — 1.0이면 폭 4.6 m 칸에서 4열 × 15행(60셀)이 나온다.")]
+        [Tooltip("건축 그리드 정사각 셀 한 변(m) — 1.0이면 폭 4.6 m 칸에서 4열이 나온다.")]
         [SerializeField, Min(0.25f)] private float _structureCellSize = 1f;
+
+        [Tooltip("칸 앞뒤 끝에서 갑판·건축 그리드가 빠지는 셀 행 수 (건축 개편 §7.2) — 1이면 "
+            + "첫 행·마지막 행이 빠져 길이 15 m 칸이 13행이 된다. 칸 콜라이더도 같은 범위로 맞춘다.")]
+        [SerializeField, Min(0)] private int _deckEdgeRows = 1;
 
         [Header("열차 하부 즉사 존 (M5 6차)")]
         [Tooltip("이 높이(y) 이하 + 열차 발자국 안이면 견인·파지·기절 몬스터가 즉사한다. 0 = 존 비활성.")]
@@ -40,6 +44,14 @@ namespace Game.Gameplay.Train
 
         /// <summary>건축 그리드 정사각 셀 한 변(m) — 건축 개편 1차 결정 ①.</summary>
         public float StructureCellSize => _structureCellSize;
+
+        /// <summary>
+        /// 밟을 수 있는 갑판의 Z 길이 (m) — 칸 길이에서 앞뒤 제외 행을 뺀 값 (건축 개편 §7.2).
+        /// <b>칸 콜라이더·건축 그리드·갑판 판정이 전부 이 길이를 쓴다.</b> 칸 간격·이탈 계산은
+        /// <see cref="CarLength"/> 그대로다 — 편성 좌표는 바뀌지 않고 밟는 면만 좁아진다.
+        /// </summary>
+        public float DeckLength =>
+            Mathf.Max(_structureCellSize, _carLength - 2f * _deckEdgeRows * _structureCellSize);
 
         /// <summary>열차 하부 즉사 존의 높이 상한 (M5 6차). 0 = 비활성.</summary>
         public float WheelKillHeight => _wheelKillHeight;
@@ -63,10 +75,22 @@ namespace Game.Gameplay.Train
             return TrainLayoutMath.GetCarCenterZ(index, FrontZ, _carLength, _couplingGap, ejectOffset);
         }
 
-        /// <summary>Z가 해당 칸의 갑판 범위 안인가 — 이탈 오프셋을 반영한다.</summary>
+        /// <summary>
+        /// Z가 해당 칸의 <b>귀속</b> 범위 안인가 (칸 길이 기준) — 이탈 오프셋을 반영한다.
+        /// "어느 칸 위인가"를 묻는 판정용이다. 밟을 수 있는 면은 <see cref="IsZOnDeck"/>가 더 좁게 본다.
+        /// </summary>
         public bool IsZOnCar(float z, int index, float ejectOffset)
         {
             return TrainLayoutMath.IsZOnCar(z, index, FrontZ, _carLength, _couplingGap, ejectOffset);
+        }
+
+        /// <summary>
+        /// Z가 그 칸의 <b>밟을 수 있는 갑판</b> 범위 안인가 (건축 개편 §7.2) — 앞뒤 끝 행은 콜라이더가
+        /// 없어 제외된다. 칸 귀속(<see cref="IsZOnCar"/>)과 달리 물건 안착·낙하 판정이 쓴다.
+        /// </summary>
+        public bool IsZOnDeck(float z, float carCenterZ)
+        {
+            return TrainLayoutMath.IsWithinDeckSpan(z, carCenterZ, DeckLength);
         }
 
         public float RearZ => -TotalLength * 0.5f;

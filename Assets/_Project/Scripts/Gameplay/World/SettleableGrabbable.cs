@@ -59,8 +59,8 @@ namespace Game.Gameplay.World
 
         public GrabKind Kind => GrabKind.Reel;
 
-        /// <summary>무게 등급 — 파생이 정한다 (자원 = 종류 카탈로그, 보따리 = 고정값).</summary>
-        public abstract int GrabWeight { get; }
+        /// <summary>요구 집게 등급 — 파생이 정한다 (자원 = 종류 카탈로그, 보따리 = 고정값).</summary>
+        public abstract int RequiredHarpoonTier { get; }
 
         public virtual bool IsAvailableForGrab => IsSpawned && !_isTowed.Value;
 
@@ -125,6 +125,9 @@ namespace Game.Gameplay.World
             // 해제(견인 → 비견인)를 전 피어가 감지해 자기 표시 높이에서 로컬 하강을 시작한다 (7차 2차 C3).
             _isTowed.OnValueChanged += OnTowedChanged;
 
+            // 발밑 갑판 상실(판자 철거)도 같은 하강 재생을 탄다 (건축 개편 §7).
+            _isDeckResting.OnValueChanged += OnDeckRestingChanged;
+
             _predictedTow = false;
             ApplyScrolledPosition();
         }
@@ -132,12 +135,27 @@ namespace Game.Gameplay.World
         public override void OnNetworkDespawn()
         {
             _isTowed.OnValueChanged -= OnTowedChanged;
+            _isDeckResting.OnValueChanged -= OnDeckRestingChanged;
         }
 
         /// <summary>견인이 풀리는 순간 — 현재 표시 높이에서 안착 위치까지의 하강을 로컬로 시작한다.</summary>
         private void OnTowedChanged(bool previous, bool current)
         {
             if (previous && !current)
+            {
+                _falling = true;
+                _fallDisplayY = transform.position.y;
+            }
+        }
+
+        /// <summary>
+        /// 갑판 휴지가 풀리는 순간 — 견인 확정(<see cref="TryClaimGrab"/>)이 아니라면 발밑 갑판이
+        /// 사라진 것이므로(§7 — 판자 철거) 지금 높이에서 지면까지 로컬 하강을 재생한다.
+        /// 견인 확정 경로는 <c>_isTowed</c>가 먼저 켜지므로 여기서 걸러진다.
+        /// </summary>
+        private void OnDeckRestingChanged(bool previous, bool current)
+        {
+            if (previous && !current && !_isTowed.Value)
             {
                 _falling = true;
                 _fallDisplayY = transform.position.y;
@@ -225,6 +243,37 @@ namespace Game.Gameplay.World
             _deckRestEjectOffset.Value = onDeck && train != null ? train.GetEjectOffset(deckCarIndex) : 0f;
             _isTowed.Value = false;
             _grabberClientId.Value = NoGrabber;
+        }
+
+        /// <summary>
+        /// 서버 전용 — 갑판 휴지 중인데 발밑 갑판이 사라졌으면(판자 철거 등) 그 자리에서 지면으로
+        /// 떨어뜨린다 (건축 개편 §7 결정 2026-08-19: "판자가 사라지면 그 위 물건은 지면으로 낙하").
+        /// 지면 안착 뒤에는 컨베이어 소속으로 돌아가 뒤로 흘러가고 평소대로 후방 회수 대상이 된다.
+        /// 하강 표현은 <see cref="OnDeckRestingChanged"/>가 전 피어에서 로컬로 재생한다.
+        /// </summary>
+        /// <returns>이번 호출로 지면 낙하를 시작했으면 true.</returns>
+        public bool ServerDropIfDeckLost(Train.ITrainState train)
+        {
+            if (!IsServer || train == null || _isTowed.Value || !_isDeckResting.Value)
+            {
+                return false;
+            }
+
+            // 판정 위치는 표시 좌표가 아니라 안착 좌표다 — 하강 재생 중이면 표시 Y가 아직 내려오는 중이라
+            // 같은 프레임에 두 번 판정될 수 있다 (안착 좌표는 이탈 추종까지 반영된 권위 값).
+            Vector3 rest = GetRestPosition();
+            if (train.TryGetDeckSurface(rest, out _, out _))
+            {
+                return false;
+            }
+
+            rest.y = _serverRestOffsetY;
+            _spawnPosition.Value = rest;
+            _spawnDistance.Value = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.TraveledDistance : 0f;
+            _isDeckResting.Value = false;
+            _deckCarIndex.Value = -1;
+            _deckRestEjectOffset.Value = 0f;
+            return true;
         }
 
         /// <summary>획득·이관 확정 — 파생이 정한다 (자원 = 수납 후 소멸, 보따리 = 항상 Rejected(운반 전용)).</summary>

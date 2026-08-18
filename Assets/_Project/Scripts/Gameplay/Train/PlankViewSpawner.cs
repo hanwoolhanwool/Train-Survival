@@ -126,7 +126,7 @@ namespace Game.Gameplay.Train
 
             float cellSize = _layoutSettings.StructureCellSize;
             int bodyColumns = StructureGridLogic.BodyColumns(_layoutSettings.CarWidth, cellSize);
-            int rows = StructureGridLogic.Rows(_layoutSettings.CarLength, cellSize);
+            int rows = StructureGridLogic.Rows(_layoutSettings.DeckLength, cellSize);
             float worldX = StructureGridLogic.ColumnCenterWorldX(
                 StructureGridLogic.PlankColumn(side, ordinal, bodyColumns), bodyColumns, cellSize);
 

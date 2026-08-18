@@ -61,7 +61,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            float rearEdgeZ = _layoutSettings.CarCenterZ(rearIndex) - _layoutSettings.CarLength * 0.5f;
+            float rearEdgeZ = _layoutSettings.CarCenterZ(rearIndex) - _layoutSettings.DeckLength * 0.5f;
             Vector3 position = transform.position;
             transform.position = new Vector3(position.x, position.y, rearEdgeZ + _zOffsetFromRearEdge);
         }

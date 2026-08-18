@@ -141,18 +141,18 @@ namespace Game.Tests.EditMode
         // ── 갑판 낙하의 폭·높이 게이트 (M5 7차 A3) — Z 범위는 IsZOnCar가 칸별 판정 ─────────
 
         private const float DeckHeight = 3f;
-        private const float ApertureMargin = 0.5f;
+        private const float SurfaceMargin = 0.5f;
 
-        private static bool InAperture(Vector3 position)
+        private static bool InAperture(Vector3 position, float halfWidth = HalfWidth)
         {
-            return TrainLayoutMath.IsWithinDeckAperture(position, HalfWidth, DeckHeight, ApertureMargin);
+            return TrainLayoutMath.IsWithinDeckAperture(position, halfWidth, DeckHeight, SurfaceMargin);
         }
 
         [Test]
         public void 폭_안_갑판_높이_위면_갑판_낙하_게이트를_통과한다()
         {
             Assert.That(InAperture(new Vector3(0f, 4f, 0f)), Is.True, "갑판 위 플레이어 앞 (도착 지점)");
-            Assert.That(InAperture(new Vector3(1.9f, 2.6f, 0f)), Is.True, "여유 폭·여유 높이 경계 안쪽");
+            Assert.That(InAperture(new Vector3(1.5f, 2.6f, 0f)), Is.True, "폭 경계 정확히 위 · 여유 높이 안쪽");
         }
 
         [Test]
@@ -160,6 +160,53 @@ namespace Game.Tests.EditMode
         {
             Assert.That(InAperture(new Vector3(2.1f, 4f, 0f)), Is.False, "열차 옆 — 지상 낙하");
             Assert.That(InAperture(new Vector3(0f, 1f, 0f)), Is.False, "지상 높이 — 열차 폭 안이어도 갑판이 아니다");
+        }
+
+        // ── 가로 여유 없음 (건축 개편 §7 — C-발견 2) ─────────
+
+        [Test]
+        public void 갑판_반폭_밖은_조금만_벗어나도_갑판이_아니다()
+        {
+            // 판자가 없는 칸의 판자 자리(반폭 바로 밖)에 떨어진 보따리가 갑판 높이에 얹히던 버그.
+            Assert.That(InAperture(new Vector3(1.6f, 4f, 0f)), Is.False, "반폭 +0.1 m — 판자 없는 자리");
+            Assert.That(InAperture(new Vector3(-1.6f, 4f, 0f)), Is.False, "반대쪽도 같다");
+        }
+
+        [Test]
+        public void 판자로_넓어진_반폭까지는_갑판이다()
+        {
+            // 판자 1열(1 m)이 붙으면 그 열 위도 갑판 — 폭 게이트가 실측 반폭을 그대로 따라간다.
+            Assert.That(InAperture(new Vector3(1.6f, 4f, 0f), halfWidth: HalfWidth + 1f), Is.True, "판자 열 위");
+            Assert.That(InAperture(new Vector3(2.6f, 4f, 0f), halfWidth: HalfWidth + 1f), Is.False, "판자 열 밖");
+        }
+
+        // ── 갑판 유효 Z 범위 (건축 개편 §7.2 — 앞뒤 한 행씩 콜라이더 제외) ─────────
+
+        private const float DeckSpanLength = 13f;   // 칸 길이 15 − 앞뒤 1 m
+
+        [Test]
+        public void 갑판_유효_길이_안이면_밟는_면이다()
+        {
+            Assert.That(TrainLayoutMath.IsWithinDeckSpan(0f, 0f, DeckSpanLength), Is.True, "칸 중앙");
+            Assert.That(TrainLayoutMath.IsWithinDeckSpan(6.4f, 0f, DeckSpanLength), Is.True, "제외 행 바로 안쪽");
+            Assert.That(TrainLayoutMath.IsWithinDeckSpan(-6.5f, 0f, DeckSpanLength), Is.True, "경계 정확히 위");
+        }
+
+        [Test]
+        public void 칸_안이어도_앞뒤_끝_행은_갑판이_아니다()
+        {
+            // 칸 귀속 범위(±7.5)에는 들지만 콜라이더가 없는 구간 — 물건이 얹히면 공중에 뜬다.
+            Assert.That(TrainLayoutMath.IsWithinDeckSpan(6.6f, 0f, DeckSpanLength), Is.False, "마지막 행");
+            Assert.That(TrainLayoutMath.IsWithinDeckSpan(-7.4f, 0f, DeckSpanLength), Is.False, "첫 행");
+        }
+
+        [Test]
+        public void 갑판_Z_범위는_칸_중심을_따라간다()
+        {
+            // 이탈로 칸이 뒤로 밀리면 갑판 범위도 함께 밀린다 (중심 인자를 그대로 쓴다).
+            const float pushedCenter = -20f;
+            Assert.That(TrainLayoutMath.IsWithinDeckSpan(-26f, pushedCenter, DeckSpanLength), Is.True, "밀린 칸 위");
+            Assert.That(TrainLayoutMath.IsWithinDeckSpan(-13.4f, pushedCenter, DeckSpanLength), Is.False, "원래 자리");
         }
     }
 }
