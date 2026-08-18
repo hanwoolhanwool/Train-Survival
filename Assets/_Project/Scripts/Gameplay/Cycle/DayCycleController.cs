@@ -16,13 +16,20 @@ namespace Game.Gameplay.Cycle
         [SerializeField] private DayTimelineSettings _settings;
 
         [Header("디버그 (테스트용)")]
-        [Tooltip("켜면 숫자패드 1 = 아침(낮 시작), 2 = 저녁(밤 시작), 3 = 다음 Day 아침으로 즉시 전환. 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드 1 = 아침(낮 시작), 2 = 저녁(밤 시작), 3 = 다음 Day 아침으로 즉시 전환, " +
+                 "F8 = 시간 배속 순환(×1 → ×4 → ×16). 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableDebugPhaseKeys = true;
+
+        /// <summary>F8이 순환하는 시간 배속 단계 (M8 2차 — 연출이 국면 <b>내내</b> 흐르는지 보려면 기다림이 필요했다).</summary>
+        private static readonly float[] DebugTimeScales = { 1f, 4f, 16f };
 
         private readonly NetworkVariable<float> _totalSeconds = new NetworkVariable<float>();
 
         private DayTimelineState _state;
         private bool _hasEvaluated;
+
+        /// <summary>호스트 전용 — 누적 속도 배율의 현재 단계. 복제하지 않는다(누적 시간 자체가 이미 복제된다).</summary>
+        private int _debugTimeScaleIndex;
 
         public int DayNumber => _state.DayNumber;
 
@@ -77,9 +84,12 @@ namespace Game.Gameplay.Cycle
         {
             bool holding = ServiceLocator.TryGet(out INightHoldGate gate) && gate.IsHoldingNight;
 
+            // 배속은 가산량에만 곱한다 — 보류 클램프·국면 파생은 배속을 모르므로 규칙이 갈라지지 않는다.
+            float delta = Time.deltaTime * DebugTimeScales[_debugTimeScaleIndex];
+
             float previous = _totalSeconds.Value;
             float next = NightHoldMath.ClampAccumulation(
-                previous, previous + Time.deltaTime,
+                previous, previous + delta,
                 _settings.DayDurationSeconds, _settings.NightDurationSeconds, holding);
 
             if (!Mathf.Approximately(next, previous))
@@ -117,6 +127,28 @@ namespace Game.Gameplay.Cycle
                 // 지역 전환(M4)은 Day 단위로 일어나므로 Day를 건너뛸 수단이 필요하다.
                 RequestAdvanceDayServerRpc();
             }
+            else if (keyboard.f8Key.wasPressedThisFrame)
+            {
+                RequestCycleTimeScaleServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// 시간 배속을 다음 단계로 돌린다 (호스트 권위, 디버그 전용). 국면 <b>점프</b>가 아니라
+        /// <b>가속</b>이므로 낮/밤이 흐르는 과정을 그대로 볼 수 있다 — 연출(M8 2차)이 국면 내내
+        /// 변하는지는 점프로는 확인할 수 없다.
+        /// <para>
+        /// 빨라지는 것은 <b>시간축뿐이다</b>. 이동·물리·전투 속도는 그대로이므로 <c>Time.timeScale</c>과
+        /// 달리 판정이 왜곡되지 않는다. 대신 밤이 자주 오므로 웨이브가 잦아진다 —
+        /// 격리 관찰이 필요하면 숫자패드 5(웨이브 토글)와 함께 쓴다.
+        /// </para>
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestCycleTimeScaleServerRpc()
+        {
+            _debugTimeScaleIndex = (_debugTimeScaleIndex + 1) % DebugTimeScales.Length;
+
+            Debug.Log($"[DayCycle] 시간 배속 → ×{DebugTimeScales[_debugTimeScaleIndex]:0}");
         }
 
         /// <summary>다음 Day의 아침으로 누적 시간을 점프시킨다(호스트 권위, 디버그 전용).</summary>
