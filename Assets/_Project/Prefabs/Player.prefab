@@ -32,6 +32,8 @@ GameObject:
   - component: {fileID: 8811223344556677005}
   - component: {fileID: 8811223344556677006}
   - component: {fileID: 8811223344556677007}
+  - component: {fileID: 8811223344556677010}
+  - component: {fileID: 8811223344556677020}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -299,6 +301,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Inventory.HotbarController
   ShowTopMostFoldoutHeaderGroup: 1
   _harpoon: {fileID: 7642862762512348835}
+  _handedness: {fileID: 11400000, guid: eda8891e13c7d9e4d95d8c22b4211306, type: 2}
   _hammer: {fileID: 5447795796761736459}
   _guns:
   - {fileID: 7965373453658798524}
@@ -437,6 +440,7 @@ GameObject:
   - component: {fileID: 3262967093418075143}
   - component: {fileID: 6685222545460311329}
   - component: {fileID: 6063044775309778054}
+  - component: {fileID: 8811223344556677011}
   m_Layer: 0
   m_Name: PlayerCamera
   m_TagString: Untagged
@@ -1473,3 +1477,40 @@ SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: -4337069466901714706, guid: 2f0f2e761a34dcb4c95bc88b41cd22a3, type: 3}
   m_PrefabInstance: {fileID: 5566001122334455750}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8811223344556677010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfa041d58ed4b8f43856a198694cd123, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerViewModeController
+  _settings: {fileID: 11400000, guid: 23498d83eb06b924093dbb4bb3c793e7, type: 2}
+--- !u!114 &8811223344556677011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3877519062468645117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5944d1f0f1341db4da6736d3c30fd3f3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerCameraTuner
+--- !u!114 &8811223344556677020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d86b8bc16db70f42a39f278f8469f28, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerGrabTarget
