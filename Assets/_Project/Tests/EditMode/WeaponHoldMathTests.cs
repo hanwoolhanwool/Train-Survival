@@ -206,6 +206,44 @@ namespace Game.Tests.EditMode
             Assert.That(Quaternion.Angle(rotation, faceRight), Is.LessThan(0.001f));
         }
 
+        // ── 어깨 추종 (포즈 편집 계획 E6) ───────────────────────────────
+
+        [Test]
+        public void 정지_자세_어깨에서는_추종_오프셋이_0이다()
+        {
+            // 기준점에서 0이어야 기존에 맞춰 둔 파지 수치가 그대로 재현된다.
+            Vector3 rest = new Vector3(0.16f, 1.091f, 0.141f);
+
+            Vector3 offset = WeaponHoldMath.ShoulderFollowOffset(rest, rest, 1f);
+
+            Assert.That(offset.magnitude, Is.LessThan(0.0001f));
+        }
+
+        [Test]
+        public void 어깨가_내려가면_타깃도_같은_만큼_내려간다()
+        {
+            // 달리기 클립은 어깨를 최대 21 cm 끌어내린다 — 타깃이 따라가야 팔 자세가 유지된다.
+            Vector3 rest = new Vector3(0.16f, 1.091f, 0.141f);
+            Vector3 running = rest + new Vector3(0.03f, -0.21f, 0.09f);
+
+            Vector3 offset = WeaponHoldMath.ShoulderFollowOffset(running, rest, 1f);
+
+            Assert.That(offset.x, Is.EqualTo(0.03f).Within(0.0001f));
+            Assert.That(offset.y, Is.EqualTo(-0.21f).Within(0.0001f));
+            Assert.That(offset.z, Is.EqualTo(0.09f).Within(0.0001f));
+        }
+
+        [Test]
+        public void 추종_비율_0이면_종전대로_루트에_고정된다()
+        {
+            Vector3 rest = new Vector3(0.16f, 1.091f, 0.141f);
+            Vector3 running = rest + new Vector3(0.03f, -0.21f, 0.09f);
+
+            Assert.That(WeaponHoldMath.ShoulderFollowOffset(running, rest, 0f), Is.EqualTo(Vector3.zero));
+            Assert.That(WeaponHoldMath.ShoulderFollowOffset(running, rest, 0.5f).y,
+                Is.EqualTo(-0.105f).Within(0.0001f));
+        }
+
         // ── 손목 펴기 (포즈 편집 계획 E5) ───────────────────────────────
 
         [Test]

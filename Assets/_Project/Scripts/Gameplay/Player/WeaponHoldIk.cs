@@ -68,24 +68,33 @@ namespace Game.Gameplay.Player
 
             // 포즈 클립이 자세를 맡는 만큼 IK를 비운다 (업그레이드 계획 C축 §2.1) —
             // 클립 반입 전에는 잔여 가중치가 1이라 A안과 동일하게 IK 단독으로 동작한다.
+            // 상체가 움직이면 어깨만 옮겨가 팔 자세가 달라진다 — 타깃을 어깨와 함께 옮겨
+            // 정지든 달리기든 같은 파지가 되게 한다 (E6).
+            Vector3 rightShoulder = ShoulderOffset(
+                HumanBodyBones.RightUpperArm, _settings.RightShoulderRestLocalPosition);
+            Vector3 leftShoulder = ShoulderOffset(
+                HumanBodyBones.LeftUpperArm, _settings.LeftShoulderRestLocalPosition);
+
             ApplyHand(AvatarIKGoal.RightHand,
                 WeaponHoldMath.BlendIkWithPose(_rightWeight, pose.IkResidualWeight),
-                pose.RightHandLocalPosition, pose.RightHandLocalRotation, pose.StraightenWrist);
+                pose.RightHandLocalPosition, pose.RightHandLocalRotation,
+                pose.StraightenWrist, rightShoulder);
             ApplyHand(AvatarIKGoal.LeftHand,
                 WeaponHoldMath.BlendIkWithPose(_leftWeight, pose.LeftIkResidualWeight),
-                pose.LeftHandLocalPosition, pose.LeftHandLocalRotation, pose.StraightenWrist);
+                pose.LeftHandLocalPosition, pose.LeftHandLocalRotation,
+                pose.StraightenWrist, leftShoulder);
 
             ApplyElbowHint(AvatarIKHint.RightElbow,
                 WeaponHoldMath.BlendIkWithPose(_rightWeight, pose.RightElbowHintWeight),
-                pose.RightElbowHintLocalPosition);
+                pose.RightElbowHintLocalPosition, rightShoulder);
             ApplyElbowHint(AvatarIKHint.LeftElbow,
                 WeaponHoldMath.BlendIkWithPose(_leftWeight, pose.LeftElbowHintWeight),
-                pose.LeftElbowHintLocalPosition);
+                pose.LeftElbowHintLocalPosition, leftShoulder);
         }
 
         private void ApplyHand(
             AvatarIKGoal goal, float weight, Vector3 localPosition, Quaternion localRotation,
-            bool straightenWrist)
+            bool straightenWrist, Vector3 shoulderOffset)
         {
             if (weight <= 0.001f)
             {
@@ -99,6 +108,9 @@ namespace Game.Gameplay.Player
                 root.position, root.rotation, _settings.AimPivotLocalPosition,
                 _aim.DisplayPitchDegrees, localPosition, localRotation,
                 out Vector3 worldPosition, out Quaternion worldRotation);
+
+            // 어깨 이동분은 루트 공간의 변위라 피치 회전을 태우지 않는다 (E6).
+            worldPosition += root.rotation * shoulderOffset;
 
             _animator.SetIKPositionWeight(goal, weight);
             _animator.SetIKPosition(goal, worldPosition);
@@ -158,7 +170,8 @@ namespace Game.Gameplay.Player
         /// (2본 IK의 남는 자유도 1) 힌트로 잡는다 (포즈 편집 계획 §2.3 · E3).
         /// 가중치 0이면 아무것도 세팅하지 않아 내장 IK 기본 스윙이 그대로 남는다.
         /// </summary>
-        private void ApplyElbowHint(AvatarIKHint hint, float weight, Vector3 localPosition)
+        private void ApplyElbowHint(
+            AvatarIKHint hint, float weight, Vector3 localPosition, Vector3 shoulderOffset)
         {
             if (weight <= 0.001f)
             {
@@ -168,10 +181,33 @@ namespace Game.Gameplay.Player
             Transform root = _aim.transform;
             Vector3 worldPosition = WeaponHoldMath.ComputeHoldPosition(
                 root.position, root.rotation, _settings.AimPivotLocalPosition,
-                _aim.DisplayPitchDegrees, localPosition);
+                _aim.DisplayPitchDegrees, localPosition) + root.rotation * shoulderOffset;
 
             _animator.SetIKHintPositionWeight(hint, weight);
             _animator.SetIKHintPosition(hint, worldPosition);
+        }
+
+        /// <summary>
+        /// 어깨가 정지 자세에서 얼마나 벗어났는지 (루트 로컬) — 로코모션이 상체를 흔들어도
+        /// 팔 자세가 그대로이게 타깃을 함께 옮기는 데 쓴다 (E6). 어깨 관절의 <b>위치</b>는
+        /// 부모(쇄골·가슴)가 정하므로 IK 적용 전후가 같아, OnAnimatorIK에서 읽어도 된다.
+        /// </summary>
+        private Vector3 ShoulderOffset(HumanBodyBones shoulderBone, Vector3 restLocalPosition)
+        {
+            if (_settings.ShoulderFollow <= 0.001f)
+            {
+                return Vector3.zero;
+            }
+
+            Transform shoulder = _animator.GetBoneTransform(shoulderBone);
+            if (shoulder == null)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 local = _aim.transform.InverseTransformPoint(shoulder.position);
+            return WeaponHoldMath.ShoulderFollowOffset(
+                local, restLocalPosition, _settings.ShoulderFollow);
         }
     }
 }

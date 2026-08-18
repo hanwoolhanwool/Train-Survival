@@ -61,6 +61,21 @@ namespace Game.Gameplay.Player
         }
 
         /// <summary>
+        /// <b>어깨 추종 오프셋</b> (포즈 편집 계획 E6) — 홀드 타깃은 조준 피벗(루트 로컬) 기준이라
+        /// 로코모션이 상체를 움직이면 어깨만 이동해 팔 자세가 달라진다. 달리기 클립은 어깨를
+        /// 정지 대비 최대 21 cm 끌어내려, 어깨–손 거리가 절반 가까이 줄고 팔이 접힌다(실측).
+        /// 어깨가 움직인 만큼 타깃도 옮겨 <b>정지든 달리기든 같은 팔 자세</b>를 유지한다.
+        /// </summary>
+        /// <param name="shoulderLocalPosition">현재 어깨의 루트 로컬 위치.</param>
+        /// <param name="restLocalPosition">정지 자세 기준 어깨 위치 — 여기서는 오프셋이 0이다.</param>
+        /// <param name="follow">추종 비율. 0이면 종전대로 루트에 고정된다.</param>
+        public static Vector3 ShoulderFollowOffset(
+            Vector3 shoulderLocalPosition, Vector3 restLocalPosition, float follow)
+        {
+            return (shoulderLocalPosition - restLocalPosition) * Mathf.Clamp01(follow);
+        }
+
+        /// <summary>
         /// <b>손목을 편 손 자세</b> — 손 본의 손끝 축을 실제 전완 방향에 맞추고, 남는 자유도(축 둘레
         /// 롤)만 데이터로 준다 (포즈 편집 계획 E5). 손 회전을 절대각으로 고정하면 팔이 조금만
         /// 달리 서도 그 차이가 손목 꺾임으로 남지만, 이 방식은 팔이 어떻게 서든 손목이 펴진다.

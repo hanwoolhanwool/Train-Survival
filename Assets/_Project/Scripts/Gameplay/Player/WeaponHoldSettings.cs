@@ -156,6 +156,16 @@ namespace Game.Gameplay.Player
         [Header("TP 조준 피벗 (플레이어 루트 로컬 — 가슴 높이)")]
         [SerializeField] private Vector3 _aimPivotLocalPosition = new Vector3(0f, 1.25f, 0f);
 
+        [Header("어깨 추종 (포즈 편집 계획 E6)")]
+        [Tooltip("로코모션이 상체를 움직여도 팔 자세가 유지되도록 홀드 타깃을 어깨 이동분만큼 " +
+                 "함께 옮긴다. 0이면 루트 고정(종전) — 달리면 팔이 접혀 뒤로 당겨진다.")]
+        [SerializeField, Range(0f, 1f)] private float _shoulderFollow = 1f;
+
+        [Tooltip("정지 자세의 어깨 위치 (루트 로컬) — 여기서 추종 오프셋이 0이 된다. Girl·Man idle 실측 평균.")]
+        [SerializeField] private Vector3 _rightShoulderRestLocalPosition = new Vector3(0.16f, 1.091f, 0.141f);
+
+        [SerializeField] private Vector3 _leftShoulderRestLocalPosition = new Vector3(-0.237f, 1.081f, 0.141f);
+
         [Header("IK 가중치")]
         [SerializeField, Range(0f, 1f)] private float _aimHandWeight = 1f;
 
@@ -174,6 +184,18 @@ namespace Game.Gameplay.Player
 
         /// <summary>조준 자세일 때 손 IK 목표 가중치 — 애니 에셋 반입 시 데이터로 내리는 스위치 (§2.5).</summary>
         public float AimHandWeight => _aimHandWeight;
+
+        /// <summary>
+        /// 홀드 타깃이 어깨를 따라가는 비율 (E6) — 1이면 로코모션이 상체를 어떻게 흔들어도
+        /// 팔 자세가 정지 때와 같다. 0이면 루트 고정이라 달릴 때 팔이 접힌다.
+        /// </summary>
+        public float ShoulderFollow => _shoulderFollow;
+
+        /// <summary>정지 자세 기준 오른 어깨 위치 (루트 로컬) — Girl·Man 공용 1벌 (LSP).</summary>
+        public Vector3 RightShoulderRestLocalPosition => _rightShoulderRestLocalPosition;
+
+        /// <summary>정지 자세 기준 왼 어깨 위치 (루트 로컬).</summary>
+        public Vector3 LeftShoulderRestLocalPosition => _leftShoulderRestLocalPosition;
 
         /// <summary>IK 가중치 블렌드 반감기 (초) — <see cref="WeaponHoldMath.StepWeight"/>에 쓴다.</summary>
         public float IkBlendHalfLifeSeconds => _ikBlendHalfLifeSeconds;
