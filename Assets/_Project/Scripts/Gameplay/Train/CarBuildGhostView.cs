@@ -100,8 +100,9 @@ namespace Game.Gameplay.Train
 
         /// <summary>
         /// 재결합 &gt; 칸 건설 &gt; 판자 증축 &gt; 건축물 설치 — 망치의 우클릭 우선순위와 같은 순서로 그린다.
-        /// 이미 깔린 판자 열은 그 위 건축물 설치가 우선이라 건축물 프리뷰가 함께 서므로, 판자 테두리는
-        /// 빈 자리(증축 대상)일 때만 그린다 — 철거 안내는 HUD가 맡는다 (건축 개편 3차).
+        /// 각 분기는 <b>자기 이벤트만</b> 본다: 무엇이 이겼는지는 컨트롤러가 이미 정해 보냈고
+        /// (이미 깔린 판자 열은 그 위 건축물 설치가 우선이라 EmptySlot이 거짓으로 온다), 여기서는
+        /// 두 이벤트를 상관시켜 다시 판단하지 않는다 (건축 개편 마무리 패스).
         /// </summary>
         private void Redraw()
         {
@@ -117,7 +118,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            if (_plankAim.Aiming && !_structureAim.Aiming)
+            if (_plankAim.Aiming && _plankAim.EmptySlot)
             {
                 DrawBox(_plankAim.GhostCenter, _plankAim.GhostSize, _plankAim.CanBuild);
                 return;

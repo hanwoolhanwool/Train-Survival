@@ -23,6 +23,10 @@ namespace Game.Gameplay.Train
         [SerializeField] private TrainLayoutSettings _layoutSettings;
         [SerializeField] private ResourceCatalog _catalog;
 
+        [Tooltip("건축물 카탈로그 — '공유 저장 블록을 갖는 종류'를 데이터로 판정한다 (2차 §2.8). " +
+            "창고 계열 종류가 늘어도 이 스크립트는 수정하지 않는다.")]
+        [SerializeField] private StructureCatalog _structureCatalog;
+
         [Tooltip("창고 하나의 저장 슬롯 수.")]
         [SerializeField, Min(1)] private int _slotsPerStorage = 10;
 
@@ -160,23 +164,24 @@ namespace Game.Gameplay.Train
         private int FindNearestAliveStorage(Vector3 position, out Vector3 nearestPoint)
         {
             nearestPoint = default;
-            if (_layoutSettings == null || !ServiceLocator.TryGet(out ITrainState train))
+            if (_structureCatalog == null || !ServiceLocator.TryGet(out ITrainState train))
             {
                 return -1;
             }
 
+            // 목록 순회·점유 중심 계산은 상태(TrainState)가 맡는다 — 창고·제작대·망치가 같은 조회를
+            // 각자 구현하지 않게 하는 경계다 (건축 개편 마무리 패스).
             int best = -1;
             float bestSqr = float.PositiveInfinity;
-            for (int i = 0; i < train.StructureCount; i++)
+            for (int kindIndex = 0; kindIndex < _structureCatalog.EntryCount; kindIndex++)
             {
-                if (!train.TryGetStructureAt(i, out StructureEntry entry)
-                    || entry.Kind != StructureKind.Storage || entry.Health <= 0f
-                    || !train.TryGetCar(entry.CarIndex, out CarState car) || car.Health <= 0f)
+                if (!_structureCatalog.TryGetKindAt(kindIndex, out StructureKind kind)
+                    || !_structureCatalog.ProvidesStorageBlock(kind)
+                    || !train.TryGetNearestStructure(kind, position, out StructureEntry entry, out Vector3 point))
                 {
                     continue;
                 }
 
-                Vector3 point = StoragePoint(train, entry);
                 float sqr = (position - point).sqrMagnitude;
                 if (sqr < bestSqr)
                 {
@@ -189,23 +194,12 @@ namespace Game.Gameplay.Train
             return best;
         }
 
-        /// <summary>창고 실물의 점유 영역 중심 — 근접·시선·서버 거리 재검증·배출 위치가 같은 지점을 쓴다.</summary>
-        private Vector3 StoragePoint(ITrainState train, StructureEntry entry)
-        {
-            float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, train.GetEjectOffset(entry.CarIndex));
-            StructureGridLogic.RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
-                out int rotatedWidth, out int rotatedLength);
-            StructureGridLogic.CellRegionCenterWorld(entry.CellX, entry.CellZ, rotatedWidth, rotatedLength,
-                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
-                out float worldX, out float worldZ);
-            return new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
-        }
-
-        /// <summary>창고가 기능하는 상태인지 — 항목 생존 + 칸 잔존(파괴 아님. 이탈은 허용).</summary>
-        private static bool IsStorageAlive(ITrainState train, int storageId, out StructureEntry entry)
+        /// <summary>창고가 기능하는 상태인지 — 저장 블록 보유 종류 + 항목 생존 + 칸 잔존(파괴 아님. 이탈은 허용).</summary>
+        private bool IsStorageAlive(ITrainState train, int storageId, out StructureEntry entry)
         {
             return train.TryGetStructureById(storageId, out entry)
-                && entry.Kind == StructureKind.Storage && entry.Health > 0f
+                && _structureCatalog != null && _structureCatalog.ProvidesStorageBlock(entry.Kind)
+                && entry.Health > 0f
                 && train.TryGetCar(entry.CarIndex, out CarState car) && car.Health > 0f;
         }
 
@@ -283,7 +277,7 @@ namespace Game.Gameplay.Train
             }
 
             // 서버 측 거리 검증 — 로컬 판정과 같은 지점(창고 실물의 점유 영역 중심)을 쓴다.
-            Vector3 point = StoragePoint(train, storageEntry);
+            train.TryGetStructureCenter(storageEntry.Id, out Vector3 point);
             float maxDistance = _interactRadius + 1.5f;
             if ((client.PlayerObject.transform.position - point).sqrMagnitude > maxDistance * maxDistance)
             {
@@ -673,7 +667,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            Vector3 point = StoragePoint(train, entry);
+            train.TryGetStructureCenter(entry.Id, out Vector3 point);
             if (mode == StorageReleaseMode.DeckBundle)
             {
                 spawner.ServerSpawnDeckResting(contents, entry.CarIndex,

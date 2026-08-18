@@ -31,6 +31,11 @@ namespace Game.Gameplay.Train
         private readonly Dictionary<StructureKind, GameObject> _previews =
             new Dictionary<StructureKind, GameObject>();
 
+        // 종류별 프리뷰의 렌더러 — 틴트는 커서가 셀을 넘을 때마다 다시 칠하므로, 그때마다
+        // GetComponentsInChildren로 배열을 새로 만들지 않도록 사본 생성 시 한 번만 모은다.
+        private readonly Dictionary<StructureKind, Renderer[]> _previewRenderers =
+            new Dictionary<StructureKind, Renderer[]>();
+
         private MaterialPropertyBlock _propertyBlock;
         private GameObject _active;
 
@@ -78,9 +83,12 @@ namespace Game.Gameplay.Train
 
             Color tint = evt.CanBuild ? _buildableColor : _blockedColor;
             _propertyBlock.SetColor(BaseColorId, tint);
-            foreach (Renderer renderer in preview.GetComponentsInChildren<Renderer>())
+            if (_previewRenderers.TryGetValue(evt.Kind, out Renderer[] renderers))
             {
-                renderer.SetPropertyBlock(_propertyBlock);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    renderers[i].SetPropertyBlock(_propertyBlock);
+                }
             }
         }
 
@@ -125,7 +133,8 @@ namespace Game.Gameplay.Train
                 Destroy(view);
             }
 
-            foreach (Renderer renderer in preview.GetComponentsInChildren<Renderer>(includeInactive: true))
+            Renderer[] renderers = preview.GetComponentsInChildren<Renderer>(includeInactive: true);
+            foreach (Renderer renderer in renderers)
             {
                 var materials = new Material[renderer.sharedMaterials.Length];
                 for (int i = 0; i < materials.Length; i++)
@@ -139,6 +148,7 @@ namespace Game.Gameplay.Train
             }
 
             _previews[kind] = preview;
+            _previewRenderers[kind] = renderers;
             return preview;
         }
     }

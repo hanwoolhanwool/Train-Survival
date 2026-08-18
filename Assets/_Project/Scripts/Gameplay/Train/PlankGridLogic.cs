@@ -104,7 +104,7 @@ namespace Game.Gameplay.Train
                 return false;
             }
 
-            int current = side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks;
+            int current = car.Planks(side);
             return current < Mathf.Min(StructureGridLogic.ClampPlankColumns(maxColumns), StructureGridLogic.MaxPlankColumnsPerSide);
         }
 
@@ -126,7 +126,7 @@ namespace Game.Gameplay.Train
                 return false;
             }
 
-            int current = StructureGridLogic.ClampPlankColumns(side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks);
+            int current = StructureGridLogic.ClampPlankColumns(car.Planks(side));
             if (current <= 0)
             {
                 return false;

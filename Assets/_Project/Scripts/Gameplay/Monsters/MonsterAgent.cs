@@ -26,6 +26,9 @@ namespace Game.Gameplay.Monsters
 
         [SerializeField] private TrainLayoutSettings _trainLayout;
 
+        // 편성 상태 — 갑판 반폭(판자 증축 반영) 조회가 매 프레임 여러 번 도는 경로라 캐시한다.
+        private ITrainState _trainState;
+
         private const float Gravity = 25f;
 
         // 갑판 위 건축물 관통 금지 판정의 몸 반경 여유(m) — 건축 개편 1차 §2.10 최소 구현.
@@ -446,9 +449,11 @@ namespace Game.Gameplay.Monsters
 
         private bool IsWithinTrainFootprint(Vector3 position)
         {
+            // Z 범위를 먼저 거른다 — 폭 조회는 편성을 훑으므로, 열차 근처가 아닌 개체가 매 프레임
+            // 그 비용을 내지 않게 한다 (건축 개편 마무리 패스).
             return _trainLayout != null &&
-                Mathf.Abs(position.x) <= DeckHalfWidth(position) + 0.5f &&
-                position.z >= _trainLayout.RearZ && position.z <= _trainLayout.FrontZ;
+                position.z >= _trainLayout.RearZ && position.z <= _trainLayout.FrontZ &&
+                Mathf.Abs(position.x) <= DeckHalfWidth(position) + 0.5f;
         }
 
         /// <summary>
@@ -457,9 +462,12 @@ namespace Game.Gameplay.Monsters
         /// </summary>
         private float DeckHalfWidth(Vector3 position)
         {
-            return ServiceLocator.TryGet(out ITrainState train)
-                ? train.GetDeckHalfWidthAt(position)
-                : _trainLayout.CarWidth * 0.5f;
+            if (_trainState == null && !ServiceLocator.TryGet(out _trainState))
+            {
+                return _trainLayout.CarWidth * 0.5f;
+            }
+
+            return _trainState.GetDeckHalfWidthAt(position);
         }
 
         private void FaceVelocity(Vector3 horizontalVelocity, Transform target)

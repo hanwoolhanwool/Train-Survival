@@ -30,6 +30,26 @@ namespace Game.Gameplay.Train
         bool TryGetStructureById(int structureId, out StructureEntry entry);
 
         /// <summary>
+        /// 건축물 점유 영역의 중심 월드 지점(갑판 높이) — 이탈 오프셋 반영. 프리뷰·사거리 검증·
+        /// 보따리 배출이 같은 지점을 쓰도록 계산을 상태 쪽에 모은다(호출부가 레이아웃 에셋을 들 필요가 없다).
+        /// </summary>
+        bool TryGetStructureCenter(int structureId, out UnityEngine.Vector3 center);
+
+        /// <summary>
+        /// 살아 있는 그 종류 건축물 중 <paramref name="from"/>에서 가장 가까운 것 — 항목과 점유 영역
+        /// 중심을 함께 돌려준다. 창고 접근·제작대 조회가 각자 목록을 훑지 않게 하는 경계다
+        /// (건축 개편 — 칸당 1개 전제가 사라져 "가장 가까운 그것"이 판정 기준이 됐다).
+        /// </summary>
+        bool TryGetNearestStructure(StructureKind kind, UnityEngine.Vector3 from,
+            out StructureEntry nearest, out UnityEngine.Vector3 center);
+
+        /// <summary>
+        /// 월드 Z가 얹힌 살아 있는 칸 — 이탈 오프셋을 반영한 칸 중심 Z까지 돌려준다.
+        /// 갑판·조준·관통 판정이 공유하는 "어느 칸 위인가" 조회다 (편성을 순회하는 유일한 지점).
+        /// </summary>
+        bool TryGetCarAtZ(float worldZ, out int carIndex, out CarState car, out float carCenterZ);
+
+        /// <summary>
         /// 살아 있는(설치됨 + 체력 &gt; 0) 해당 종류 건축물의 수 (M7 3차 — 강화 난방로 연료 소모).
         /// 연료 축(<see cref="Game.Gameplay.World.FuelTank"/>)이 건축물 목록을 직접 훑지 않게 하는 경계다.
         /// 이탈 칸 위의 것도 센다 — 난방은 이탈 칸에서도 동작하므로 연료도 그만큼 든다.

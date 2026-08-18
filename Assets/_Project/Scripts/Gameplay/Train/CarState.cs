@@ -29,6 +29,25 @@ namespace Game.Gameplay.Train
         /// <summary>우측(+X)에 덧댄 판자 열 수 — <see cref="LeftPlanks"/>와 같은 규약.</summary>
         public byte RightPlanks;
 
+        /// <summary>그 쪽 판자 열 수 — 좌/우 분기를 값 쪽에 모은다(판정·뷰·조준이 같은 접근자를 쓴다).</summary>
+        public byte Planks(PlankSide side)
+        {
+            return side == PlankSide.Left ? LeftPlanks : RightPlanks;
+        }
+
+        /// <summary>그 쪽 판자 열 수를 정한다 — 호스트 변이 전용(복제는 목록 대입이 맡는다).</summary>
+        public void SetPlanks(PlankSide side, byte columns)
+        {
+            if (side == PlankSide.Left)
+            {
+                LeftPlanks = columns;
+            }
+            else
+            {
+                RightPlanks = columns;
+            }
+        }
+
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref Type);

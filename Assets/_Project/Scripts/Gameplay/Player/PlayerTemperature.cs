@@ -297,6 +297,13 @@ namespace Game.Gameplay.Player
                 negatesColdPenalty |= entryHeat
                     && _structureCatalog.GetHeaterFuelPerSecond(entry.Kind) > 0f
                     && fuelAlive;
+
+                // 셋 다 성립하면 더 볼 것이 없다 — 효과가 칸 단위 boolean이라 개수는 의미가 없고,
+                // 이 루프는 매 프레임 플레이어마다 돈다 (건축 개편 마무리 패스).
+                if (hasShade && hasHeat && negatesColdPenalty)
+                {
+                    return;
+                }
             }
         }
 

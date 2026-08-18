@@ -54,13 +54,13 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>유효 열 범위의 첫 열 — 좌측 판자가 있으면 본체보다 그만큼 왼쪽에서 시작한다.</summary>
-        public static int FirstColumn(int leftPlanks)
+        private static int FirstColumn(int leftPlanks)
         {
             return FirstBodyColumn - ClampPlankColumns(leftPlanks);
         }
 
         /// <summary>유효 열 수 — 칸 본체 + 좌우 판자 열.</summary>
-        public static int ValidColumns(int bodyColumns, int leftPlanks, int rightPlanks)
+        private static int ValidColumns(int bodyColumns, int leftPlanks, int rightPlanks)
         {
             return bodyColumns + ClampPlankColumns(leftPlanks) + ClampPlankColumns(rightPlanks);
         }
@@ -189,10 +189,25 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
+        /// 항목 하나의 점유 영역 중심 월드 X·Z — 회전 반영 점유를 풀어 <see cref="CellRegionCenterWorld"/>에
+        /// 넘기는 두 단계를 하나로 묶는다. 프리뷰·뷰 스폰·사거리 검증·보따리 배출·창고 접근·제작 조회가
+        /// <b>전부 이 함수 하나</b>를 거치므로 "같은 지점"이 규약이 아니라 구조로 보장된다.
+        /// </summary>
+        public static void EntryCenterWorld(StructureEntry entry,
+            float carCenterZ, float carWidth, float carLength, float cellSize,
+            out float worldX, out float worldZ)
+        {
+            RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
+                out int rotatedWidth, out int rotatedLength);
+            CellRegionCenterWorld(entry.CellX, entry.CellZ, rotatedWidth, rotatedLength,
+                carCenterZ, carWidth, carLength, cellSize, out worldX, out worldZ);
+        }
+
+        /// <summary>
         /// 점유 영역이 유효 열·행 안에 온전히 들어가는지 — 유효 열 = 칸 본체 + 그 칸의 판자 열
         /// (건축 개편 3차). 판자가 없는 칸은 본체 4열만 유효하다.
         /// </summary>
-        public static bool IsWithinColumns(int cellX, int cellZ, int rotatedWidth, int rotatedLength,
+        private static bool IsWithinColumns(int cellX, int cellZ, int rotatedWidth, int rotatedLength,
             int bodyColumns, int rows, int leftPlanks, int rightPlanks)
         {
             int firstColumn = FirstColumn(leftPlanks);
@@ -203,7 +218,7 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>같은 칸 위 기존 항목들과 점유 셀이 교차하는지 — 셀 사각형 교차 판정.</summary>
-        public static bool OverlapsExisting(StructureEntry[] entries, int carIndex,
+        private static bool OverlapsExisting(StructureEntry[] entries, int carIndex,
             int cellX, int cellZ, int rotatedWidth, int rotatedLength)
         {
             if (entries == null)
@@ -366,8 +381,8 @@ namespace Game.Gameplay.Train
         {
             RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
                 out int rotatedWidth, out int rotatedLength);
-            CellRegionCenterWorld(entry.CellX, entry.CellZ, rotatedWidth, rotatedLength,
-                carCenterZ, carWidth, carLength, cellSize, out float centerX, out float centerZ);
+            EntryCenterWorld(entry, carCenterZ, carWidth, carLength, cellSize,
+                out float centerX, out float centerZ);
 
             float halfWidth = rotatedWidth * cellSize * 0.5f + padding;
             float halfLength = rotatedLength * cellSize * 0.5f + padding;

@@ -37,9 +37,6 @@ namespace Game.Gameplay.Train
 
         private float _nextSwingTime;
 
-        [Tooltip("건축물 설치 프리뷰 테두리의 높이(m) — 점유 셀 영역 표시용.")]
-        [SerializeField, Min(0.2f)] private float _structureGhostHeight = 1.2f;
-
         // 마지막으로 HUD에 알린 조준 상태 — 바뀔 때만 다시 발행한다.
         private bool _sentHasTarget;
         private TrainPartKind _sentKind;
@@ -61,15 +58,10 @@ namespace Game.Gameplay.Train
         // 설치 프리뷰 회전 (건축 개편 1차 — Q/E, 0~3 × 90°). 종류 변경·망치 해제 시 0으로 리셋한다.
         private int _previewRotation;
 
-        // X 홀드 철거 게이지 (건축 개편 2차 — 결정 ④). 표적이 바뀌거나 키를 놓으면 리셋한다.
-        private float _demolishHoldTime;
-        private int _demolishTargetId = -1;
-
-        // 판자 철거 X 홀드 게이지 (건축 개편 3차) — 건축물 철거와 같은 결의 별도 게이지.
-        // 표적(칸 + 쪽)이 바뀌거나 키를 놓으면 리셋한다.
-        private float _plankHoldTime;
-        private int _plankHoldCar = -1;
-        private PlankSide _plankHoldSide;
+        // X 홀드 철거 게이지 (건축 개편 2·3차 — 결정 ④). 건축물과 판자가 같은 규약을 쓰되 표적이
+        // 달라 게이지만 둘로 나눈다 (상태 기계는 HoldGauge 하나).
+        private HoldGauge _demolishHold;
+        private HoldGauge _plankHold;
 
         // 마지막으로 알린 판자 조준 상태 — 바뀔 때만 다시 발행한다.
         private PlankAimLocalEvent _sentPlankAim;
@@ -105,12 +97,16 @@ namespace Game.Gameplay.Train
 
         private PlayerHealth _health;
 
+        // 자원 인벤토리 — 조준 경로가 매 프레임 묻는 값이라 캐시한다(같은 오브젝트에 고정).
+        private IResourceInventory _inventory;
+
         /// <summary>도구 슬롯 활성 여부 — <see cref="Game.Gameplay.Inventory.HotbarController"/>가 제어한다. 소유자 입력 게이트.</summary>
         public bool InputEnabled { get; set; }
 
         private void Awake()
         {
             _health = GetComponent<PlayerHealth>();
+            _inventory = GetComponent<IResourceInventory>();
         }
 
         private void Update()
@@ -124,11 +120,11 @@ namespace Game.Gameplay.Train
             if (!InputEnabled || (_health != null && !_health.IsAlive))
             {
                 _previewRotation = 0;
-                ResetDemolishHold();
-                ResetPlankHold();
+                _demolishHold.Reset();
+                _plankHold.Reset();
                 PublishNoTarget();
-                PublishBuildAim(false, -1, 0, false, false);
-                PublishRecoupleAim(false, -1, 0, RecouplePrompt.None, 0f);
+                PublishNoBuildAim();
+                PublishNoRecoupleAim();
                 PublishNoPlaceAim();
                 PublishNoPlankAim();
                 return;
@@ -154,7 +150,7 @@ namespace Game.Gameplay.Train
                 out int recoupleCar, out int recoupleCost, out RecouplePrompt recouplePrompt, out float remaining))
             {
                 PublishRecoupleAim(true, recoupleCar, recoupleCost, recouplePrompt, remaining);
-                PublishBuildAim(false, -1, 0, false, false);
+                PublishNoBuildAim();
                 PublishNoPlaceAim();
                 PublishNoTarget();
 
@@ -168,7 +164,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            PublishRecoupleAim(false, -1, 0, RecouplePrompt.None, 0f);
+            PublishNoRecoupleAim();
 
             // 건설 조준이 성립하면 부위 조준을 덮는다 — 우클릭 의미(칸 건설 vs 돔 설치)가 겹치지 않게 한다.
             if (TryGetBuildAim(origin, forward, blockingDistance,
@@ -188,20 +184,10 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            PublishBuildAim(false, -1, 0, false, false);
+            PublishNoBuildAim();
 
-            // 판자 조준 (건축 개편 3차 — 계획서 §2.9): 갑판 높이 평면을 연장해 칸 옆 판자 열을 겨눈다.
-            // 아직 판자가 없는 빈 자리는 콜라이더가 없어 레이캐스트로는 잡히지 않으므로 평면 교차로 판정한다.
-            // 빈 자리를 겨눈 동안에는 다른 조준을 덮는다(우클릭 의미가 겹치지 않게) — 이미 깔린 판자 열은
-            // 그 위에 건축물을 지을 수 있어야 하므로 조준을 넘기고 X 홀드 철거만 얹는다.
-            if (TryUpdatePlankAim(origin, forward, hasRayHit, hit, out bool plankEmptySlot) && plankEmptySlot)
-            {
-                ResetDemolishHold();
-                PublishNoPlaceAim();
-                PublishNoTarget();
-                return;
-            }
-
+            // 부위 식별을 먼저 한다 — 판자 조준이 "지금 건축물을 겨누는 중인가"를 알아야 하고,
+            // 아래 부위 조준도 같은 결과를 쓴다 (조준 대상 해석은 이 한 지점뿐).
             bool hasHit = hasRayHit;
             TrainPartKind kind = default;
             int index = -1;
@@ -210,9 +196,23 @@ namespace Game.Gameplay.Train
                 hasHit = TryResolvePart(hit, out kind, out index);
             }
 
+            // 판자 조준 (건축 개편 3차 — 계획서 §2.9): 갑판 높이 평면을 연장해 칸 옆 판자 열을 겨눈다.
+            // 아직 판자가 없는 빈 자리는 콜라이더가 없어 레이캐스트로는 잡히지 않으므로 평면 교차로 판정한다.
+            // 빈 자리를 겨눈 동안에는 다른 조준을 덮는다(우클릭 의미가 겹치지 않게) — 이미 깔린 판자 열은
+            // 그 위에 건축물을 지을 수 있어야 하므로 조준을 넘기고 X 홀드 철거만 얹는다.
+            bool aimingStructure = hasHit && kind == TrainPartKind.Structure;
+            if (TryUpdatePlankAim(origin, forward, blockingDistance, aimingStructure, out bool plankEmptySlot)
+                && plankEmptySlot)
+            {
+                _demolishHold.Reset();
+                PublishNoPlaceAim();
+                PublishNoTarget();
+                return;
+            }
+
             if (!hasHit || !ServiceLocator.TryGet(out ITrainState train))
             {
-                ResetDemolishHold();
+                _demolishHold.Reset();
                 PublishNoPlaceAim();
                 PublishNoTarget();
                 return;
@@ -222,7 +222,7 @@ namespace Game.Gameplay.Train
             if (!ReadPartState(train, kind, index, out float health, out float maxHealth,
                 out bool canRepair, out bool canDemolish, out StructureKind targetStructureKind))
             {
-                ResetDemolishHold();
+                _demolishHold.Reset();
                 PublishNoPlaceAim();
                 PublishNoTarget();
                 return;
@@ -341,14 +341,10 @@ namespace Game.Gameplay.Train
             bool canPlace = expansion.CanPlaceStructure(carIndex, cellX, cellZ, _previewRotation, _selectedStructureKind);
 
             int cost = expansion.GetStructureBuildCost(_selectedStructureKind);
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
-            afford = inventory != null && inventory.Count >= cost;
+            afford = CanAfford(cost);
 
-            StructureGridLogic.CellRegionCenterWorld(cellX, cellZ, rotatedWidth, rotatedLength,
-                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, cellSize,
-                out float ghostX, out float ghostZ);
-            var ghostCenter = new Vector3(ghostX, _layoutSettings.DeckHeight + _structureGhostHeight * 0.5f, ghostZ);
-            var ghostSize = new Vector3(rotatedWidth * cellSize, _structureGhostHeight, rotatedLength * cellSize);
+            StructureGhostVolume(cellX, cellZ, rotatedWidth, rotatedLength, centerZ,
+                out Vector3 ghostCenter, out Vector3 ghostSize);
 
             // 자리 점유 판정 — 프리뷰 테두리와 같은 상자다 (칸 건설과 같은 규약: 테두리 안이 비어야 지어진다).
             occupied = IsVolumeOccupied(ghostCenter, ghostSize);
@@ -365,78 +361,60 @@ namespace Game.Gameplay.Train
         /// 이미 깔린 판자면 철거 안내(X 홀드)를 발행한다.
         /// 반환 = 판자 조준 성립. <paramref name="emptySlot"/> = 아직 판자가 없는 다음 자리.
         /// </summary>
-        private bool TryUpdatePlankAim(Vector3 origin, Vector3 forward, bool hasRayHit, RaycastHit hit,
-            out bool emptySlot)
+        private bool TryUpdatePlankAim(Vector3 origin, Vector3 forward, float blockedDistance,
+            bool aimingStructure, out bool emptySlot)
         {
             emptySlot = false;
 
-            if (_layoutSettings == null
+            // 건축물을 겨누는 동안에는 판자 안내를 아예 내지 않는다 — X 홀드의 주인이 하나로 정해져,
+            // 프리뷰·HUD가 두 이벤트를 상관시켜 스스로 우선순위를 판단할 필요가 없다 (마무리 패스).
+            if (aimingStructure
+                || _layoutSettings == null
                 || !ServiceLocator.TryGet(out ITrainState train)
                 || !ServiceLocator.TryGet(out ITrainExpansion expansion)
-                || !TryGetDeckPlanePoint(origin, forward, hasRayHit, hit, out Vector3 point)
-                || !TryGetAimedCar(train, point.z, out int carIndex, out CarState car, out float centerZ)
-                || !TrainStateLogic.IsCarPresent(car))
+                || !PlankAimLogic.TryDeckPlanePoint(origin, forward, _layoutSettings.DeckHeight,
+                    _settings.MaxRange, blockedDistance, PlankOcclusionTolerance, out Vector3 point)
+                || !train.TryGetCarAtZ(point.z, out int carIndex, out CarState car, out float centerZ)
+                || !TrainStateLogic.IsCarPresent(car)
+                || !IsWithinRange(point))
             {
                 // 이탈 칸 위에서는 안내 자체를 띄우지 않는다 — 건축물 철거(2차)와 같은 게이트다.
                 PublishNoPlankAim();
-                ResetPlankHold();
+                _plankHold.Reset();
                 return false;
             }
 
             float cellSize = _layoutSettings.StructureCellSize;
             int bodyColumns = StructureGridLogic.BodyColumns(_layoutSettings.CarWidth, cellSize);
-            int column = StructureGridLogic.WorldXToColumn(point.x, bodyColumns, cellSize);
-
-            PlankSide side;
-            bool alreadyPlanked = PlankGridLogic.TryGetPlankColumn(column, bodyColumns,
-                car.LeftPlanks, car.RightPlanks, out PlankSide placedSide, out _);
-            if (alreadyPlanked)
-            {
-                side = placedSide;
-            }
-            else if (PlankGridLogic.IsNextPlankColumn(column, bodyColumns,
-                car.LeftPlanks, car.RightPlanks, out PlankSide nextSide))
-            {
-                side = nextSide;
-                emptySlot = true;
-            }
-            else
+            if (!PlankAimLogic.TryResolveColumn(point.x, bodyColumns, cellSize,
+                car.LeftPlanks, car.RightPlanks, out PlankSide side, out emptySlot, out int previewColumn))
             {
                 // 칸 본체 열이거나 예약 범위 밖 허공 — 판자 조준이 아니다.
                 PublishNoPlankAim();
-                ResetPlankHold();
-                return false;
-            }
-
-            if (!IsWithinRange(point))
-            {
-                PublishNoPlankAim();
-                ResetPlankHold();
+                _plankHold.Reset();
                 return false;
             }
 
             int cost = expansion.PlankBuildCost;
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
-            bool afford = inventory != null && inventory.Count >= cost;
-            bool canBuild = emptySlot && expansion.CanBuildPlank(carIndex, side) && afford;
+            bool afford = CanAfford(cost);
+            bool canBuild = emptySlot && afford && expansion.CanBuildPlank(carIndex, side);
+            bool canRemove = !emptySlot && expansion.CanRemovePlank(carIndex, side);
+            float removeProgress = _plankHold.Update(
+                canRemove && IsHoldingDemolishKey(), PlankHoldKey(carIndex, side),
+                _settings.DemolishHoldSeconds, out bool removeCompleted);
+            if (removeCompleted)
+            {
+                RequestRemovePlankServerRpc(carIndex, side);
+            }
 
-            // 철거는 이미 깔린 판자에서만, 그리고 조준이 그 위 건축물에 막히지 않았을 때만 —
-            // 건축물을 겨눈 X 홀드는 건축물 철거(2차)의 몫이다.
-            bool aimingStructure = hasRayHit && hit.collider != null
-                && hit.collider.GetComponentInParent<StructureView>() != null;
-            bool canRemove = !emptySlot && !aimingStructure && expansion.CanRemovePlank(carIndex, side);
-            int refund = expansion.PlankDemolishRefund;
-            float removeProgress = UpdatePlankHold(carIndex, side, canRemove);
-
-            int previewColumn = emptySlot
-                ? column
-                : StructureGridLogic.PlankColumn(side,
-                    StructureGridLogic.ClampPlankColumns(side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks) - 1,
-                    bodyColumns);
-            PlankColumnVolume(previewColumn, bodyColumns, centerZ, out Vector3 ghostCenter, out Vector3 ghostSize);
+            PlankAimLogic.ColumnVolume(previewColumn, bodyColumns,
+                StructureGridLogic.Rows(_layoutSettings.CarLength, cellSize),
+                centerZ, cellSize, _layoutSettings.DeckHeight, _settings.GhostHeight,
+                out Vector3 ghostCenter, out Vector3 ghostSize);
 
             PublishPlankAim(new PlankAimLocalEvent(true, carIndex, side, emptySlot, cost, afford, canBuild,
-                refund, canRemove, removeProgress, ghostCenter, ghostSize));
+                expansion.PlankDemolishRefund, canRemove, removeProgress,
+                expansion.PlankRefundResource, ghostCenter, ghostSize));
 
             Mouse mouse = Mouse.current;
             if (canBuild && mouse != null && mouse.rightButton.wasPressedThisFrame)
@@ -448,151 +426,55 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
-        /// 조준 레이가 갑판 높이 평면과 만나는 지점 — 판자가 아직 없어 콜라이더가 없는 자리를 겨누기
-        /// 위한 계산이다. 아래를 향하지 않거나, 그 앞을 다른 물체가 확실히 가리고 있으면 false.
+        /// 건축물 점유 영역의 프리뷰·점유 판정 상자 — 소유자 프리뷰와 호스트 재검증이 이 한 함수를 쓴다
+        /// (<see cref="CarBuildAimLogic.BuildVolume"/>이 칸 건설에서 맡는 역할과 같다).
         /// </summary>
-        private bool TryGetDeckPlanePoint(Vector3 origin, Vector3 forward, bool hasRayHit, RaycastHit hit,
-            out Vector3 point)
-        {
-            point = default;
-
-            float deckY = _layoutSettings.DeckHeight;
-            float denominator = forward.y;
-            if (Mathf.Abs(denominator) < 0.0001f)
-            {
-                return false;
-            }
-
-            float distance = (deckY - origin.y) / denominator;
-            if (distance <= 0f || distance > _settings.MaxRange)
-            {
-                return false;
-            }
-
-            // 앞을 가로막은 물체가 평면보다 확실히 앞이면 그 물체를 겨눈 것이다 (칸 본체·건축물 조준).
-            if (hasRayHit && hit.distance < distance - PlankOcclusionTolerance)
-            {
-                return false;
-            }
-
-            point = origin + forward * distance;
-            return true;
-        }
-
-        /// <summary>조준점의 Z가 얹힌 살아 있는 칸 — 이탈 오프셋을 반영한다 (갑판 판정과 같은 규약).</summary>
-        private bool TryGetAimedCar(ITrainState train, float worldZ,
-            out int carIndex, out CarState car, out float carCenterZ)
-        {
-            for (int i = 0; i < train.CarCount; i++)
-            {
-                if (!train.TryGetCar(i, out CarState candidate) || candidate.Health <= 0f)
-                {
-                    continue;
-                }
-
-                float ejectOffset = train.GetEjectOffset(i);
-                if (_layoutSettings.IsZOnCar(worldZ, i, ejectOffset))
-                {
-                    carIndex = i;
-                    car = candidate;
-                    carCenterZ = _layoutSettings.CarCenterZ(i, ejectOffset);
-                    return true;
-                }
-            }
-
-            carIndex = -1;
-            car = default;
-            carCenterZ = 0f;
-            return false;
-        }
-
-        /// <summary>판자 열 하나의 프리뷰 상자 — 폭 = 셀 1칸, 길이 = 칸의 그리드 행 전체.</summary>
-        private void PlankColumnVolume(int column, int bodyColumns, float carCenterZ,
-            out Vector3 center, out Vector3 size)
+        private void StructureGhostVolume(int cellX, int cellZ, int rotatedWidth, int rotatedLength,
+            float carCenterZ, out Vector3 center, out Vector3 size)
         {
             float cellSize = _layoutSettings.StructureCellSize;
-            int rows = StructureGridLogic.Rows(_layoutSettings.CarLength, cellSize);
-            float worldX = StructureGridLogic.ColumnCenterWorldX(column, bodyColumns, cellSize);
+            StructureGridLogic.CellRegionCenterWorld(cellX, cellZ, rotatedWidth, rotatedLength,
+                carCenterZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, cellSize,
+                out float worldX, out float worldZ);
 
-            center = new Vector3(worldX, _layoutSettings.DeckHeight + _structureGhostHeight * 0.5f, carCenterZ);
-            size = new Vector3(cellSize, _structureGhostHeight, rows * cellSize);
+            float ghostHeight = _settings.GhostHeight;
+            center = new Vector3(worldX, _layoutSettings.DeckHeight + ghostHeight * 0.5f, worldZ);
+            size = new Vector3(rotatedWidth * cellSize, ghostHeight, rotatedLength * cellSize);
         }
 
-        /// <summary>
-        /// 판자 철거 X 홀드 게이지 (건축 개편 3차) — 건축물 철거와 같은 시간·같은 리셋 규약을 쓴다.
-        /// 표적(칸 + 쪽)이 바뀌거나 키를 놓으면 리셋하고, 충족 시 철거 요청을 쏜다. 반환 = 진행도 0~1.
-        /// </summary>
-        private float UpdatePlankHold(int carIndex, PlankSide side, bool canRemove)
+        /// <summary>비용을 지금 낼 수 있는지 — 조준 안내 네 곳이 같은 판정을 쓴다.</summary>
+        private bool CanAfford(int cost)
+        {
+            return _inventory != null && _inventory.Count >= cost;
+        }
+
+        /// <summary>판자 홀드 게이지의 표적 토큰 — 칸과 쪽이 바뀌면 게이지가 리셋된다.</summary>
+        private static int PlankHoldKey(int carIndex, PlankSide side)
+        {
+            return (carIndex * 2) + (int)side;
+        }
+
+        private static bool IsHoldingDemolishKey()
         {
             Keyboard keyboard = Keyboard.current;
-            if (!canRemove || keyboard == null || !keyboard.xKey.isPressed)
-            {
-                ResetPlankHold();
-                return 0f;
-            }
-
-            if (_plankHoldCar != carIndex || _plankHoldSide != side)
-            {
-                _plankHoldCar = carIndex;
-                _plankHoldSide = side;
-                _plankHoldTime = 0f;
-            }
-
-            _plankHoldTime += Time.deltaTime;
-            float holdSeconds = _settings.DemolishHoldSeconds;
-            if (_plankHoldTime >= holdSeconds)
-            {
-                RequestRemovePlankServerRpc(carIndex, side);
-                ResetPlankHold();
-                return 0f;
-            }
-
-            return Mathf.Clamp01(_plankHoldTime / holdSeconds);
-        }
-
-        private void ResetPlankHold()
-        {
-            _plankHoldTime = 0f;
-            _plankHoldCar = -1;
+            return keyboard != null && keyboard.xKey.isPressed;
         }
 
         /// <summary>
-        /// X 홀드 게이지 갱신 (건축 개편 2차 — 결정 ④: 짧은 홀드 + 게이지로 오철거 방지).
-        /// 표적이 바뀌거나 키를 놓으면 리셋하고, 충족 시 철거 요청을 쏜다. 반환 = 진행도 0~1.
+        /// 건축물 철거 X 홀드 게이지 (건축 개편 2차 — 결정 ④: 짧은 홀드 + 게이지로 오철거 방지).
+        /// 상태 기계는 <see cref="HoldGauge"/>가 들고, 여기서는 표적·완료 처리만 한다. 반환 = 진행도 0~1.
         /// </summary>
         private float UpdateDemolishHold(TrainPartKind kind, int index, bool canDemolish)
         {
-            Keyboard keyboard = Keyboard.current;
-            bool holding = canDemolish && kind == TrainPartKind.Structure
-                && keyboard != null && keyboard.xKey.isPressed;
-            if (!holding)
-            {
-                ResetDemolishHold();
-                return 0f;
-            }
-
-            if (_demolishTargetId != index)
-            {
-                _demolishTargetId = index;
-                _demolishHoldTime = 0f;
-            }
-
-            _demolishHoldTime += Time.deltaTime;
-            float holdSeconds = _settings.DemolishHoldSeconds;
-            if (_demolishHoldTime >= holdSeconds)
+            bool holding = canDemolish && kind == TrainPartKind.Structure && IsHoldingDemolishKey();
+            float progress = _demolishHold.Update(holding, index, _settings.DemolishHoldSeconds,
+                out bool completed);
+            if (completed)
             {
                 RequestDemolishStructureServerRpc(index);
-                ResetDemolishHold();
-                return 0f;
             }
 
-            return Mathf.Clamp01(_demolishHoldTime / holdSeconds);
-        }
-
-        private void ResetDemolishHold()
-        {
-            _demolishHoldTime = 0f;
-            _demolishTargetId = -1;
+            return progress;
         }
 
         /// <summary>초기 선택(돔)이 설치 불가가 된 개편 이후를 흡수한다 — 첫 조준 때 설치 가능 종류로 옮긴다.</summary>
@@ -630,8 +512,7 @@ namespace Game.Gameplay.Train
             }
 
             cost = expansion.CarBuildCost;
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
-            afford = inventory != null && inventory.Count >= cost;
+            afford = CanAfford(cost);
             occupied = IsBuildVolumeOccupied(slot);
             return true;
         }
@@ -668,8 +549,7 @@ namespace Game.Gameplay.Train
 
             bool frontPresent = train.TryGetCar(carIndex - 1, out CarState front)
                 && TrainStateLogic.IsCarPresent(front);
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
-            bool afford = inventory != null && inventory.Count >= cost;
+            bool afford = CanAfford(cost);
 
             prompt = CarRecoupleAimLogic.ResolvePrompt(frontPresent, remainingMeters, afford);
             return true;
@@ -934,8 +814,18 @@ namespace Game.Gameplay.Train
             if (_sentPlankAim.Aiming)
             {
                 PublishPlankAim(new PlankAimLocalEvent(
-                    false, -1, default, false, 0, false, false, 0, false, 0f, default, default));
+                    false, -1, default, false, 0, false, false, 0, false, 0f, default, default, default));
             }
+        }
+
+        private void PublishNoBuildAim()
+        {
+            PublishBuildAim(false, -1, 0, false, false);
+        }
+
+        private void PublishNoRecoupleAim()
+        {
+            PublishRecoupleAim(false, -1, 0, RecouplePrompt.None, 0f);
         }
 
         private void PublishBuildAim(bool aiming, int slot, int cost, bool afford, bool occupied)
@@ -1028,31 +918,21 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            // 거리 재검증 — 프리뷰·뷰 스폰과 같은 점유 영역 중심 기준 (권위 이탈 오프셋 반영).
+            // 거리·자리 재검증 — 프리뷰와 <b>같은 함수</b>로 같은 상자를 만든다 (판정이 갈리지 않는다).
             _structureCatalog.GetFootprint(structureKind, out int width, out int length);
             StructureGridLogic.RotatedFootprint(width, length, rotation, out int rotatedWidth, out int rotatedLength);
             float centerZ = _layoutSettings.CarCenterZ(carIndex, train.GetEjectOffset(carIndex));
-            StructureGridLogic.CellRegionCenterWorld(cellX, cellZ, rotatedWidth, rotatedLength,
-                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
-                out float worldX, out float worldZ);
-            if (!IsWithinRange(new Vector3(worldX, _layoutSettings.DeckHeight, worldZ)))
-            {
-                return;
-            }
+            StructureGhostVolume(cellX, cellZ, rotatedWidth, rotatedLength, centerZ,
+                out Vector3 volumeCenter, out Vector3 volumeSize);
 
-            // 자리 점유 재검증 — 프리뷰와 같은 상자 판정 (칸 건설 확정과 같은 규약).
-            float cellSize = _layoutSettings.StructureCellSize;
-            var volumeCenter = new Vector3(
-                worldX, _layoutSettings.DeckHeight + _structureGhostHeight * 0.5f, worldZ);
-            var volumeSize = new Vector3(
-                rotatedWidth * cellSize, _structureGhostHeight, rotatedLength * cellSize);
-            if (IsVolumeOccupied(volumeCenter, volumeSize))
+            var groundPoint = new Vector3(volumeCenter.x, _layoutSettings.DeckHeight, volumeCenter.z);
+            if (!IsWithinRange(groundPoint) || IsVolumeOccupied(volumeCenter, volumeSize))
             {
                 return;
             }
 
             // 건자재 차감과 건설을 원자적으로 확정한다 — 건설 실패 시 차감도 반영되지 않는다.
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            IResourceInventory inventory = _inventory;
             inventory?.ServerTrySpend(expansion.GetStructureBuildCost(structureKind),
                 () => expansion.ServerTryBuildStructure(carIndex, cellX, cellZ, rotation, structureKind));
         }
@@ -1070,12 +950,11 @@ namespace Game.Gameplay.Train
                 || !IsSenderAlive()
                 || !ServiceLocator.TryGet(out ITrainExpansion expansion)
                 || !ServiceLocator.TryGet(out ITrainState train)
-                || !train.TryGetStructureById(structureId, out StructureEntry entry))
+                || !train.TryGetStructureCenter(structureId, out Vector3 point))
             {
                 return;
             }
 
-            Vector3 point = StructureWorldCenter(train, entry);
             if (!IsWithinRange(point))
             {
                 return;
@@ -1108,7 +987,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            IResourceInventory inventory = _inventory;
             inventory?.ServerTrySpend(expansion.PlankBuildCost, () => expansion.ServerTryBuildPlank(carIndex, side));
         }
 
@@ -1146,7 +1025,7 @@ namespace Game.Gameplay.Train
             float cellSize = _layoutSettings.StructureCellSize;
             int bodyColumns = StructureGridLogic.BodyColumns(_layoutSettings.CarWidth, cellSize);
             int columns = train.TryGetCar(carIndex, out CarState car)
-                ? StructureGridLogic.ClampPlankColumns(side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks)
+                ? StructureGridLogic.ClampPlankColumns(car.Planks(side))
                 : 0;
 
             int ordinal = nextColumn ? columns : columns - 1;
@@ -1162,7 +1041,7 @@ namespace Game.Gameplay.Train
         /// </summary>
         private void GrantRefund(int refund, ResourceType resource, Vector3 point)
         {
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            IResourceInventory inventory = _inventory;
 
             int accepted = 0;
             while (accepted < refund && inventory != null && inventory.ServerTryAdd(resource, 1))
@@ -1181,18 +1060,6 @@ namespace Game.Gameplay.Train
             }
         }
 
-        /// <summary>건축물 점유 영역 중심의 월드 좌표 — 철거 거리 검증·반환 보따리 스폰이 같은 지점을 쓴다.</summary>
-        private Vector3 StructureWorldCenter(ITrainState train, StructureEntry entry)
-        {
-            float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, train.GetEjectOffset(entry.CarIndex));
-            StructureGridLogic.RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
-                out int rotatedWidth, out int rotatedLength);
-            StructureGridLogic.CellRegionCenterWorld(entry.CellX, entry.CellZ, rotatedWidth, rotatedLength,
-                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
-                out float worldX, out float worldZ);
-            return new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
-        }
-
         /// <summary>
         /// 칸 건설 — 건설 슬롯·지점을 권위 상태로 재계산해 거리 검증 후
         /// (자원 차감 + 건설)을 원자적으로 확정한다. 건설 실패 시 자원을 되돌린다.
@@ -1209,7 +1076,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            IResourceInventory inventory = _inventory;
             inventory?.ServerTrySpend(expansion.CarBuildCost, () => expansion.ServerTryBuildCar());
         }
 
@@ -1228,7 +1095,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            IResourceInventory inventory = GetComponent<IResourceInventory>();
+            IResourceInventory inventory = _inventory;
             inventory?.ServerTrySpend(recouple.RecoupleCost, () => recouple.ServerTryRecouple(target));
         }
 

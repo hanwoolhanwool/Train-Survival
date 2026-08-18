@@ -19,7 +19,6 @@ namespace Game.Gameplay.Crafting
     public sealed class CraftingStation : NetworkBehaviour, ICraftingStation
     {
         [SerializeField] private RecipeCatalog _recipes;
-        [SerializeField] private Train.TrainLayoutSettings _layoutSettings;
         [SerializeField, Min(0.5f)] private float _interactRadius = 3f;
 
         [Tooltip("제작대를 '쳐다봤다'고 볼 시선 정렬 하한 (카메라 전방·제작대 방향 내적).")]
@@ -247,37 +246,19 @@ namespace Game.Gameplay.Crafting
                 found = true;
             }
 
-            if (_layoutSettings == null || !ServiceLocator.TryGet(out Train.ITrainState train))
+            if (!ServiceLocator.TryGet(out Train.ITrainState train))
             {
                 return found;
             }
 
-            Train.StructureKind structureKind = ResolveStructureKind(kind);
-
-            for (int i = 0; i < train.StructureCount; i++)
+            // 목록 순회·점유 중심 계산은 상태(TrainState)가 맡는다 — 창고 접근과 같은 조회를 쓴다
+            // (건축 개편 마무리 패스: "가장 가까운 그것"이 칸당 1개 전제를 대신하는 판정 기준).
+            // 제작대는 기관차 고정 지점과 경쟁하므로 더 가까울 때만 이긴다.
+            if (train.TryGetNearestStructure(ResolveStructureKind(kind), position, out _, out Vector3 nearest)
+                && (position - nearest).sqrMagnitude < bestSqr)
             {
-                if (!train.TryGetStructureAt(i, out Train.StructureEntry entry)
-                    || entry.Kind != structureKind || entry.Health <= 0f
-                    || !train.TryGetCar(entry.CarIndex, out Train.CarState car) || car.Health <= 0f)
-                {
-                    continue;
-                }
-
-                float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, train.GetEjectOffset(entry.CarIndex));
-                Train.StructureGridLogic.RotatedFootprint(entry.FootprintWidth, entry.FootprintLength,
-                    entry.Rotation, out int rotatedWidth, out int rotatedLength);
-                Train.StructureGridLogic.CellRegionCenterWorld(entry.CellX, entry.CellZ,
-                    rotatedWidth, rotatedLength, centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength,
-                    _layoutSettings.StructureCellSize, out float worldX, out float worldZ);
-
-                var structurePoint = new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
-                float sqr = (position - structurePoint).sqrMagnitude;
-                if (sqr < bestSqr)
-                {
-                    bestSqr = sqr;
-                    point = structurePoint;
-                    found = true;
-                }
+                point = nearest;
+                found = true;
             }
 
             return found;

@@ -22,13 +22,11 @@ namespace Game.Gameplay.Train
         private readonly Dictionary<int, StructureView> _views = new Dictionary<int, StructureView>();
         private readonly List<int> _staleIds = new List<int>();
 
+        // 재구성 때 살아 있는 항목 Id — 매번 새로 만들지 않고 비운 뒤 채운다.
+        private readonly HashSet<int> _liveIds = new HashSet<int>();
+
         // 칸 인덱스 → 칸 트랜스폼 — 씬 정적 배치(Car_Locomotive/Car_N)를 첫 동기화 때 수집한다.
         private readonly Dictionary<int, Transform> _carTransforms = new Dictionary<int, Transform>();
-
-        // 칸 인덱스 → 스케일 보정 앵커 — 칸 오브젝트는 비균등 스케일(4.6 × 3.4 × 15)의 보정 홀더라
-        // 실물을 칸에 직접 붙이면 90° 회전 시 부모 축 스케일이 실물의 다른 축에 걸려 길게 늘어난다.
-        // 월드 스케일 (1,1,1)로 되돌린 앵커를 칸마다 만들어 그 밑에 스폰한다 (이탈 이동은 그대로 따라간다).
-        private readonly Dictionary<int, Transform> _carAnchors = new Dictionary<int, Transform>();
 
         private void OnEnable()
         {
@@ -80,12 +78,23 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            CollectCarTransforms();
+            CarViewAnchor.CollectCars(_carTransforms);
+
+            // 살아 있는 Id를 한 번에 모아 두고 비교한다 — 항목마다 목록을 다시 훑으면
+            // 후발 접속(실물 × 항목)에서 제곱이 된다.
+            _liveIds.Clear();
+            for (int i = 0; i < train.StructureCount; i++)
+            {
+                if (train.TryGetStructureAt(i, out StructureEntry live))
+                {
+                    _liveIds.Add(live.Id);
+                }
+            }
 
             _staleIds.Clear();
             foreach (KeyValuePair<int, StructureView> pair in _views)
             {
-                if (!train.TryGetStructureById(pair.Key, out _))
+                if (!_liveIds.Contains(pair.Key))
                 {
                     _staleIds.Add(pair.Key);
                 }
@@ -119,17 +128,15 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            float ejectOffset = ServiceLocator.TryGet(out ITrainState train) ? train.GetEjectOffset(entry.CarIndex) : 0f;
-            float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, ejectOffset);
-            StructureGridLogic.RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
-                out int rotatedWidth, out int rotatedLength);
-            StructureGridLogic.CellRegionCenterWorld(entry.CellX, entry.CellZ, rotatedWidth, rotatedLength,
-                centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
-                out float worldX, out float worldZ);
+            // 스폰 지점은 상태가 계산한다 — 프리뷰·사거리 검증·창고 접근과 같은 한 지점을 쓴다.
+            if (!ServiceLocator.TryGet(out ITrainState train)
+                || !train.TryGetStructureCenter(entry.Id, out Vector3 position))
+            {
+                return;
+            }
 
-            var position = new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
             Quaternion rotation = Quaternion.Euler(0f, entry.Rotation * 90f, 0f);
-            Transform parent = ResolveCarAnchor(entry.CarIndex);
+            Transform parent = CarViewAnchor.ResolveForCar(entry.CarIndex, _carTransforms);
 
             StructureView view = PoolManager.Spawn(prefab, position, rotation, parent)
                 .GetComponent<StructureView>();
@@ -166,44 +173,6 @@ namespace Game.Gameplay.Train
             }
 
             _views.Clear();
-        }
-
-        /// <summary>칸 트랜스폼 수집 — 증설 예비 슬롯 포함 씬 정적 배치라 편성 변화 때 다시 모으면 충분하다.</summary>
-        private void CollectCarTransforms()
-        {
-            _carTransforms.Clear();
-            _carAnchors.Clear();
-            foreach (CarView car in FindObjectsByType<CarView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                _carTransforms[car.CarIndex] = car.transform;
-            }
-        }
-
-        private Transform ResolveCarTransform(int carIndex)
-        {
-            if (_carTransforms.Count == 0)
-            {
-                CollectCarTransforms();
-            }
-
-            return _carTransforms.TryGetValue(carIndex, out Transform car) ? car : null;
-        }
-
-        /// <summary>칸 밑의 스폰 앵커 — 스케일 보정 규약은 <see cref="CarViewAnchor"/>가 든다(판자 뷰와 공유).</summary>
-        private Transform ResolveCarAnchor(int carIndex)
-        {
-            if (_carAnchors.TryGetValue(carIndex, out Transform cached) && cached != null)
-            {
-                return cached;
-            }
-
-            Transform anchor = CarViewAnchor.Resolve(ResolveCarTransform(carIndex));
-            if (anchor != null)
-            {
-                _carAnchors[carIndex] = anchor;
-            }
-
-            return anchor;
         }
     }
 }

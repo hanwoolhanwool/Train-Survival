@@ -1,3 +1,4 @@
+using Game.Core.Events;
 using Game.Core.Pooling;
 using Game.Core.Services;
 using UnityEngine;
@@ -20,6 +21,7 @@ namespace Game.Gameplay.Train
         private Renderer[] _renderers;
         private Collider[] _colliders;
         private int _carIndex = -1;
+        private bool _carEjecting;
         private bool _visible = true;
 
         private void Awake()
@@ -32,11 +34,39 @@ namespace Game.Gameplay.Train
         public void Bind(int carIndex)
         {
             _carIndex = carIndex;
+            SyncCarState();
+        }
+
+        private void OnEnable()
+        {
+            EventBus<CarStateChangedEvent>.Subscribe(OnCarStateChanged);
+        }
+
+        private void OnDisable()
+        {
+            EventBus<CarStateChangedEvent>.Unsubscribe(OnCarStateChanged);
+        }
+
+        private void OnCarStateChanged(CarStateChangedEvent evt)
+        {
+            if (evt.Index == _carIndex)
+            {
+                _carEjecting = !TrainStateLogic.IsCarPresent(evt.State) && evt.State.Health > 0f;
+            }
+        }
+
+        private void SyncCarState()
+        {
+            _carEjecting = ServiceLocator.TryGet(out ITrainState train)
+                && train.TryGetCar(_carIndex, out CarState car)
+                && !TrainStateLogic.IsCarPresent(car) && car.Health > 0f;
         }
 
         private void Update()
         {
-            if (_carIndex < 0 || !ServiceLocator.TryGet(out ITrainState train))
+            // 붙어 있는 칸의 판자는 아무 일도 하지 않는다 — 이탈 중일 때만 소실 거리를 본다
+            // (StructureView와 같은 게이트: 매 프레임 서비스 조회가 판자 수만큼 돌지 않게).
+            if (!_carEjecting || !ServiceLocator.TryGet(out ITrainState train))
             {
                 return;
             }
@@ -54,6 +84,7 @@ namespace Game.Gameplay.Train
         public void OnDespawned()
         {
             _carIndex = -1;
+            _carEjecting = false;
         }
 
         private void SetPresentation(bool visible)

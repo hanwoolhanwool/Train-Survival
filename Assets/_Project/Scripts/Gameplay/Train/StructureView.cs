@@ -32,11 +32,6 @@ namespace Game.Gameplay.Train
         /// <summary>바인딩된 그리드 항목의 서버 발급 Id — 수리 망치의 부위 식별·피해 RPC 지목에 쓴다.</summary>
         public int StructureId => _entry.Id;
 
-        public int CarIndex => _entry.CarIndex;
-
-        /// <summary>바인딩된 항목의 현재 값 — HUD·조준 판정이 읽는다.</summary>
-        public StructureEntry Entry => _entry;
-
         // ── IDamageable — 몬스터·화기가 공격하는 표적면 (데미지 확정은 호스트) ──────────
 
         /// <summary>건축물이 살아 있고 얹힌 칸이 편성에 살아 붙어 있을 때만 공격 대상이 된다.</summary>

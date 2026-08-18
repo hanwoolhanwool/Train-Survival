@@ -9,23 +9,6 @@ namespace Game.Gameplay.Train
     /// </summary>
     public static class StorageBlockLogic
     {
-        /// <summary>건축물 Id를 소유한 블록 인덱스 — 없으면 -1.</summary>
-        public static int FindBlock(ushort[] blockOwners, int storageId)
-        {
-            if (blockOwners != null && storageId > 0)
-            {
-                for (int i = 0; i < blockOwners.Length; i++)
-                {
-                    if (blockOwners[i] == storageId)
-                    {
-                        return i;
-                    }
-                }
-            }
-
-            return -1;
-        }
-
         /// <summary>블록의 평탄 슬롯 시작 오프셋.</summary>
         public static int SlotOffset(int blockIndex, int slotsPerBlock)
         {

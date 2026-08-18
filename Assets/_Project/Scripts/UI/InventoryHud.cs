@@ -604,19 +604,14 @@ namespace Game.UI
                         : $"<color=red>증축 자원 부족 ({BuildShortagePrompt(hotbar, _plankAim.Cost)})</color>";
                 }
             }
-            else if (_hammerTarget.CanDemolish)
-            {
-                // 판자 위 건축물을 겨누는 중 — X 홀드 의미가 겹치지 않게 판자 안내를 내린다.
-                return;
-            }
             else if (_plankAim.RemoveProgress > 0f)
             {
                 action = $"<color=orange>철거 중… {_plankAim.RemoveProgress * 100f:F0}%</color>";
             }
             else if (_plankAim.CanRemove)
             {
-                string refundName = _catalog != null && ServiceLocator.TryGet(out ITrainExpansion expansion)
-                    ? _catalog.GetDisplayName(expansion.PlankRefundResource)
+                string refundName = _catalog != null
+                    ? _catalog.GetDisplayName(_plankAim.RefundResource)
                     : "자원";
                 action = $"[X 홀드] 철거 (반환: {refundName} {_plankAim.Refund})";
             }

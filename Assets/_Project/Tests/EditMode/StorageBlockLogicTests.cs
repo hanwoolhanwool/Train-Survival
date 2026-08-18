@@ -10,16 +10,21 @@ namespace Game.Tests.EditMode
     /// </summary>
     public sealed class StorageBlockLogicTests
     {
-        [Test]
-        public void 블록은_소유_건축물_Id로_찾는다()
+        /// <summary>
+        /// 소유자 목록에서 블록을 찾는 조회 — 런타임은 복제 목록(NetworkList)을 그대로 훑으므로
+        /// (사본을 만들지 않는다) 여기서는 같은 규칙을 배열 위에 재현해 swap-remove 결과를 검증한다.
+        /// </summary>
+        private static int FindBlock(System.Collections.Generic.IReadOnlyList<ushort> owners, int storageId)
         {
-            ushort[] owners = { 7, 12, 3 };
+            for (int i = 0; i < owners.Count; i++)
+            {
+                if (owners[i] == storageId)
+                {
+                    return i;
+                }
+            }
 
-            Assert.That(StorageBlockLogic.FindBlock(owners, 7), Is.EqualTo(0));
-            Assert.That(StorageBlockLogic.FindBlock(owners, 3), Is.EqualTo(2));
-            Assert.That(StorageBlockLogic.FindBlock(owners, 5), Is.EqualTo(-1), "미등재 Id");
-            Assert.That(StorageBlockLogic.FindBlock(owners, 0), Is.EqualTo(-1), "0은 무효 Id");
-            Assert.That(StorageBlockLogic.FindBlock(null, 7), Is.EqualTo(-1));
+            return -1;
         }
 
         [Test]
@@ -69,7 +74,7 @@ namespace Game.Tests.EditMode
                 }
             }
 
-            int remove = StorageBlockLogic.FindBlock(owners.ToArray(), 7);
+            int remove = FindBlock(owners, 7);
             Assert.That(StorageBlockLogic.TryPlanSwapRemove(owners.Count, remove, out int moveFrom), Is.True);
             if (moveFrom >= 0)
             {
@@ -87,11 +92,11 @@ namespace Game.Tests.EditMode
             owners.RemoveAt(owners.Count - 1);
 
             // 남은 창고(12·3)의 내용물이 각자 소유자 기준으로 그대로 조회된다.
-            int block12 = StorageBlockLogic.FindBlock(owners.ToArray(), 12);
-            int block3 = StorageBlockLogic.FindBlock(owners.ToArray(), 3);
+            int block12 = FindBlock(owners, 12);
+            int block3 = FindBlock(owners, 3);
             Assert.That(slots[StorageBlockLogic.SlotOffset(block12, SlotsPerBlock)], Is.EqualTo(1200));
             Assert.That(slots[StorageBlockLogic.SlotOffset(block3, SlotsPerBlock)], Is.EqualTo(300));
-            Assert.That(StorageBlockLogic.FindBlock(owners.ToArray(), 7), Is.EqualTo(-1), "제거된 창고는 조회 불가");
+            Assert.That(FindBlock(owners, 7), Is.EqualTo(-1), "제거된 창고는 조회 불가");
         }
     }
 }

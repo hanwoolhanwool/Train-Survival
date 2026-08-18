@@ -254,6 +254,75 @@ namespace Game.Gameplay.Train
             return false;
         }
 
+        public bool TryGetStructureCenter(int structureId, out Vector3 center)
+        {
+            if (TryGetStructureById(structureId, out StructureEntry entry))
+            {
+                center = StructureCenter(entry);
+                return true;
+            }
+
+            center = default;
+            return false;
+        }
+
+        public bool TryGetNearestStructure(StructureKind kind, Vector3 from,
+            out StructureEntry nearest, out Vector3 center)
+        {
+            nearest = default;
+            center = default;
+            if (_layoutSettings == null)
+            {
+                return false;
+            }
+
+            bool found = false;
+            float bestSqr = float.PositiveInfinity;
+            for (int i = 0; i < _structures.Count; i++)
+            {
+                StructureEntry entry = _structures[i];
+                if (entry.Kind != kind || entry.Health <= 0f
+                    || !TryGetCar(entry.CarIndex, out CarState car) || car.Health <= 0f)
+                {
+                    continue;
+                }
+
+                Vector3 point = StructureCenter(entry);
+                float sqr = (from - point).sqrMagnitude;
+                if (sqr < bestSqr)
+                {
+                    bestSqr = sqr;
+                    nearest = entry;
+                    center = point;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        /// <summary>
+        /// 이 종류가 공유 저장 블록을 갖는지 — 카탈로그 플래그가 진실이다 (2차 §2.8).
+        /// 창고 계열 종류를 추가해도 블록 할당·배출·재건 정리 경로에 코드 수정이 필요 없다(OCP).
+        /// </summary>
+        private bool ProvidesStorageBlock(StructureKind kind)
+        {
+            return _structureCatalog != null && _structureCatalog.ProvidesStorageBlock(kind);
+        }
+
+        /// <summary>
+        /// 항목의 점유 영역 중심 월드 지점 (갑판 높이) — 이탈 오프셋을 반영한다. 프리뷰·사거리 검증·
+        /// 뷰 스폰·창고 접근·제작 조회·보따리 배출이 <b>전부 이 한 지점</b>을 쓴다.
+        /// </summary>
+        private Vector3 StructureCenter(StructureEntry entry)
+        {
+            float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, GetEjectOffset(entry.CarIndex));
+            StructureGridLogic.EntryCenterWorld(entry, centerZ,
+                _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize,
+                out float worldX, out float worldZ);
+            return new Vector3(worldX, _layoutSettings.DeckHeight, worldZ);
+        }
+
         public int CountStructures(StructureKind kind)
         {
             int count = 0;
@@ -275,7 +344,9 @@ namespace Game.Gameplay.Train
         /// </summary>
         public bool IsStructureBlockingAt(Vector3 position, float padding)
         {
-            if (_layoutSettings == null)
+            // 지점이 얹힌 칸을 먼저 좁힌다 — 매 프레임 갑판 위 몬스터마다 도는 경로라, 다른 칸 위
+            // 건축물까지 전부 훑으면 설치 수에 비례해 비싸진다 (건축 개편 이후 칸당 다중 설치).
+            if (_layoutSettings == null || !TryGetCarAtZ(position.z, out int carIndex, out _, out float centerZ))
             {
                 return false;
             }
@@ -283,13 +354,11 @@ namespace Game.Gameplay.Train
             for (int i = 0; i < _structures.Count; i++)
             {
                 StructureEntry entry = _structures[i];
-                if (!StructureGridLogic.IsAlive(entry)
-                    || !TryGetCar(entry.CarIndex, out CarState car) || car.Health <= 0f)
+                if (entry.CarIndex != carIndex || !StructureGridLogic.IsAlive(entry))
                 {
                     continue;
                 }
 
-                float centerZ = _layoutSettings.CarCenterZ(entry.CarIndex, GetEjectOffset(entry.CarIndex));
                 if (StructureGridLogic.IsWorldPointOnEntry(entry, position.x, position.z, padding,
                     centerZ, _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize))
                 {
@@ -351,39 +420,51 @@ namespace Game.Gameplay.Train
         /// <summary>갑판 낙하 판정의 폭·높이 여유 (m) — PlayerTemperature의 칸 위 판정과 같은 규약.</summary>
         private const float DeckApertureMargin = 0.5f;
 
+        public bool TryGetCarAtZ(float worldZ, out int carIndex, out CarState car, out float carCenterZ)
+        {
+            if (_layoutSettings != null)
+            {
+                for (int i = 0; i < CarCount; i++)
+                {
+                    // 파괴된 칸은 갑판이 없다 — 이탈 칸은 갑판이 남아 있으므로 허용한다
+                    // (오프셋 반영. 창고 접근과 같은 규약).
+                    if (!TryGetCar(i, out CarState candidate) || candidate.Health <= 0f)
+                    {
+                        continue;
+                    }
+
+                    float ejectOffset = GetEjectOffset(i);
+                    if (_layoutSettings.IsZOnCar(worldZ, i, ejectOffset))
+                    {
+                        carIndex = i;
+                        car = candidate;
+                        carCenterZ = _layoutSettings.CarCenterZ(i, ejectOffset);
+                        return true;
+                    }
+                }
+            }
+
+            carIndex = -1;
+            car = default;
+            carCenterZ = 0f;
+            return false;
+        }
+
         public bool TryGetDeckSurface(Vector3 position, out float deckHeight, out int carIndex)
         {
             deckHeight = 0f;
-            carIndex = -1;
-            if (_layoutSettings == null)
+
+            // 폭 게이트는 칸별로 본다 — 판자 증축이 칸마다 다르기 때문이다 (건축 개편 3차 §2.9).
+            if (!TryGetCarAtZ(position.z, out carIndex, out CarState car, out _)
+                || !TrainLayoutMath.IsWithinDeckAperture(
+                    position, DeckHalfWidth(car, position.x), _layoutSettings.DeckHeight, DeckApertureMargin))
             {
+                carIndex = -1;
                 return false;
             }
 
-            for (int i = 0; i < CarCount; i++)
-            {
-                // 파괴된 칸은 갑판이 없다 — 이탈 칸은 갑판이 남아 있으므로 허용한다 (오프셋 반영. 창고 접근과 같은 규약).
-                if (!TryGetCar(i, out CarState car) || car.Health <= 0f)
-                {
-                    continue;
-                }
-
-                if (!_layoutSettings.IsZOnCar(position.z, i, GetEjectOffset(i)))
-                {
-                    continue;
-                }
-
-                // 폭 게이트는 칸별로 본다 — 판자 증축이 칸마다 다르기 때문이다 (건축 개편 3차 §2.9).
-                if (TrainLayoutMath.IsWithinDeckAperture(
-                    position, DeckHalfWidth(car, position.x), _layoutSettings.DeckHeight, DeckApertureMargin))
-                {
-                    deckHeight = _layoutSettings.DeckHeight;
-                    carIndex = i;
-                    return true;
-                }
-            }
-
-            return false;
+            deckHeight = _layoutSettings.DeckHeight;
+            return true;
         }
 
         public float GetDeckHalfWidthAt(Vector3 position)
@@ -393,16 +474,9 @@ namespace Game.Gameplay.Train
                 return 0f;
             }
 
-            for (int i = 0; i < CarCount; i++)
-            {
-                if (TryGetCar(i, out CarState car) && car.Health > 0f
-                    && _layoutSettings.IsZOnCar(position.z, i, GetEjectOffset(i)))
-                {
-                    return DeckHalfWidth(car, position.x);
-                }
-            }
-
-            return _layoutSettings.CarWidth * 0.5f;
+            return TryGetCarAtZ(position.z, out _, out CarState car, out _)
+                ? DeckHalfWidth(car, position.x)
+                : _layoutSettings.CarWidth * 0.5f;
         }
 
         /// <summary>그 칸의 그 쪽(X 부호) 갑판 반폭 — 판자 증축 반영 (건축 개편 3차).</summary>
@@ -604,7 +678,7 @@ namespace Game.Gameplay.Train
 
             // 창고 파괴 = 내용물이 보따리로 그 자리 갑판 위에 떨어진다 (M5 8차 — 칸은 살아 있다).
             // 몬스터 파괴는 자원 반환 경로를 타지 않는다 — 보따리 배출만 예외 (요구사항).
-            if (destroyed.Kind == StructureKind.Storage && ServiceLocator.TryGet(out ITrainStorage storage))
+            if (ProvidesStorageBlock(destroyed.Kind) && ServiceLocator.TryGet(out ITrainStorage storage))
             {
                 storage.ServerReleaseBlock(destroyed.Id, StorageReleaseMode.DeckBundle);
             }
@@ -644,7 +718,7 @@ namespace Game.Gameplay.Train
             for (int i = 0; i < _structures.Count; i++)
             {
                 StructureEntry entry = _structures[i];
-                if (entry.CarIndex == carIndex && entry.Kind == StructureKind.Storage)
+                if (entry.CarIndex == carIndex && ProvidesStorageBlock(entry.Kind))
                 {
                     storage.ServerReleaseBlock(entry.Id, mode);
                 }
@@ -803,7 +877,7 @@ namespace Game.Gameplay.Train
             }
 
             _structureCatalog.GetFootprint(kind, out int width, out int length);
-            return StructureGridLogic.CanPlace(SnapshotStructures(), SnapshotCars(), carIndex,
+            return StructureGridLogic.CanPlace(QueryStructures(), QueryCars(), carIndex,
                 cellX, cellZ, rotation, kind, width, length, _structureCatalog.IsPlaceable(kind),
                 _layoutSettings.CarWidth, _layoutSettings.CarLength, _layoutSettings.StructureCellSize);
         }
@@ -838,7 +912,7 @@ namespace Game.Gameplay.Train
             _structures.Add(entry);
 
             // 창고 설치 = 저장 블록 할당 (건축 개편 2차 §2.8 — 블록 = 건축물 Id).
-            if (kind == StructureKind.Storage && ServiceLocator.TryGet(out ITrainStorage storage))
+            if (ProvidesStorageBlock(kind) && ServiceLocator.TryGet(out ITrainStorage storage))
             {
                 storage.ServerAllocateBlock(entry.Id);
             }
@@ -877,7 +951,7 @@ namespace Game.Gameplay.Train
 
             // 창고 철거 — 내용물 보따리와 반환 자원 보따리는 별개로 스폰된다 (§2.5 — 묶으면
             // 해체 UI가 혼합 목록이 되어 혼란). 블록 해제는 항목 제거 전에.
-            if (removed.Kind == StructureKind.Storage && ServiceLocator.TryGet(out ITrainStorage storage))
+            if (ProvidesStorageBlock(removed.Kind) && ServiceLocator.TryGet(out ITrainStorage storage))
             {
                 storage.ServerReleaseBlock(removed.Id, StorageReleaseMode.DeckBundle);
             }
@@ -891,7 +965,8 @@ namespace Game.Gameplay.Train
 
         public int PlankBuildCost => _expansionSettings != null ? _expansionSettings.PlankBuildCost : 0;
 
-        public int MaxPlankColumns => _expansionSettings != null ? _expansionSettings.MaxPlankColumns : 0;
+        /// <summary>좌/우 각 최대 판자 열 수 — 증축 판정의 상한 (에셋 값, 좌표계 예약으로 클램프됨).</summary>
+        private int MaxPlankColumns => _expansionSettings != null ? _expansionSettings.MaxPlankColumns : 0;
 
         public int PlankDemolishRefund
         {
@@ -908,7 +983,7 @@ namespace Game.Gameplay.Train
 
         public bool CanBuildPlank(int carIndex, PlankSide side)
         {
-            return PlankGridLogic.CanBuildPlank(SnapshotCars(), carIndex, side, MaxPlankColumns);
+            return PlankGridLogic.CanBuildPlank(QueryCars(), carIndex, side, MaxPlankColumns);
         }
 
         /// <summary>
@@ -917,24 +992,7 @@ namespace Game.Gameplay.Train
         /// </summary>
         public bool ServerTryBuildPlank(int carIndex, PlankSide side)
         {
-            if (!IsServer || !CanBuildPlank(carIndex, side))
-            {
-                return false;
-            }
-
-            CarState car = _cars[carIndex];
-            if (side == PlankSide.Left)
-            {
-                car.LeftPlanks++;
-            }
-            else
-            {
-                car.RightPlanks++;
-            }
-
-            _cars[carIndex] = car;
-            BroadcastPlankChangedRpc(carIndex, side, side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks, true);
-            return true;
+            return CanBuildPlank(carIndex, side) && ServerChangePlanks(carIndex, side, +1);
         }
 
         public bool CanRemovePlank(int carIndex, PlankSide side)
@@ -944,7 +1002,7 @@ namespace Game.Gameplay.Train
                 return false;
             }
 
-            return PlankGridLogic.CanRemovePlank(SnapshotStructures(), SnapshotCars(), carIndex, side,
+            return PlankGridLogic.CanRemovePlank(QueryStructures(), QueryCars(), carIndex, side,
                 _layoutSettings.CarWidth, _layoutSettings.StructureCellSize);
         }
 
@@ -954,23 +1012,24 @@ namespace Game.Gameplay.Train
         /// </summary>
         public bool ServerTryRemovePlank(int carIndex, PlankSide side)
         {
-            if (!IsServer || !CanRemovePlank(carIndex, side))
+            return CanRemovePlank(carIndex, side) && ServerChangePlanks(carIndex, side, -1);
+        }
+
+        /// <summary>
+        /// 판자 열 수를 한 칸 옮긴다 (증축 +1 / 철거 -1) — 판정은 호출부가 이미 통과시켰다.
+        /// 별도 권위 이벤트가 없는 이유: <see cref="CarState"/> 자체가 복제되므로 이 대입이
+        /// 전 피어에서 <see cref="CarStateChangedEvent"/>를 낳고, 판자 뷰는 그것으로 동기화된다.
+        /// </summary>
+        private bool ServerChangePlanks(int carIndex, PlankSide side, int delta)
+        {
+            if (!IsServer)
             {
                 return false;
             }
 
             CarState car = _cars[carIndex];
-            if (side == PlankSide.Left)
-            {
-                car.LeftPlanks--;
-            }
-            else
-            {
-                car.RightPlanks--;
-            }
-
+            car.SetPlanks(side, (byte)Mathf.Max(0, car.Planks(side) + delta));
             _cars[carIndex] = car;
-            BroadcastPlankChangedRpc(carIndex, side, side == PlankSide.Left ? car.LeftPlanks : car.RightPlanks, false);
             return true;
         }
 
@@ -1274,6 +1333,42 @@ namespace Game.Gameplay.Train
             return _durabilitySettings != null ? _durabilitySettings.MaxHealthFor(type) : float.PositiveInfinity;
         }
 
+        // 읽기 전용 판정용 재사용 버퍼 — 설치·판자 프리뷰는 조준 중 매 프레임 도는 경로라,
+        // 변이 경로(Snapshot*/WriteBack*)와 달리 사본을 새로 만들지 않는다. 순수 로직이 배열을
+        // 수정하지 않는 판정(Can*)에만 쓴다.
+        private CarState[] _queryCars;
+        private StructureEntry[] _queryStructures;
+
+        private CarState[] QueryCars()
+        {
+            if (_queryCars == null || _queryCars.Length != _cars.Count)
+            {
+                _queryCars = new CarState[_cars.Count];
+            }
+
+            for (int i = 0; i < _cars.Count; i++)
+            {
+                _queryCars[i] = _cars[i];
+            }
+
+            return _queryCars;
+        }
+
+        private StructureEntry[] QueryStructures()
+        {
+            if (_queryStructures == null || _queryStructures.Length != _structures.Count)
+            {
+                _queryStructures = new StructureEntry[_structures.Count];
+            }
+
+            for (int i = 0; i < _structures.Count; i++)
+            {
+                _queryStructures[i] = _structures[i];
+            }
+
+            return _queryStructures;
+        }
+
         private CarState[] SnapshotCars()
         {
             var snapshot = new CarState[_cars.Count];
@@ -1424,12 +1519,6 @@ namespace Game.Gameplay.Train
         private void BroadcastCarRecoupledRpc(int index)
         {
             EventBus<CarRecoupledEvent>.Publish(new CarRecoupledEvent(index));
-        }
-
-        [Rpc(SendTo.Everyone)]
-        private void BroadcastPlankChangedRpc(int carIndex, PlankSide side, int columns, bool built)
-        {
-            EventBus<CarPlanksChangedEvent>.Publish(new CarPlanksChangedEvent(carIndex, side, columns, built));
         }
     }
 }

@@ -20,6 +20,12 @@ namespace Game.Gameplay.Train
         [Tooltip("X 홀드 철거 성립 시간(초) — 짧은 홀드 + 게이지로 전투 중 오철거를 막는다.")]
         [SerializeField, Min(0.1f)] private float _demolishHoldSeconds = 0.5f;
 
+        [Header("설치 프리뷰 (건축 개편 1·3차)")]
+        [Tooltip("건축물·판자 프리뷰 상자의 높이(m). 표시용이자 '자리에 사람·몬스터가 있는가' 판정 상자의 " +
+            "높이이기도 하므로 설치 성립을 좌우한다 — 소유자 프리뷰와 호스트 재검증이 같은 값을 써야 해서 " +
+            "프리팹이 아니라 공유 에셋이 든다.")]
+        [SerializeField, Min(0.2f)] private float _ghostHeight = 1.2f;
+
         [Header("사거리")]
         [Tooltip("수리 가능 거리(m) — 근접 도구이므로 짧게 잡는다.")]
         [SerializeField, Min(0.5f)] private float _maxRange = 4f;
@@ -33,6 +39,9 @@ namespace Game.Gameplay.Train
 
         /// <summary>X 홀드 철거 성립 시간(초) — 건축 개편 2차 결정 ④.</summary>
         public float DemolishHoldSeconds => _demolishHoldSeconds;
+
+        /// <summary>설치 프리뷰·자리 점유 판정 상자의 높이(m) — 건축 개편 1·3차.</summary>
+        public float GhostHeight => _ghostHeight;
 
         public float MaxRange => _maxRange;
 

@@ -10,7 +10,7 @@ namespace Game.Gameplay.Train
     /// 칸 옆면 판자 증축의 실물을 스폰·회수한다 (건축 개편 3차 — 계획서 §2.9).
     /// 상태를 소유하지 않는 표현 계층: 판자 열 수는 <see cref="CarState.LeftPlanks"/>·
     /// <see cref="CarState.RightPlanks"/>가 진실이고, 여기서는 권위 이벤트
-    /// (<see cref="CarPlanksChangedEvent"/>·<see cref="CarStateChangedEvent"/>)와 초기 동기화
+    /// (<see cref="CarStateChangedEvent"/> — 판자 열은 CarState가 나르므로 별도 이벤트가 필요 없다)와 초기 동기화
     /// (<see cref="TrainInitializedEvent"/> — 신규·후발 접속 공통)에 반응해
     /// <see cref="PoolManager"/>로 로컬 스폰만 한다.
     /// 실물은 칸 오브젝트의 스케일 보정 앵커(<see cref="CarViewAnchor"/>) 밑에 붙어 이탈 이동을 따라간다.
@@ -37,7 +37,6 @@ namespace Game.Gameplay.Train
         private void OnEnable()
         {
             EventBus<TrainInitializedEvent>.Subscribe(OnTrainInitialized);
-            EventBus<CarPlanksChangedEvent>.Subscribe(OnPlanksChanged);
             EventBus<CarStateChangedEvent>.Subscribe(OnCarStateChanged);
             ResyncAll();
         }
@@ -45,7 +44,6 @@ namespace Game.Gameplay.Train
         private void OnDisable()
         {
             EventBus<TrainInitializedEvent>.Unsubscribe(OnTrainInitialized);
-            EventBus<CarPlanksChangedEvent>.Unsubscribe(OnPlanksChanged);
             EventBus<CarStateChangedEvent>.Unsubscribe(OnCarStateChanged);
             DespawnAll();
         }
@@ -53,13 +51,8 @@ namespace Game.Gameplay.Train
         private void OnTrainInitialized(TrainInitializedEvent _)
         {
             // 편성 자체가 바뀐 시점 — 증설 슬롯 포함 칸 트랜스폼을 다시 모은다.
-            CollectCarTransforms();
+            CarViewAnchor.CollectCars(_carTransforms);
             ResyncAll();
-        }
-
-        private void OnPlanksChanged(CarPlanksChangedEvent evt)
-        {
-            SyncCar(evt.CarIndex);
         }
 
         /// <summary>
@@ -125,7 +118,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            Transform parent = CarViewAnchor.Resolve(ResolveCarTransform(carIndex));
+            Transform parent = CarViewAnchor.ResolveForCar(carIndex, _carTransforms);
             if (parent == null)
             {
                 return;
@@ -185,24 +178,5 @@ namespace Game.Gameplay.Train
             return (carIndex * 100) + ((int)side * 10) + ordinal;
         }
 
-        /// <summary>칸 트랜스폼 수집 — 증설 예비 슬롯 포함 씬 정적 배치라 편성 변화 때 다시 모으면 충분하다.</summary>
-        private void CollectCarTransforms()
-        {
-            _carTransforms.Clear();
-            foreach (CarView car in FindObjectsByType<CarView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                _carTransforms[car.CarIndex] = car.transform;
-            }
-        }
-
-        private Transform ResolveCarTransform(int carIndex)
-        {
-            if (_carTransforms.Count == 0)
-            {
-                CollectCarTransforms();
-            }
-
-            return _carTransforms.TryGetValue(carIndex, out Transform car) ? car : null;
-        }
     }
 }

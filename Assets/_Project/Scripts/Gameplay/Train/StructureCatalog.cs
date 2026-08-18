@@ -45,6 +45,11 @@ namespace Game.Gameplay.Train
                 "enum 값·기존 항목은 유지된다.")]
             [SerializeField] private bool _placeable = true;
 
+            [Tooltip("공유 저장 블록을 갖는지 (건축 개편 2차 §2.8) — 켜면 설치 시 슬롯 블록이 할당되고, " +
+                "철거·파괴 시 내용물이 보따리로 배출되며, 근접하면 저장 패널이 열린다. 창고 계열 종류를 " +
+                "추가할 때 코드 수정 없이 이 플래그만 켜면 된다.")]
+            [SerializeField] private bool _providesStorageBlock;
+
             [Tooltip("철거 시 반환되는 자원 종류 (건축 개편 2차 — 결정 ⑧). 초기값 전부 목재.")]
             [SerializeField] private Game.Gameplay.Inventory.ResourceType _refundResource
                 = Game.Gameplay.Inventory.ResourceType.Wood;
@@ -76,6 +81,9 @@ namespace Game.Gameplay.Train
 
             /// <summary>설치 목록 노출 여부 — false면 R 순환 제외 + 설치 기각 (돔).</summary>
             public bool Placeable => _placeable;
+
+            /// <summary>공유 저장 블록 보유 여부 (2차 §2.8) — 창고 계열 판정의 데이터 축.</summary>
+            public bool ProvidesStorageBlock => _providesStorageBlock;
 
             /// <summary>철거 반환 자원 종류 (2차 — 결정 ⑧).</summary>
             public Game.Gameplay.Inventory.ResourceType RefundResource => _refundResource;
@@ -161,6 +169,16 @@ namespace Game.Gameplay.Train
         {
             Entry entry = Find(kind);
             return entry != null && entry.Placeable;
+        }
+
+        /// <summary>
+        /// 공유 저장 블록을 갖는 종류인지 (2차 §2.8) — 설치 시 블록 할당, 철거·파괴 시 내용물 배출,
+        /// 근접 시 패널 개방이 전부 이 플래그로 갈린다. 미등재 종류는 저장 없음.
+        /// </summary>
+        public bool ProvidesStorageBlock(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null && entry.ProvidesStorageBlock;
         }
 
         /// <summary>철거 반환 자원 종류 (2차 — 결정 ⑧). 미등재면 목재.</summary>

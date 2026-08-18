@@ -58,9 +58,6 @@ namespace Game.Gameplay.Train
         /// <summary>판자 1열 건설에 드는 자원 수.</summary>
         int PlankBuildCost { get; }
 
-        /// <summary>좌/우 각 최대 판자 열 수 — 프리뷰가 "더 못 붙인다"를 판단하는 상한.</summary>
-        int MaxPlankColumns { get; }
-
         /// <summary>판자 1열 철거 시 반환되는 자원 수 — floor(판자 비용 × 반환 비율).</summary>
         int PlankDemolishRefund { get; }
 
