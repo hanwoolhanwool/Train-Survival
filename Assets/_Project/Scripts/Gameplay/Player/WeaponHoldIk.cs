@@ -70,13 +70,22 @@ namespace Game.Gameplay.Player
             // 클립 반입 전에는 잔여 가중치가 1이라 A안과 동일하게 IK 단독으로 동작한다.
             ApplyHand(AvatarIKGoal.RightHand,
                 WeaponHoldMath.BlendIkWithPose(_rightWeight, pose.IkResidualWeight),
-                pose.RightHandLocalPosition, pose.RightHandLocalRotation);
+                pose.RightHandLocalPosition, pose.RightHandLocalRotation, pose.StraightenWrist);
             ApplyHand(AvatarIKGoal.LeftHand,
                 WeaponHoldMath.BlendIkWithPose(_leftWeight, pose.LeftIkResidualWeight),
-                pose.LeftHandLocalPosition, pose.LeftHandLocalRotation);
+                pose.LeftHandLocalPosition, pose.LeftHandLocalRotation, pose.StraightenWrist);
+
+            ApplyElbowHint(AvatarIKHint.RightElbow,
+                WeaponHoldMath.BlendIkWithPose(_rightWeight, pose.RightElbowHintWeight),
+                pose.RightElbowHintLocalPosition);
+            ApplyElbowHint(AvatarIKHint.LeftElbow,
+                WeaponHoldMath.BlendIkWithPose(_leftWeight, pose.LeftElbowHintWeight),
+                pose.LeftElbowHintLocalPosition);
         }
 
-        private void ApplyHand(AvatarIKGoal goal, float weight, Vector3 localPosition, Quaternion localRotation)
+        private void ApplyHand(
+            AvatarIKGoal goal, float weight, Vector3 localPosition, Quaternion localRotation,
+            bool straightenWrist)
         {
             if (weight <= 0.001f)
             {
@@ -92,9 +101,77 @@ namespace Game.Gameplay.Player
                 out Vector3 worldPosition, out Quaternion worldRotation);
 
             _animator.SetIKPositionWeight(goal, weight);
-            _animator.SetIKRotationWeight(goal, weight);
             _animator.SetIKPosition(goal, worldPosition);
-            _animator.SetIKRotation(goal, worldRotation);
+
+            // 손목 펴기를 쓰면 회전은 IK가 아니라 LateUpdate가 잡는다 (E5) — 여기서 절대각을
+            // 걸면 IK 뒤 실제 전완과 어긋난 채로 굳는다.
+            _animator.SetIKRotationWeight(goal, straightenWrist ? 0f : weight);
+            if (!straightenWrist)
+            {
+                _animator.SetIKRotation(goal, worldRotation);
+            }
+        }
+
+        /// <summary>
+        /// IK가 팔을 다 움직인 뒤 <b>손목만 편다</b> (E5). 전완 방향을 실측해 쓰므로 팔이 어떻게
+        /// 서든 손목이 꺾이지 않는다. 무기는 손 본 자식이라 손을 돌리면 함께 따라온다.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (_animator == null || _settings == null || _aim == null || !_aim.IsSpawned
+                || _lastEntry == null || !_lastEntry.StraightenWrist)
+            {
+                return;
+            }
+
+            StraightenWrist(HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, _rightWeight,
+                _lastEntry.RightWristRollDegrees, _lastEntry.RightWristBendDegrees, mirrored: false);
+            StraightenWrist(HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, _leftWeight,
+                _lastEntry.LeftWristRollDegrees, _lastEntry.LeftWristBendDegrees, mirrored: true);
+        }
+
+        private void StraightenWrist(
+            HumanBodyBones lowerArmBone, HumanBodyBones handBone, float weight,
+            float rollDegrees, float bendDegrees, bool mirrored)
+        {
+            if (weight <= 0.001f)
+            {
+                return;
+            }
+
+            Transform lowerArm = _animator.GetBoneTransform(lowerArmBone);
+            Transform hand = _animator.GetBoneTransform(handBone);
+            if (lowerArm == null || hand == null)
+            {
+                return;
+            }
+
+            Quaternion straight = WeaponHoldMath.StraightWristRotation(
+                hand.position - lowerArm.position, rollDegrees, bendDegrees, mirrored);
+
+            // 파지 블렌드 중에는 클립 자세에서 서서히 옮겨간다 — 들자마자 손목이 튀지 않게.
+            hand.rotation = Quaternion.Slerp(hand.rotation, straight, Mathf.Clamp01(weight));
+        }
+
+        /// <summary>
+        /// 팔꿈치 스윙 방향 — 손 목표만으로는 팔꿈치가 어느 쪽으로 굽을지 정해지지 않아
+        /// (2본 IK의 남는 자유도 1) 힌트로 잡는다 (포즈 편집 계획 §2.3 · E3).
+        /// 가중치 0이면 아무것도 세팅하지 않아 내장 IK 기본 스윙이 그대로 남는다.
+        /// </summary>
+        private void ApplyElbowHint(AvatarIKHint hint, float weight, Vector3 localPosition)
+        {
+            if (weight <= 0.001f)
+            {
+                return;
+            }
+
+            Transform root = _aim.transform;
+            Vector3 worldPosition = WeaponHoldMath.ComputeHoldPosition(
+                root.position, root.rotation, _settings.AimPivotLocalPosition,
+                _aim.DisplayPitchDegrees, localPosition);
+
+            _animator.SetIKHintPositionWeight(hint, weight);
+            _animator.SetIKHintPosition(hint, worldPosition);
         }
     }
 }

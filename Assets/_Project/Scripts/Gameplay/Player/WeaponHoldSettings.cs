@@ -55,6 +55,30 @@ namespace Game.Gameplay.Player
             [SerializeField] private Vector3 _leftHandLocalPosition;
             [SerializeField] private Vector3 _leftHandLocalEulerAngles;
 
+            [Header("손목 펴기 (포즈 편집 계획 E5)")]
+            [Tooltip("켜면 손 회전을 실제 전완 방향에서 계산한다 — 팔이 어떻게 서든 손목이 펴진다. " +
+                     "위의 손 오일러값은 쓰이지 않고 아래 롤·굽힘이 대신한다.")]
+            [SerializeField] private bool _straightenWrist;
+
+            [Tooltip("전완 축 둘레 회전 (도) — 0이면 손등이 하늘. 총을 세우려면 ±90 부근.")]
+            [SerializeField, Range(-180f, 180f)] private float _rightWristRollDegrees;
+
+            [Tooltip("손목 굽힘 (도) — +면 손등 쪽으로 젖힌다. 0이 곧게 편 상태.")]
+            [SerializeField, Range(-60f, 60f)] private float _rightWristBendDegrees;
+
+            [SerializeField, Range(-180f, 180f)] private float _leftWristRollDegrees;
+            [SerializeField, Range(-60f, 60f)] private float _leftWristBendDegrees;
+
+            [Header("팔꿈치 힌트 (조준 피벗 로컬 — 포즈 편집 계획 E3)")]
+            [Tooltip("오른 팔꿈치가 향할 지점 — 손 목표와 같은 조준 피벗 로컬 좌표계.")]
+            [SerializeField] private Vector3 _rightElbowHintLocalPosition;
+
+            [Tooltip("0이면 힌트를 쓰지 않는다 — 내장 IK의 기본 스윙이 그대로 남는다.")]
+            [SerializeField, Range(0f, 1f)] private float _rightElbowHintWeight;
+
+            [SerializeField] private Vector3 _leftElbowHintLocalPosition;
+            [SerializeField, Range(0f, 1f)] private float _leftElbowHintWeight;
+
             [Header("Hold 레이어 (품질 업그레이드 계획 C축)")]
             [Tooltip("이 무기가 쓰는 파지 포즈 카테고리 — Hold 레이어의 클립 묶음을 고른다.")]
             [SerializeField] private WeaponHoldPose _pose = WeaponHoldPose.None;
@@ -75,6 +99,41 @@ namespace Game.Gameplay.Player
             public Quaternion RightHandLocalRotation => Quaternion.Euler(_rightHandLocalEulerAngles);
             public Vector3 LeftHandLocalPosition => _leftHandLocalPosition;
             public Quaternion LeftHandLocalRotation => Quaternion.Euler(_leftHandLocalEulerAngles);
+
+            /// <summary>
+            /// 손목을 편 자세로 손을 잡을지 — 켜면 <see cref="WeaponHoldMath.StraightWristRotation"/>이
+            /// 실제 전완 방향에서 손 회전을 만든다. 손 오일러를 절대각으로 고정하면 팔이 조금만
+            /// 달리 서도 그 차이가 손목 꺾임으로 남는다 (포즈 편집 계획 E5).
+            /// </summary>
+            public bool StraightenWrist => _straightenWrist;
+
+            /// <summary>오른 손목 롤 (도) — 전완 축 둘레. 0이면 손등이 하늘, 총기는 ±90 부근.</summary>
+            public float RightWristRollDegrees => _rightWristRollDegrees;
+
+            /// <summary>오른 손목 굽힘 (도) — +면 손등 쪽. 0이 곧게 편 상태.</summary>
+            public float RightWristBendDegrees => _rightWristBendDegrees;
+
+            /// <summary>왼 손목 롤 (도) — 미러라 부호는 <see cref="WeaponHoldMath"/>가 뒤집는다.</summary>
+            public float LeftWristRollDegrees => _leftWristRollDegrees;
+
+            /// <summary>왼 손목 굽힘 (도).</summary>
+            public float LeftWristBendDegrees => _leftWristBendDegrees;
+
+            /// <summary>
+            /// 오른 팔꿈치 힌트 위치 (조준 피벗 로컬) — 손 목표만으로는 팔꿈치가 어느 쪽으로
+            /// 굽을지 정해지지 않는(자유도 1) 것을 데이터로 잡는다 (포즈 편집 계획 §2.3).
+            /// 손 목표와 같은 좌표계라 피치를 함께 탄다.
+            /// </summary>
+            public Vector3 RightElbowHintLocalPosition => _rightElbowHintLocalPosition;
+
+            /// <summary>오른 팔꿈치 힌트 가중치 — 0이면 내장 IK 기본 스윙을 그대로 둔다.</summary>
+            public float RightElbowHintWeight => _rightElbowHintWeight;
+
+            /// <summary>왼 팔꿈치 힌트 위치 (조준 피벗 로컬) — 양손 무기에서만 의미가 있다.</summary>
+            public Vector3 LeftElbowHintLocalPosition => _leftElbowHintLocalPosition;
+
+            /// <summary>왼 팔꿈치 힌트 가중치 — 0이면 내장 IK 기본 스윙을 그대로 둔다.</summary>
+            public float LeftElbowHintWeight => _leftElbowHintWeight;
 
             /// <summary>Hold 레이어 포즈 카테고리 (C축) — 클립 반입 전에는 <see cref="WeaponHoldPose.None"/>.</summary>
             public WeaponHoldPose Pose => _pose;
