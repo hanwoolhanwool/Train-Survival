@@ -6998,6 +6998,7 @@ GameObject:
   - component: {fileID: 1904839124}
   - component: {fileID: 1904839125}
   - component: {fileID: 1904839126}
+  - component: {fileID: 1904839127}
   m_Layer: 0
   m_Name: Train
   m_TagString: Untagged
@@ -7164,6 +7165,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.StructureViewSpawner
   _catalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
   _layoutSettings: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
+--- !u!114 &1904839127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf96ad264cd82bc47962f202277af1a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.PlankViewSpawner
+  _plankPrefab: {fileID: 4611738012934571830, guid: 5d2a7e18c4b3f0249a8e6c1d7b4e3a25, type: 3}
+  _layoutSettings: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
+  _thickness: 0.15
 --- !u!1 &1913292929
 GameObject:
   m_ObjectHideFlags: 0
