@@ -11,6 +11,10 @@ namespace Game.Gameplay.Player
     /// <see cref="WeaponHoldSettings"/> 데이터만 읽는다 (§4 MVP·DIP).
     /// <see cref="HeldWeaponSocket"/>과는 서로 모른다 (ISP) — 무기는 오른손 본 자식이라
     /// IK로 팔이 들리면 총도 자연히 조준 위치로 올라간다.
+    ///
+    /// <para><b>팔이 어디로 가는지는 시점 모드가 정한다</b> (1인칭 통합 시점 전환 계획 §3.3):
+    /// 분리 모드는 원격이 옆에서 보는 자세를, 통합 1인칭은 자기 눈에서 보이는 자세를 쓴다.
+    /// 이 클래스가 하는 일은 <b>프로파일 한 벌을 고르는 것</b>뿐이고, 나머지 계산은 같다.</para>
     /// </summary>
     public sealed class WeaponHoldIk : MonoBehaviour
     {
@@ -18,14 +22,20 @@ namespace Game.Gameplay.Player
 
         private Animator _animator;
         private PlayerAimView _aim;
+        private PlayerViewModeController _viewMode;
         private WeaponHoldSettings.Entry _lastEntry;
         private float _rightWeight;
         private float _leftWeight;
+
+        /// <summary>현재 시점 모드 — 컨트롤러가 없거나 원격 프록시면 분리(현행)다.</summary>
+        private PlayerViewMode CurrentMode =>
+            _viewMode != null ? _viewMode.Mode : PlayerViewMode.SplitFpTp;
 
         private void Awake()
         {
             _animator = GetComponent<Animator>();
             _aim = GetComponentInParent<PlayerAimView>();
+            _viewMode = GetComponentInParent<PlayerViewModeController>();
         }
 
         // Girl↔Man 전환으로 모델이 꺼졌다 켜지면 이전 블렌드 잔량이 남지 않게 한다.
@@ -60,7 +70,13 @@ namespace Game.Gameplay.Player
 
             // 블렌드 아웃 중에는 마지막 파지 엔트리의 타깃으로 팔을 되돌린다 — 타깃 없이
             // 가중치만 남으면 손이 원점으로 튄다.
-            WeaponHoldSettings.Entry pose = held ? entry : _lastEntry;
+            WeaponHoldSettings.Entry source = held ? entry : _lastEntry;
+            if (source == null)
+            {
+                return;
+            }
+
+            WeaponHoldSettings.HoldProfile pose = source.GetProfile(CurrentMode);
             if (pose == null)
             {
                 return;
@@ -105,7 +121,7 @@ namespace Game.Gameplay.Player
             // (기술 확정 ⑥). OnAnimatorIK가 1프레임 이전 값을 읽는 지연은 수용.
             Transform root = _aim.transform;
             WeaponHoldMath.ComputeHoldPose(
-                root.position, root.rotation, _settings.AimPivotLocalPosition,
+                root.position, root.rotation, _settings.GetAimPivotLocalPosition(CurrentMode),
                 _aim.DisplayPitchDegrees, localPosition, localRotation,
                 out Vector3 worldPosition, out Quaternion worldRotation);
 
@@ -131,15 +147,21 @@ namespace Game.Gameplay.Player
         private void LateUpdate()
         {
             if (_animator == null || _settings == null || _aim == null || !_aim.IsSpawned
-                || _lastEntry == null || !_lastEntry.StraightenWrist)
+                || _lastEntry == null)
+            {
+                return;
+            }
+
+            WeaponHoldSettings.HoldProfile pose = _lastEntry.GetProfile(CurrentMode);
+            if (pose == null || !pose.StraightenWrist)
             {
                 return;
             }
 
             StraightenWrist(HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, _rightWeight,
-                _lastEntry.RightWristRollDegrees, _lastEntry.RightWristBendDegrees, mirrored: false);
+                pose.RightWristRollDegrees, pose.RightWristBendDegrees, mirrored: false);
             StraightenWrist(HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, _leftWeight,
-                _lastEntry.LeftWristRollDegrees, _lastEntry.LeftWristBendDegrees, mirrored: true);
+                pose.LeftWristRollDegrees, pose.LeftWristBendDegrees, mirrored: true);
         }
 
         private void StraightenWrist(
@@ -180,7 +202,7 @@ namespace Game.Gameplay.Player
 
             Transform root = _aim.transform;
             Vector3 worldPosition = WeaponHoldMath.ComputeHoldPosition(
-                root.position, root.rotation, _settings.AimPivotLocalPosition,
+                root.position, root.rotation, _settings.GetAimPivotLocalPosition(CurrentMode),
                 _aim.DisplayPitchDegrees, localPosition) + root.rotation * shoulderOffset;
 
             _animator.SetIKHintPositionWeight(hint, weight);

@@ -1,6 +1,7 @@
 using System;
 using Game.Gameplay.Inventory;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Gameplay.Player
 {
@@ -28,28 +29,24 @@ namespace Game.Gameplay.Player
     /// 무기 추가·자세 조정은 이 에셋의 엔트리 편집만으로 끝난다 (OCP — 파지 계획 §4):
     /// <see cref="HeldWeaponSocket"/>·<see cref="WeaponHoldIk"/>는 <see cref="HotbarItemType"/>
     /// 키로 엔트리를 조회할 뿐 무기 컨트롤러 구체 타입을 모른다.
+    ///
+    /// <para><b>팔 자세는 시점 모드마다 다르다</b> (1인칭 통합 시점 전환 계획 §3.3). 원격이 옆에서
+    /// 보는 그림과 자기 눈에서 보는 그림은 기준이 달라, 같은 값으로 둘 다 만족시킬 수 없다.
+    /// 그래서 <b>손에 쥐는 방식(소켓)은 공유</b>하고 <b>팔이 어디로 가는지(<see cref="HoldProfile"/>)만
+    /// 모드별로</b> 갖는다 — 두 벌을 한 엔트리에 나란히 두어야 QA가 F10으로 오갈 수 있다.</para>
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponHoldSettings", menuName = "Game/Weapon Hold Settings")]
     public sealed class WeaponHoldSettings : ScriptableObject
     {
-        /// <summary>무기 1종의 파지 데이터 — 소켓 오프셋(오른손 본 로컬) + 홀드 타깃(조준 피벗 로컬).</summary>
+        /// <summary>
+        /// 한 시점 모드에서의 팔 자세 — 손 목표·손목·팔꿈치 힌트·IK 합성 비율.
+        /// 좌표계는 전부 <b>조준 피벗 로컬</b>이며, 그 피벗 자체도 모드마다 다르다
+        /// (<see cref="GetAimPivotLocalPosition"/>).
+        /// </summary>
         [Serializable]
-        public sealed class Entry
+        public sealed class HoldProfile
         {
-            [SerializeField] private HotbarItemType _itemType;
-
-            [Header("소켓 오프셋 (오른손 소켓 로컬)")]
-            [SerializeField] private Vector3 _socketLocalPosition;
-            [SerializeField] private Vector3 _socketLocalEulerAngles;
-            [SerializeField] private Vector3 _socketLocalScale = Vector3.one;
-
-            [Header("조준 자세 (총기만 — 파지 계획 결정 ③)")]
-            [Tooltip("켜면 드는 동안 항상 팔을 들어 겨눈다. 꺼진 무기는 소켓 부착만 한다 (망치·근접).")]
-            [SerializeField] private bool _aimPose;
-
-            [Tooltip("왼손도 홀드 타깃에 붙인다 (샷건·집게).")]
-            [SerializeField] private bool _twoHanded;
-
+            [Header("손 목표 (조준 피벗 로컬)")]
             [SerializeField] private Vector3 _rightHandLocalPosition;
             [SerializeField] private Vector3 _rightHandLocalEulerAngles;
             [SerializeField] private Vector3 _leftHandLocalPosition;
@@ -79,22 +76,13 @@ namespace Game.Gameplay.Player
             [SerializeField] private Vector3 _leftElbowHintLocalPosition;
             [SerializeField, Range(0f, 1f)] private float _leftElbowHintWeight;
 
-            [Header("Hold 레이어 (품질 업그레이드 계획 C축)")]
-            [Tooltip("이 무기가 쓰는 파지 포즈 카테고리 — Hold 레이어의 클립 묶음을 고른다.")]
-            [SerializeField] private WeaponHoldPose _pose = WeaponHoldPose.None;
-
+            [Header("Hold 레이어 합성 (품질 업그레이드 계획 C축)")]
             [Tooltip("포즈 클립이 자세를 담당할 때 남기는 IK 비율 — 클립이 없으면 1(IK 단독).")]
             [SerializeField, Range(0f, 1f)] private float _ikResidualWeight = 1f;
 
             [Tooltip("왼손 전용 IK 비율 — 무기를 쥔 오른손과 달리 왼손은 총열에 붙어야 해서 더 높다.")]
             [SerializeField, Range(0f, 1f)] private float _leftIkResidualWeight = 1f;
 
-            public HotbarItemType ItemType => _itemType;
-            public Vector3 SocketLocalPosition => _socketLocalPosition;
-            public Quaternion SocketLocalRotation => Quaternion.Euler(_socketLocalEulerAngles);
-            public Vector3 SocketLocalScale => _socketLocalScale;
-            public bool AimPose => _aimPose;
-            public bool TwoHanded => _twoHanded;
             public Vector3 RightHandLocalPosition => _rightHandLocalPosition;
             public Quaternion RightHandLocalRotation => Quaternion.Euler(_rightHandLocalEulerAngles);
             public Vector3 LeftHandLocalPosition => _leftHandLocalPosition;
@@ -122,7 +110,6 @@ namespace Game.Gameplay.Player
             /// <summary>
             /// 오른 팔꿈치 힌트 위치 (조준 피벗 로컬) — 손 목표만으로는 팔꿈치가 어느 쪽으로
             /// 굽을지 정해지지 않는(자유도 1) 것을 데이터로 잡는다 (포즈 편집 계획 §2.3).
-            /// 손 목표와 같은 좌표계라 피치를 함께 탄다.
             /// </summary>
             public Vector3 RightElbowHintLocalPosition => _rightElbowHintLocalPosition;
 
@@ -135,12 +122,9 @@ namespace Game.Gameplay.Player
             /// <summary>왼 팔꿈치 힌트 가중치 — 0이면 내장 IK 기본 스윙을 그대로 둔다.</summary>
             public float LeftElbowHintWeight => _leftElbowHintWeight;
 
-            /// <summary>Hold 레이어 포즈 카테고리 (C축) — 클립 반입 전에는 <see cref="WeaponHoldPose.None"/>.</summary>
-            public WeaponHoldPose Pose => _pose;
-
             /// <summary>
             /// 포즈 클립 위에 남기는 IK 비율 — 클립이 "자세"를, IK가 "피치 추종·그립 밀착"을 맡는
-            /// 합성 규약(업그레이드 계획 §2.1). 클립 반입 전에는 1이라 A안과 동일하게 동작한다.
+            /// 합성 규약(업그레이드 계획 §2.1).
             /// </summary>
             public float IkResidualWeight => _ikResidualWeight;
 
@@ -151,10 +135,62 @@ namespace Game.Gameplay.Player
             public float LeftIkResidualWeight => _leftIkResidualWeight;
         }
 
+        /// <summary>무기 1종의 파지 데이터 — 소켓 오프셋(공통) + 시점 모드별 팔 자세 2벌.</summary>
+        [Serializable]
+        public sealed class Entry
+        {
+            [SerializeField] private HotbarItemType _itemType;
+
+            [Header("소켓 오프셋 (오른손 소켓 로컬 — 모드 공통)")]
+            [SerializeField] private Vector3 _socketLocalPosition;
+            [SerializeField] private Vector3 _socketLocalEulerAngles;
+            [SerializeField] private Vector3 _socketLocalScale = Vector3.one;
+
+            [Header("파지 성격 (모드 공통)")]
+            [Tooltip("켜면 드는 동안 항상 팔을 들어 겨눈다. 꺼진 무기는 소켓 부착만 한다 (망치·근접).")]
+            [SerializeField] private bool _aimPose;
+
+            [Tooltip("왼손도 홀드 타깃에 붙인다 (샷건·집게).")]
+            [SerializeField] private bool _twoHanded;
+
+            [Tooltip("이 무기가 쓰는 파지 포즈 카테고리 — Hold 레이어의 클립 묶음을 고른다.")]
+            [SerializeField] private WeaponHoldPose _pose = WeaponHoldPose.None;
+
+            [Header("팔 자세 — 시점 모드별 (1인칭 통합 계획 §3.3)")]
+            [Tooltip("분리 모드(현행) — 원격 피어가 옆에서 보는 그림 기준으로 맞춘 값.")]
+            [SerializeField] private HoldProfile _tpProfile = new HoldProfile();
+
+            [Tooltip("통합 1인칭 — 자기 눈에서 보는 그림 기준. 시야(수직 30° 이내)와 " +
+                     "팔 도달(어깨에서 0.40 m 이내)을 동시에 만족해야 한다.")]
+            [SerializeField] private HoldProfile _fpProfile = new HoldProfile();
+
+            public HotbarItemType ItemType => _itemType;
+            public Vector3 SocketLocalPosition => _socketLocalPosition;
+            public Quaternion SocketLocalRotation => Quaternion.Euler(_socketLocalEulerAngles);
+            public Vector3 SocketLocalScale => _socketLocalScale;
+            public bool AimPose => _aimPose;
+            public bool TwoHanded => _twoHanded;
+
+            /// <summary>Hold 레이어 포즈 카테고리 (C축) — 모드와 무관하게 같은 클립 묶음을 쓴다.</summary>
+            public WeaponHoldPose Pose => _pose;
+
+            /// <summary>시점 모드에 맞는 팔 자세 — 모드가 바뀌면 이 한 조회의 결과만 달라진다.</summary>
+            public HoldProfile GetProfile(PlayerViewMode mode)
+            {
+                return mode == PlayerViewMode.UnifiedFirstPerson ? _fpProfile : _tpProfile;
+            }
+        }
+
         [SerializeField] private Entry[] _entries;
 
-        [Header("TP 조준 피벗 (플레이어 루트 로컬 — 가슴 높이)")]
-        [SerializeField] private Vector3 _aimPivotLocalPosition = new Vector3(0f, 1.25f, 0f);
+        [Header("조준 피벗 (플레이어 루트 로컬) — 홀드 타깃이 피치로 도는 중심")]
+        [Tooltip("분리 모드 — 가슴 높이. 원격이 보는 상체 회전과 어울리는 중심이다.")]
+        [FormerlySerializedAs("_aimPivotLocalPosition")]
+        [SerializeField] private Vector3 _tpAimPivotLocalPosition = new Vector3(0f, 1.08f, 0f);
+
+        [Tooltip("통합 1인칭 — 눈높이. 시선과 무기가 같은 중심으로 돌아야 화면에서 무기가 고정된다. " +
+                 "이 값이 카메라 높이와 같으면 프로파일의 손 좌표가 곧 카메라 기준 오프셋이 된다.")]
+        [SerializeField] private Vector3 _fpAimPivotLocalPosition = new Vector3(0f, 1.6f, 0f);
 
         [Header("어깨 추종 (포즈 편집 계획 E6)")]
         [Tooltip("로코모션이 상체를 움직여도 팔 자세가 유지되도록 홀드 타깃을 어깨 이동분만큼 " +
@@ -179,9 +215,6 @@ namespace Game.Gameplay.Player
         [Tooltip("Hold 레이어 가중치 블렌드 반감기 (초).")]
         [SerializeField, Min(0f)] private float _holdLayerBlendHalfLifeSeconds = 0.15f;
 
-        /// <summary>TP 조준 피벗의 플레이어 루트 로컬 위치 — 복제 피치 회전의 중심 (파지 계획 §2.3).</summary>
-        public Vector3 AimPivotLocalPosition => _aimPivotLocalPosition;
-
         /// <summary>조준 자세일 때 손 IK 목표 가중치 — 애니 에셋 반입 시 데이터로 내리는 스위치 (§2.5).</summary>
         public float AimHandWeight => _aimHandWeight;
 
@@ -203,12 +236,22 @@ namespace Game.Gameplay.Player
         /// <summary>
         /// 파지 중 Hold 레이어 목표 가중치 (C축). <b>포즈 클립을 반입하기 전에는 0</b>이어야 한다 —
         /// 모션이 빈 스테이트가 가중치를 얻으면 상체가 바인드 포즈로 덮어써진다.
-        /// 클립을 얹은 뒤 1로 올리고 엔트리의 <see cref="Entry.IkResidualWeight"/>를 내린다.
         /// </summary>
         public float HoldLayerWeight => _holdLayerWeight;
 
         /// <summary>Hold 레이어 가중치 블렌드 반감기 (초).</summary>
         public float HoldLayerBlendHalfLifeSeconds => _holdLayerBlendHalfLifeSeconds;
+
+        /// <summary>
+        /// 시점 모드별 조준 피벗 (루트 로컬) — 홀드 타깃·팔꿈치 힌트가 이 점을 중심으로 피치를 탄다.
+        /// 통합 1인칭에서 눈높이를 쓰는 이유는 §3.3 참조 (가슴 중심이면 위를 볼 때 무기가 화면 아래로 밀린다).
+        /// </summary>
+        public Vector3 GetAimPivotLocalPosition(PlayerViewMode mode)
+        {
+            return mode == PlayerViewMode.UnifiedFirstPerson
+                ? _fpAimPivotLocalPosition
+                : _tpAimPivotLocalPosition;
+        }
 
         /// <summary>든 아이템의 파지 엔트리 조회 — 없는 아이템(자원 등)은 false.</summary>
         public bool TryGetEntry(HotbarItemType itemType, out Entry entry)

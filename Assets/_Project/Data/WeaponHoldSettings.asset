@@ -15,105 +15,201 @@ MonoBehaviour:
   _entries:
   - _itemType: 2
     _socketLocalPosition: {x: 0.0509, y: 0.1121, z: -0.0066}
-    _straightenWrist: 1
-    _rightWristRollDegrees: 90
-    _rightWristBendDegrees: 0
-    _leftWristRollDegrees: 90
-    _leftWristBendDegrees: 0
     _socketLocalEulerAngles: {x: 348.69, y: 270, z: 342.26}
     _socketLocalScale: {x: 1, y: 1, z: 1}
     _aimPose: 1
     _twoHanded: 0
-    _rightHandLocalPosition: {x: 0.378, y: -0.107, z: 0.448}
-    _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
-    _leftHandLocalPosition: {x: 0, y: 0, z: 0}
-    _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
-    _rightElbowHintLocalPosition: {x: 0.314, y: -0.149, z: 0.248}
-    _rightElbowHintWeight: 1
-    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
-    _leftElbowHintWeight: 0
     _pose: 1
-    _ikResidualWeight: 1
-    _leftIkResidualWeight: 1
+    _tpProfile:
+      _rightHandLocalPosition: {x: 0.378, y: -0.107, z: 0.448}
+      _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 1
+      _rightWristRollDegrees: 90
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 90
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0.314, y: -0.149, z: 0.248}
+      _rightElbowHintWeight: 1
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
+    _fpProfile:
+      _rightHandLocalPosition: {x: 0.22, y: -0.24, z: 0.4}
+      _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 1
+      _rightWristRollDegrees: 90
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 90
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0.3, y: -0.45, z: 0.22}
+      _rightElbowHintWeight: 1
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
   - _itemType: 5
     _socketLocalPosition: {x: 0.1838, y: 0.1747, z: -0.2503}
-    _straightenWrist: 1
-    _rightWristRollDegrees: 90
-    _rightWristBendDegrees: 0
-    _leftWristRollDegrees: 90
-    _leftWristBendDegrees: 0
     _socketLocalEulerAngles: {x: 341.09, y: 270, z: 57.57}
     _socketLocalScale: {x: 0.8, y: 0.8, z: 0.8}
     _aimPose: 1
     _twoHanded: 1
-    _rightHandLocalPosition: {x: 0, y: -0.143, z: 0.346}
-    _rightHandLocalEulerAngles: {x: 0, y: 212.43, z: 288.91}
-    _leftHandLocalPosition: {x: 0, y: -0.183, z: 0.416}
-    _leftHandLocalEulerAngles: {x: 0, y: 125.16, z: 91.74}
-    _rightElbowHintLocalPosition: {x: 0.17, y: -0.212, z: 0.238}
-    _rightElbowHintWeight: 1
-    _leftElbowHintLocalPosition: {x: -0.118, y: -0.177, z: 0.249}
-    _leftElbowHintWeight: 1
     _pose: 2
-    _ikResidualWeight: 1
-    _leftIkResidualWeight: 1
+    _tpProfile:
+      _rightHandLocalPosition: {x: 0, y: -0.143, z: 0.346}
+      _rightHandLocalEulerAngles: {x: 0, y: 212.43, z: 288.91}
+      _leftHandLocalPosition: {x: 0, y: -0.183, z: 0.416}
+      _leftHandLocalEulerAngles: {x: 0, y: 125.16, z: 91.74}
+      _straightenWrist: 1
+      _rightWristRollDegrees: 90
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 90
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0.17, y: -0.212, z: 0.238}
+      _rightElbowHintWeight: 1
+      _leftElbowHintLocalPosition: {x: -0.118, y: -0.177, z: 0.249}
+      _leftElbowHintWeight: 1
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
+    _fpProfile:
+      _rightHandLocalPosition: {x: 0.1, y: -0.23, z: 0.38}
+      _rightHandLocalEulerAngles: {x: 0, y: 212.43, z: 288.91}
+      _leftHandLocalPosition: {x: -0.05, y: -0.27, z: 0.45}
+      _leftHandLocalEulerAngles: {x: 0, y: 125.16, z: 91.74}
+      _straightenWrist: 1
+      _rightWristRollDegrees: 90
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 90
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0.24, y: -0.46, z: 0.2}
+      _rightElbowHintWeight: 1
+      _leftElbowHintLocalPosition: {x: -0.22, y: -0.47, z: 0.24}
+      _leftElbowHintWeight: 1
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
   - _itemType: 1
     _socketLocalPosition: {x: 0.1066, y: 0.1043, z: -0.0043}
-    _straightenWrist: 1
-    _rightWristRollDegrees: 90
-    _rightWristBendDegrees: 0
-    _leftWristRollDegrees: 90
-    _leftWristBendDegrees: 0
     _socketLocalEulerAngles: {x: 348.69, y: 270, z: 342.26}
     _socketLocalScale: {x: 0.75, y: 0.75, z: 0.75}
     _aimPose: 1
     _twoHanded: 0
-    _rightHandLocalPosition: {x: 0.378, y: -0.107, z: 0.448}
-    _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
-    _leftHandLocalPosition: {x: 0, y: 0, z: 0}
-    _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
-    _rightElbowHintLocalPosition: {x: 0.314, y: -0.149, z: 0.248}
-    _rightElbowHintWeight: 1
-    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
-    _leftElbowHintWeight: 0
     _pose: 1
-    _ikResidualWeight: 1
-    _leftIkResidualWeight: 1
+    _tpProfile:
+      _rightHandLocalPosition: {x: 0.378, y: -0.107, z: 0.448}
+      _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 1
+      _rightWristRollDegrees: 90
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 90
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0.314, y: -0.149, z: 0.248}
+      _rightElbowHintWeight: 1
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
+    _fpProfile:
+      _rightHandLocalPosition: {x: 0.2, y: -0.25, z: 0.42}
+      _rightHandLocalEulerAngles: {x: 0, y: 287.74, z: 281.31}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 1
+      _rightWristRollDegrees: 90
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 90
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0.28, y: -0.46, z: 0.23}
+      _rightElbowHintWeight: 1
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
   - _itemType: 4
     _socketLocalPosition: {x: 0.113372356, y: 0.101922885, z: -0.08067209}
     _socketLocalEulerAngles: {x: 333.77, y: 265.34, z: 123.98}
     _socketLocalScale: {x: 1, y: 1, z: 1}
     _aimPose: 0
     _twoHanded: 0
-    _rightHandLocalPosition: {x: 0, y: 0, z: 0}
-    _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
-    _leftHandLocalPosition: {x: 0, y: 0, z: 0}
-    _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
-    _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
-    _rightElbowHintWeight: 0
-    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
-    _leftElbowHintWeight: 0
     _pose: 3
-    _ikResidualWeight: 1
-    _leftIkResidualWeight: 1
+    _tpProfile:
+      _rightHandLocalPosition: {x: 0, y: 0, z: 0}
+      _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 0
+      _rightWristRollDegrees: 0
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 0
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _rightElbowHintWeight: 0
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
+    _fpProfile:
+      _rightHandLocalPosition: {x: 0, y: 0, z: 0}
+      _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 0
+      _rightWristRollDegrees: 0
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 0
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _rightElbowHintWeight: 0
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
   - _itemType: 7
     _socketLocalPosition: {x: 0.017219871, y: 0.030864786, z: -0.018730747}
     _socketLocalEulerAngles: {x: 311.94, y: 142.08, z: 221.4}
     _socketLocalScale: {x: 1, y: 1, z: 1}
     _aimPose: 0
     _twoHanded: 0
-    _rightHandLocalPosition: {x: 0, y: 0, z: 0}
-    _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
-    _leftHandLocalPosition: {x: 0, y: 0, z: 0}
-    _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
-    _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
-    _rightElbowHintWeight: 0
-    _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
-    _leftElbowHintWeight: 0
     _pose: 3
-    _ikResidualWeight: 1
-    _leftIkResidualWeight: 1
-  _aimPivotLocalPosition: {x: 0, y: 1.08, z: 0}
+    _tpProfile:
+      _rightHandLocalPosition: {x: 0, y: 0, z: 0}
+      _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 0
+      _rightWristRollDegrees: 0
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 0
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _rightElbowHintWeight: 0
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
+    _fpProfile:
+      _rightHandLocalPosition: {x: 0, y: 0, z: 0}
+      _rightHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _leftHandLocalPosition: {x: 0, y: 0, z: 0}
+      _leftHandLocalEulerAngles: {x: 0, y: 0, z: 0}
+      _straightenWrist: 0
+      _rightWristRollDegrees: 0
+      _rightWristBendDegrees: 0
+      _leftWristRollDegrees: 0
+      _leftWristBendDegrees: 0
+      _rightElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _rightElbowHintWeight: 0
+      _leftElbowHintLocalPosition: {x: 0, y: 0, z: 0}
+      _leftElbowHintWeight: 0
+      _ikResidualWeight: 1
+      _leftIkResidualWeight: 1
+  _tpAimPivotLocalPosition: {x: 0, y: 1.08, z: 0}
+  _fpAimPivotLocalPosition: {x: 0, y: 1.6, z: 0}
   _shoulderFollow: 1
   _rightShoulderRestLocalPosition: {x: 0.16, y: 1.091, z: 0.141}
   _leftShoulderRestLocalPosition: {x: -0.237, y: 1.081, z: 0.141}
