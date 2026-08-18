@@ -1,4 +1,3 @@
-using Game.Core.Events;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -10,13 +9,9 @@ namespace Game.Gameplay.Player
     /// 틴트 색을 로컬 적용한다. 색은 머티리얼 인스턴스 분기 대신
     /// <see cref="MaterialPropertyBlock"/>으로 칠한다 (SRP Batcher 규약 — M8 1차 §2.4).
     ///
-    /// <para>소유자 자신의 몸을 그릴지 말지는 <see cref="PlayerViewMode"/>가 정한다
-    /// (1인칭 통합 시점 전환 계획 §3.2): <b>분리 모드</b>는 그림자만 남기고(현행),
-    /// <b>통합 1인칭</b>은 메시를 그대로 그린다. 원격 피어의 표현은 두 모드에서 완전히 같다 —
-    /// 모드는 복제되지 않는다.</para>
-    ///
-    /// <para>카메라를 가리는 머리를 치우는 일은 <see cref="FirstPersonHeadHider"/>가 맡는다 —
-    /// 본을 만지는 것은 "어느 모델을 어떤 색으로 켤 것인가"와 변경 이유가 다르다 (SRP).</para>
+    /// <para><b>소유자 자신의 몸은 시점 모드와 무관하게 언제나 그림자만 남긴다</b>
+    /// (1인칭 통합 시점 전환 계획 §3.2 — 2026-08-19 사용자 확정). 화면에 보이는 것은 무기뿐이고,
+    /// 몸은 그림자로만 존재한다. 메시를 켜지 않으므로 <b>그림자가 머리까지 온전</b>하다.</para>
     /// </summary>
     public sealed class PlayerCharacterView : NetworkBehaviour
     {
@@ -37,20 +32,8 @@ namespace Game.Gameplay.Player
         /// </summary>
         private readonly NetworkVariable<int> _visualSlot = new NetworkVariable<int>();
 
-        private IPlayerViewMode _viewMode;
-        private SkinnedMeshRenderer _activeRenderer;
-
         /// <summary>현재 켜져 있는 모델의 Animator — <see cref="PlayerAnimationDriver"/>가 구동한다.</summary>
         public Animator ActiveAnimator { get; private set; }
-
-        /// <summary>현재 시점 모드 — 구현체가 없거나 원격 프록시면 현행(분리)이다.</summary>
-        private PlayerViewMode CurrentMode =>
-            _viewMode != null ? _viewMode.Mode : PlayerViewMode.SplitFpTp;
-
-        private void Awake()
-        {
-            _viewMode = GetComponent<IPlayerViewMode>();
-        }
 
         public override void OnNetworkSpawn()
         {
@@ -60,20 +43,12 @@ namespace Game.Gameplay.Player
             }
 
             _visualSlot.OnValueChanged += OnVisualSlotChanged;
-            EventBus<PlayerViewModeChangedLocalEvent>.Subscribe(OnViewModeChanged);
             Apply(_visualSlot.Value);
         }
 
         public override void OnNetworkDespawn()
         {
             _visualSlot.OnValueChanged -= OnVisualSlotChanged;
-            EventBus<PlayerViewModeChangedLocalEvent>.Unsubscribe(OnViewModeChanged);
-        }
-
-        /// <summary>시점 모드 전환 — 몸 렌더 모드를 다시 적용한다.</summary>
-        private void OnViewModeChanged(PlayerViewModeChangedLocalEvent evt)
-        {
-            ApplyBodyVisibility();
         }
 
         private void OnVisualSlotChanged(int previous, int current)
@@ -97,7 +72,6 @@ namespace Game.Gameplay.Player
             ActiveAnimator = useGirl ? _girlAnimator : _manAnimator;
 
             SkinnedMeshRenderer renderer = useGirl ? _girlRenderer : _manRenderer;
-            _activeRenderer = renderer;
             if (renderer != null)
             {
                 if (_settings != null)
@@ -108,7 +82,12 @@ namespace Game.Gameplay.Player
                     renderer.SetPropertyBlock(block);
                 }
 
-                ApplyBodyVisibility();
+                // 소유자 몸은 카메라(y 1.6)를 가리므로 메시는 숨기고 그림자만 남긴다.
+                // 시점 모드와 무관하다 — 통합 1인칭에서도 화면에 보이는 것은 손에 쥔 무기뿐이고,
+                // 메시를 켜지 않으므로 그림자가 머리까지 온전하다.
+                renderer.shadowCastingMode = IsOwner
+                    ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
+                    : UnityEngine.Rendering.ShadowCastingMode.On;
             }
 
             // 소유자는 상시 갱신한다 — ShadowsOnly 렌더러는 화면 밖 판정이 나기 쉬워
@@ -121,24 +100,6 @@ namespace Game.Gameplay.Player
                     ? AnimatorCullingMode.AlwaysAnimate
                     : AnimatorCullingMode.CullUpdateTransforms;
             }
-        }
-
-        /// <summary>
-        /// 소유자 몸의 렌더 모드 — <b>분리 모드</b>는 자기 몸이 카메라(y 1.6)를 가리므로 그림자만
-        /// 남기고, <b>통합 1인칭</b>은 메시를 그대로 그린다 (내려다보면 자기 몸통·다리가 보인다).
-        /// 원격 피어는 모드와 무관하게 항상 온전히 그린다 — 모드는 복제되지 않는다 (§4.2).
-        /// </summary>
-        private void ApplyBodyVisibility()
-        {
-            if (_activeRenderer == null)
-            {
-                return;
-            }
-
-            bool shadowsOnly = IsOwner && CurrentMode == PlayerViewMode.SplitFpTp;
-            _activeRenderer.shadowCastingMode = shadowsOnly
-                ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
-                : UnityEngine.Rendering.ShadowCastingMode.On;
         }
 
         /// <summary>현재 접속자 목록에서의 위치 — 스폰 승인 직전 AddClient가 끝나 목록에 있다.</summary>

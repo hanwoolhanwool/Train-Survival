@@ -39,6 +39,7 @@ namespace Game.Gameplay.Player
 
         private CharacterController _characterController;
         private PlayerHealth _health;
+        private IExternalTow _externalTow;
         private IMoveSpeedModifier[] _speedModifiers;
         private Vector3 _horizontalVelocity;
         private float _verticalSpeed;
@@ -90,6 +91,7 @@ namespace Game.Gameplay.Player
         {
             _characterController = GetComponent<CharacterController>();
             _health = GetComponent<PlayerHealth>();
+            _externalTow = GetComponent<IExternalTow>();
             _speedModifiers = GetComponents<IMoveSpeedModifier>();
         }
 
@@ -243,13 +245,24 @@ namespace Game.Gameplay.Player
                 _verticalSpeed = 0f;
             }
 
-            // 구속형 상태(Grabbed/Carried)에서는 소유자 입력을 정지한다 — 호스트 구동 (§4.2).
+            bool lookAllowed = !_inventoryPanelOpen && !_sessionMenuOpen && !_craftingPanelOpen
+                && !_storagePanelOpen;
+
+            // 구속형 상태(Grabbed/Carried)에서는 소유자 <b>이동</b> 입력을 정지한다 — 호스트 구동 (§4.2).
+            // 이동을 대신하는 것은 외부 견인이다 (집게 단계별 파지 계획 §3.5 — 동료가 끌어온다).
+            // 시선은 남긴다: 끌려가는 동안 주변을 볼 수 없으면 구조가 사고처럼 보인다.
             if (_movementState.Value != PlayerMovementState.Normal)
             {
+                if (lookAllowed)
+                {
+                    UpdateLook();
+                }
+
+                UpdateExternalTow();
                 return;
             }
 
-            if (!_inventoryPanelOpen && !_sessionMenuOpen && !_craftingPanelOpen && !_storagePanelOpen)
+            if (lookAllowed)
             {
                 UpdateLook();
             }
@@ -257,6 +270,30 @@ namespace Game.Gameplay.Player
             UpdateMove();
             UpdateFallBehindWarning();
             UpdateDebugInput();
+        }
+
+        /// <summary>
+        /// 외부 견인 구동 (집게 단계별 파지 계획 §3.5) — 소유자 로컬에서 앵커를 향해 직접 움직인다.
+        /// <b>위치 권위는 그대로 소유자</b>다: 서버는 "누가 끄는가"만 복제하고 여기서 실제 이동이 일어나므로,
+        /// 끌리는 쪽 화면에 왕복 지연이 보이지 않는다. 서버는 복제돼 올라온 위치로 도착만 판정한다.
+        /// 무엇이 끄는지는 알지 않는다 (<see cref="IExternalTow"/>).
+        /// </summary>
+        private void UpdateExternalTow()
+        {
+            if (_externalTow == null || !_externalTow.TryGetTowStep(out Vector3 anchor, out float speed))
+            {
+                return;
+            }
+
+            // 앵커로 곧장 당겨진다 — 수직 성분도 그대로다(끌려 올라간다). 중력·컨베이어는 잠시 물러난다:
+            // 끌려가는 동안 지면 밀림까지 겹치면 도착 반경에 못 들어오는 구간이 생긴다.
+            Vector3 current = transform.position;
+            Vector3 next = Vector3.MoveTowards(current, anchor, speed * Time.deltaTime);
+            _characterController.Move(next - current);
+
+            // 견인이 끝나면 낙하부터 다시 시작한다 — 관성이 남아 튀지 않게 속도를 비워 둔다.
+            _horizontalVelocity = Vector3.zero;
+            _verticalSpeed = 0f;
         }
 
         private void UpdateLook()
@@ -454,6 +491,14 @@ namespace Game.Gameplay.Player
                 return;
             }
 
+            // 구조가 이탈 사망을 이긴다 (집게 단계별 파지 계획 §3.5) — 뒤처진 동료를 집게로 끌어올리는
+            // 중이라면 사망선 판정을 미룬다. 여기서 죽이면 "구해내는 중이었는데 죽었다"가 되어
+            // 동료 그랩의 존재 이유가 사라진다. 놓치면 다음 프레임에 곧바로 판정이 돌아온다.
+            if (_externalTow != null && _externalTow.IsTowed)
+            {
+                return;
+            }
+
             if (transform.position.z < _trainLayout.DeathZ)
             {
                 _respawnPending.Value = true;
@@ -533,6 +578,19 @@ namespace Game.Gameplay.Player
         }
 
         // ── 상태 머신 전환 (호스트 확정, §4.2) ─────────────────────────────
+
+        /// <summary>
+        /// 서버 전용 — 호스트 개입 상태 확정 (§4.2). 외부 힘에 끌리는 구간의 진입·복귀가 첫 사용처다
+        /// (집게 단계별 파지 계획 §3.5). 상태를 바꾸는 쪽이 <b>되돌리는 책임도 진다</b> —
+        /// 여기서는 값만 확정하고 정책은 호출자가 갖는다.
+        /// </summary>
+        public void ServerSetMovementState(PlayerMovementState state)
+        {
+            if (IsServer)
+            {
+                _movementState.Value = state;
+            }
+        }
 
         [Rpc(SendTo.Server)]
         private void DebugSetMovementStateServerRpc(PlayerMovementState state)
