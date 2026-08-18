@@ -30,20 +30,24 @@ namespace Game.Gameplay.Player
 
         private PlayerAimView _aim;
         private PlayerCharacterView _view;
+        private PlayerViewModeController _viewMode;
         private Animator _cachedAnimator;
         private Transform _socket;
         private Renderer[][] _renderers;
         private bool[] _visible;
+        private bool[] _shadowOnly;
         private Vector3[] _baseScales;
 
         private void Awake()
         {
             _aim = GetComponent<PlayerAimView>();
             _view = GetComponent<PlayerCharacterView>();
+            _viewMode = GetComponent<PlayerViewModeController>();
 
             int count = _models != null ? _models.Length : 0;
             _renderers = new Renderer[count][];
             _visible = new bool[count];
+            _shadowOnly = new bool[count];
             _baseScales = new Vector3[count];
             for (int i = 0; i < count; i++)
             {
@@ -146,10 +150,17 @@ namespace Game.Gameplay.Player
             return Mathf.Approximately(denominator, 0f) ? 1f : numerator / denominator;
         }
 
-        /// <summary>든 무기만 보인다 — 소유자는 ShadowsOnly, 원격 피어는 온전한 표시 (기술 확정 ④).</summary>
+        /// <summary>
+        /// 든 무기만 보인다 — 원격 피어는 온전한 표시, 소유자는 시점 모드가 정한다 (기술 확정 ④):
+        /// <b>분리 모드</b>는 화면 전용 FP 뷰모델이 그 자리를 맡으므로 그림자만 남기고,
+        /// <b>통합 1인칭</b>은 이 손 무기가 곧 화면에 보이는 무기다
+        /// (1인칭 통합 시점 전환 계획 §3.2).
+        /// </summary>
         private void ApplyVisibility(HotbarItemType held)
         {
-            bool ownerShadowOnly = _aim.IsOwner;
+            bool unified = _viewMode != null
+                && _viewMode.Mode == PlayerViewMode.UnifiedFirstPerson;
+            bool ownerShadowOnly = _aim.IsOwner && !unified;
             for (int i = 0; i < _models.Length; i++)
             {
                 SetVisible(i, visible: held != HotbarItemType.None && _models[i].ItemType == held, ownerShadowOnly);
@@ -164,14 +175,20 @@ namespace Game.Gameplay.Player
             }
         }
 
+        /// <summary>
+        /// 표시 상태 적용 — <b>그림자 모드도 함께 비교</b>한다. 무기를 든 채 시점 모드를 바꾸면
+        /// 표시 여부는 그대로이고 그림자 모드만 달라지는데, 표시 여부만 보고 조기 반환하면
+        /// 그 전환이 화면에 반영되지 않는다 (1인칭 통합 계획 §4.1 — 전환 멱등성).
+        /// </summary>
         private void SetVisible(int index, bool visible, bool ownerShadowOnly)
         {
-            if (_visible[index] == visible)
+            if (_visible[index] == visible && _shadowOnly[index] == ownerShadowOnly)
             {
                 return;
             }
 
             _visible[index] = visible;
+            _shadowOnly[index] = ownerShadowOnly;
             Renderer[] renderers = _renderers[index];
             for (int i = 0; i < renderers.Length; i++)
             {
