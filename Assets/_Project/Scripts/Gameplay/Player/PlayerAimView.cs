@@ -50,6 +50,13 @@ namespace Game.Gameplay.Player
         /// </summary>
         public HotbarItemType HeldItem => (HotbarItemType)_heldItem.Value;
 
+        /// <summary>
+        /// 표시 피치 (도, +가 내려다봄) — <see cref="ApplyBodyPitch"/>가 쓰는 스무딩된 값과
+        /// 동일해 가슴 회전과 파지 IK 타깃이 같은 피치를 본다 (무기 손 파지 계획 기술 확정 ⑥).
+        /// OnAnimatorIK가 LateUpdate보다 먼저 돌아 1프레임 이전 값을 읽는 지연은 수용.
+        /// </summary>
+        public float DisplayPitchDegrees => _currentPitch;
+
         private void Awake()
         {
             _view = GetComponent<PlayerCharacterView>();
