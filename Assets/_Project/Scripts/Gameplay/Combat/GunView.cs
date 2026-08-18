@@ -8,6 +8,10 @@ namespace Game.Gameplay.Combat
     /// 소유자는 입력 게이트(<see cref="GunController.InputEnabled"/>)를, 원격 피어는 복제된
     /// 파지 슬롯(<see cref="Player.PlayerAimView.HeldItem"/>)을 따른다 (M8 검증 개선 — TP 무기 공유).
     /// Player 프리팹에서 무기 모델의 부모 피벗에 부착한다.
+    ///
+    /// <para><b>통합 1인칭</b>에서는 이 화면 전용 뷰모델을 띄우지 않는다 — 손에 쥔 무기가 그 자리를
+    /// 대신한다 (1인칭 통합 시점 전환 계획 §3.2). 원격 프록시의 모드는 항상 분리에 머물러 있어
+    /// (<see cref="Player.PlayerViewModeController.CanDrive"/>) 이 조건은 <b>자기 화면에만</b> 걸린다.</para>
     /// </summary>
     public sealed class GunView : MonoBehaviour
     {
@@ -15,12 +19,14 @@ namespace Game.Gameplay.Combat
         [SerializeField] private GunController _gun;
 
         private Player.PlayerAimView _aim;
+        private Player.PlayerViewModeController _viewMode;
         private Renderer[] _renderers;
         private bool _visible;
 
         private void Awake()
         {
             _aim = GetComponentInParent<Player.PlayerAimView>();
+            _viewMode = GetComponentInParent<Player.PlayerViewModeController>();
             _renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
             _visible = true;
             SetVisible(false);
@@ -28,7 +34,9 @@ namespace Game.Gameplay.Combat
 
         private void Update()
         {
-            bool visible = _gun != null && _gun.IsSpawned
+            bool unified = _viewMode != null
+                && _viewMode.Mode == Player.PlayerViewMode.UnifiedFirstPerson;
+            bool visible = !unified && _gun != null && _gun.IsSpawned
                 && (_gun.IsOwner
                     ? _gun.InputEnabled
                     : _aim != null && _aim.HeldItem == _gun.WeaponItem);
