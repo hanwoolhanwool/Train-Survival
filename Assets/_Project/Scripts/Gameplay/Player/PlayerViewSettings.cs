@@ -35,18 +35,11 @@ namespace Game.Gameplay.Player
         [Tooltip("카메라 미세 조정 여지 — 무기가 화면에 놓이는 위치를 손대지 않고 옮길 때 쓴다.")]
         [SerializeField] private Vector3 _unifiedCameraLocalOffset = Vector3.zero;
 
-        [Header("QA 표시")]
-        [Tooltip("모드 전환 토스트 유지 시간 (초) — 0이면 표시하지 않는다 (§4.1).")]
-        [SerializeField, Min(0f)] private float _modeToastSeconds = 2f;
-
         /// <summary>스폰 시 적용할 모드 — 통합이 합격하면 이 한 필드를 뒤집는다 (§8).</summary>
         public PlayerViewMode DefaultMode => _defaultMode;
 
         /// <summary>F10 런타임 전환 허용 여부.</summary>
         public bool DebugToggleEnabled => _debugToggleEnabled;
-
-        /// <summary>모드 전환 토스트 유지 시간 (초).</summary>
-        public float ModeToastSeconds => _modeToastSeconds;
 
         /// <summary>모드별 근평면 (m).</summary>
         public float GetNearClip(PlayerViewMode mode)
