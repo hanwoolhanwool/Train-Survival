@@ -30,8 +30,12 @@ namespace Game.Gameplay.Train
 
         public GrabKind Kind => GrabKind.Anchor;
 
-        /// <summary>손잡이는 등급 잠금이 없다 — 이탈 저항은 1단계 집게로도 성립해야 한다.</summary>
-        public int GrabWeight => 1;
+        /// <summary>
+        /// 손잡이는 등급 잠금이 없다 — 이탈 저항은 1단계 집게로도 성립해야 한다.
+        /// <b>잡을 수는 있고, 잡은 동안 무기를 못 바꿀 뿐이다</b> (1단계 전환 게이트,
+        /// <see cref="HarpoonSwitchRules"/> — 집게 단계별 파지 계획 §3.2).
+        /// </summary>
+        public int RequiredHarpoonTier => 1;
 
         /// <summary>이탈 중인 칸의 손잡이만 잡을 수 있다(스펙: 이탈 중이고 소실 전인 칸만). 서버 기준 진실.</summary>
         public bool IsAvailableForGrab =>

@@ -65,6 +65,24 @@ namespace Game.Gameplay.Harpoon
             return true;
         }
 
+        /// <summary>
+        /// 무기 전환에 의한 놓기 (집게 단계별 파지 계획 §3.2 — 2·3단계가 양손 무기를 고른 경우).
+        /// 우클릭 취소(<see cref="TryCancel"/>)와 달리 <b>승인 대기(PendingGrab)도 포함</b>한다:
+        /// 승인이 날아오는 중에 양손 무기로 바꿨는데 뒤늦게 잡히는 일이 없어야 한다.
+        /// 취소와 마찬가지로 미스 페널티 없이 발사 쿨다운만 적용된다.
+        /// </summary>
+        public bool TryReleaseForWeaponSwitch()
+        {
+            if (State != HarpoonState.PendingGrab && State != HarpoonState.Reeling
+                && State != HarpoonState.Holding)
+            {
+                return false;
+            }
+
+            EnterCooldown();
+            return true;
+        }
+
         /// <summary>투사체 로컬 명중 판정 → 호스트 승인 대기로 전환.</summary>
         public void NotifyLocalHit()
         {

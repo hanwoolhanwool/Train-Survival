@@ -27,6 +27,9 @@ namespace Game.UI
         /// </summary>
         private const float StatusAreaHeight = 130f;
 
+        /// <summary>슬롯 전환 거부 연출의 길이 (초) — 짧게 한 번 튕기고 끝난다.</summary>
+        private const float RejectShakeSeconds = 0.28f;
+
         // 버리기 임시 비활성 (8차 1차 검증 방침 2026-08-11 — "기능 자체를 끈다").
         // 코드 경로(수정자 키 수량·서버 원자 확정)는 유지 — 다시 켤 때 이 게이트만 연다.
         private static readonly bool DropEnabled = false;
@@ -49,6 +52,10 @@ namespace Game.UI
         private PlankAimLocalEvent _plankAim;
         private bool _panelOpen;
         private int _dragFromIndex = -1;
+
+        // 슬롯 전환 거부 연출 (§3.6) — 거부된 칸이 잠깐 붉게 흔들린다.
+        private int _rejectedSlotIndex = -1;
+        private float _rejectedUntilTime;
 
         // 제작 창 (M7 3차 검증 개선) — 제작 창이 열리면 인벤토리도 함께 열려 재료를 보며 만들 수 있다.
         // 제작 창의 소유자는 CraftingStation이므로 여기서는 열림 여부만 미러링한다.
@@ -92,6 +99,7 @@ namespace Game.UI
             EventBus<Game.Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
             EventBus<Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent>.Subscribe(OnHarpoonTierChanged);
+            EventBus<HotbarSelectionRejectedLocalEvent>.Subscribe(OnSelectionRejected);
         }
 
         private void OnDisable()
@@ -112,6 +120,18 @@ namespace Game.UI
             EventBus<Game.Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
             EventBus<Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent>.Unsubscribe(OnHarpoonTierChanged);
+            EventBus<HotbarSelectionRejectedLocalEvent>.Unsubscribe(OnSelectionRejected);
+        }
+
+        /// <summary>
+        /// 슬롯 전환 거부 연출 (집게 단계별 파지 계획 §3.6) — 문구는 첫 회만 뜨지만
+        /// <b>연출은 누를 때마다</b> 나간다. "눌렀는데 아무 반응이 없다"가 고장으로 읽히는 것을 막는 쪽이
+        /// 이 연출의 목적이라, 반복 억제를 여기에 걸면 그 목적이 사라진다.
+        /// </summary>
+        private void OnSelectionRejected(HotbarSelectionRejectedLocalEvent evt)
+        {
+            _rejectedSlotIndex = evt.SlotIndex;
+            _rejectedUntilTime = Time.unscaledTime + RejectShakeSeconds;
         }
 
         private void OnHarpoonTierChanged(Game.Gameplay.Harpoon.HarpoonTierChangedLocalEvent evt)
@@ -399,9 +419,25 @@ namespace Game.UI
             float startX = (Screen.width - totalWidth) * 0.5f;
             float y = Screen.height - SlotSize - 16f;
 
+            // 거부 연출 (§3.6) — 거부된 칸만 좌우로 튕기고 붉게 물든다. 연출이 끝나면 원래대로 그린다.
+            bool rejecting = Time.unscaledTime < _rejectedUntilTime;
+            float rejectShake = 0f;
+            if (rejecting)
+            {
+                float remaining = _rejectedUntilTime - Time.unscaledTime;
+                // 남은 시간이 줄수록 진폭도 준다 — 한 번 튕기고 잦아드는 모양.
+                rejectShake = Mathf.Sin(remaining * 60f) * (6f * remaining / RejectShakeSeconds);
+            }
+
+            Color baseColor = GUI.color;
+
             for (int i = 0; i < slotCount; i++)
             {
-                var rect = new Rect(startX + i * (SlotSize + SlotGap), y, SlotSize, SlotSize);
+                bool rejected = rejecting && i == _rejectedSlotIndex;
+                float offsetX = rejected ? rejectShake : 0f;
+                var rect = new Rect(startX + i * (SlotSize + SlotGap) + offsetX, y, SlotSize, SlotSize);
+
+                GUI.color = rejected ? new Color(1f, 0.45f, 0.45f, 1f) : baseColor;
                 GUI.Box(rect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
 
                 if (i == hotbar.SelectedIndex)
@@ -411,6 +447,8 @@ namespace Game.UI
                     GUI.Label(new Rect(rect.x, rect.y - 18f, rect.width, 16f), $"[{i + 1}]");
                 }
             }
+
+            GUI.color = baseColor;
         }
 
         private void DrawEnginePrompt(ILocalHotbar hotbar)

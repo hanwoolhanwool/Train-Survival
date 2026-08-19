@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Gameplay.Inventory
 {
@@ -28,8 +29,9 @@ namespace Game.Gameplay.Inventory
             [Tooltip("지상 노드·아이콘에 쓰는 종류 식별 색 (전 종류가 한 프리팹을 공유하므로 색이 곧 외형 구분이다).")]
             [SerializeField] private Color _color = Color.white;
 
-            [Tooltip("집게 무게 등급 (M5 5차) — 이 값 이상의 집게 등급이어야 낚아챌 수 있다. 0·미등재 = 1.")]
-            [SerializeField, Range(0, 3)] private int _grabWeight = 1;
+            [Tooltip("요구 집게 등급 — 이 값 이상의 집게 등급이어야 낚아챌 수 있다. 0·미등재 = 1.")]
+            [FormerlySerializedAs("_grabWeight")]
+            [SerializeField, Range(0, 3)] private int _requiredHarpoonTier = 1;
 
             public ResourceType Type => _type;
 
@@ -43,8 +45,8 @@ namespace Game.Gameplay.Inventory
 
             public Color Color => _color;
 
-            /// <summary>집게 무게 등급 — 0 이하로 두면 1(기본)로 본다.</summary>
-            public int GrabWeight => _grabWeight <= 0 ? 1 : _grabWeight;
+            /// <summary>요구 집게 등급 — 0 이하로 두면 1(기본)로 본다.</summary>
+            public int RequiredHarpoonTier => _requiredHarpoonTier <= 0 ? 1 : _requiredHarpoonTier;
         }
 
         [SerializeField] private Entry[] _entries;
@@ -88,13 +90,13 @@ namespace Game.Gameplay.Inventory
         }
 
         /// <summary>
-        /// 종류의 집게 무게 등급 (M5 5차). <b>미등재는 1</b> — 기존 종류가 전부 1단계 집게로
+        /// 종류의 요구 집게 등급 (M5 5차). <b>미등재는 1</b> — 기존 종류가 전부 1단계 집게로
         /// 그대로 채집되도록 하는 폴백이다 (회귀 없음).
         /// </summary>
-        public int GetGrabWeight(ResourceType type)
+        public int GetRequiredHarpoonTier(ResourceType type)
         {
             Entry entry = Find(type);
-            return entry == null ? 1 : entry.GrabWeight;
+            return entry == null ? 1 : entry.RequiredHarpoonTier;
         }
 
         /// <summary>건자재로 인정되는 종류들의 표시명 나열 ("목재·돌·고철") — 비용 부족 안내용.</summary>

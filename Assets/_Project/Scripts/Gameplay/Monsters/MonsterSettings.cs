@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Gameplay.Monsters
 {
@@ -39,8 +40,9 @@ namespace Game.Gameplay.Monsters
         [SerializeField, Min(0.1f)] private float _attackInterval = 1.4f;
 
         [Header("집게 그랩·기절 (M5 5차 — 6차에서 파지로 재정의)")]
-        [Tooltip("집게 무게 등급 — 이 값 이상의 집게 등급이어야 낚아챌 수 있다 (3 = 향후 대형 변종 자리).")]
-        [SerializeField, Range(1, 3)] private int _grabWeight = 1;
+        [Tooltip("요구 집게 등급 — 이 값 이상의 집게 등급이어야 낚아챌 수 있다 (3 = 향후 대형 변종 자리).")]
+        [FormerlySerializedAs("_grabWeight")]
+        [SerializeField, Range(1, 3)] private int _requiredHarpoonTier = 1;
 
         [Tooltip("파지에서 놓였을 때 잠깐 기절하는 시간(초) — 추격 재개 전의 이탈 틈. 0 = 기절 없음.")]
         [SerializeField, Min(0f)] private float _stunDurationSeconds = 2.5f;
@@ -87,8 +89,13 @@ namespace Game.Gameplay.Monsters
 
         public float AttackInterval => _attackInterval;
 
-        /// <summary>집게 무게 등급 (M5 5차) — 그랩 검증의 대상 무게 인자.</summary>
-        public int GrabWeight => _grabWeight;
+        /// <summary>
+        /// 요구 집게 등급 (M5 5차) — 그랩 검증의 대상 등급 인자.
+        /// <b>기획서 §3.1은 몬스터를 2단계부터로 확정했지만 에셋 값은 아직 현행(일반형·돌진형 1)이다</b> —
+        /// 변종 체계를 다시 설계할 예정이라 의도적으로 미룬 편차다 (집게 단계별 파지 계획 §1.2).
+        /// 재설계 차수에는 변종별 값만 여기 대입하면 된다 — 코드 변경은 이미 끝나 있다.
+        /// </summary>
+        public int RequiredHarpoonTier => _requiredHarpoonTier;
 
         /// <summary>파지에서 놓였을 때의 기절 지속 시간 (초) — 추격 재개 전의 이탈 틈.</summary>
         public float StunDurationSeconds => _stunDurationSeconds;

@@ -1,10 +1,11 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Gameplay.Harpoon
 {
     /// <summary>
     /// 집게 밸런스 데이터 (슬라이스 스펙 §2.2~§2.4 초기값 + M5 5차 티어).
-    /// 등급마다 달라지는 수치(사거리·릴 속도·미스 페널티·쿨다운·무게 상한)만 <see cref="Tier"/> 배열로
+    /// 등급마다 달라지는 수치(사거리·릴 속도·미스 페널티·쿨다운·대상 등급 상한)만 <see cref="Tier"/> 배열로
     /// 나누고, 등급과 무관한 공통 수치(투사체·보간·되감기·타임아웃)는 이 에셋 상단에 그대로 둔다.
     /// </summary>
     [CreateAssetMenu(fileName = "HarpoonSettings", menuName = "Game/Harpoon Settings")]
@@ -22,8 +23,9 @@ namespace Game.Gameplay.Harpoon
             [SerializeField, Min(0f)] private float _fireCooldown = 0.5f;
             [SerializeField, Min(0f)] private float _missRecoveryDuration = 2.5f;
 
-            [Tooltip("이 등급으로 낚아챌 수 있는 최대 무게 등급 (대상의 GrabWeight 상한).")]
-            [SerializeField, Range(1, MaxTier)] private int _grabWeightLimit = 1;
+            [Tooltip("이 등급으로 낚아챌 수 있는 대상 요구 등급의 상한 (대상의 RequiredHarpoonTier 상한).")]
+            [FormerlySerializedAs("_grabWeightLimit")]
+            [SerializeField, Range(1, MaxTier)] private int _maxGrabTier = 1;
 
             public float MaxRange => _maxRange;
 
@@ -33,8 +35,8 @@ namespace Game.Gameplay.Harpoon
 
             public float MissRecoveryDuration => _missRecoveryDuration;
 
-            /// <summary>낚아챌 수 있는 대상 무게 상한 — 그랩 검증의 "집게 등급" 인자로 쓰인다.</summary>
-            public int GrabWeightLimit => _grabWeightLimit;
+            /// <summary>낚아챌 수 있는 대상 요구 등급의 상한 — 그랩 검증의 "집게 등급" 인자로 쓰인다.</summary>
+            public int MaxGrabTier => _maxGrabTier;
         }
 
         [Header("등급 (§M5 5차 — 인덱스 0 = 1단계)")]

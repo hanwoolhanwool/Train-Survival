@@ -67,8 +67,18 @@ namespace Game.Gameplay.Harpoon
         /// <summary>무기 슬롯 활성 여부 — 무기 전환 시스템이 제어한다. 소유자 입력 게이트 (M2).</summary>
         public bool InputEnabled { get; set; } = true;
 
+        /// <summary>
+        /// 견인 앵커의 높이 오프셋 (m) — 대상을 사수의 발밑이 아니라 몸 높이로 끌어당긴다.
+        /// <b>대상이 스스로 끌려오는 경우(플레이어 동료)도 같은 값을 써야</b> 서버의 도착 판정과
+        /// 소유자의 이동이 어긋나지 않는다 (집게 단계별 파지 계획 §3.5).
+        /// </summary>
+        public const float TowAnchorHeight = 0.5f;
+
         /// <summary>현재 집게 등급 (1~). 스폰 전에는 1단계로 본다.</summary>
         public int Tier => Mathf.Max(1, _tier.Value);
+
+        /// <summary>현재 등급의 릴 속도 (m/s) — 스스로 끌려오는 대상이 같은 속도를 쓰기 위해 공개한다.</summary>
+        public float ReelSpeed => _settings != null ? CurrentTier.ReelSpeed : 0f;
 
         /// <summary>승급 상한 — 데이터에 등재된 등급 수 (에셋이 비면 1단계).</summary>
         public int MaxTier => _settings != null ? _settings.TierCount : 1;
@@ -211,6 +221,9 @@ namespace Game.Gameplay.Harpoon
         {
             // 무기를 바꿔도 파지는 유지된다 (M5 6차 2차 — 사용자 결정으로 "놓기 ② 무기 교체" 철회).
             // 든 채 다른 무기로 쏠 수 있고, 놓기·투척은 집게로 돌아와서 한다.
+            // 단 전환 자체는 등급이 게이트한다 (집게 단계별 파지 계획 §3.2 — 1단계는 전환 불가,
+            // 2·3단계가 양손 무기를 고르면 TryReleaseForWeaponSwitch로 놓고 넘어간다).
+            // 여기서 유지되는 것은 "한손 무기로 바꾼 뒤에도 파지가 살아 있다"는 그 규약이다.
             if (!InputEnabled)
             {
                 return;
@@ -256,6 +269,28 @@ namespace Game.Gameplay.Harpoon
                 DiscardActiveProjectile();
                 CancelGrabServerRpc();
             }
+        }
+
+        /// <summary>
+        /// 소유자 로컬 — 무기 전환을 위해 잡은 것을 놓는다 (집게 단계별 파지 계획 §3.2 <c>ReleaseThenAllow</c>).
+        /// <b>해제 경로는 우클릭 취소와 완전히 같다</b> — 신규 RPC 없이 상태 머신 → 훅 폐기 →
+        /// <see cref="CancelGrabServerRpc"/> 순서를 그대로 밟는다. 승인 대기 중이라면 서버는 요청을 먼저
+        /// 처리한 뒤 이 취소를 받으므로(RPC 순서 보장) 뒤늦게 잡히는 경우가 없고, 뒤따라 도착하는
+        /// 승인 통지는 상태가 이미 쿨다운이라 무시된다.
+        /// </summary>
+        /// <returns>실제로 놓았으면 true. 잡고 있지 않았으면 아무 일도 하지 않고 false.</returns>
+        public bool TryReleaseForWeaponSwitch()
+        {
+            if (!IsOwner || _stateMachine == null || !_stateMachine.TryReleaseForWeaponSwitch())
+            {
+                return false;
+            }
+
+            HarpoonSliceMetrics.EndTowTracking("무기 전환");
+            CancelPredictedTow();
+            DiscardActiveProjectile();
+            CancelGrabServerRpc();
+            return true;
         }
 
         private void Fire()
@@ -407,11 +442,11 @@ namespace Game.Gameplay.Harpoon
             bool targetExists = grabbable != null && grabbable.NetworkObject.IsSpawned && grabbable.IsAvailableForGrab;
             bool claimedByOther = grabbable != null && grabbable.IsClaimed;
 
-            // 무게 등급 게이트 (M5 5차) — 집게 등급 상한과 대상 무게를 순수 함수가 비교한다.
+            // 등급 게이트 (M5 5차) — 집게 등급 상한과 대상 요구 등급을 순수 함수가 비교한다.
             GrabVerdict verdict = GrabValidation.Validate(
                 targetExists, claimedByOther, firePosition, hitPoint,
                 CurrentTier.MaxRange, _settings.RangeTolerance,
-                CurrentTier.GrabWeightLimit, targetExists ? grabbable.GrabWeight : 1);
+                CurrentTier.MaxGrabTier, targetExists ? grabbable.RequiredHarpoonTier : 1);
 
             if (verdict == GrabVerdict.Approved && grabbable.TryClaimGrab(senderClientId))
             {
@@ -484,7 +519,7 @@ namespace Game.Gameplay.Harpoon
                 return;
             }
 
-            Vector3 anchor = transform.position + Vector3.up * 0.5f;
+            Vector3 anchor = transform.position + Vector3.up * TowAnchorHeight;
             Vector3 current = _serverTowTarget.NetworkObject.transform.position;
             Vector3 next = Vector3.MoveTowards(current, anchor, CurrentTier.ReelSpeed * Time.deltaTime);
             _serverTowTarget.UpdateTowPosition(next);
@@ -527,6 +562,23 @@ namespace Game.Gameplay.Harpoon
                 _serverTowTarget.ReleaseGrab();
                 _serverTowTarget = null;
             }
+        }
+
+        /// <summary>
+        /// 서버 전용 — <b>대상 쪽 사정</b>으로 그랩을 끊는다 (집게 단계별 파지 계획 §3.5:
+        /// 끌려오던 동료가 죽은 경우). 대상 디스폰 분기와 <b>같은 경로</b>다: 견인을 놓고 전 피어에
+        /// 강제 해제를 통지해 로프·훅을 정리한다. 대상이 스스로 사라지지는 않는 종류(플레이어)를 위한 표면이다.
+        /// </summary>
+        public void ServerForceReleaseTow()
+        {
+            if (!IsServer || _serverTowTarget == null)
+            {
+                return;
+            }
+
+            ServerReleaseTow();
+            ForceReleaseOwnerRpc();
+            ForceReleaseNotOwnerRpc();
         }
 
         /// <summary>

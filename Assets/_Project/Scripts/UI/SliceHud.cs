@@ -1,5 +1,6 @@
 using Game.Core.Events;
 using Game.Gameplay.Harpoon;
+using Game.Gameplay.Inventory;
 using Game.Gameplay.Player;
 using Game.Gameplay.World;
 using UnityEngine;
@@ -30,6 +31,7 @@ namespace Game.UI
             EventBus<FallBehindWarningLocalEvent>.Subscribe(OnFallBehindWarning);
             EventBus<PlayerFellBehindEvent>.Subscribe(OnPlayerFellBehind);
             EventBus<HarpoonGrabRejectedLocalEvent>.Subscribe(OnGrabRejected);
+            EventBus<HotbarSelectionRejectedLocalEvent>.Subscribe(OnSelectionRejected);
         }
 
         private void OnDisable()
@@ -38,6 +40,7 @@ namespace Game.UI
             EventBus<FallBehindWarningLocalEvent>.Unsubscribe(OnFallBehindWarning);
             EventBus<PlayerFellBehindEvent>.Unsubscribe(OnPlayerFellBehind);
             EventBus<HarpoonGrabRejectedLocalEvent>.Unsubscribe(OnGrabRejected);
+            EventBus<HotbarSelectionRejectedLocalEvent>.Unsubscribe(OnSelectionRejected);
         }
 
         /// <summary>
@@ -50,6 +53,37 @@ namespace Game.UI
             _grabRejectUntilTime = string.IsNullOrEmpty(_grabRejectMessage)
                 ? 0f
                 : Time.unscaledTime + GrabRejectHoldSeconds;
+        }
+
+        /// <summary>
+        /// 슬롯 전환 거부 안내 (집게 단계별 파지 계획 §3.6) — 1단계 집게는 잡은 동안 손이 묶인다.
+        /// 그랩 거부와 <b>같은 자리·같은 수명</b>으로 띄운다: 둘 다 "왜 안 되는지"를 알리는 안내라
+        /// 화면에서 다른 문법으로 보이면 안 된다. 반복 억제는 발행 쪽이 결정한다
+        /// (<see cref="HotbarSelectionRejectedLocalEvent.ShowMessage"/>) — 여기서는 시키는 대로만 띄운다.
+        /// </summary>
+        private void OnSelectionRejected(HotbarSelectionRejectedLocalEvent evt)
+        {
+            if (!evt.ShowMessage)
+            {
+                return;
+            }
+
+            _grabRejectMessage = GetSelectionRejectMessage(evt.Reason);
+            _grabRejectUntilTime = string.IsNullOrEmpty(_grabRejectMessage)
+                ? 0f
+                : Time.unscaledTime + GrabRejectHoldSeconds;
+        }
+
+        private static string GetSelectionRejectMessage(HotbarSwitchRejectReason reason)
+        {
+            switch (reason)
+            {
+                case HotbarSwitchRejectReason.HarpoonTier1HandsFull:
+                    return "잡은 손이 묶였다 — 강화 집게라야 든 채로 무기를 바꾼다";
+
+                default:
+                    return string.Empty;
+            }
         }
 
         private static string GetRejectMessage(GrabVerdict verdict)

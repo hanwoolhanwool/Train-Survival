@@ -4,6 +4,7 @@ using Game.Gameplay.Inventory;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace Game.Gameplay.World
 {
@@ -20,8 +21,9 @@ namespace Game.Gameplay.World
     /// </summary>
     public sealed class StorageBundle : SettleableGrabbable
     {
-        [Tooltip("집게 무게 등급 — 이 값 이상의 집게 등급이어야 운반할 수 있다.")]
-        [SerializeField, Range(1, 3)] private int _grabWeight = 1;
+        [Tooltip("요구 집게 등급 — 이 값 이상의 집게 등급이어야 운반할 수 있다.")]
+        [FormerlySerializedAs("_grabWeight")]
+        [SerializeField, Range(1, 3)] private int _requiredHarpoonTier = 1;
 
         [Tooltip("E 상호작용 반경 — 창고와 같은 규약.")]
         [SerializeField, Min(0.5f)] private float _interactRadius = 3f;
@@ -61,11 +63,11 @@ namespace Game.Gameplay.World
 
         /// <summary>
         /// 비행 중에는 3단계 집게만 낚아챌 수 있다 (1차 검증 개선 1 — "불허"의 등급 예외화).
-        /// 그랩 검증이 이미 등급 ≥ 무게를 강제하므로 무게 축으로 표현한다 — 착지하면 원래 등급.
+        /// 그랩 검증이 이미 집게 등급 ≥ 요구 등급을 강제하므로 같은 축으로 표현한다 — 착지하면 원래 등급.
         /// </summary>
-        public override int GrabWeight => IsInFlight ? FlightGrabWeight : _grabWeight;
+        public override int RequiredHarpoonTier => IsInFlight ? FlightRequiredTier : _requiredHarpoonTier;
 
-        private const int FlightGrabWeight = 3;
+        private const int FlightRequiredTier = 3;
 
         /// <summary>투척 비행 중인가 — 3단계 집게 외에는 착지 후부터 잡힌다.</summary>
         public bool IsInFlight => _flightDuration.Value > 0f && IsSpawned

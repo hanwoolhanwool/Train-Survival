@@ -85,10 +85,15 @@ namespace Game.Gameplay.Harpoon
         GrabKind Kind { get; }
 
         /// <summary>
-        /// 무게 등급 (1~3, M5 5차) — 그래버의 집게 등급이 이 값 이상이어야 낚아챌 수 있다
+        /// 요구 집게 등급 (1~3) — 그래버의 집게 등급이 이 값 이상이어야 낚아챌 수 있다
         /// (<see cref="GrabValidation.CanLift"/>). 기존 자원·손잡이는 전부 1이라 회귀가 없다.
+        /// <para>
+        /// 축의 이름은 "무게"가 아니라 <b>등급</b>이다 (집게 단계별 파지 계획 §3.1, M5 5차의 GrabWeight 개명).
+        /// 대상표가 정하는 것은 몸무게가 아니라 "몇 단계 집게부터 잡히는가"이고, 값은 전부 에셋에 있어
+        /// 코드 변경 없이 밸런싱에서 되돌릴 수 있다 — 몬스터 재설계 차수는 이 축에 값만 대입하면 된다.
+        /// </para>
         /// </summary>
-        int GrabWeight { get; }
+        int RequiredHarpoonTier { get; }
 
         /// <summary>그랩 가능한 상태인지 (미소멸·미점유). 서버 기준 진실.</summary>
         bool IsAvailableForGrab { get; }

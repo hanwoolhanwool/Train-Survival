@@ -95,13 +95,13 @@ namespace Game.Gameplay.Monsters
 
         public GrabKind Kind => GrabKind.Reel;
 
-        /// <summary>무게 등급은 변종이 정한다 — 일반형·돌진형 1 / 돌격형·도약형 2 / 3은 대형 변종 예약.</summary>
-        public int GrabWeight
+        /// <summary>요구 등급은 변종이 정한다 — 일반형·돌진형 1 / 돌격형·도약형 2 / 3은 대형 변종 예약.</summary>
+        public int RequiredHarpoonTier
         {
             get
             {
                 MonsterSettings settings = _agent != null ? _agent.ActiveSettings : null;
-                return settings != null ? settings.GrabWeight : 1;
+                return settings != null ? settings.RequiredHarpoonTier : 1;
             }
         }
 

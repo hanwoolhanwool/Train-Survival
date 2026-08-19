@@ -36,8 +36,9 @@ namespace Game.Gameplay.World
             ? (Inventory.ResourceType)_syncedResourceType.Value
             : _defaultResourceType;
 
-        /// <summary>무게 등급은 종류가 정한다 (M5 5차) — 미등재 종류는 1이라 기존 5종의 채집 경로가 유지된다.</summary>
-        public override int GrabWeight => _catalog != null ? _catalog.GetGrabWeight(ResourceType) : 1;
+        /// <summary>요구 등급은 종류가 정한다 (M5 5차) — 미등재 종류는 1이라 기존 5종의 채집 경로가 유지된다.</summary>
+        public override int RequiredHarpoonTier =>
+            _catalog != null ? _catalog.GetRequiredHarpoonTier(ResourceType) : 1;
 
         public override bool IsAvailableForGrab => !_acquired && base.IsAvailableForGrab;
 

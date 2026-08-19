@@ -21,6 +21,10 @@ namespace Game.Gameplay.Inventory
         [SerializeField] private HarpoonController _harpoon;
         [SerializeField] private RepairHammerController _hammer;
 
+        [Tooltip("무기 손 점유 판정 데이터 — 그랩 유지 중 전환 게이트가 '양손인가'를 여기서만 읽는다. " +
+            "비어 있으면 전부 한손으로 본다 (게이트는 1단계 거부만 남는다).")]
+        [SerializeField] private WeaponHandednessSettings _handedness;
+
         [Tooltip("이 플레이어의 총기들 (리볼버·샷건·볼트액션) — 각자 세팅의 WeaponItem으로 게이트가 열린다.")]
         [SerializeField] private GunController[] _guns;
 
@@ -33,6 +37,9 @@ namespace Game.Gameplay.Inventory
         private bool _craftingOpen;
         private bool _storageOpen;
         private bool _bundleOpen;
+
+        // 거부 문구 반복 억제 (§3.6) — 한 번의 그랩 동안 문구는 첫 회만. 그랩이 풀리면 다시 알린다.
+        private bool _switchRejectAnnounced;
 
         public int SlotCount => _inventory != null ? _inventory.SlotCount : 0;
 
@@ -190,9 +197,53 @@ namespace Game.Gameplay.Inventory
         private void Select(int index)
         {
             // 선택은 핫바 칸(1~5)에 한정한다 — 가방 칸은 I 창 드래그로만 다룬다.
-            _selectedIndex = Mathf.Clamp(index, 0, Mathf.Max(0, HotbarSize - 1));
+            int next = Mathf.Clamp(index, 0, Mathf.Max(0, HotbarSize - 1));
+
+            if (!TryPassGrabGate(next))
+            {
+                return;
+            }
+
+            _selectedIndex = next;
             EventBus<HotbarSelectionChangedLocalEvent>.Publish(
                 new HotbarSelectionChangedLocalEvent(_selectedIndex, SelectedItemType));
+        }
+
+        /// <summary>
+        /// 그랩 유지 중 전환 게이트 (집게 단계별 파지 계획 §3.2) — 판정은
+        /// <see cref="HarpoonSwitchRules"/>가 하고, 여기서는 결과를 조작에 옮기기만 한다.
+        /// 1단계는 손이 묶여 전환이 막히고, 2·3단계가 양손 무기를 고르면 먼저 놓고 넘어간다.
+        /// </summary>
+        private bool TryPassGrabGate(int index)
+        {
+            if (_harpoon == null)
+            {
+                return true;
+            }
+
+            HotbarItemType target = _inventory != null
+                ? _inventory.GetSlot(index).ItemType
+                : HotbarItemType.None;
+            bool twoHanded = _handedness != null && _handedness.IsTwoHanded(target);
+
+            switch (HarpoonSwitchRules.Evaluate(_harpoon.State, _harpoon.Tier, twoHanded))
+            {
+                case SwitchOutcome.Deny:
+                    // 문구는 같은 그랩의 첫 회만 — 연타해도 토스트가 쌓이지 않는다 (확정 ⑥).
+                    EventBus<HotbarSelectionRejectedLocalEvent>.Publish(
+                        new HotbarSelectionRejectedLocalEvent(
+                            index, HotbarSwitchRejectReason.HarpoonTier1HandsFull, !_switchRejectAnnounced));
+                    _switchRejectAnnounced = true;
+                    return false;
+
+                case SwitchOutcome.ReleaseThenAllow:
+                    // 잡았던 대상은 그 자리에 떨어진다 — 우클릭 놓기와 같은 경로다.
+                    _harpoon.TryReleaseForWeaponSwitch();
+                    return true;
+
+                default:
+                    return true;
+            }
         }
 
         private void ApplyWeaponGates()
@@ -202,6 +253,12 @@ namespace Game.Gameplay.Inventory
             if (_harpoon != null)
             {
                 _harpoon.InputEnabled = selected == HotbarItemType.Harpoon;
+
+                // 그랩이 풀리면 거부 문구를 다시 띄울 수 있게 한다 — "같은 그랩 동안 첫 회만"의 경계다.
+                if (!HarpoonSwitchRules.IsGrabHeld(_harpoon.State))
+                {
+                    _switchRejectAnnounced = false;
+                }
             }
 
             if (_hammer != null)
