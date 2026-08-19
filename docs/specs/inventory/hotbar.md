@@ -1,7 +1,7 @@
 # 통합 핫바 인벤토리 (호스트 권위 개인 인벤토리)
 
-> **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md)
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M2 골격 → M5 1·3·8차 확장)
+> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2·M5](../../guide/Train-Survival-개발-가이드.md)
 
 ## 1. 개요·목적
 
@@ -16,8 +16,15 @@
 `IResourceInventory`), 소유자 로컬 선택·입력 게이트(`HotbarController`, `ILocalHotbar`), 아이템 종류
 (`HotbarItemType`), 밸런스 데이터(`InventorySettings`), 로컬 표현 이벤트(`InventoryEvents`), HUD(`InventoryHud`).
 
+**M5에서 추가된 포함 범위**: 자원 종류 분화(`ResourceType`·`ResourceCatalog` — M5 1차),
+장비 착용(`EquipSlot`·`EquipmentCatalog`·`EquipmentLogic` — M5 3차),
+요리·식품(`FoodCatalog` — M5 4차 / M7 확장), 공유 창고·보따리 이송(`StorageLogic` — M5 3·8차),
+무기 파지 손 정의(`WeaponHandednessSettings` — 무기 파지 차수).
+
 **미포함**: 자원 채집 호출부(집게/자원 노드가 `IResourceInventory`로 주입), 엔진 투입 소비(→
-[fuel](../world/fuel-loop.md)의 `EngineFuelPort`가 든 칸 소모), 공유 인벤토리·제작·요리(M3·M5), 아이템 드롭.
+[fuel](../world/fuel-loop.md)의 `EngineFuelPort`가 든 칸 소모), 제작 규칙(→
+[crafting](../crafting/crafting-pipeline.md)), 창고 건축물의 배치·파괴(→
+[train/construction.md](../train/construction.md)), 요리 효과의 소비처(체온·허기 — player).
 
 ## 3. 요구사항 → 설계 해석
 
@@ -151,6 +158,51 @@ sequenceDiagram
   있으면 무기 입력 차단. 리볼버·집게가 이 게이트로 활성/비활성된다.
 - `SelectedIndex`/`SelectedItemType`이 엔진 투입의 "든 칸" 판정 근거([fuel](../world/fuel-loop.md)).
 
+### 6.4 자원 종류 분화 (M5 1차)
+
+M2까지 자원은 단일 종류였다. M5 1차에서 `ResourceType`(byte)로 분화하고 `ResourceCatalog`(SO)가
+표시명·스택 상한·**발열량**·건자재 여부·색을 정의한다.
+
+| 그룹 | 종류 |
+|---|---|
+| 기본 자원 | `Wood 1` · `Stone 2` · `Scrap 3` · `Niter 4`(화약 원료) · `RawFood 5` |
+| 후반 자원 | `Timber 6` · `OreVein 7` · `Rice 8` · `Salt 9` · `BossCore 10` · `Ice 11` · `RareMetal 12` · `RelicPart 13` |
+| 탄약 | `RevolverAmmo 16` · `ShotgunAmmo 17` · `RifleAmmo 18` |
+| 요리 | `CookedMeal 19` · `HeartyStew 20` · `CookedRice 21` … |
+
+> **종류는 프리팹이 아니라 인덱스 복제다.** 지상 자원 노드는 한 프리팹을 공유하고 `ResourceType`
+> 인덱스만 복제해 각 피어가 카탈로그를 조회한다 — **네트워크 프리팹 목록이 늘지 않는다.**
+> 몬스터 변종·레시피 카탈로그와 같은 규약이며, 따라서 **enum 값과 카탈로그 순서를 바꾸면 안 된다.**
+
+**발열량 차등**이 지역 연료 차별화를 데이터만으로 만든다 — 목재 6 > 고철 3 > 돌 2, 화약 원료·탄약은
+투입 불가([fuel](../world/fuel-loop.md)).
+
+### 6.5 장비 착용 (M5 3차)
+
+`EquipSlot`(머리·상체·하체·신발) 4부위. `EquipmentCatalog`가 부위·피해 감소·체온 보정을 정의하고,
+`EquipmentLogic`(순수)이 착용·해제 시 슬롯 이동을 계획한다.
+
+**보온 장비는 단열이 아니라 기본 체온을 밀어 올린다**(M5 7차) — 가죽 옷 36.8 / 조합 37.1 ℃.
+단열 계수와 별개 축이라, 돔에 들어가도 높아진 값까지만 하강한다.
+
+### 6.6 공유 창고·보따리 이송 (M5 3·8차)
+
+`StorageLogic`(순수)이 세 컨테이너 사이의 이송을 판정한다 — **개인 인벤토리 ↔ 창고 ↔ 보따리**.
+
+| 규칙 | 내용 |
+|---|---|
+| `TryTransfer` | 컨테이너 간 이동. **점유 칸 스왑 지원**(검증 중 발견된 버그를 당일 수정) |
+| `TryUnpackBundle` | 보따리 풀기 — 내용물이 전부 들어가면 수납, **1칸이라도 부족하면 보따리 아이템 1칸**으로 남고 내용물은 서버 보관소에 |
+| 회수 | **집게 일괄 획득** — 3단계 집게는 비행 중에도 낚아챈다(등급 예외) |
+
+> 보따리 설계의 목적: **창고 파괴가 소실이 아니라 회수 가능한 사건이 되게 하는 것**(M5 8차 목표 문장).
+
+### 6.7 버리기 — 구현 후 기능 게이트로 off
+
+수량 지정 버리기(전량 / Shift 절반 / Ctrl 1개)가 구현됐으나 **사용자 방침으로 꺼져 있다**
+(`InventoryHud.DropEnabled = false`, M5 8차 1차 검증). 코드 경로(수정자 키 수량·서버 원자 확정)는
+유지되며 **게이트만 열면 재개**된다.
+
 ## 7. 인터페이스·의존성 (경계)
 
 - **`IResourceInventory`** — 채집·투입 시스템이 구현을 모른 채 자원을 넣고 뺀다(DIP). 채집 호출부는 이
@@ -159,7 +211,7 @@ sequenceDiagram
   읽기 창구로만 사용.
 - **로컬 표현 이벤트**: `HotbarSelectionChangedLocalEvent`, `InventoryPanelToggledLocalEvent` — 상태를
   바꾸지 않는 표현/입력 신호. 패널 토글은 HUD가 발행, 컨트롤러가 구독해 무기 입력을 막는다.
-- **`RevolverController`/`HarpoonController` 게이트** — 핫바가 선택 종류로 무기 입력을 켜고 끈다([combat](../combat/revolver-fire.md)).
+- **`RevolverController`/`HarpoonController` 게이트** — 핫바가 선택 종류로 무기 입력을 켜고 끈다([combat](../combat/weapon-combat.md)).
 
 ## 8. 설계 포인트 (SOLID)
 
@@ -190,23 +242,25 @@ sequenceDiagram
 
 | 항목 | 내용 |
 |---|---|
-| 만탄 시 자원 낙하 처리 | `TryAddResource` 실패(false)까지가 이 도메인 — 실제 "그 자리 낙하"는 채집 호출부 책임, 연동 확인 필요 |
-| 공유 인벤토리·제작·요리 | 개인 인벤토리만 M2 — 공유 인벤토리·제작은 M3·M5 |
-| 아이템 드롭/버리기 | 현재 swap 재배치만 존재, 드롭 API 없음(집게·리볼버 버릴 수 없음 전제) |
+| 만탄 시 자원 낙하 처리 | `TryAddResource` 실패(false)까지가 이 도메인 — 실제 "그 자리 낙하"는 채집 호출부 책임 |
+| **버리기 기능 off** | 구현 완료 후 기능 게이트로 비활성 (§6.7). 재개 판단 필요 |
+| **카탈로그 순서 규약이 코드로 강제되지 않는다** | `ResourceType` 값·`ResourceCatalog` 순서를 바꾸면 복제 식별자가 어긋난다. 검증 테스트 추가 여지 |
+| `InventoryHud` 1,169줄 | 7개 관심사 미분할 · `BuildSpendPreview` SSOT 위반 → [리팩터링 조사 보고서](../../plans/features/리팩터링-조사-보고서.md) |
 
 ## 12. 확장 여지
 
-- `HotbarItemType`에 종류를 추가하고 `HotbarLogic` 규칙만 확장하면 제작 재료·완성품(M5)이 얹힘.
-- `NetworkList<NetworkSlot>` 동기화 구조는 공유 인벤토리(M3)에 그대로 재사용 가능.
+- `HotbarItemType`·`ResourceType` 추가는 **enum 끝에 append**만 하면 성립한다(실증됨 — M5에서 탄약 3종·요리 다수 추가).
+- `NetworkList<NetworkSlot>` 동기화 구조가 공유 창고·보따리에 그대로 재사용됐다(M5 3·8차).
 
 ## 13. 파일 위치
 
 | 구분 | 파일 | 경로 |
 |---|---|---|
-| 순수 로직 | `HotbarLogic.cs`, `HotbarItemType.cs` | `Assets/_Project/Scripts/Gameplay/Inventory/` |
-| 권위·입력 | `PlayerInventory.cs`, `HotbarController.cs` | 〃 |
-| 인터페이스 | `IResourceInventory.cs`, `ILocalHotbar.cs` | 〃 |
-| 이벤트 | `InventoryEvents.cs` | 〃 |
-| 데이터 | `InventorySettings.cs` (+ `.asset`) | 〃 (+ `Assets/_Project/Data/`) |
+| 순수 로직 | `HotbarLogic.cs` · `EquipmentLogic.cs` · `StorageLogic.cs` · `HotbarItemLabels.cs` | `Assets/_Project/Scripts/Gameplay/Inventory/` |
+| 권위·입력 | `PlayerInventory.cs` · `HotbarController.cs` | 〃 |
+| 인터페이스 | `IResourceInventory.cs` · `ILocalHotbar.cs` | 〃 |
+| 종류·슬롯 | `HotbarItemType.cs`(+`HotbarSlotView`) · `ResourceType.cs` · `EquipSlot.cs` · `NetworkSlot.cs` | 〃 |
+| 카탈로그 (SO) | `ResourceCatalog.cs` · `EquipmentCatalog.cs` · `FoodCatalog.cs` · `WeaponHandednessSettings.cs` | 〃 (+ `Assets/_Project/Data/`) |
+| 이벤트·설정 | `InventoryEvents.cs` · `InventorySettings.cs` | 〃 |
 | HUD | `InventoryHud.cs` | `Assets/_Project/Scripts/UI/` |
-| 테스트 | `HotbarLogicTests.cs` | `Assets/_Project/Tests/EditMode/` |
+| 테스트 | `HotbarLogicTests.cs` 외 | `Assets/_Project/Tests/EditMode/` |

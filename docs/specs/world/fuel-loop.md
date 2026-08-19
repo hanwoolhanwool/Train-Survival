@@ -1,7 +1,7 @@
 # 연료 루프 (엔진 투입 → 충전 → 소모 → 감속)
 
-> **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md) · [world/scroll-and-streaming](scroll-and-streaming.md)
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M2 골격 → M3 칸 비례 → M5 발열량 → M7 건축물 소모)
+> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md) · [world/scroll-and-streaming](scroll-and-streaming.md)
 
 ## 1. 개요·목적
 
@@ -15,8 +15,12 @@
 엔진 투입구 상호작용(`EngineFuelPort`), 밸런스 데이터(`FuelSettings`), 연료·안내 이벤트(`FuelEvents`,
 `TrainEvents`), 스크롤 속도 제어 계약(`IWorldScrollSpeedControl`, 수신 측 `WorldScrollController`).
 
+**M3~M7에서 추가된 포함 범위**: 칸 수 비례 소모(M3 트레이드오프 — `ConsumptionPerCar`),
+자원 종류별 **발열량 차등**(M5 1차), 연료를 태우는 건축물의 소모 가산(M7 3차 강화 난방로).
+
 **미포함**: 든 칸 차감 자체(→ [inventory](../inventory/hotbar.md)의 `ServerTryRemoveAt`), 월드 스크롤·타일
-스트리밍 본체(→ [scroll-and-streaming](scroll-and-streaming.md)), 칸 증설에 따른 소모 증가 트레이드오프(M3).
+스트리밍 본체(→ [scroll-and-streaming](scroll-and-streaming.md)), 환경 배율 감속(날씨 — →
+[region/weather-events](../region/weather-events.md)), 건축물 배치(→ [train/construction](../train/construction.md)).
 
 ## 3. 요구사항 → 설계 해석
 
@@ -75,14 +79,27 @@ classDiagram
 
 ### `FuelSettings`
 
-| 필드 | 기본값 | 의미 |
+| 필드 | 현재값 | 의미 |
 |---|---|---|
 | `Capacity` | 100 | 최대 저장량 |
 | `InitialFuel` | 60 | 초기 연료 |
-| `ConsumptionPerSecond` | 0.8 | 초당 소모율 |
-| `FuelPerResource` | 6 | 자원 1개당 충전량 |
-| `DepletedSpeedRatio` | 0.3 | 고갈 시 기본 속도 대비 유지 비율 (Range 0~1) |
+| `ConsumptionPerSecond` | **0.5** | 기본 초당 소모율 |
+| `ConsumptionPerCar` | **0.15** | **칸 1량당 추가 소모** (M3 증설 트레이드오프) |
+| `FuelPerResource` | 6 | 기본 충전량 — **자원 종류별 발열량이 이를 대체**한다 (§6.4) |
+| `DepletedSpeedRatio` | 0.3 | 고갈 시 기본 속도 대비 유지 비율 |
 | `SpeedChangeRate` | 1.5 | 가감속률 (m/s²) |
+
+### 발열량 차등 (M5 1차 — `ResourceCatalog`)
+
+| 자원 | 발열량 |
+|---|---|
+| 목재 | **6** |
+| 고철 | 3 |
+| 돌 | 2 |
+| 화약 원료·탄약 | **투입 불가** |
+
+> 이 표가 **지역 연료 차별화를 데이터만으로** 만든다 — 숲(목재)에서는 연료가 넉넉하고,
+> 사막(고철·화약 원료)에서는 같은 개수를 모아도 절반만 탄다.
 
 ### `EngineFuelPort` 판정 상수
 
@@ -123,11 +140,24 @@ sequenceDiagram
 ### 6.2 소모 → 감속 (`FuelTank.Update`, 서버 전용)
 
 ```
-_fuel = FuelMath.ConsumeFuel(_fuel, ConsumptionPerSecond, dt)
+rate  = FuelMath.ComputeConsumptionPerSecond(base, perCar, 붙어있는 칸 수)   ← M3
+rate  = FuelMath.AddStructureConsumption(rate, ...)                          ← M7 3차
+_fuel = FuelMath.ConsumeFuel(_fuel, rate, dt)
 target = FuelMath.ComputeTargetScrollSpeed(BaseScrollSpeed, _fuel, DepletedSpeedRatio)
 next   = FuelMath.StepScrollSpeed(_currentSpeed, target, SpeedChangeRate, dt)
 변화 있으면 → ServiceLocator.TryGet<IWorldScrollSpeedControl>().SetScrollSpeed(next)
 ```
+
+**소모율의 3요소** (M2 → M3 → M7로 누적):
+
+| 요소 | 출처 | 의미 |
+|---|---|---|
+| 기본 0.5/s | M2 | 상시 |
+| **+ 칸 수 × 0.15/s** | M3 | 편성이 길수록 연료를 먹는다 — **증설 트레이드오프** |
+| **+ 연료 건축물** | M7 3차 | 강화 난방로가 태우는 몫. 칸 수는 `IFuelLoadProvider`(= `TrainState`), 건축물 수는 `ITrainState.CountStructures(kind)`로 조회 |
+
+> **소모와 HUD 표시가 같은 계산을 공유한다** — "표시된 소모율"과 "실제 소모"가 갈리지 않게
+> `FuelTank`가 하나의 값을 산출해 둘 다에 쓴다.
 
 - **감속은 이진 목표 + 수렴**: 연료가 있으면 목표=기본 속도, 고갈이면 목표=기본×`DepletedSpeedRatio`.
   현재 속도를 `MoveTowards`로 `SpeedChangeRate`만큼 목표에 수렴시켜 급변하지 않는다. (연속 배율 곡선은
@@ -178,15 +208,19 @@ next   = FuelMath.StepScrollSpeed(_currentSpeed, target, SpeedChangeRate, dt)
 
 ## 11. 리스크·미결정 (TBD)
 
-| 항목 | 내용 |
+| 항목 | 상태 |
 |---|---|
-| 이진 감속 vs 연속 곡선 | 현재 있음/고갈 이진 목표 — 연료량 비례 연속 감속이 필요하면 `ComputeTargetScrollSpeed`만 곡선화 |
-| 칸 증설 소모 증가 | 연료 소모 증가 트레이드오프는 M3(열차 시스템) — 현재 소모율은 고정 |
-| 밸런스 초기값 | 소모 0.8/s·충전 6/개는 초기값 — 코어 루프 반복 밸런싱에서 조정 |
+| 이진 감속 vs 연속 곡선 | **미해소** — 현재 있음/고갈 이진 목표. 연료량 비례 연속 감속이 필요하면 `ComputeTargetScrollSpeed`만 곡선화 |
+| ~~칸 증설 소모 증가~~ | **해소 (M3)** — `ConsumptionPerCar` 0.15/량 |
+| 밸런스 수치 | 전부 SO — 반복 밸런싱에서 조정 |
+| 연료 고갈 속도가 이탈 칸 회수를 쉽게 만든다 | 고갈 시 3.8 m/s로 느려져 **1인 견인이 수식상 성립**한다. 조사 결과 버그 아님 — 사용자 결정으로 현행 유지 (M5 8차, → [train/train-state-model §6.3](../train/train-state-model.md)) |
 
 ## 12. 확장 여지
 
-- `IWorldScrollSpeedControl`은 날씨(모래폭풍 감속, M4)·부스트 아이템 등 다른 속도 개입원에도 재사용 가능.
+- `IWorldScrollSpeedControl`의 **환경 배율 레이어**가 M4에서 추가돼 날씨 감속이 연료 감속과 충돌하지
+  않는다 — 기본 속도와 환경 배율을 분리하고 곱으로 최종 속도를 산출한다. 부스트 아이템 등 다른
+  개입원도 같은 레이어를 쓴다.
+- 발열량이 `ResourceCatalog` 필드라 **새 연료 자원 추가에 코드 수정이 없다.**
 - 칸별 소모 가중치(M3)는 `ConsumptionPerSecond`를 열차 상태 모델에서 산출하도록 확장하면 얹힌다.
 
 ## 13. 파일 위치

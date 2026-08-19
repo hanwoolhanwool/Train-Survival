@@ -166,7 +166,7 @@ sequenceDiagram
 
 ## 7. 인터페이스·의존성 (경계)
 
-- **`IDamageable`** — `MonsterHealth`가 구현. 사격([combat](../combat/revolver-fire.md))은 이 인터페이스로만
+- **`IDamageable`** — `MonsterHealth`가 구현. 사격([combat](../combat/weapon-combat.md))은 이 인터페이스로만
   데미지를 넣고, 몬스터 구현을 모른다. 몬스터 공격도 플레이어의 `IDamageable`을 같은 방식으로 호출.
 - **`IDayCycleService` / `DayPhaseChangedEvent`** — 밤 진입 신호를 [cycle](../cycle/day-night-cycle.md)에서 소비.
 - **`IWorldScrollService`** — 조향에 스크롤 속도가 필요해 world 도메인에서 조회(컨베이어 변위·추격 하한).
