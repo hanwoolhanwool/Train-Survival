@@ -18,6 +18,13 @@
 **UI 열림 게이트**(I창/Esc/제작/창고/보따리 → 시점·커서 정지), **재접속 위치 복원**(`ServerRestorePosition`,
 M7), 접속 순서 복제(`_spawnOrder`), 게임오버 종단 가드, 열차 레벨 디자인 기준 데이터(`TrainLayoutSettings`).
 
+**2026-08-17~19에 추가된 포함 범위** (M8 1차와 병행한 표현 축):
+- **애니메이션 A축** — `PlayerAnimationDriver`·`PlayerAnimationMath`(이동 단계 히스테리시스)·`PlayerAnimationSettings`
+- **1인칭 통합 시점** — `PlayerViewMode`·`PlayerViewModeController`·`IPlayerViewMode`·`PlayerViewSettings`·
+  `PlayerCameraTuner`·`PlayerCharacterView`·`FirstPersonViewModel`
+- **무기 손 파지** — `HeldWeaponSocket`·`WeaponHoldIk`·`WeaponHoldPoseDriver`·`WeaponHoldMath`·
+  `WeaponHoldSettings`·`FirstPersonHoldMath`
+
 **미포함**: `Grabbed`/`Carried` 상태로의 실제 전환 콘텐츠(F9 디버그 RPC로 전환 경로만 검증 —
 **구현 계획 확정: [플레이어-확장-계획](../../plans/features/플레이어-확장-계획.md) B축**), 웅크리기, 스태미나.
 체온/허기/동상은 별도 상태 축(같은 프리팹의 `PlayerTemperature` 등)으로 분리 구현됨.
@@ -131,6 +138,46 @@ sequenceDiagram
 - **엣지 케이스 — UI 열림 게이트**: I창/Esc/제작/창고/보따리 토글 이벤트 5종을 구독해, 열림 중에는 시점 회전을 멈추고 커서를 해제한다 (이동은 유지).
 - **엣지 케이스 — 재접속 위치 복원** (M7): 호스트가 스냅샷 위치를 판정해 `RestorePlacementOwnerRpc`로 소유자에게 지시 — 살아 있는 갑판 위 또는 사망선 앞 지상으로 복원한다. 부활 대기는 Day 비례(5 + Day×1 s, 상한 20)이며, 게임오버 확정 후의 `RespawnCompleteServerRpc`/`ReviveServerRpc`는 종단 가드로 무시된다.
 - **엣지 케이스 — 이동속도 배율 개입점** (M7 3차): `GetComponents<IMoveSpeedModifier>()`의 배율 곱 합성으로 최종 속도를 정한다 — 동상(`PlayerFrostbite`)이 첫 구현체이고, 컨트롤러는 "동상"을 모른다 (OCP).
+
+### 6.5 표현 축 — 시점 모드·파지·애니메이션 (2026-08-17~19)
+
+M8 1차(에셋 적용)와 병행해 들어온 **표현 전용** 계층이다. 판정·복제는 건드리지 않는다.
+
+#### 1인칭 통합 시점
+
+기존 FP/TP 분리를 뒤집은 결정이다 — **몸은 두 모드 모두 그림자만, 화면에 보이는 것은 무기뿐.**
+
+| 원칙 | 내용 |
+|---|---|
+| **복제하지 않는다** | `PlayerViewMode`는 **로컬 표현 선택**이다. 판정·복제·원격 표현은 두 모드가 완전히 공유하므로, 값이 바뀔 때 달라지는 것은 **그 피어의 화면뿐**이다 |
+| **단일 출처 + 소비자 분리** | `PlayerViewModeController`는 **모드 값 보유와 전환 요청 수신만** 한다. 몸 렌더·머리 은닉·카메라 파라미터·파지 프로파일·뷰모델 가시성은 각 컴포넌트가 `IPlayerViewMode`를 읽어 자기 몫을 적용한다 — **소비자가 늘어도 이 클래스는 변하지 않는다**(SRP·OCP) |
+| 기준선 | 원격 화면이 기준 — 통합 모드 파지 자세를 분리 모드와 동일하게 되돌렸다 |
+
+`FirstPersonViewModel`이 화면 전용 뷰모델의 **공통 규약**을 기반 클래스로 갖는다(그림자 차단 등) —
+무기가 두 개로 보이던 이중 그림자 문제가 여기서 해소됐다.
+
+#### 무기 손 파지
+
+| 구성요소 | 역할 |
+|---|---|
+| `HeldWeaponSocket` | 손 본에 붙는 소켓 |
+| `WeaponHoldIk` · `WeaponHoldPoseDriver` | Humanoid IK 목표·엘보 힌트 적용 |
+| `WeaponHoldMath` | 순수 — 피치 → 홀드 타깃 산출, 가중치 블렌드 |
+| `FirstPersonHoldMath` | 순수 — 홀드 타깃이 **화면 안에 있는가**·**팔이 닿는가** 판정 계기 |
+| `WeaponHoldSettings` | 시점 모드별 프로파일 2벌 |
+
+> **캐릭터 본 스케일 함정**: 손 본의 `lossyScale`이 100이라 소켓 오프셋을 루트 배율로 **정규화**해야 한다.
+> 무기 축은 총구 +Y · 위 +Z, 어깨 y ≈ 1.08 · 팔 길이 0.475 m가 실측 기준이다.
+
+집게는 **등급이 파지 손을 바꾼다**(대상 등급 축 + 전환 게이트, 2026-08-19).
+
+#### 애니메이션 A축
+
+`PlayerAnimationMath.LocomotionTier`(Idle/Walk/…)가 **히스테리시스**로 이동 단계를 정한다 — 경계에서
+파라미터가 떨리지 않게 하기 위함이다. 리타게팅 보정(머리 −22° / 가슴 −6°)과 어깨 추종이 함께 들어갔다.
+
+**동기화 예외**: 시점 피치·파지 슬롯을 소유자 기록 `NetworkVariable` 2개로 공유한다 —
+원격 표현 요구로 사용자가 확정한 **"상시 증분 0"의 명시적 예외**다(M8 1차 §6.5).
 
 ## 7. 인터페이스·의존성 (경계)
 
