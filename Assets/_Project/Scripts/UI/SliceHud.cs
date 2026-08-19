@@ -18,6 +18,9 @@ namespace Game.UI
         /// <summary>그랩 거부 사유 표시 시간 — 조준점 근처에 잠깐 띄우고 사라진다.</summary>
         private const float GrabRejectHoldSeconds = 2f;
 
+        /// <summary>좌상단 영역 높이 — 자원 1줄 + 경고 2줄이 최대다.</summary>
+        private const float TopAreaHeight = 90f;
+
         private int _resourceTotal;
         private float _warningMeters;
         private float _warningUntilTime;
@@ -123,8 +126,12 @@ namespace Game.UI
 
         private void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(20f, 20f, 360f, 160f));
-            GUILayout.Label($"자원: {_resourceTotal}");
+            // 좌상단 — 팀 자원과 이탈 경고. 상태 기둥(CoreLoopHud)은 좌하단이라 서로 닿지 않는다.
+            // 이전에는 두 영역이 y 100~180에서 80 px 겹쳐 글자가 포개졌다.
+            GUILayout.BeginArea(new Rect(
+                HudLayout.ScreenMargin, HudLayout.ScreenMargin, HudLayout.StatusColumnWidth, TopAreaHeight));
+
+            GUILayout.Label($"자원 {_resourceTotal}");
 
             if (Time.unscaledTime < _warningUntilTime)
             {
