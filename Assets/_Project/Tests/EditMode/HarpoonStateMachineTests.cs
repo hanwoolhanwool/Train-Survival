@@ -184,5 +184,52 @@ namespace Game.Tests.EditMode
             reeling.NotifyForcedRelease();
             Assert.That(reeling.State, Is.EqualTo(HarpoonState.Cooldown));
         }
+
+        // ── 무기 전환에 의한 놓기 (집게 단계별 파지 계획 §3.2) ────────────────
+
+        [Test]
+        public void 무기_전환_놓기는_승인대기_릴감기_파지_셋에서_성립한다()
+        {
+            HarpoonStateMachine pending = Create();
+            pending.TryFire();
+            pending.NotifyLocalHit();
+            Assert.That(pending.TryReleaseForWeaponSwitch(), Is.True, "승인 대기 중에도 놓을 수 있어야 한다");
+            Assert.That(pending.State, Is.EqualTo(HarpoonState.Cooldown));
+
+            HarpoonStateMachine reeling = Create();
+            reeling.TryFire();
+            reeling.NotifyLocalHit();
+            reeling.NotifyGrabApproved();
+            Assert.That(reeling.TryReleaseForWeaponSwitch(), Is.True);
+            Assert.That(reeling.State, Is.EqualTo(HarpoonState.Cooldown));
+
+            HarpoonStateMachine holding = CreateHolding();
+            Assert.That(holding.TryReleaseForWeaponSwitch(), Is.True);
+            Assert.That(holding.State, Is.EqualTo(HarpoonState.Cooldown));
+        }
+
+        [Test]
+        public void 무기_전환_놓기는_잡고_있지_않으면_아무_일도_하지_않는다()
+        {
+            HarpoonStateMachine ready = Create();
+            Assert.That(ready.TryReleaseForWeaponSwitch(), Is.False);
+            Assert.That(ready.State, Is.EqualTo(HarpoonState.Ready));
+
+            HarpoonStateMachine firing = Create();
+            firing.TryFire();
+            Assert.That(firing.TryReleaseForWeaponSwitch(), Is.False, "비행 중은 아직 잡은 것이 없다");
+            Assert.That(firing.State, Is.EqualTo(HarpoonState.Firing));
+        }
+
+        [Test]
+        public void 무기_전환_놓기에는_미스_페널티가_없다()
+        {
+            // 우클릭 취소와 같은 대우 — 쿨다운만 걸린다 (§2.2).
+            HarpoonStateMachine sm = CreateHolding();
+
+            sm.TryReleaseForWeaponSwitch();
+
+            Assert.That(sm.RemainingLockTime, Is.EqualTo(Cooldown).Within(0.0001f));
+        }
     }
 }
