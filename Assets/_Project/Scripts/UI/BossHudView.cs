@@ -21,8 +21,9 @@ namespace Game.UI
         [Tooltip("처치 배너가 남아 있는 시간 (초).")]
         [SerializeField, Min(0f)] private float _killBannerSeconds = 4f;
 
-        private static readonly Color BarBackColor = new Color(0.08f, 0.05f, 0.06f, 0.85f);
-        private static readonly Color BarFillColor = new Color(0.78f, 0.14f, 0.2f, 0.95f);
+        // 체력바는 면(fill)이라 위험 텍스트 변형이 아니라 면색을 쓴다 (비주얼·UI/UX 가이드 §7.2).
+        private static readonly Color BarBackColor = UiPalette.PanelBackdrop;
+        private static readonly Color BarFillColor = UiPalette.CriticalFill;
 
         private bool _visible;
         private string _displayName = string.Empty;
@@ -98,7 +99,7 @@ namespace Game.UI
             if (_killBanner != null && Time.time < _killBannerUntil)
             {
                 var rect = new Rect(0f, _topMargin + _barHeight + 24f, Screen.width, 26f);
-                GUI.Label(rect, $"<color=#ffd76a><b>{_killBanner}</b></color>", _labelStyle);
+                GUI.Label(rect, $"<color={UiPalette.HexFocusBrass}><b>{_killBanner}</b></color>", _labelStyle);
             }
         }
 
@@ -117,7 +118,7 @@ namespace Game.UI
             string phaseLabel = _phaseCount > 1 ? $" · 페이즈 {_phaseIndex + 1}/{_phaseCount}" : string.Empty;
             var labelRect = new Rect(x, _topMargin - 22f, width, 20f);
             GUI.Label(labelRect,
-                $"<color=#ffb3b3><b>{_displayName}</b></color>  {Mathf.CeilToInt(_current)} / {Mathf.CeilToInt(_max)}{phaseLabel}",
+                $"<color={UiPalette.HexCriticalText}><b>{_displayName}</b></color>  {Mathf.CeilToInt(_current)} / {Mathf.CeilToInt(_max)}{phaseLabel}",
                 _labelStyle);
         }
 

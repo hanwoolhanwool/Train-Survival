@@ -353,7 +353,7 @@ namespace Game.UI
 
             // 다중 창고 (건축 개편 2차) — 조준(최근접 + 시선)한 그 창고가 열린다. Id는 내부 식별자라 노출하지 않는다.
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.66f, 300f, 24f),
-                "<color=yellow>E — 공유 창고</color>");
+                $"<color={UiPalette.HexFocusBrass}>E — 공유 창고</color>");
         }
 
         /// <summary>보따리 접근 안내 (M5 8차) — 근접 + 시선에서 표시한다 (창고와 같은 규약).</summary>
@@ -365,7 +365,7 @@ namespace Game.UI
             }
 
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f),
-                "<color=yellow>E — 보따리 (파괴된 창고의 내용물)</color>");
+                $"<color={UiPalette.HexFocusBrass}>E — 보따리 (파괴된 창고의 내용물)</color>");
         }
 
         /// <summary>
@@ -437,7 +437,8 @@ namespace Game.UI
                 float offsetX = rejected ? rejectShake : 0f;
                 var rect = new Rect(startX + i * (SlotSize + SlotGap) + offsetX, y, SlotSize, SlotSize);
 
-                GUI.color = rejected ? new Color(1f, 0.45f, 0.45f, 1f) : baseColor;
+                // 거부 슬롯은 아이콘 위에 얹는 틴트라 면색이 아니라 밝은 텍스트 변형을 쓴다.
+                GUI.color = rejected ? UiPalette.CriticalText : baseColor;
                 GUI.Box(rect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
 
                 if (i == hotbar.SelectedIndex)
@@ -467,16 +468,16 @@ namespace Game.UI
             if (holdingResource && fuelValue > 0f)
             {
                 string name = _catalog != null ? _catalog.GetDisplayName(held.Resource) : "자원";
-                prompt = $"<color=yellow>E 또는 좌클릭 — 연료 투입 ({name} 1개 = +{fuelValue:0.#})</color>";
+                prompt = $"<color={UiPalette.HexFocusBrass}>E 또는 좌클릭 — 연료 투입 ({name} 1개 = +{fuelValue:0.#})</color>";
             }
             else if (holdingResource)
             {
                 string name = _catalog != null ? _catalog.GetDisplayName(held.Resource) : "이 자원";
-                prompt = $"<color=red>{name} — 연료로 쓸 수 없는 자원이다</color>";
+                prompt = $"<color={UiPalette.HexCriticalText}>{name} — 연료로 쓸 수 없는 자원이다</color>";
             }
             else
             {
-                prompt = "<color=yellow>자원 슬롯(숫자 키 1~5)을 든 채 E — 연료 투입</color>";
+                prompt = $"<color={UiPalette.HexFocusBrass}>자원 슬롯(숫자 키 1~5)을 든 채 E — 연료 투입</color>";
             }
 
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f), prompt);
@@ -493,15 +494,15 @@ namespace Game.UI
             string prompt;
             if (!_carBuildAim.CanAfford)
             {
-                prompt = $"<color=red>칸 건설 자원 부족 ({BuildShortagePrompt(hotbar, _carBuildAim.Cost)})</color>";
+                prompt = $"<color={UiPalette.HexCriticalText}>칸 건설 자원 부족 ({BuildShortagePrompt(hotbar, _carBuildAim.Cost)})</color>";
             }
             else if (_carBuildAim.Occupied)
             {
-                prompt = "<color=red>자리에 사람·몬스터가 있어 칸을 지을 수 없다</color>";
+                prompt = $"<color={UiPalette.HexCriticalText}>자리에 사람·몬스터가 있어 칸을 지을 수 없다</color>";
             }
             else
             {
-                prompt = $"<color=yellow>우클릭 — 칸 건설 (소모: {BuildSpendPreview(hotbar, _carBuildAim.Cost)})</color>";
+                prompt = $"<color={UiPalette.HexFocusBrass}>우클릭 — 칸 건설 (소모: {BuildSpendPreview(hotbar, _carBuildAim.Cost)})</color>";
             }
 
             GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.58f, 360f, 24f), prompt);
@@ -523,16 +524,16 @@ namespace Game.UI
             switch (_carRecoupleAim.Prompt)
             {
                 case RecouplePrompt.FrontCarMissing:
-                    prompt = "<color=red>앞 칸이 비어 있어 재결합할 수 없다</color>";
+                    prompt = $"<color={UiPalette.HexCriticalText}>앞 칸이 비어 있어 재결합할 수 없다</color>";
                     break;
                 case RecouplePrompt.NotAtSlot:
-                    prompt = $"<color=red>칸을 슬롯까지 끌어와야 한다 ({_carRecoupleAim.RemainingMeters:F1} m 남음)</color>";
+                    prompt = $"<color={UiPalette.HexCriticalText}>칸을 슬롯까지 끌어와야 한다 ({_carRecoupleAim.RemainingMeters:F1} m 남음)</color>";
                     break;
                 case RecouplePrompt.InsufficientResources:
-                    prompt = $"<color=red>재결합 자원 부족 ({BuildShortagePrompt(hotbar, _carRecoupleAim.Cost)})</color>";
+                    prompt = $"<color={UiPalette.HexCriticalText}>재결합 자원 부족 ({BuildShortagePrompt(hotbar, _carRecoupleAim.Cost)})</color>";
                     break;
                 default:
-                    prompt = $"<color=yellow>우클릭 — 재결합 (소모: {BuildSpendPreview(hotbar, _carRecoupleAim.Cost)})</color>";
+                    prompt = $"<color={UiPalette.HexFocusBrass}>우클릭 — 재결합 (소모: {BuildSpendPreview(hotbar, _carRecoupleAim.Cost)})</color>";
                     break;
             }
 
@@ -582,12 +583,12 @@ namespace Game.UI
                     : _hammerTarget.SelectedStructureKind.ToString();
                 if (!_hammerTarget.CanAffordStructure)
                 {
-                    action += $" — <color=red>{structureName} 설치 자원 부족 ({BuildShortagePrompt(hotbar, _hammerTarget.StructureCost)})</color> [R] 종류 변경";
+                    action += $" — <color={UiPalette.HexCriticalText}>{structureName} 설치 자원 부족 ({BuildShortagePrompt(hotbar, _hammerTarget.StructureCost)})</color> [R] 종류 변경";
                 }
                 else if (_structurePlaceAim.Aiming && _structurePlaceAim.Occupied)
                 {
                     // 자리 점유 안내 (건축 개편 1차 — 칸 건설과 같은 규약: 테두리 안이 비어야 지어진다).
-                    action += " — <color=red>자리에 사람·몬스터가 있어 설치할 수 없다</color> [R] 종류 변경";
+                    action += $" — <color={UiPalette.HexCriticalText}>자리에 사람·몬스터가 있어 설치할 수 없다</color> [R] 종류 변경";
                 }
                 else
                 {
@@ -602,13 +603,13 @@ namespace Game.UI
                     ? _catalog.GetDisplayName(_structureCatalog.GetRefundResource(_hammerTarget.TargetStructureKind))
                     : "자원";
                 action += _hammerTarget.DemolishProgress > 0f
-                    ? $" — <color=orange>철거 중… {_hammerTarget.DemolishProgress * 100f:F0}%</color>"
+                    ? $" — <color={UiPalette.HexAlertText}>철거 중… {_hammerTarget.DemolishProgress * 100f:F0}%</color>"
                     : $" — [X 홀드] 철거 (반환: {refundName} {_hammerTarget.DemolishRefund})";
             }
 
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth
-                ? "orange"
-                : "white";
+                ? UiPalette.HexAlertText
+                : UiPalette.HexTextSteam;
             GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.54f, 400f, 24f),
                 $"<color={color}>{partName}: {healthText}{action}</color>");
         }
@@ -638,13 +639,13 @@ namespace Game.UI
                 else
                 {
                     action = _plankAim.CanAfford
-                        ? "<color=red>여기엔 판자를 붙일 수 없다</color>"
-                        : $"<color=red>증축 자원 부족 ({BuildShortagePrompt(hotbar, _plankAim.Cost)})</color>";
+                        ? $"<color={UiPalette.HexCriticalText}>여기엔 판자를 붙일 수 없다</color>"
+                        : $"<color={UiPalette.HexCriticalText}>증축 자원 부족 ({BuildShortagePrompt(hotbar, _plankAim.Cost)})</color>";
                 }
             }
             else if (_plankAim.RemoveProgress > 0f)
             {
-                action = $"<color=orange>철거 중… {_plankAim.RemoveProgress * 100f:F0}%</color>";
+                action = $"<color={UiPalette.HexAlertText}>철거 중… {_plankAim.RemoveProgress * 100f:F0}%</color>";
             }
             else if (_plankAim.CanRemove)
             {
@@ -655,7 +656,7 @@ namespace Game.UI
             }
             else
             {
-                action = "<color=red>위에 놓인 건축물을 먼저 철거해야 뜯을 수 있다</color>";
+                action = $"<color={UiPalette.HexCriticalText}>위에 놓인 건축물을 먼저 철거해야 뜯을 수 있다</color>";
             }
 
             GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.50f, 400f, 24f),

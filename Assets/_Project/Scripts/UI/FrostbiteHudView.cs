@@ -27,6 +27,8 @@ namespace Game.UI
         [Tooltip("부위 판독을 그릴 화면 좌측 여백·상단 위치.")]
         [SerializeField] private Vector2 _partReadoutOrigin = new Vector2(20f, 360f);
 
+        // 화면 전체를 덮는 연출 틴트라 UI 상태 토큰(UiPalette)의 대상이 아니다 — 정보를 전달하는
+        // 색이 아니라 "얼고 있다"는 감각을 만드는 색이고, 아트 에셋이 들어오면 함께 교체된다.
         private static readonly Color FrostTint = new Color(0.72f, 0.88f, 1f, 1f);
 
         private static readonly string[] PartNames = { "머리", "상체", "하체", "발" };
@@ -104,7 +106,7 @@ namespace Game.UI
             EnsureStyle();
 
             var builder = new System.Text.StringBuilder(48);
-            builder.Append("<color=#9fd8ff><b>동상</b>");
+            builder.Append($"<color={UiPalette.HexCautionText}><b>동상</b>");
 
             for (int i = 0; i < FrostbiteMath.PartCount; i++)
             {
@@ -116,7 +118,7 @@ namespace Game.UI
 
                 string label = i < PartNames.Length ? PartNames[i] : ((EquipSlot)i).ToString();
                 builder.Append(stage == FrostbiteStage.Severe
-                    ? $" · <color=#ff9d9d>{label} 중증</color>"
+                    ? $" · <color={UiPalette.HexCriticalText}>{label} 중증</color>"
                     : $" · {label} 경증");
             }
 

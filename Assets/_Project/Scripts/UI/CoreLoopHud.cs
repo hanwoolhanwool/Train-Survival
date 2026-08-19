@@ -101,8 +101,8 @@ namespace Game.UI
         private void OnDayPhaseChanged(DayPhaseChangedEvent evt)
         {
             _bannerText = evt.Phase == DayPhase.Night
-                ? $"<color=red>Day {evt.DayNumber} — 밤이 온다. 열차를 지켜라!</color>"
-                : $"<color=yellow>Day {evt.DayNumber} — 아침이 밝았다</color>";
+                ? $"<color={UiPalette.HexCriticalText}>Day {evt.DayNumber} — 밤이 온다. 열차를 지켜라!</color>"
+                : $"<color={UiPalette.HexSafeText}>Day {evt.DayNumber} — 아침이 밝았다</color>";
             _bannerUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -110,8 +110,8 @@ namespace Game.UI
         {
             string name = evt.Region == null ? $"지역 #{evt.RegionIndex}" : evt.Region.DisplayName;
             _regionBannerText = evt.CycleNumber > 0
-                ? $"<color=cyan>{name} 진입 — {evt.CycleNumber + 1}주기</color>"
-                : $"<color=cyan>{name} 진입</color>";
+                ? $"<color={UiPalette.HexFocusBrass}>{name} 진입 — {evt.CycleNumber + 1}주기</color>"
+                : $"<color={UiPalette.HexFocusBrass}>{name} 진입</color>";
             _regionBannerUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -122,7 +122,7 @@ namespace Game.UI
                 return;
             }
 
-            _regionBannerText = $"<color=orange>{evt.Weather.DisplayName} 발생 — 시야 차단·감속</color>";
+            _regionBannerText = $"<color={UiPalette.HexAlertText}>{evt.Weather.DisplayName} 발생 — 시야 차단·감속</color>";
             _regionBannerUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -200,7 +200,7 @@ namespace Game.UI
 
         private void OnCouplingBroken(CouplingBrokenEvent evt)
         {
-            _trainAlertText = $"<color=red>연결부 파괴! (#{evt.Index})</color>";
+            _trainAlertText = $"<color={UiPalette.HexCriticalText}>연결부 파괴! (#{evt.Index})</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -208,13 +208,13 @@ namespace Game.UI
         {
             int count = evt.Indices != null ? evt.Indices.Length : 0;
             _detachedCars += count;
-            _trainAlertText = $"<color=red>{count}칸 이탈!</color>";
+            _trainAlertText = $"<color={UiPalette.HexCriticalText}>{count}칸 이탈!</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
         private void OnCarDestroyed(CarDestroyedEvent evt)
         {
-            _trainAlertText = $"<color=red>칸 파괴! (#{evt.Index})</color>";
+            _trainAlertText = $"<color={UiPalette.HexCriticalText}>칸 파괴! (#{evt.Index})</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -223,7 +223,7 @@ namespace Game.UI
             string name = _structureCatalog != null
                 ? _structureCatalog.GetDisplayName(evt.Kind)
                 : "건축물";
-            _trainAlertText = $"<color=red>{name} 파괴! (#{evt.CarIndex}번 칸)</color>";
+            _trainAlertText = $"<color={UiPalette.HexCriticalText}>{name} 파괴! (#{evt.CarIndex}번 칸)</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -232,7 +232,7 @@ namespace Game.UI
             string name = _structureCatalog != null
                 ? _structureCatalog.GetDisplayName(evt.Kind)
                 : "건축물";
-            _trainAlertText = $"<color=yellow>{name} 철거 (#{evt.CarIndex}번 칸)</color>";
+            _trainAlertText = $"<color={UiPalette.HexCautionText}>{name} 철거 (#{evt.CarIndex}번 칸)</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -241,15 +241,15 @@ namespace Game.UI
             string name = _structureCatalog != null
                 ? _structureCatalog.GetDisplayName(evt.Entry.Kind)
                 : "건축물";
-            _trainAlertText = $"<color=lime>{name} 설치! (#{evt.Entry.CarIndex}번 칸)</color>";
+            _trainAlertText = $"<color={UiPalette.HexSafeText}>{name} 설치! (#{evt.Entry.CarIndex}번 칸)</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
         private void OnCarBuilt(CarBuiltEvent evt)
         {
             _trainAlertText = evt.Rebuilt
-                ? $"<color=lime>칸 재건! (#{evt.Index})</color>"
-                : $"<color=lime>칸 증설! (#{evt.Index})</color>";
+                ? $"<color={UiPalette.HexSafeText}>칸 재건! (#{evt.Index})</color>"
+                : $"<color={UiPalette.HexSafeText}>칸 증설! (#{evt.Index})</color>";
             _trainAlertUntilTime = Time.unscaledTime + BannerHoldSeconds;
         }
 
@@ -276,13 +276,13 @@ namespace Game.UI
             {
                 // 소모율을 함께 보여준다 — 칸 증설 트레이드오프(칸 수 → 소모 증가)를 눈으로 확인할 수 있다.
                 string fuelText = $"연료: {_fuel:F0} / {_fuelCapacity:F0}  (-{_fuelConsumptionPerSecond:F2}/s)";
-                GUILayout.Label(_fuel <= 0f ? $"<color=red>{fuelText} — 감속 중!</color>" : fuelText);
+                GUILayout.Label(_fuel <= 0f ? $"<color={UiPalette.HexCriticalText}>{fuelText} — 감속 중!</color>" : fuelText);
             }
 
             if (_maxHealth > 0f)
             {
                 string healthText = $"체력: {_health:F0} / {_maxHealth:F0}";
-                GUILayout.Label(_health <= _maxHealth * 0.3f ? $"<color=red>{healthText}</color>" : healthText);
+                GUILayout.Label(_health <= _maxHealth * 0.3f ? $"<color={UiPalette.HexCriticalText}>{healthText}</color>" : healthText);
             }
 
             DrawTemperatureLine();
@@ -303,7 +303,7 @@ namespace Game.UI
 
             if (_detachedCars > 0)
             {
-                GUILayout.Label($"<color=red>이탈 칸: {_detachedCars}</color>");
+                GUILayout.Label($"<color={UiPalette.HexCriticalText}>이탈 칸: {_detachedCars}</color>");
             }
 
             GUILayout.EndArea();
@@ -329,7 +329,7 @@ namespace Game.UI
                 builder.Append($" 보온 {_warmthBuffSeconds:F0}s");
             }
 
-            GUILayout.Label($"<color=lime>{builder}</color>");
+            GUILayout.Label($"<color={UiPalette.HexSafeText}>{builder}</color>");
         }
 
         /// <summary>허기와 굶주림 경고 (기획서 §3.4, M5 4차 — 회복 수단은 화덕 요리 섭취).</summary>
@@ -345,11 +345,11 @@ namespace Game.UI
             switch (_hungerStress)
             {
                 case HungerStress.Hungry:
-                    GUILayout.Label($"<color=yellow>{text} — 허기! 요리를 먹어라</color>");
+                    DrawStatusLine(UiStatusLevel.Caution, $"{text} — 허기! 요리를 먹어라");
                     break;
 
                 case HungerStress.Starving:
-                    GUILayout.Label($"<color=red>{text} — 굶주림! 체력이 깎인다</color>");
+                    DrawStatusLine(UiStatusLevel.Critical, $"{text} — 굶주림! 체력이 깎인다");
                     break;
 
                 default:
@@ -371,18 +371,29 @@ namespace Game.UI
             switch (_temperatureStress)
             {
                 case TemperatureStress.Heat:
-                    GUILayout.Label($"<color=orange>{text} — 더위! 건축물 그늘로</color>");
+                    DrawStatusLine(UiStatusLevel.Alert, $"{text} — 더위! 건축물 그늘로");
                     break;
 
                 case TemperatureStress.Cold:
                     // 그늘은 추위를 막지 못한다 — 난방 건축물이 있는 칸 위가 대응 수단이다 (M5 3차).
-                    GUILayout.Label($"<color=aqua>{text} — 추위! 난방 칸 위로</color>");
+                    // 더위와 같은 Alert다 — 색은 위험도를 말하고, 무엇이 문제인지는 문구가 말한다
+                    // (비주얼·UI/UX 가이드 §7.2 "같은 색이 게임 전체에서 같은 뜻").
+                    DrawStatusLine(UiStatusLevel.Alert, $"{text} — 추위! 난방 칸 위로");
                     break;
 
                 default:
                     GUILayout.Label(text);
                     break;
             }
+        }
+
+        /// <summary>
+        /// 상태 단계에 맞는 색으로 한 줄 그리기 — 단계 판정은 도메인(<see cref="HungerStress"/> 등)이
+        /// 하고, 여기서는 그것을 색으로만 옮긴다 (비주얼·UI/UX 가이드 §7.2).
+        /// </summary>
+        private static void DrawStatusLine(UiStatusLevel level, string text)
+        {
+            GUILayout.Label($"<color={UiPalette.StatusHex(level)}>{text}</color>");
         }
 
         /// <summary>현재 지역·지역 내 일차와 다음 지역 예고 (기획서 §2 — 마지막 1~2일 예고 연출).</summary>
@@ -403,17 +414,17 @@ namespace Game.UI
 
             if (region.IsFinalDayOfRegion)
             {
-                GUILayout.Label("<color=red>오늘 밤 — 지역 마지막 밤, 대형 웨이브</color>");
+                GUILayout.Label($"<color={UiPalette.HexCriticalText}>오늘 밤 — 지역 마지막 밤, 대형 웨이브</color>");
             }
             else if (region.IsForecastWindow && region.NextRegion != null)
             {
                 int daysLeft = Mathf.Max(0, region.RegionDayCount - region.DayInRegion);
-                GUILayout.Label($"<color=orange>다음 지역 예고: {region.NextRegion.DisplayName} ({daysLeft}일 뒤)</color>");
+                GUILayout.Label($"<color={UiPalette.HexCautionText}>다음 지역 예고: {region.NextRegion.DisplayName} ({daysLeft}일 뒤)</color>");
             }
 
             if (ServiceLocator.TryGet(out IWeatherService weather) && weather.IsActive)
             {
-                GUILayout.Label($"<color=orange>날씨: {weather.ActiveWeather.DisplayName}</color>");
+                GUILayout.Label($"<color={UiPalette.HexAlertText}>날씨: {weather.ActiveWeather.DisplayName}</color>");
             }
         }
 
@@ -432,7 +443,7 @@ namespace Game.UI
             if (Time.unscaledTime < _deathUntilTime)
             {
                 GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.35f, 400f, 30f),
-                    "<color=red>사망 — 잠시 후 후미 칸에서 부활</color>");
+                    $"<color={UiPalette.HexCriticalText}>사망 — 잠시 후 후미 칸에서 부활</color>");
             }
 
             if (Time.unscaledTime < _trainAlertUntilTime && !string.IsNullOrEmpty(_trainAlertText))

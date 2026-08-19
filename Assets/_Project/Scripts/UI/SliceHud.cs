@@ -128,12 +128,12 @@ namespace Game.UI
 
             if (Time.unscaledTime < _warningUntilTime)
             {
-                GUILayout.Label($"<color=orange>경고 — 열차에서 {_warningMeters:F0} m 뒤처짐!</color>");
+                GUILayout.Label($"<color={UiPalette.HexAlertText}>경고 — 열차에서 {_warningMeters:F0} m 뒤처짐!</color>");
             }
 
             if (Time.unscaledTime < _fellBehindUntilTime)
             {
-                GUILayout.Label("<color=red>플레이어 이탈 — 후미 칸에서 부활</color>");
+                GUILayout.Label($"<color={UiPalette.HexCriticalText}>플레이어 이탈 — 후미 칸에서 부활</color>");
             }
 
             GUILayout.EndArea();
@@ -141,7 +141,7 @@ namespace Game.UI
             if (Time.unscaledTime < _grabRejectUntilTime)
             {
                 GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.5f + 28f, 360f, 24f),
-                    $"<color=red>{_grabRejectMessage}</color>");
+                    $"<color={UiPalette.HexCriticalText}>{_grabRejectMessage}</color>");
             }
 
             // 조준점.

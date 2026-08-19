@@ -49,7 +49,7 @@ namespace Game.UI
             if (_promptVisible && !_panelOpen)
             {
                 GUI.Label(new Rect(Screen.width * 0.5f - 100f, Screen.height * 0.62f, 200f, 24f),
-                    "<color=yellow>E — 제작</color>");
+                    $"<color={UiPalette.HexFocusBrass}>E — 제작</color>");
             }
 
             if (_panelOpen)
@@ -202,7 +202,7 @@ namespace Game.UI
             {
                 int have = HotbarLogic.CountResource(slots, ingredients[i].Type);
                 int need = ingredients[i].Count;
-                string color = have >= need ? "white" : "red";
+                string color = have >= need ? UiPalette.HexTextSteam : UiPalette.HexCriticalText;
                 if (i > 0)
                 {
                     builder.Append("  ");
