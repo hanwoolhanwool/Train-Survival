@@ -1,7 +1,7 @@
 # 연료 루프 (엔진 투입 → 충전 → 소모 → 감속)
 
 > **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../Train-Survival-개발-가이드.md) · [world/scroll-and-streaming](scroll-and-streaming.md)
+> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md) · [world/scroll-and-streaming](scroll-and-streaming.md)
 
 ## 1. 개요·목적
 

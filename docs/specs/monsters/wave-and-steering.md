@@ -1,7 +1,7 @@
 # 몬스터 웨이브·조향 (호스트 조향 AI + 저주기 스냅샷 보간)
 
 > **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4.3·§6.2](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../Train-Survival-개발-가이드.md)
+> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4.3·§6.2](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md)
 
 ## 1. 개요·목적
 

@@ -1,7 +1,7 @@
 # 낮/밤 사이클 (호스트 권위 누적 시간 + 순수 파생)
 
 > **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M2](../../Train-Survival-개발-가이드.md)
+> **최종 갱신**: 2026-07-24 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md)
 
 ## 1. 개요·목적
 

@@ -1,7 +1,7 @@
 # 날씨 이벤트 (호스트 권위 무작위 상태 + 로컬 연출)
 
 > **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-08-03 · **관련 기획서**: [Train-Survival-기획서 §7.4](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../Train-Survival-개발-가이드.md) · [region/region-timeline](region-timeline.md) · [world/fuel-loop](../world/fuel-loop.md)
+> **최종 갱신**: 2026-08-03 · **관련 기획서**: [Train-Survival-기획서 §7.4](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../guide/Train-Survival-개발-가이드.md) · [region/region-timeline](region-timeline.md) · [world/fuel-loop](../world/fuel-loop.md)
 
 ## 1. 개요·목적
 
@@ -203,7 +203,7 @@ sequenceDiagram
 순수 로직이 얇아(추첨·카운트다운이 전부 무작위·시간·네트워크 경계) EditMode 테스트가 없다 —
 지속시간 롤의 min/max 스왑 방어 정도가 전부라 분리 비용 대비 이득이 없다고 판단했다. 검증은
 1차 플레이 검증 E 항목(발생 배너·안개·감속·갬·양 피어 동일)과 결함 ③ 수정 후 재확인으로 수행했다
-([M4 플레이 검증 항목](../../plans/M4-플레이-검증-항목.md)). 배율 소비 측은 `WorldScrollMathTests`·
+([M4 플레이 검증 항목](../../plans/M4/M4-플레이-검증-항목.md)). 배율 소비 측은 `WorldScrollMathTests`·
 `FuelMathTests`가 기존 경로를 고정한다.
 
 ## 11. 리스크·미결정 (TBD)

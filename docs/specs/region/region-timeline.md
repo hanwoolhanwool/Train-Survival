@@ -1,7 +1,7 @@
 # 지역 타임라인 (Day 번호 → 지역 순수 파생)
 
 > **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-08-03 · **관련 기획서**: [Train-Survival-기획서 §4·§4.5·§5](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../Train-Survival-개발-가이드.md) · [cycle/day-night-cycle](../cycle/day-night-cycle.md)
+> **최종 갱신**: 2026-08-03 · **관련 기획서**: [Train-Survival-기획서 §4·§4.5·§5](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../guide/Train-Survival-개발-가이드.md) · [cycle/day-night-cycle](../cycle/day-night-cycle.md)
 
 ## 1. 개요·목적
 
@@ -238,7 +238,7 @@ sequenceDiagram
 | `WaveMathTests` (일부) | 지역 배율이 물량·체력에 반영, 지역 마지막 밤 대형 웨이브, 배율 0 방어 — 배율 소비 측 검증 |
 
 컨트롤러의 구독·발행 배선은 EditMode 대상 밖 — 1차 플레이 검증 A(지역 전환)·G(멀티 정합) 항목으로
-확인했다 ([M4 플레이 검증 항목](../../plans/M4-플레이-검증-항목.md)).
+확인했다 ([M4 플레이 검증 항목](../../plans/M4/M4-플레이-검증-항목.md)).
 
 ## 11. 리스크·미결정 (TBD)
 
