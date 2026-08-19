@@ -14,6 +14,9 @@ namespace Game.Tests.EditMode
         private const float CouplingGap = 1.5f;
         private const float CarWidth = 3f;
         private const float DeckHeight = 3f;
+
+        /// <summary>바닥이 y=0에 닿은 기준 편성 — 갑판 높이와 몸통 높이가 같다.</summary>
+        private const float CarBodyHeight = 3f;
         private const float LostDistance = 45f;
 
         private static float MaxHealthFor(CarType type)
@@ -78,7 +81,7 @@ namespace Game.Tests.EditMode
         [Test]
         public void 프리뷰_부피는_이어질_연결부_자리다()
         {
-            CarRecoupleAimLogic.CouplingVolume(-27f, CarLength, CouplingGap, CarWidth, DeckHeight,
+            CarRecoupleAimLogic.CouplingVolume(-27f, CarLength, CouplingGap, CarWidth, DeckHeight, CarBodyHeight,
                 out Vector3 center, out Vector3 size);
 
             // 중심은 칸 건설과 같은 조준 지점(앞 연결부 중앙), 깊이는 연결 간격 — 칸이 아니라 간극을 강조한다.

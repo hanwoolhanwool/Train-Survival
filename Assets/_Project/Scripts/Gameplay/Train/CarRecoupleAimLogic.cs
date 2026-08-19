@@ -71,11 +71,11 @@ namespace Game.Gameplay.Train
         /// 열차는 원점 고정이라 X 중심은 0이고, 갑판이 y=<paramref name="deckHeight"/>에 오도록 바닥을 y=0에 맞춘다.
         /// </summary>
         public static void CouplingVolume(float slotCenterZ, float carLength, float couplingGap,
-            float carWidth, float deckHeight, out Vector3 center, out Vector3 size)
+            float carWidth, float deckHeight, float carBodyHeight, out Vector3 center, out Vector3 size)
         {
-            center = new Vector3(0f, deckHeight * 0.5f,
+            center = new Vector3(0f, deckHeight - carBodyHeight * 0.5f,
                 CarBuildAimLogic.AnchorZ(slotCenterZ, carLength, couplingGap));
-            size = new Vector3(carWidth, deckHeight, Mathf.Max(0.01f, couplingGap));
+            size = new Vector3(carWidth, carBodyHeight, Mathf.Max(0.01f, couplingGap));
         }
 
         /// <summary>

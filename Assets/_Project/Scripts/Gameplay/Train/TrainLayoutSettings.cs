@@ -13,7 +13,14 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(1)] private int _carCount = 3;
         [SerializeField, Min(1f)] private float _carLength = 12f;
         [SerializeField, Min(1f)] private float _carWidth = 3f;
+        [Tooltip("갑판 상면의 월드 y — 건축물·몬스터 착지·조준 평면이 전부 이 높이를 밟는 면으로 본다. "
+            + "씬에서 열차를 올리거나 내리면 반드시 함께 맞춘다.")]
         [SerializeField, Min(1f)] private float _deckHeight = 3f;
+
+        [Tooltip("칸 몸통의 세로 크기(m) — 바닥에서 갑판 상면까지. 증설·재결합 프리뷰 상자의 높이다. "
+            + "열차가 지면에 붙어 있지 않을 수 있으므로 갑판 높이와 별개 값이다.")]
+        [SerializeField, Min(1f)] private float _carBodyHeight = 3f;
+
         [SerializeField, Min(0f)] private float _couplingGap = 1.5f;
 
         [Header("건축 그리드 (건축 개편 1차 — 결정 ①)")]
@@ -38,7 +45,11 @@ namespace Game.Gameplay.Train
 
         public float CarWidth => _carWidth;
 
+        /// <summary>갑판 상면의 월드 y — 밟는 면·설치 면의 단일 기준.</summary>
         public float DeckHeight => _deckHeight;
+
+        /// <summary>칸 몸통의 세로 크기 (m) — 프리뷰 상자 높이. 갑판 높이와 달리 열차를 올려도 변하지 않는다.</summary>
+        public float CarBodyHeight => _carBodyHeight;
 
         public float CouplingGap => _couplingGap;
 

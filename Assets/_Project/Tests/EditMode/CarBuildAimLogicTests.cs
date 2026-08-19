@@ -15,6 +15,9 @@ namespace Game.Tests.EditMode
         private const float CarWidth = 3f;
         private const float DeckHeight = 3f;
 
+        /// <summary>바닥이 y=0에 닿은 기준 편성 — 갑판 높이와 몸통 높이가 같다.</summary>
+        private const float CarBodyHeight = 3f;
+
         [Test]
         public void 건설_지점은_슬롯_앞_연결부_중앙이다()
         {
@@ -51,12 +54,30 @@ namespace Game.Tests.EditMode
         [Test]
         public void 건설_부피는_슬롯_자리의_칸_한_칸_크기다()
         {
-            CarBuildAimLogic.BuildVolume(-27f, CarWidth, DeckHeight, CarLength,
+            CarBuildAimLogic.BuildVolume(-27f, CarWidth, DeckHeight, CarBodyHeight, CarLength,
                 out Vector3 center, out Vector3 size);
 
             // 열차는 원점 고정(x=0)이고 바닥이 y=0에 닿아 갑판이 DeckHeight에 온다.
             Assert.That(center, Is.EqualTo(new Vector3(0f, DeckHeight * 0.5f, -27f)));
             Assert.That(size, Is.EqualTo(new Vector3(CarWidth, DeckHeight, CarLength)));
+        }
+
+        /// <summary>
+        /// 궤도 위에 얹혀 갑판이 올라가도 상자는 <b>갑판에 매달려</b> 따라 올라간다 — 몸통 두께는 그대로다.
+        /// 두 값을 하나로 묶어 두면 상자가 아래로 길어져 지면을 파고든다(기찻길 배치 이후 실제로 그랬다).
+        /// </summary>
+        [Test]
+        public void 열차가_지면에서_뜨면_상자도_갑판을_따라_올라간다()
+        {
+            const float RaisedDeck = 3.566f;
+            const float BodyHeight = 2.65f;
+
+            CarBuildAimLogic.BuildVolume(-27f, CarWidth, RaisedDeck, BodyHeight, CarLength,
+                out Vector3 center, out Vector3 size);
+
+            Assert.That(size.y, Is.EqualTo(BodyHeight).Within(0.001f), "몸통 두께는 갑판이 올라가도 변하지 않는다.");
+            Assert.That(center.y + size.y * 0.5f, Is.EqualTo(RaisedDeck).Within(0.001f), "상자 윗면이 갑판에 붙어야 한다.");
+            Assert.That(center.y - size.y * 0.5f, Is.GreaterThan(0f), "상자 아랫면이 지면을 파고들면 안 된다.");
         }
 
         [Test]
@@ -65,7 +86,7 @@ namespace Game.Tests.EditMode
             // 겨누는 지점(연결부)은 지어질 칸 앞면(+Z)보다 연결 간격 절반만큼 더 앞이다 —
             // 조준 지점이 부피 안에 들어가면 자기 몸이 늘 자리를 막는 것처럼 보인다.
             const float slotCenterZ = -27f;
-            CarBuildAimLogic.BuildVolume(slotCenterZ, CarWidth, DeckHeight, CarLength, out _, out Vector3 size);
+            CarBuildAimLogic.BuildVolume(slotCenterZ, CarWidth, DeckHeight, CarBodyHeight, CarLength, out _, out Vector3 size);
             float frontFaceZ = slotCenterZ + size.z * 0.5f;
 
             Assert.That(CarBuildAimLogic.AnchorZ(slotCenterZ, CarLength, CouplingGap),

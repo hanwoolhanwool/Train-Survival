@@ -574,7 +574,7 @@ namespace Game.Gameplay.Train
         private bool IsBuildVolumeOccupied(int slot)
         {
             CarBuildAimLogic.BuildVolume(_layoutSettings.CarCenterZ(slot), _layoutSettings.CarWidth,
-                _layoutSettings.DeckHeight, _layoutSettings.CarLength,
+                _layoutSettings.DeckHeight, _layoutSettings.CarBodyHeight, _layoutSettings.CarLength,
                 out Vector3 center, out Vector3 size);
 
             return IsVolumeOccupied(center, size);
@@ -846,7 +846,8 @@ namespace Game.Gameplay.Train
             if (aiming && _layoutSettings != null)
             {
                 CarBuildAimLogic.BuildVolume(_layoutSettings.CarCenterZ(slot), _layoutSettings.CarWidth,
-                    _layoutSettings.DeckHeight, _layoutSettings.CarLength, out ghostCenter, out ghostSize);
+                    _layoutSettings.DeckHeight, _layoutSettings.CarBodyHeight, _layoutSettings.CarLength,
+                    out ghostCenter, out ghostSize);
             }
 
             EventBus<CarBuildAimLocalEvent>.Publish(new CarBuildAimLocalEvent(
@@ -875,7 +876,8 @@ namespace Game.Gameplay.Train
             {
                 CarRecoupleAimLogic.CouplingVolume(_layoutSettings.CarCenterZ(carIndex),
                     _layoutSettings.CarLength, _layoutSettings.CouplingGap,
-                    _layoutSettings.CarWidth, _layoutSettings.DeckHeight, out ghostCenter, out ghostSize);
+                    _layoutSettings.CarWidth, _layoutSettings.DeckHeight, _layoutSettings.CarBodyHeight,
+                    out ghostCenter, out ghostSize);
             }
 
             EventBus<CarRecoupleAimLocalEvent>.Publish(new CarRecoupleAimLocalEvent(

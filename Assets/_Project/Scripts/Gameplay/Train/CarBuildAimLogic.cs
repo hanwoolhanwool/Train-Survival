@@ -21,13 +21,17 @@ namespace Game.Gameplay.Train
         /// <summary>
         /// 지어질 칸이 차지할 부피 — 프리뷰 테두리이자 자리 점유 판정 영역이다(둘이 같은 상자여야
         /// "초록 테두리 안이 비어야 지어진다"가 성립한다). 열차는 원점 고정이라 X 중심은 0이고,
-        /// 갑판이 y=<paramref name="deckHeight"/>에 오도록 바닥을 y=0에 맞춘다.
+        /// 상자의 <b>윗면</b>이 y=<paramref name="deckHeight"/>에 오도록 <paramref name="carBodyHeight"/>만큼
+        /// 아래로 채운다.
+        ///
+        /// <para>높이를 갑판 높이와 따로 받는 이유: 열차가 지면에 붙어 있다는 보장이 없다.
+        /// 궤도 위에 얹히면 갑판만 올라가고 몸통 두께는 그대로라, 하나로 묶으면 상자가 지면을 파고든다.</para>
         /// </summary>
-        public static void BuildVolume(float slotCenterZ, float carWidth, float deckHeight, float carLength,
-            out Vector3 center, out Vector3 size)
+        public static void BuildVolume(float slotCenterZ, float carWidth, float deckHeight, float carBodyHeight,
+            float carLength, out Vector3 center, out Vector3 size)
         {
-            center = new Vector3(0f, deckHeight * 0.5f, slotCenterZ);
-            size = new Vector3(carWidth, deckHeight, carLength);
+            center = new Vector3(0f, deckHeight - carBodyHeight * 0.5f, slotCenterZ);
+            size = new Vector3(carWidth, carBodyHeight, carLength);
         }
 
         /// <summary>
