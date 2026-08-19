@@ -19,7 +19,7 @@
   달라지는 것은 도착 후 동작뿐이다 (→ [monsters §6.6](../monsters/wave-and-steering.md))
 - **보따리 일괄 회수** (M5 8차) — 3단계 집게는 **비행 중에도 낚아챈다**(등급 예외)
 - **등급별 파지 손 전환** (2026-08-19) — `HarpoonSwitchRules`가 대상 등급 축과 전환 게이트를 판정
-  (→ [player §6.5](../player/network-movement.md))
+  (→ [player §6.2](../player/network-movement.md))
 
 **미포함**:
 - 그랩 대상 자체 구현 — 자원(`ResourceNode`)은 [world 도메인](../world/scroll-and-streaming.md) 소관.
