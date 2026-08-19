@@ -1,7 +1,7 @@
 # 날씨 이벤트 (호스트 권위 무작위 상태 + 로컬 연출)
 
-> **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-08-03 · **관련 기획서**: [Train-Survival-기획서 §7.4](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../guide/Train-Survival-개발-가이드.md) · [region/region-timeline](region-timeline.md) · [world/fuel-loop](../world/fuel-loop.md)
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M4 → M7 지역 4종 확장)
+> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서 §7.4](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../guide/Train-Survival-개발-가이드.md) · [region/region-timeline](region-timeline.md) · [world/fuel-loop](../world/fuel-loop.md)
 
 ## 1. 개요·목적
 

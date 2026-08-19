@@ -1,7 +1,7 @@
 # 플레이어 이동 (소유자 권위 + 개입 상태 머신)
 
-> **종류**: 아키텍처 명세 · **상태**: as-built (M7 3차 기준)
-> **최종 갱신**: 2026-08-16 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [수직 슬라이스 스펙 §4](../../design/Train-Survival-수직슬라이스-스펙.md) · [네트워크 아키텍처 §4.2](../../design/Train-Survival-네트워크-아키텍처.md) · [플레이어-확장-계획](../../plans/features/플레이어-확장-계획.md)
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M1 슬라이스 → M7 3차 → 표현 축 2026-08)
+> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [수직 슬라이스 스펙 §4](../../design/Train-Survival-수직슬라이스-스펙.md) · [네트워크 아키텍처 §4.2](../../design/Train-Survival-네트워크-아키텍처.md) · [플레이어-확장-계획](../../plans/features/플레이어-확장-계획.md)
 
 ## 1. 개요·목적
 

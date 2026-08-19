@@ -1,7 +1,7 @@
 # 월드 스크롤·지형 스트리밍·지상 자원
 
-> **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-21 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4.1·§8](../../design/Train-Survival-네트워크-아키텍처.md)
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M1 슬라이스 → M4 지역 전환 → M5 안착 공용화)
+> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4.1·§8](../../design/Train-Survival-네트워크-아키텍처.md)
 
 ## 1. 개요·목적
 
@@ -15,8 +15,28 @@
 지형 타일 전방 생성/후방 회수(`TerrainTileStreamer`), 지상 자원 스폰·회수(`GroundResourceSpawner`)와
 그랩 대상 엔티티(`ResourceNode`), 팀 공유 자원 카운터(`SharedResourceCounter`).
 
-**미포함**: 트랙 커브·경사 표현(미결, M4 이전 결정 예정), 지역·날씨 전환(M4), 다중 자원 등급(2·3단계 집게),
-지형 비주얼 에셋(현재는 더미 프리팹).
+**M4~M5에서 추가된 포함 범위**: 지역 전환 시 타일·자원 교체(`RegionChangedEvent` 구독)와
+지형 경계 복제(`TerrainRegionBoundary`), 지역별 자원 가중 추첨(`ResourceSpawnPicker`),
+**안착 파이프라인 공용화**(`SettleableGrabbable` — M5 8차), 창고 보따리(`StorageBundle`),
+연료 도메인 동거(`FuelTank`·`FuelMath` — → [fuel-loop](fuel-loop.md)).
+
+**미포함**: 트랙 커브·경사 표현(**M7 이월** — 스크롤 벡터 회전은 위치 유도 공식·몬스터 조향·
+손잡이 이탈 시뮬까지 재검증 대상), 날씨 감속(→ [region/weather-events](../region/weather-events.md)),
+지형 비주얼 에셋(→ [train-art-layout](train-art-layout.md) · M8 아트 패스).
+
+### 2.1 안착 축 (`SettleableGrabbable`) — M5 7·8차
+
+지상 자원(`ResourceNode`)에만 있던 "안착" 동작을 **베이스로 공용화**했다 (기존 동작 무변).
+
+| 축 | 내용 |
+|---|---|
+| 컨베이어 | 월드 소속이면 스크롤만큼 뒤로 흐른다 |
+| **갑판 휴지** | 열차 갑판 위에 놓이면 **열차가 달려도 제자리** — 이탈 칸을 추종하고, 칸이 소실되면 함께 회수 |
+| 하강 로컬 재생 | 낙하를 각 피어가 로컬 재생 — 좌표 복제 없이 클라 떨림 해소 |
+| 지상 투척 | 칸 파괴 시 포물선 — **좌표 1회 복제 + 각 피어 로컬 재생** |
+
+이 베이스 위에 `StorageBundle`(창고 보따리)이 올라간다 — **창고 파괴가 소실이 아니라 회수 가능한
+사건이 되게 하는** 축이다(→ [inventory §6.6](../inventory/hotbar.md)).
 
 ## 3. 요구사항 → 설계 해석
 

@@ -1,7 +1,7 @@
 # 지역 타임라인 (Day 번호 → 지역 순수 파생)
 
-> **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-08-03 · **관련 기획서**: [Train-Survival-기획서 §4·§4.5·§5](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../guide/Train-Survival-개발-가이드.md) · [cycle/day-night-cycle](../cycle/day-night-cycle.md)
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M4 → M7 지역 4종 확장)
+> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서 §4·§4.5·§5](../../design/Train-Survival-기획서.md) · [개발 가이드 §5 M4](../../guide/Train-Survival-개발-가이드.md) · [cycle/day-night-cycle](../cycle/day-night-cycle.md)
 
 ## 1. 개요·목적
 
@@ -22,7 +22,18 @@ M4 지역 전환의 축이다. **숲 5일 → 사막 4일 → (순환)** 진행�
 [monsters/wave-and-steering](../monsters/wave-and-steering.md)의 `WaveMath` — 이 도메인은 배율만 공급),
 체온 시스템(`TemperatureMath`/`PlayerTemperature` — 이 도메인은 환경 온도 데이터만 공급), 지형 타일
 스트리밍 본체(→ [world/scroll-and-streaming](../world/scroll-and-streaming.md)), 트랙 커브·경사 표현(M7
-이월), 지역별 자원 **종류** 분화(M5 이월 — M4는 밀도·프리팹 교체까지).
+이월), 지역별 자원 **종류** 분화(→ [inventory §6.4](../inventory/hotbar.md) — M5에서 해소).
+
+### 2.1 지역 4종으로 확장 (M7) — **코드 0줄 실증**
+
+M4는 숲·사막 2종으로 착수했고, M7에서 **대초원(1차)·북극(3차)**이 추가됐다.
+
+> **지역 추가가 "에셋 경로"임이 실증됐다.** `Region_Grassland.asset` 신설 +
+> `RegionTimelineSettings._regions`에 append만으로 예고 HUD·마지막 밤 대형 웨이브·지형 경계 복제·
+> 후발 접속·온도·날씨 훅이 **전부 자동 성립**했다 — 이 문서 §12가 예정했던 확장 경로 그대로다.
+
+M7 1차 검증 A 구역이 이 자동 성립을 항목별로 확인하는 데 쓰였다 —
+*"하나라도 코드 수정 없이 성립하지 않으면 그 자체가 발견"*이라는 기준으로.
 
 ## 3. 요구사항 → 설계 해석
 

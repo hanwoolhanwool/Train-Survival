@@ -1,7 +1,7 @@
 # 집게(하푼) 그랩 파이프라인
 
-> **종류**: 아키텍처 명세 · **상태**: 구현중
-> **최종 갱신**: 2026-07-21 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [수직 슬라이스 스펙](../../design/Train-Survival-수직슬라이스-스펙.md)
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M1 슬라이스 → M5 등급·그랩 → 파지 전환)
+> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서](../../design/Train-Survival-기획서.md) · [수직 슬라이스 스펙](../../design/Train-Survival-수직슬라이스-스펙.md)
 
 ## 1. 개요·목적
 
@@ -13,9 +13,16 @@
 
 **포함**: 발사 입력 게이트(`HarpoonStateMachine`), 훅 비행·충돌·되감기(`HarpoonProjectile` + `HarpoonHookMotion`), 호스트 검증 규칙(`GrabValidation`), 견인 시뮬레이션, 로프 연출(`HarpoonRopeRenderer`), 발사·미스·견인의 비소유 클라이언트 브로드캐스트, 그랩 대상 공용 계약(`IGrabbable`), 손맛 검증 계측(`HarpoonSliceMetrics` + `TowMotionAnalyzer` — 에디터·개발 빌드 전용, 릴리스에서는 `[Conditional]`로 호출 제거).
 
+**M5 이후 추가된 포함 범위**:
+- **2·3단계 집게** (M5 5차) — 승급은 제작 경로(`IHarpoonTierHolder`). 등급이 **잡을 수 있는 대상**을 정한다
+- **몬스터 그랩** (M5 5·6차) — `IGrabbable`을 몬스터가 구현(`MonsterGrabTarget`). **파이프라인은 그대로 재사용**되고
+  달라지는 것은 도착 후 동작뿐이다 (→ [monsters §6.6](../monsters/wave-and-steering.md))
+- **보따리 일괄 회수** (M5 8차) — 3단계 집게는 **비행 중에도 낚아챈다**(등급 예외)
+- **등급별 파지 손 전환** (2026-08-19) — `HarpoonSwitchRules`가 대상 등급 축과 전환 게이트를 판정
+  (→ [player §6.5](../player/network-movement.md))
+
 **미포함**:
-- 그랩 대상 자체 구현 — 자원(`ResourceNode`)은 [world 도메인](../world/scroll-and-streaming.md) 소관, 몬스터 그랩은 `IGrabbable` 인터페이스만 준비된 상태로 미구현 (M5 확장 대상).
-- 2·3단계 집게(무게 등급별 릴 속도, 다중 대상 등) — 슬라이스 범위 밖.
+- 그랩 대상 자체 구현 — 자원(`ResourceNode`)은 [world 도메인](../world/scroll-and-streaming.md) 소관.
 - 발사음·팔 애니메이션 등 실제 리소스 — 로컬 표현 이벤트(`HarpoonFiredLocalEvent`)만 발행하고 구독 측(연출·오디오)은 이 문서 밖.
 - ~~정성 블라인드 테스트~~ — **통과 (2026-07-22)**: 정량(Q1~Q5)·정성 모두 종결로 손맛 검증 전체 완료 (§11 참조).
 
