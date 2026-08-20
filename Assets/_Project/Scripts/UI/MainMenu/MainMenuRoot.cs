@@ -34,6 +34,11 @@ namespace Game.UI.MainMenu
         [SerializeField] private MenuPanel _panelAchievements;
         [SerializeField] private MenuPanel _panelSettings;
 
+        [Header("주변 UI")]
+        [SerializeField] private NoticeBoardView _noticeBoard;
+        [SerializeField] private MenuPanel _panelNotice;
+        [SerializeField] private TMP_Text _versionLabel;
+
         [Header("여정 시작 패널")]
         [SerializeField] private Button _newJourney;
         [SerializeField] private Button _invite;
@@ -72,6 +77,19 @@ namespace Game.UI.MainMenu
             Subscribe(_panelPlay);
             Subscribe(_panelAchievements);
             Subscribe(_panelSettings);
+            Subscribe(_panelNotice);
+
+            if (_noticeBoard != null)
+            {
+                _noticeBoard.Clicked -= OnNoticeClicked;
+                _noticeBoard.Clicked += OnNoticeClicked;
+            }
+
+            if (_versionLabel != null)
+            {
+                _versionLabel.text = "v" + NoticeBoardView.Version;
+                _versionLabel.color = UiPalette.TextMuted;
+            }
 
             Bind(_newJourney, OnNewJourney);
             Bind(_invite, OnInvite);
@@ -98,6 +116,17 @@ namespace Game.UI.MainMenu
             Unsubscribe(_panelPlay);
             Unsubscribe(_panelAchievements);
             Unsubscribe(_panelSettings);
+            Unsubscribe(_panelNotice);
+
+            if (_noticeBoard != null)
+            {
+                _noticeBoard.Clicked -= OnNoticeClicked;
+            }
+        }
+
+        private void OnNoticeClicked()
+        {
+            Open(_panelNotice);
         }
 
         private void Update()
@@ -258,6 +287,7 @@ namespace Game.UI.MainMenu
             Close(_panelPlay);
             Close(_panelAchievements);
             Close(_panelSettings);
+            Close(_panelNotice);
             panel.Open();
 
             if (_banner != null)
@@ -272,6 +302,7 @@ namespace Game.UI.MainMenu
             Close(_panelPlay);
             Close(_panelAchievements);
             Close(_panelSettings);
+            Close(_panelNotice);
 
             if (_banner != null)
             {
