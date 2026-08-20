@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Game.UI.MainMenu
 {
@@ -34,6 +36,7 @@ namespace Game.UI.MainMenu
 
         private int _current = -1;
         private bool _applying;
+        private bool[] _states;
 
         /// <summary>지금 화살표가 붙어 있는 줄.</summary>
         public int CurrentSlot => _current;
@@ -98,13 +101,26 @@ namespace Game.UI.MainMenu
 
                 _plates[i].Focused -= OnPlateFocused;
                 _plates[i].Focused += OnPlateFocused;
+                _plates[i].Clicked -= OnPlateClicked;
+                _plates[i].Clicked += OnPlateClicked;
             }
 
-            Highlight(_defaultSlot, true);
+            ApplyNavigation();
+
+            // 시작 슬롯이 이미 잠겨 있을 수 있다 — MainMenuRoot가 세션 준비 전에 "게임 시작"을
+            // 잠그는데, 컴포넌트 활성화 순서에 따라 그쪽이 먼저 돌 수 있다. 그대로 켜면
+            // 못 누르는 줄에 화살표가 얹힌다.
+            int start = MenuNavigation.Rescue(_defaultSlot, InteractableStates());
+            if (start == MenuNavigation.None)
+            {
+                start = _defaultSlot;
+            }
+
+            Highlight(start, true);
 
             if (Application.isPlaying)
             {
-                SelectSlot(_defaultSlot);
+                SelectSlot(start);
             }
         }
 
@@ -115,8 +131,110 @@ namespace Game.UI.MainMenu
                 if (_plates[i] != null)
                 {
                     _plates[i].Focused -= OnPlateFocused;
+                    _plates[i].Clicked -= OnPlateClicked;
                 }
             }
+        }
+
+        /// <summary>명판이 눌렸다 — 무엇을 열지는 <see cref="MainMenuRoot"/>가 정한다.</summary>
+        public event System.Action<MenuPlateButton> PlateClicked;
+
+        /// <summary>슬롯별로 누를 수 있는지 지정하고, 그에 맞춰 상하 이동 링크를 다시 건다.</summary>
+        public void SetInteractable(IReadOnlyList<bool> interactable)
+        {
+            for (int i = 0; _plates != null && i < _plates.Length; i++)
+            {
+                MenuPlateButton plate = _plates[i];
+                if (plate == null)
+                {
+                    continue;
+                }
+
+                int slot = plate.Slot;
+                plate.interactable = interactable != null && slot < interactable.Count ? interactable[slot] : true;
+            }
+
+            ApplyNavigation();
+
+            // 지금 자리가 잠겼으면 살아 있는 줄로 옮긴다 — 포커스가 죽은 줄에 남지 않게.
+            int rescued = MenuNavigation.Rescue(_current, InteractableStates());
+            if (rescued != MenuNavigation.None && rescued != _current)
+            {
+                Highlight(rescued, true);
+            }
+        }
+
+        /// <summary>패널이 열려 있는 동안 표지판 전체를 잠근다 — 뒤쪽 명판이 입력을 훔치지 않게.</summary>
+        public void SetPlatesInteractable(bool on)
+        {
+            for (int i = 0; _plates != null && i < _plates.Length; i++)
+            {
+                if (_plates[i] != null)
+                {
+                    _plates[i].interactable = on;
+                }
+            }
+        }
+
+        /// <summary>지금 선택된 줄로 포커스를 되돌린다 — 패널을 닫고 돌아올 때.</summary>
+        public void FocusCurrent()
+        {
+            SelectSlot(_current < 0 ? _defaultSlot : _current);
+        }
+
+        /// <summary>
+        /// 상하 이웃을 <see cref="MenuNavigation"/>이 정한 대로 명시 지정한다.
+        /// 유니티 기본 내비게이션은 <b>순환하지도, 잠긴 이웃을 건너뛰지도 않는다.</b>
+        /// </summary>
+        private void ApplyNavigation()
+        {
+            IReadOnlyList<bool> states = InteractableStates();
+
+            for (int i = 0; _plates != null && i < _plates.Length; i++)
+            {
+                MenuPlateButton plate = _plates[i];
+                if (plate == null)
+                {
+                    continue;
+                }
+
+                Navigation nav = plate.navigation;
+                nav.mode = Navigation.Mode.Explicit;
+                nav.selectOnUp = Find(MenuNavigation.Move(plate.Slot, states, -1));
+                nav.selectOnDown = Find(MenuNavigation.Move(plate.Slot, states, 1));
+                nav.selectOnLeft = null;
+                nav.selectOnRight = null;
+                plate.navigation = nav;
+            }
+        }
+
+        private IReadOnlyList<bool> InteractableStates()
+        {
+            if (_states == null || _states.Length != MenuPlateLayout.SlotCount)
+            {
+                _states = new bool[MenuPlateLayout.SlotCount];
+            }
+
+            for (int i = 0; i < _states.Length; i++)
+            {
+                _states[i] = false;
+            }
+
+            for (int i = 0; _plates != null && i < _plates.Length; i++)
+            {
+                MenuPlateButton plate = _plates[i];
+                if (plate != null && plate.Slot >= 0 && plate.Slot < _states.Length)
+                {
+                    _states[plate.Slot] = plate.IsInteractable();
+                }
+            }
+
+            return _states;
+        }
+
+        private void OnPlateClicked(MenuPlateButton plate)
+        {
+            PlateClicked?.Invoke(plate);
         }
 
         /// <summary>해당 줄로 포커스를 옮긴다 — 키보드·게임패드 내비게이션(4차)이 부를 자리다.</summary>
