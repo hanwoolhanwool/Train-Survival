@@ -19,9 +19,18 @@ Unity 6 (6000.5.3f1) / URP 17.5 / Input System / PC(StandaloneWindows64) 기준.
 
 ```
 Boot (인프라 초기화: GameBootstrapper가 서비스 등록 · NetworkManager+UnityTransport 상주)
-  → Main (타이틀/메뉴 — 현재 플레이스홀더)
-  → Game (인게임 — 현재 플레이스홀더)
+  → Main (프론트엔드 — 화면 두 개가 한 씬 안에 있다)
+       ├─ 배너 화면   Canvas_Scene — 표지판 명판 4장 · 공고대
+       └─ 대기실      Canvas_Ready — 로스터 4칸 · 난이도 · 시작/초대/나가기
+  → Game / Game_ArtTest (인게임)
 ```
+
+- **`Main`은 씬을 나누지 않는다.** 배너와 대기실은 같은 배경·같은 열차 위에 겹쳐 있고
+  `SetActive` 한 번으로 갈린다. 씬을 나누면 배경·연출을 통째로 복제해야 하고,
+  `EnableSceneManagement`가 켜져 있어 **대기 중 씬 전환이 곧 네트워크 씬 동기화**가 된다.
+  근거는 [게임 준비 화면 구현 계획](../docs/plans/features/게임-준비-화면-구현-계획.md) §2.
+- 대기실은 `Prefabs/UI/Ready_Screen.prefab` 한 덩어리이고 씬에는 인스턴스만 있다 —
+  씬 diff를 작게 유지하기 위한 것이다.
 
 - `Assets/_Project/Scenes/`에 Boot/Main/Game 씬이 존재하며 셋 다 Build Settings에 등록되어 있다 (Boot이 0번).
 - Boot 씬 구성: `NetworkManager`(NetworkManager + UnityTransport + NetworkPrefabPoolRegistrar,
