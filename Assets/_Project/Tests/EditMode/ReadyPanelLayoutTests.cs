@@ -90,8 +90,6 @@ namespace Game.Tests.EditMode
                 ReadyPanelLayout.SlotRole,
                 ReadyPanelLayout.SlotName,
                 ReadyPanelLayout.SlotEmptyLabel,
-                ReadyPanelLayout.SlotDot,
-                ReadyPanelLayout.SlotStatus,
             };
 
             foreach (Rect part in parts)
@@ -105,10 +103,9 @@ namespace Game.Tests.EditMode
         {
             Assert.LessOrEqual(ReadyPanelLayout.SlotIcon.xMax, ReadyPanelLayout.SlotName.xMin + Tolerance,
                 "아이콘이 이름 위로 올라탄다");
-            Assert.LessOrEqual(ReadyPanelLayout.SlotName.xMax, ReadyPanelLayout.SlotDot.xMin + Tolerance,
-                "이름이 접속 표시 위로 올라탄다");
-            Assert.LessOrEqual(ReadyPanelLayout.SlotDot.xMax, ReadyPanelLayout.SlotStatus.xMin + Tolerance,
-                "접속 점이 상태 문구 위로 올라탄다");
+
+            // 접속 표시를 지운 뒤(2026-08-22) 이름이 오른쪽 끝까지 넓어졌다 — 칸 안에는 남아야 한다.
+            Assert.LessOrEqual(ReadyPanelLayout.SlotName.xMax, 1f + Tolerance, "이름이 칸 밖으로 나간다");
         }
 
         [Test]

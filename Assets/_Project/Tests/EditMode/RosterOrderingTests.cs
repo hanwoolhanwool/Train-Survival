@@ -111,10 +111,30 @@ namespace Game.Tests.EditMode
         [Test]
         public void 표시_이름은_칸_번호에서_나온다()
         {
-            Assert.AreEqual("플레이어 1", RosterOrdering.DisplayName(0));
-            Assert.AreEqual("플레이어 2", RosterOrdering.DisplayName(1));
-            Assert.AreEqual("플레이어 3", RosterOrdering.DisplayName(2));
-            Assert.AreEqual("플레이어 4", RosterOrdering.DisplayName(3));
+            // 증기 기관차 승무원 넷 — 칸도 넷이라 자리 이름이 그대로 맞아떨어진다.
+            Assert.AreEqual("기관사", RosterOrdering.DisplayName(0));
+            Assert.AreEqual("화부", RosterOrdering.DisplayName(1));
+            Assert.AreEqual("제동수", RosterOrdering.DisplayName(2));
+            Assert.AreEqual("차장", RosterOrdering.DisplayName(3));
+        }
+
+        [Test]
+        public void 이름이_칸마다_다르다()
+        {
+            // 같은 이름이 둘 있으면 로스터에서 누가 누군지 가릴 수 없다.
+            var seen = new System.Collections.Generic.HashSet<string>();
+            for (int i = 0; i < RosterOrdering.Capacity; i++)
+            {
+                Assert.IsTrue(seen.Add(RosterOrdering.DisplayName(i)), "칸 " + i + "의 이름이 겹친다");
+            }
+        }
+
+        [Test]
+        public void 범위_밖_칸에도_이름이_있다()
+        {
+            // 있을 수 없는 입력이지만 여기서 죽으면 로스터가 통째로 비어 보인다.
+            Assert.IsNotEmpty(RosterOrdering.DisplayName(-1));
+            Assert.IsNotEmpty(RosterOrdering.DisplayName(99));
         }
 
         [Test]
