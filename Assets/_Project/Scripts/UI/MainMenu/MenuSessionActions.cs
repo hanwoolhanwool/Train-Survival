@@ -6,8 +6,13 @@ using UnityEngine;
 namespace Game.UI.MainMenu
 {
     /// <summary>
-    /// 메뉴가 실제로 무엇을 하는가 — 호스트 시작·친구 참가·인게임 씬 선택.
+    /// 메뉴가 실제로 무엇을 하는가 — 방 열기·출발·친구 참가·인게임 씬 선택.
     /// [로비·메인 메뉴 구현 계획](docs/plans/features/로비-메인메뉴-구현-계획.md) §5.2에서 옮겨온 로직이다.
+    ///
+    /// <para><b>방을 여는 일과 출발하는 일이 갈려 있다</b>(게임 준비 화면 계획 §3.2).
+    /// 예전의 <c>StartNewJourney()</c>는 호스트 시작 · 로비 생성 · 씬 로드를 한 호출에 묶었고,
+    /// 그래서 <b>사람이 모일 틈이 없었다.</b> 지금은 <see cref="OpenRoom"/>이 대기실까지,
+    /// <see cref="BeginJourney"/>가 그 뒤를 맡는다.</para>
     ///
     /// <para><b>게임 시작은 언제나 세션 서비스를 거친다.</b> 1인 플레이도 "혼자 호스트인 세션"이라
     /// (개발 원칙 2) 여기에 예외 경로를 두지 않는다 — 두면 혼자 할 때만 재현되는 버그가 생긴다.</para>
@@ -53,11 +58,34 @@ namespace Game.UI.MainMenu
             get { return ServiceLocator.TryGet(out INetworkSessionService session) ? session : null; }
         }
 
+        /// <summary>지금 세션의 호스트인가 — 게스트에게는 출발과 난이도가 잠긴다.</summary>
+        public bool IsHost
+        {
+            get
+            {
+                INetworkSessionService session = Session;
+                return session != null && session.IsHost;
+            }
+        }
+
+        /// <summary>세션이 열려 있는가 — 대기실이 살아 있는지 판단하는 값이다.</summary>
+        public bool IsSessionActive
+        {
+            get
+            {
+                INetworkSessionService session = Session;
+                return session != null && session.IsSessionActive;
+            }
+        }
+
         /// <summary>
-        /// 새 여정 — 호스트 세션을 열고 인게임 씬을 로드한다.
-        /// Steam 모드에서는 호스트 시작이 친구 전용 로비 생성을 겸한다.
+        /// 방을 연다 — 호스트 세션을 시작하고, Steam 모드에서는 친구 전용 로비까지 만든다.
+        ///
+        /// <para><b>인게임으로 넘어가지 않는다.</b> 여기가 <see cref="BeginJourney"/>와 갈리는 지점이고,
+        /// 그 사이가 대기실이다 — 예전 <c>StartNewJourney()</c>는 셋을 한 호출에 묶어 두어
+        /// 사람이 모일 틈이 없었다(게임 준비 화면 계획 §3).</para>
         /// </summary>
-        public bool StartNewJourney()
+        public bool OpenRoom()
         {
             INetworkSessionService session = Session;
             if (session == null || session.IsSessionActive)
@@ -75,7 +103,43 @@ namespace Game.UI.MainMenu
                 lobby.CreateLobby();
             }
 
+            return true;
+        }
+
+        /// <summary>
+        /// 출발 — 열려 있는 방을 그대로 데리고 인게임 씬으로 넘어간다. <b>호스트만</b> 부를 수 있고,
+        /// 게스트는 NGO 씬 동기화로 함께 끌려온다.
+        ///
+        /// <para>1인 플레이도 이 경로를 지난다 — 혼자 있는 대기실을 거쳐 출발하므로
+        /// "게임 시작 = 세션을 거친다"는 원칙에 예외가 생기지 않는다(개발 원칙 2).</para>
+        /// </summary>
+        public bool BeginJourney()
+        {
+            INetworkSessionService session = Session;
+            if (session == null || !session.IsSessionActive || !session.IsHost)
+            {
+                return false;
+            }
+
             return session.LoadGameplayScene(GameplaySceneRoute.Current);
+        }
+
+        /// <summary>
+        /// 방을 떠난다. <b>호스트가 부르면 방이 닫히고 게스트는 연결이 끊긴다</b> —
+        /// 세션 종료는 비동기라 호출 직후에도 <see cref="IsSessionActive"/>는 잠시 참일 수 있다.
+        /// </summary>
+        public void CloseRoom()
+        {
+            if (ActiveTransportMode.IsSteam && ServiceLocator.TryGet(out ISteamLobbyService lobby))
+            {
+                lobby.LeaveLobby();
+            }
+
+            INetworkSessionService session = Session;
+            if (session != null)
+            {
+                session.Shutdown();
+            }
         }
 
         /// <summary>

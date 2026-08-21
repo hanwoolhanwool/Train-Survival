@@ -15,8 +15,10 @@ namespace Game.UI.MainMenu
     /// <b>"내가 방을 여는가, 남의 방에 드는가"</b>여야 한다. 표지판 원화의 명판이 <b>정확히 4장</b>이라
     /// 업적은 자리를 내줬다 — 되살릴 때는 새 진입점이 필요하다.</para>
     ///
-    /// <para>두 항목 모두 하위 패널을 연다. <b>방 만들기</b> = 호스트 시작 · 친구 초대 ·
-    /// (개발 빌드) 인게임 씬 선택. <b>참가하기</b> = 주소 접속. Steam 모드에서는 주소 칸 대신
+    /// <para><b>방 만들기는 이제 패널을 열지 않는다</b>(게임 준비 화면 계획 §6.4).
+    /// 누르는 즉시 호스트 세션이 서고 <b>대기실</b>(<see cref="Ready.ReadyScreenRoot"/>)이 뜬다 —
+    /// 예전의 <c>Panel_Host</c>가 하던 새 여정·초대·씬 선택은 전부 그쪽으로 옮겨 갔다.
+    /// <b>참가하기</b>는 그대로 패널을 연다(주소 접속). Steam 모드에서는 주소 칸 대신
     /// 오버레이 친구 목록이 참가를 맡으므로 안내 문구만 남는다.</para>
     ///
     /// <para><b>세션 서비스가 준비되기 전에는 방 만들기와 참가하기를 둘 다 잠근다</b>(§5.2).
@@ -47,9 +49,8 @@ namespace Game.UI.MainMenu
         [SerializeField] private MenuSessionActions _actions;
 
         [SerializeField]
-        [FormerlySerializedAs("_panelPlay")]
-        [Tooltip("방 만들기 — 호스트 시작·친구 초대·(개발) 씬 선택.")]
-        private MenuPanel _panelHost;
+        [Tooltip("방 만들기 뒤에 도착하는 대기실. 명판을 누르면 곧바로 여기로 온다.")]
+        private Ready.ReadyScreenRoot _readyScreen;
 
         [SerializeField]
         [FormerlySerializedAs("_panelAchievements")]
@@ -63,19 +64,14 @@ namespace Game.UI.MainMenu
         [SerializeField] private MenuPanel _panelNotice;
         [SerializeField] private TMP_Text _versionLabel;
 
-        [Header("여정 시작 패널")]
-        [SerializeField] private Button _newJourney;
-        [SerializeField] private Button _invite;
+        [Header("참가 패널")]
         [SerializeField] private Button _joinDirect;
         [SerializeField] private TMP_InputField _address;
-        [SerializeField] private GameObject _steamGroup;
         [SerializeField] private GameObject _directGroup;
-        [SerializeField] private TMP_Text _status;
 
-        [Header("개발 빌드 전용")]
-        [SerializeField] private GameObject _devGroup;
-        [SerializeField] private Button _sceneToggle;
-        [SerializeField] private TMP_Text _sceneToggleLabel;
+        [SerializeField]
+        [Tooltip("배너 아래 상태 줄 — 세션 대기와 방 열기 실패 사유가 여기 뜬다.")]
+        private TMP_Text _status;
 
         [Header("공통")]
         [SerializeField] private Button[] _backButtons;
@@ -98,10 +94,17 @@ namespace Game.UI.MainMenu
                 _banner.PlateClicked += OnPlateClicked;
             }
 
-            Subscribe(_panelHost);
             Subscribe(_panelJoin);
             Subscribe(_panelSettings);
             Subscribe(_panelNotice);
+
+            if (_readyScreen != null)
+            {
+                // 대기실은 프리팹이라 씬의 MenuSessionActions를 직렬화로 물 수 없다.
+                _readyScreen.Bind(_actions);
+                _readyScreen.Left -= ShowBanner;
+                _readyScreen.Left += ShowBanner;
+            }
 
             if (_noticeBoard != null)
             {
@@ -115,17 +118,13 @@ namespace Game.UI.MainMenu
                 _versionLabel.color = UiPalette.TextMuted;
             }
 
-            Bind(_newJourney, OnNewJourney);
-            Bind(_invite, OnInvite);
             Bind(_joinDirect, OnJoinDirect);
-            Bind(_sceneToggle, OnToggleScene);
             for (int i = 0; _backButtons != null && i < _backButtons.Length; i++)
             {
                 Bind(_backButtons[i], ShowBanner);
             }
 
             ApplyTransportMode();
-            RefreshSceneLabel();
             ShowBanner();
             RefreshReadiness(true);
         }
@@ -137,10 +136,14 @@ namespace Game.UI.MainMenu
                 _banner.PlateClicked -= OnPlateClicked;
             }
 
-            Unsubscribe(_panelHost);
             Unsubscribe(_panelJoin);
             Unsubscribe(_panelSettings);
             Unsubscribe(_panelNotice);
+
+            if (_readyScreen != null)
+            {
+                _readyScreen.Left -= ShowBanner;
+            }
 
             if (_noticeBoard != null)
             {
@@ -186,6 +189,12 @@ namespace Game.UI.MainMenu
                 return;
             }
 
+            // 대기실이 떠 있으면 포커스는 그쪽 것이다 — 배너는 지금 꺼져 있다.
+            if (_readyScreen != null && _readyScreen.IsOpen)
+            {
+                return;
+            }
+
             MenuPanel open = OpenPanel();
             if (open != null)
             {
@@ -200,7 +209,6 @@ namespace Game.UI.MainMenu
         /// <summary>지금 열려 있는 패널. 없으면 <c>null</c>.</summary>
         private MenuPanel OpenPanel()
         {
-            if (_panelHost != null && _panelHost.IsOpen) { return _panelHost; }
             if (_panelJoin != null && _panelJoin.IsOpen) { return _panelJoin; }
             if (_panelSettings != null && _panelSettings.IsOpen) { return _panelSettings; }
             if (_panelNotice != null && _panelNotice.IsOpen) { return _panelNotice; }
@@ -213,6 +221,13 @@ namespace Game.UI.MainMenu
         /// </summary>
         private void RefreshReadiness(bool force)
         {
+            // 대기실이 떠 있는 동안은 세션이 열려 있어 IsReady가 거짓이다 — 그때 명판을 잠그면
+            // 돌아왔을 때 잠긴 채로 남는다. 화면이 배너일 때만 본다.
+            if (_readyScreen != null && _readyScreen.IsOpen)
+            {
+                return;
+            }
+
             bool ready = _actions != null && _actions.IsReady;
             if (!force && ready == _lastReady)
             {
@@ -228,17 +243,7 @@ namespace Game.UI.MainMenu
                 _banner.SetInteractable(_interactable);
             }
 
-            if (_status != null)
-            {
-                _status.gameObject.SetActive(!ready);
-                _status.text = "세션 서비스 초기화 대기 중...";
-                _status.color = UiPalette.TextMuted;
-            }
-
-            if (_newJourney != null)
-            {
-                _newJourney.interactable = ready;
-            }
+            ShowStatus(ready ? string.Empty : "세션 서비스 초기화 대기 중...");
 
             if (_joinDirect != null)
             {
@@ -246,37 +251,35 @@ namespace Game.UI.MainMenu
             }
         }
 
+        /// <summary>배너 아래 상태 줄. 빈 문구를 주면 줄 자체가 사라진다.</summary>
+        private void ShowStatus(string text)
+        {
+            if (_status == null)
+            {
+                return;
+            }
+
+            bool has = !string.IsNullOrEmpty(text);
+            _status.gameObject.SetActive(has);
+            if (has)
+            {
+                _status.text = text;
+                _status.color = UiPalette.TextMuted;
+            }
+        }
+
         private void ApplyTransportMode()
         {
             bool steam = _actions != null && _actions.IsSteamMode;
-
-            if (_steamGroup != null)
-            {
-                _steamGroup.SetActive(steam);
-            }
 
             if (_directGroup != null)
             {
                 _directGroup.SetActive(!steam);
             }
 
-            if (_invite != null)
-            {
-                _invite.interactable = steam && _actions.IsSteamReady;
-            }
-
             if (_address != null && string.IsNullOrEmpty(_address.text))
             {
                 _address.text = MenuSessionActions.DefaultAddress;
-            }
-
-            bool dev = false;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            dev = true;
-#endif
-            if (_devGroup != null)
-            {
-                _devGroup.SetActive(dev);
             }
         }
 
@@ -285,7 +288,7 @@ namespace Game.UI.MainMenu
             switch (plate.Slot)
             {
                 case SlotHost:
-                    Open(_panelHost);
+                    OnCreateRoom();
                     break;
                 case SlotJoin:
                     Open(_panelJoin);
@@ -299,23 +302,28 @@ namespace Game.UI.MainMenu
             }
         }
 
-        private void OnNewJourney()
+        /// <summary>
+        /// 방 만들기 — <b>중간 패널 없이 곧바로 대기실이 열린다</b>(§6.4).
+        ///
+        /// <para>실패하면(포트 점유·Steam 초기화 실패) 대기실을 열지 않고 배너에 머문 채 사유만
+        /// 보여 준다 — <b>반쯤 열린 방이 남지 않게</b> 한다.</para>
+        /// </summary>
+        private void OnCreateRoom()
         {
-            if (_actions == null || !_actions.StartNewJourney())
+            if (_actions == null || _readyScreen == null)
             {
                 return;
             }
 
-            // 씬 로드가 시작됐다 — 이 화면은 곧 사라지므로 더 누르지 못하게 잠근다.
-            SetPanelsInteractable(false);
-        }
-
-        private void OnInvite()
-        {
-            if (_actions != null)
+            if (!_actions.OpenRoom())
             {
-                _actions.InviteFriends();
+                ShowStatus("방을 열지 못했습니다. 포트가 이미 쓰이고 있는지 확인해 주세요.");
+                return;
             }
+
+            ShowStatus(string.Empty);
+            ShowMenuScenery(false);
+            _readyScreen.Open();
         }
 
         private void OnJoinDirect()
@@ -332,25 +340,6 @@ namespace Game.UI.MainMenu
             }
         }
 
-        private void OnToggleScene()
-        {
-            if (_actions == null)
-            {
-                return;
-            }
-
-            _actions.ToggleGameplayScene();
-            RefreshSceneLabel();
-        }
-
-        private void RefreshSceneLabel()
-        {
-            if (_sceneToggleLabel != null && _actions != null)
-            {
-                _sceneToggleLabel.text = $"인게임 씬: {_actions.GameplayScene}  →  {_actions.OtherGameplayScene}";
-            }
-        }
-
         private void Open(MenuPanel panel)
         {
             if (panel == null)
@@ -358,7 +347,6 @@ namespace Game.UI.MainMenu
                 return;
             }
 
-            Close(_panelHost);
             Close(_panelJoin);
             Close(_panelSettings);
             Close(_panelNotice);
@@ -373,16 +361,43 @@ namespace Game.UI.MainMenu
         /// <summary>패널을 모두 닫고 표지판으로 돌아간다 — 포커스도 돌려준다.</summary>
         public void ShowBanner()
         {
-            Close(_panelHost);
             Close(_panelJoin);
             Close(_panelSettings);
             Close(_panelNotice);
+
+            if (_readyScreen != null && _readyScreen.IsOpen)
+            {
+                _readyScreen.Close();
+            }
+
+            ShowMenuScenery(true);
+            RefreshReadiness(true);
 
             if (_banner != null)
             {
                 _banner.SetPlatesInteractable(true);
                 _banner.SetInteractable(_interactable);
                 _banner.FocusCurrent();
+            }
+        }
+
+        /// <summary>
+        /// 표지판과 공고대를 함께 여닫는다.
+        ///
+        /// <para><b>대기실에서는 둘 다 없다.</b> 시안에 없기도 하지만, 표지판은 로스터 패널보다
+        /// 좌우로 넓어 그 위에 덮어도 가장자리가 삐져나온다. 배경과 평면 열차는 그대로 남아
+        /// "같은 정차역에서 사람을 기다린다"는 감각이 이어진다(§2 · §5.3).</para>
+        /// </summary>
+        private void ShowMenuScenery(bool on)
+        {
+            if (_banner != null)
+            {
+                _banner.gameObject.SetActive(on);
+            }
+
+            if (_noticeBoard != null)
+            {
+                _noticeBoard.gameObject.SetActive(on);
             }
         }
 
@@ -397,17 +412,9 @@ namespace Game.UI.MainMenu
 
         private void SetPanelsInteractable(bool on)
         {
-            SetGroup(_newJourney, on);
-            SetGroup(_invite, on);
-            SetGroup(_joinDirect, on);
-            SetGroup(_sceneToggle, on);
-        }
-
-        private static void SetGroup(Button button, bool on)
-        {
-            if (button != null)
+            if (_joinDirect != null)
             {
-                button.interactable = on;
+                _joinDirect.interactable = on;
             }
         }
 
