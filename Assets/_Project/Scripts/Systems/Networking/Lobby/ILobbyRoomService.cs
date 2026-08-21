@@ -22,11 +22,25 @@ namespace Game.Systems.Networking.Lobby
         /// <summary>지금 방에 있는 사람 수.</summary>
         int MemberCount { get; }
 
-        /// <summary>멤버가 들고 나서 목록이 바뀌었다.</summary>
+        /// <summary>
+        /// 이번 여정의 난이도. 상태가 아직 서기 전이면 <see cref="GameDifficulty.Normal"/>이다.
+        ///
+        /// <para><b>여기가 M4가 배율을 꽂을 자리다.</b> 대기실 상태는 인게임 씬까지 따라가므로
+        /// (§12 미결 6번) 인게임에서도 같은 값이 읽힌다 — 이번 계획은 값을 실어 나르는 데까지고,
+        /// 웨이브 배율은 별도 마일스톤이다(§12 미결 1번).</para>
+        /// </summary>
+        GameDifficulty Difficulty { get; }
+
+        /// <summary>대기실 상태가 바뀌었다 — <b>멤버가 들고 났거나 난이도가 바뀌었다.</b></summary>
         event Action Changed;
 
         /// <summary>칸에 앉은 사람을 읽는다. 빈 칸이면 <c>false</c>.</summary>
         bool TryGetSlot(int slot, out string displayName, out bool isHost);
+
+        /// <summary>
+        /// 호스트 전용 — 난이도를 바꾼다. 게스트가 부르면 아무 일도 없이 <c>false</c>다(§6.2).
+        /// </summary>
+        bool SetDifficulty(GameDifficulty value);
 
         /// <summary>호스트 전용 — 대기실 상태를 띄운다. 세션이 선 뒤에 부른다.</summary>
         bool Open();

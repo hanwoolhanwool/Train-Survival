@@ -33,6 +33,15 @@ namespace Game.Systems.Networking.Lobby
 
         public int MemberCount => LobbyRoomState.Current != null ? LobbyRoomState.Current.MemberCount : 0;
 
+        public GameDifficulty Difficulty =>
+            LobbyRoomState.Current != null ? LobbyRoomState.Current.Difficulty : GameDifficulty.Normal;
+
+        public bool SetDifficulty(GameDifficulty value)
+        {
+            LobbyRoomState state = LobbyRoomState.Current;
+            return state != null && state.SetDifficulty(value);
+        }
+
         public bool TryGetSlot(int slot, out string displayName, out bool isHost)
         {
             displayName = null;
