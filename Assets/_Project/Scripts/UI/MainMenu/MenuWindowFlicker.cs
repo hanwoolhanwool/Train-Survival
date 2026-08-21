@@ -5,8 +5,11 @@ namespace Game.UI.MainMenu
     /// <summary>
     /// 객차 창문 불빛을 느리게 흔든다 — [로비·메인 메뉴 구현 계획](docs/plans/features/로비-메인메뉴-구현-계획.md) §6.2.
     ///
-    /// <para>발광은 <c>T_Train_Menu_Emission</c>이 이미 창문과 헤드램프만 골라내고 있으므로
-    /// (2차 §13 ⑪), 여기서는 <b>그 세기만 흔든다.</b> 차체 전체가 밝아지지 않는 이유가 그 마스크다.</para>
+    /// <para>발광 부분은 <b>마스크가 이미 골라 놓았다</b> — 여기서는 <b>그 세기만 흔든다.</b>
+    /// 차체 전체가 밝아지지 않는 이유가 그 마스크다. 7차에 열차가 3D 메시에서 평면 그림으로
+    /// 바뀌면서 마스크도 <c>T_Train_Menu_Emission</c>(URP Lit의 <c>_EmissionColor</c>)에서
+    /// <c>T_Train_Menu_FlatGlow</c>(URP Unlit 쿼드의 <c>_BaseColor</c>)로 옮겨 갔다.
+    /// 그래서 <b>흔들 프로퍼티 이름을 밖에서 정한다.</b></para>
     ///
     /// <para><b>머티리얼을 복제하지 않는다.</b> <see cref="MaterialPropertyBlock"/>으로 인스턴스별
     /// 값만 덮어쓰므로 <c>M_Train_Locomotive_Menu</c> 에셋이 더럽혀지지 않고 배치도 하나로 유지된다.</para>
@@ -15,8 +18,9 @@ namespace Game.UI.MainMenu
     /// </summary>
     public sealed class MenuWindowFlicker : MonoBehaviour
     {
-        /// <summary>URP Lit의 발광 색 프로퍼티.</summary>
-        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        [SerializeField]
+        [Tooltip("흔들 색 프로퍼티. URP Lit은 _EmissionColor, URP Unlit은 _BaseColor다.")]
+        private string _colorProperty = "_EmissionColor";
 
         [SerializeField]
         [Tooltip("비우면 자신·자식에서 찾는다.")]
@@ -39,6 +43,7 @@ namespace Game.UI.MainMenu
 
         private MaterialPropertyBlock _block;
         private Color _baseEmission;
+        private int _colorId;
         private bool _ready;
 
         private void OnEnable()
@@ -48,14 +53,16 @@ namespace Game.UI.MainMenu
                 _target = GetComponentInChildren<Renderer>();
             }
 
+            _colorId = Shader.PropertyToID(string.IsNullOrEmpty(_colorProperty) ? "_EmissionColor" : _colorProperty);
+
             if (_target == null || _target.sharedMaterial == null ||
-                !_target.sharedMaterial.HasProperty(EmissionColorId))
+                !_target.sharedMaterial.HasProperty(_colorId))
             {
                 _ready = false;
                 return;
             }
 
-            _baseEmission = _target.sharedMaterial.GetColor(EmissionColorId);
+            _baseEmission = _target.sharedMaterial.GetColor(_colorId);
             _block = new MaterialPropertyBlock();
             _ready = true;
         }
@@ -78,7 +85,7 @@ namespace Game.UI.MainMenu
             float weight = MenuNoise.Flicker(Time.unscaledTime, _min, _max, _period, _seed);
 
             _target.GetPropertyBlock(_block);
-            _block.SetColor(EmissionColorId, _baseEmission * weight);
+            _block.SetColor(_colorId, _baseEmission * weight);
             _target.SetPropertyBlock(_block);
         }
     }
