@@ -69,17 +69,20 @@ namespace Game.UI.Ready
         /// <summary>"HOST" 자리 — 참가자가 있는 슬롯에서만 쓴다.</summary>
         public static Rect SlotRole => SlotRect(0.215f, 0.195f, 0.480f, 0.410f);
 
-        /// <summary>표시 이름 자리 — 역할 줄 아래.</summary>
-        public static Rect SlotName => SlotRect(0.226f, 0.498f, 0.750f, 0.800f);
+        /// <summary>
+        /// 표시 이름 자리 — 역할 줄 아래.
+        ///
+        /// <para>접속 표시를 지우면서 <b>오른쪽으로 넓어졌다</b>(0.750 → 0.940). 예전에는 점과
+        /// "접속 중"이 오른쪽 4분의 1을 차지하고 있었다.</para>
+        /// </summary>
+        public static Rect SlotName => SlotRect(0.226f, 0.498f, 0.940f, 0.800f);
 
         /// <summary>빈자리 안내 문구 자리 — 역할 줄이 없으므로 세로 중앙에 온다.</summary>
         public static Rect SlotEmptyLabel => SlotRect(0.286f, 0.378f, 0.760f, 0.636f);
 
-        /// <summary>접속 표시 점 — 색은 굽지 않고 <c>UiPalette</c>로 틴트한다.</summary>
-        public static Rect SlotDot => SlotRect(0.769f, 0.551f, 0.815f, 0.737f);
-
-        /// <summary>접속 상태 문구 자리 — 점 오른쪽.</summary>
-        public static Rect SlotStatus => SlotRect(0.836f, 0.566f, 0.960f, 0.742f);
+        // 접속 표시(녹색 점 + "접속 중")는 **삭제됐다** (2026-08-22 사용자 지시).
+        // 칸에 이름이 있다는 것이 곧 접속 중이라는 뜻이라, 같은 사실을 두 번 말하고 있었다.
+        // 이름 칸이 그만큼 넓어져 긴 이름도 잘리지 않는다.
 
         /// <summary>
         /// 타이틀 자리 — 그림의 타이틀 판 안쪽 전체다.
@@ -87,8 +90,13 @@ namespace Game.UI.Ready
         /// <para>계획 §5.1-5는 구워진 "게임 준비" 각인을 <b>남기고</b> 그 위에 TMP를 겹치기로 했지만,
         /// 1차 렌더 검증에서 두 글꼴이 달라 <b>이중으로 보였다.</b> 각인을 지우고 TMP만 남기는 쪽으로
         /// 뒤집었고(§14 ③), 그래서 이 사각형은 각인 크기가 아니라 <b>판 안쪽</b>을 가리킨다.</para>
+        ///
+        /// <para><b>2026-08-22에 다시 쟀다.</b> 원본 세로 밝기 프로파일에서 황동 테두리 안쪽이
+        /// y 136~280이었는데 예전 값(152~278)은 그보다 <b>위아래로 좁았고</b>, 그 좁은 칸에
+        /// 95 px 글자를 넣어 두어 <b>글자가 판 테두리를 넘어 나갔다</b>(사용자 지적).
+        /// 지금은 판 안쪽에 맞추고 글자는 자동 크기로 담는다 — 칸을 넓히고 글자를 줄인 셈이다.</para>
         /// </summary>
-        public static Rect RosterTitle => RosterRect(149f, 152f, 899f, 278f);
+        public static Rect RosterTitle => RosterRect(130f, 142f, 882f, 276f);
 
         // ── 조작 패널 (오른쪽) ──────────────────────────────────────────
 

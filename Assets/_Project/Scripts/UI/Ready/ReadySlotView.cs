@@ -10,6 +10,10 @@ namespace Game.UI.Ready
     /// <para>칸은 <b>빈자리 / 참가자</b> 두 모습만 갖는다. 준비(Ready) 토글은 시안에 없고,
     /// 출발은 호스트가 단독으로 정한다(§1.2).</para>
     ///
+    /// <para><b>접속 표시(녹색 점 + "접속 중")는 지웠다</b>(2026-08-22 사용자 지시).
+    /// 칸에 이름이 있다는 것이 곧 접속 중이라는 뜻이라 같은 사실을 두 번 말하고 있었고,
+    /// 그 자리를 비우니 이름 칸이 오른쪽으로 넓어졌다.</para>
+    ///
     /// <para><b>프레임 그림을 지우지 않는다.</b> 로스터 그림에는 빈 칸 넉 장이 이미 그려져 있고,
     /// 이 컴포넌트는 그 위 같은 자리에 칸을 겹친다 — 잘라낸 자리가 드러나지 않는 검증된 방식이다
     /// (로비 계획 §4.2-3). 그래서 <see cref="_background"/>는 <b>항상 켜져 있고</b>,
@@ -55,14 +59,6 @@ namespace Game.UI.Ready
         [Tooltip("빈자리 안내 문구. 역할 줄이 없으므로 세로 중앙에 온다.")]
         private TMP_Text _emptyLabel;
 
-        [SerializeField]
-        [Tooltip("접속 표시 점. 색은 굽지 않고 UiPalette로 틴트한다.")]
-        private Image _dot;
-
-        [SerializeField]
-        [Tooltip("접속 상태 문구.")]
-        private TMP_Text _status;
-
         [Header("그림")]
         [SerializeField]
         private Sprite _emptySprite;
@@ -82,9 +78,6 @@ namespace Game.UI.Ready
 
         [SerializeField]
         private string _emptyText = "플레이어 대기 중";
-
-        [SerializeField]
-        private string _connectedText = "접속 중";
 
         [Header("연출")]
         [SerializeField]
@@ -174,8 +167,6 @@ namespace Game.UI.Ready
             Place(_role, ReadyPanelLayout.SlotRole);
             Place(_name, ReadyPanelLayout.SlotName);
             Place(_emptyLabel, ReadyPanelLayout.SlotEmptyLabel);
-            Place(_dot, ReadyPanelLayout.SlotDot);
-            Place(_status, ReadyPanelLayout.SlotStatus);
 
             if (_background != null)
             {
@@ -205,8 +196,6 @@ namespace Game.UI.Ready
 
             Show(_role, false);
             Show(_name, false);
-            Show(_dot, false);
-            Show(_status, false);
             Show(_emptyLabel, true);
 
             if (_emptyLabel != null)
@@ -234,8 +223,6 @@ namespace Game.UI.Ready
 
             Show(_emptyLabel, false);
             Show(_name, true);
-            Show(_dot, true);
-            Show(_status, true);
             Show(_role, isHost);
 
             if (_role != null && isHost)
@@ -248,17 +235,6 @@ namespace Game.UI.Ready
             {
                 _name.text = displayName;
                 _name.color = UiPalette.TextSteam;
-            }
-
-            if (_dot != null)
-            {
-                _dot.color = UiPalette.StatusFill(UiStatusLevel.Safe);
-            }
-
-            if (_status != null)
-            {
-                _status.text = _connectedText;
-                _status.color = UiPalette.StatusTextColor(UiStatusLevel.Safe);
             }
         }
 

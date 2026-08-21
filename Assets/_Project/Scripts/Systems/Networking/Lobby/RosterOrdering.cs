@@ -23,10 +23,22 @@ namespace Game.Systems.Networking.Lobby
         /// <summary>칸 수 — 패널 그림이 4장 고정이고 Steam 로비도 친구 전용 4인이다.</summary>
         public const int Capacity = 4;
 
-        /// <summary>칸 번호로 짓는 임시 표시 이름. Steam 퍼소나 이름은 차후 작업이다(§7.3).</summary>
+        private static readonly string[] Names = { "기관사", "화부", "제동수", "차장" };
+
+        /// <summary>
+        /// 칸 번호로 짓는 임시 표시 이름 — <b>증기 기관차 승무원 넷</b>이다.
+        ///
+        /// <para>"플레이어 1~4"에서 바꿨다(2026-08-22 사용자 지시). 고전 증기 기관차의 승무원이
+        /// 정확히 넷이고 이 대기실의 칸도 넷이라, 번호 대신 <b>자리 이름</b>을 준다 —
+        /// 첫 칸의 <c>HOST</c> 표시와도 어긋나지 않는다. 기관사가 몰고, 화부가 불을 때고,
+        /// 제동수가 세우고, 차장이 열차 전체를 본다.</para>
+        ///
+        /// <para><b>직업 선택이 아니다.</b> 이 게임에 직업 개념은 없고(계획 §1.2) 이름은
+        /// <b>칸 번호에서 나오는 임시 호칭</b>일 뿐이다 — Steam 퍼소나 이름이 붙으면 사라진다(§7.3).</para>
+        /// </summary>
         public static string DisplayName(int slot)
         {
-            return "플레이어 " + (slot + 1);
+            return Names[slot < 0 || slot >= Names.Length ? Names.Length - 1 : slot];
         }
 
         /// <summary>
