@@ -123,18 +123,28 @@ namespace Game.Gameplay.Player
             }
 
             bool isOwner = IsOwner;
+
+            // 플레이어는 네트워크 씬 전환 전(Main)에 스폰될 수 있다 — 실제 배치는
+            // Game 씬 도착 후 첫 Update에서 수행한다 (열차 지오메트리 위에 착지).
+            //
+            // **시점과 커서도 같은 게이트를 탄다.** 예전에는 스폰 즉시 카메라 리그를 켜고 커서를
+            // 잠갔는데, 그 시절엔 호스트 시작과 씬 로드가 한 호출이라 메뉴에 머무는 시간이
+            // 한 프레임뿐이었다. 대기실이 그 사이에 들어오면서(게임 준비 화면 계획 §3.2)
+            // **플레이어 카메라가 메뉴를 덮고 커서가 잠겨 대기실을 조작할 수 없게 됐다.**
+            bool inGameplay = GameplaySceneRoute.IsGameplayScene(SceneManager.GetActiveScene().name);
             if (_cameraRig != null)
             {
-                _cameraRig.SetActive(isOwner);
+                _cameraRig.SetActive(isOwner && inGameplay);
             }
 
             if (isOwner)
             {
-                // 플레이어는 네트워크 씬 전환 전(Main)에 스폰될 수 있다 — 실제 배치는
-                // Game 씬 도착 후 첫 Update에서 수행한다 (열차 지오메트리 위에 착지).
                 _needsInitialPlacement = true;
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                if (inGameplay)
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
                 EventBus<InventoryPanelToggledLocalEvent>.Subscribe(OnInventoryPanelToggled);
                 EventBus<SessionMenuToggledLocalEvent>.Subscribe(OnSessionMenuToggled);
                 EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
@@ -226,6 +236,14 @@ namespace Game.Gameplay.Player
                 {
                     return;
                 }
+
+                // 대기실을 지나 인게임에 도착했다 — 이제서야 시점과 커서를 넘겨받는다.
+                if (_cameraRig != null && !_cameraRig.activeSelf)
+                {
+                    _cameraRig.SetActive(true);
+                }
+
+                ApplyCursorState();
 
                 _needsInitialPlacement = false;
                 if (_hasRestorePlacement)
