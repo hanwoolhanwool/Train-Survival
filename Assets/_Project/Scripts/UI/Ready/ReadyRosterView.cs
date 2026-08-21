@@ -12,7 +12,7 @@ namespace Game.UI.Ready
     /// 알려 주고, 이 컴포넌트는 <see cref="Show"/>로 받은 이름만 칸에 앉힌다.</para>
     /// </summary>
     [ExecuteAlways]
-    public sealed class ReadyRosterView : MonoBehaviour
+    public sealed class ReadyRosterView : MonoBehaviour, IReadyPanel
     {
         [SerializeField]
         [Tooltip("위에서부터 순서대로. 비어 있으면 자식에서 찾는다.")]
@@ -23,9 +23,21 @@ namespace Game.UI.Ready
         private RectTransform _title;
 
         private bool _applying;
+        private Vector2 _introOffset;
 
         /// <summary>칸 수 — 언제나 <see cref="ReadyPanelLayout.SlotCount"/>다.</summary>
         public int SlotCount => _slots != null ? _slots.Length : 0;
+
+        /// <summary>등장 연출용 오프셋 — 실측 자리에 마지막으로 더한다.</summary>
+        public Vector2 IntroOffset
+        {
+            get { return _introOffset; }
+            set
+            {
+                _introOffset = value;
+                ApplyPanelRect();
+            }
+        }
 
         private void OnEnable()
         {
@@ -117,7 +129,7 @@ namespace Game.UI.Ready
         }
 
         /// <summary>패널 자신의 크기·자리를 캔버스에서 다시 잰다.</summary>
-        private void ApplyPanelRect()
+        public void ApplyPanelRect()
         {
             RectTransform rect = transform as RectTransform;
             if (rect == null || !(rect.parent is RectTransform parent))
@@ -138,7 +150,7 @@ namespace Game.UI.Ready
                 rect.anchorMax = ReadyPanelLayout.RosterAnchor();
                 rect.pivot = new Vector2(0.5f, 0.5f);
                 rect.sizeDelta = size;
-                rect.anchoredPosition = ReadyPanelLayout.RosterPosition(parent.rect.size);
+                rect.anchoredPosition = ReadyPanelLayout.RosterPosition(parent.rect.size) + _introOffset;
                 rect.localScale = Vector3.one;
             }
             finally

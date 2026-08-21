@@ -14,7 +14,7 @@ namespace Game.UI.Ready
     /// <c>DifficultyStepper</c> 몫이다. 이 컴포넌트는 자리와 그림만 책임진다.</para>
     /// </summary>
     [ExecuteAlways]
-    public sealed class ReadyControlsView : MonoBehaviour
+    public sealed class ReadyControlsView : MonoBehaviour, IReadyPanel
     {
         [SerializeField]
         [Tooltip("\"난이도\" 각인 위에 겹치는 라벨.")]
@@ -45,6 +45,18 @@ namespace Game.UI.Ready
         private RectTransform _leaveButton;
 
         private bool _applying;
+        private Vector2 _introOffset;
+
+        /// <summary>등장 연출용 오프셋 — 실측 자리에 마지막으로 더한다.</summary>
+        public Vector2 IntroOffset
+        {
+            get { return _introOffset; }
+            set
+            {
+                _introOffset = value;
+                ApplyPanelRect();
+            }
+        }
 
         private void OnEnable()
         {
@@ -85,7 +97,8 @@ namespace Game.UI.Ready
             Place(_leaveButton, ReadyPanelLayout.LeaveButton);
         }
 
-        private void ApplyPanelRect()
+        /// <summary>패널 자신의 크기·자리를 캔버스에서 다시 잰다.</summary>
+        public void ApplyPanelRect()
         {
             RectTransform rect = transform as RectTransform;
             if (rect == null || !(rect.parent is RectTransform parent))
@@ -106,7 +119,7 @@ namespace Game.UI.Ready
                 rect.anchorMax = ReadyPanelLayout.ControlsAnchor();
                 rect.pivot = new Vector2(0.5f, 0.5f);
                 rect.sizeDelta = size;
-                rect.anchoredPosition = ReadyPanelLayout.ControlsPosition(parent.rect.size);
+                rect.anchoredPosition = ReadyPanelLayout.ControlsPosition(parent.rect.size) + _introOffset;
                 rect.localScale = Vector3.one;
             }
             finally

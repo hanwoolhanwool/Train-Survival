@@ -92,7 +92,21 @@ namespace Game.UI.Ready
 
         private static void Tint(Button button, Color color)
         {
-            if (button != null && button.targetGraphic != null)
+            if (button == null)
+            {
+                return;
+            }
+
+            // 강조 표현이 붙어 있으면 색은 그쪽이 소유한다 — 둘이 같은 그림을 두고 다투면
+            // 마우스를 올릴 때마다 바탕색이 흰색으로 튄다.
+            ReadyButtonAccent accent = button.GetComponent<ReadyButtonAccent>();
+            if (accent != null)
+            {
+                accent.SetBaseColor(color);
+                return;
+            }
+
+            if (button.targetGraphic != null)
             {
                 button.targetGraphic.color = color;
             }

@@ -79,6 +79,14 @@ namespace Game.UI.Ready
         [Tooltip("선택된 버튼을 감싸는 테두리 — 색 없이도 어디에 있는지 읽히게 한다(§9.2).")]
         private ReadyFocusFrame _focusFrame;
 
+        [SerializeField]
+        [Tooltip("로스터 패널의 등장 연출 — 위에서 내려온다.")]
+        private ReadyPanelSlide _rosterSlide;
+
+        [SerializeField]
+        [Tooltip("조작 패널의 등장 연출 — 오른쪽에서 당겨져 온다.")]
+        private ReadyPanelSlide _controlsSlide;
+
         [Header("개발 빌드 전용")]
         [SerializeField]
         [Tooltip("인게임 씬 선택 줄. Panel_Host에서 이관해 왔다(§6.4).")]
@@ -138,6 +146,7 @@ namespace Game.UI.Ready
             Bind(_sceneToggle, OnToggleScene);
             Bind(_difficultyPrev, OnDifficultyPrev);
             Bind(_difficultyNext, OnDifficultyNext);
+            BindAccents();
 
             if (_panel != null)
             {
@@ -159,6 +168,8 @@ namespace Game.UI.Ready
             {
                 _room.Changed -= OnRoomChanged;
             }
+
+            UnbindAccents();
         }
 
         /// <summary>
@@ -178,6 +189,50 @@ namespace Game.UI.Ready
                 _room = room;
                 _room.Changed += OnRoomChanged;
             }
+        }
+
+        /// <summary>
+        /// 버튼들의 강조 표현을 이 화면에 잇는다.
+        ///
+        /// <para><b>마우스가 올라오면 선택도 그리로 옮긴다.</b> 그러지 않으면 마우스가 가리키는
+        /// 버튼과 키보드가 선택한 버튼이 달라 <b>두 곳이 동시에 빛난다</b> — 배너 명판에서 실제로
+        /// 겪은 사고다. 강조를 "선택" 하나에만 매달아 두면 그 일이 구조적으로 불가능해진다.</para>
+        /// </summary>
+        private void BindAccents()
+        {
+            ReadyButtonAccent[] accents = GetComponentsInChildren<ReadyButtonAccent>(true);
+            for (int i = 0; i < accents.Length; i++)
+            {
+                if (accents[i] == null)
+                {
+                    continue;
+                }
+
+                accents[i].Focused -= OnAccentFocused;
+                accents[i].Focused += OnAccentFocused;
+            }
+        }
+
+        private void UnbindAccents()
+        {
+            ReadyButtonAccent[] accents = GetComponentsInChildren<ReadyButtonAccent>(true);
+            for (int i = 0; i < accents.Length; i++)
+            {
+                if (accents[i] != null)
+                {
+                    accents[i].Focused -= OnAccentFocused;
+                }
+            }
+        }
+
+        private void OnAccentFocused(ReadyButtonAccent accent)
+        {
+            if (accent == null || EventSystem.current == null)
+            {
+                return;
+            }
+
+            EventSystem.current.SetSelectedGameObject(accent.gameObject);
         }
 
         /// <summary>대기실 상태가 바뀌었다 — 멤버든 난이도든 한 신호로 온다(§7.1).</summary>
@@ -235,6 +290,25 @@ namespace Game.UI.Ready
 
             ApplyNavigation();
             FocusFirst();
+            PlayIntro();
+        }
+
+        /// <summary>
+        /// 두 패널을 제자리로 들여온다 — <b>간판을 내려 걸고 옆의 것을 당겨오는</b> 그림이다.
+        /// 시차를 두는 이유는 동시에 나타나면 "창이 떴다"가 되고, 하나씩 들어오면
+        /// <b>손이 하나씩 놓은 것</b>으로 읽히기 때문이다.
+        /// </summary>
+        private void PlayIntro()
+        {
+            if (_rosterSlide != null)
+            {
+                _rosterSlide.Play();
+            }
+
+            if (_controlsSlide != null)
+            {
+                _controlsSlide.Play();
+            }
         }
 
         /// <summary>대기실을 닫는다. <b>세션은 건드리지 않는다</b> — 그건 부르는 쪽이 정한다.</summary>
