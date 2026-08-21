@@ -43,6 +43,20 @@ namespace Game.Systems.Networking
 
         public bool IsHost => IsSessionActive && NetworkManager.Singleton.IsHost;
 
+        public bool IsConnectedClient
+        {
+            get
+            {
+                NetworkManager networkManager = NetworkManager.Singleton;
+                if (networkManager == null || !networkManager.IsListening)
+                {
+                    return false;
+                }
+
+                return networkManager.IsServer || networkManager.IsConnectedClient;
+            }
+        }
+
         public bool StartHost()
         {
             NetworkManager networkManager = NetworkManager.Singleton;

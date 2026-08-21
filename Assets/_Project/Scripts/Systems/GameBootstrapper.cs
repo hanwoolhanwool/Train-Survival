@@ -18,6 +18,10 @@ namespace Game.Systems
     {
         private const string MainSceneName = "Main";
 
+        [SerializeField]
+        [Tooltip("대기실 상태 프리팹 (LobbyRoomState). 호스트가 방을 열 때 하나만 스폰된다.")]
+        private GameObject _lobbyRoomStatePrefab;
+
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
@@ -33,6 +37,13 @@ namespace Game.Systems
             }
 
             RegisterServices();
+
+            if (!ServiceLocator.IsRegistered<Networking.Lobby.ILobbyRoomService>())
+            {
+                // 대기실 상태 — 프리팹 참조가 필요해 정적 등록부(RegisterServices) 밖에 둔다.
+                ServiceLocator.Register<Networking.Lobby.ILobbyRoomService>(
+                    new Networking.Lobby.NgoLobbyRoomService(_lobbyRoomStatePrefab));
+            }
         }
 
         private void Start()

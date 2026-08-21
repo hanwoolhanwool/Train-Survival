@@ -12,6 +12,13 @@ namespace Game.Systems.Networking
         /// <summary>현재 세션의 호스트인지.</summary>
         bool IsHost { get; }
 
+        /// <summary>
+        /// 접속이 <b>완료</b>됐는지. 호스트는 세션이 서면 곧 참이지만, 클라이언트는
+        /// <see cref="StartClient"/> 직후 <see cref="IsSessionActive"/>만 참이 되고 실제 승인은
+        /// 나중에 떨어진다 — "주소를 눌렀다"와 "방에 들어갔다"를 가르는 값이다.
+        /// </summary>
+        bool IsConnectedClient { get; }
+
         /// <summary>호스트로 세션을 시작한다. 이미 세션 중이면 false.</summary>
         bool StartHost();
 
