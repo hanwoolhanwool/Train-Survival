@@ -4,6 +4,7 @@ using Game.Systems.Networking.Lobby;
 using Game.UI.MainMenu;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Game.UI.Ready
@@ -21,8 +22,8 @@ namespace Game.UI.Ready
     /// 그래서 <see cref="Update"/>가 세션이 살아 있는지 계속 본다.</para>
     ///
     /// <para><b>취소(Esc·게임패드 B)는 나가기와 같은 뜻이다.</b> 이 화면에서 "닫기"는 곧
-    /// "방을 떠나기"이기 때문이다(§6.5). <b>확인 대화상자는 호스트·게스트 모두에게 붙는 것으로
-    /// 정해졌고</b>(§12 미결 3번), 짓는 것은 5차다 — 지금은 누르는 즉시 나간다.</para>
+    /// "방을 떠나기"이기 때문이다(§6.5). 그래서 <b>호스트든 게스트든 한 번 묻는다</b>
+    /// (§12 미결 3번 — <see cref="ReadyConfirmDialog"/>).</para>
     ///
     /// <para><b>시안은 호스트 화면이다.</b> 게스트에게는 시안에 없는 상태가 둘 생긴다(§6.3) —
     /// 게임 시작이 눌리지 않고, 난이도 화살표가 사라진다. <b>버튼을 숨기지는 않는다</b>:
@@ -69,6 +70,15 @@ namespace Game.UI.Ready
         [Header("문구")]
         [SerializeField] private TMP_Text _roomStatus;
 
+        [Header("연출 · 대응")]
+        [SerializeField]
+        [Tooltip("나가기 전에 한 번 묻는 창(§12 미결 3번). 없으면 묻지 않고 곧바로 나간다.")]
+        private ReadyConfirmDialog _leaveConfirm;
+
+        [SerializeField]
+        [Tooltip("선택된 버튼을 감싸는 테두리 — 색 없이도 어디에 있는지 읽히게 한다(§9.2).")]
+        private ReadyFocusFrame _focusFrame;
+
         [Header("개발 빌드 전용")]
         [SerializeField]
         [Tooltip("인게임 씬 선택 줄. Panel_Host에서 이관해 왔다(§6.4).")]
@@ -97,6 +107,19 @@ namespace Game.UI.Ready
 
         /// <summary>토스트가 떠 있는 시간(초).</summary>
         private const float ToastSeconds = 3f;
+
+        /// <summary>
+        /// 위에서 아래로 본 조작 줄 — 키보드·게임패드가 이 순서로 오르내린다.
+        /// 난이도는 화살표 둘이 <b>한 줄</b>이고, 그 안에서만 좌우로 움직인다.
+        /// </summary>
+        private const int RowDifficulty = 0;
+        private const int RowStart = 1;
+        private const int RowInvite = 2;
+        private const int RowLeave = 3;
+        private const int RowDev = 4;
+        private const int RowCount = 5;
+
+        private readonly bool[] _rowOpen = new bool[RowCount];
 
         /// <summary>
         /// 방을 떠났다 — 배너로 돌아갈지는 듣는 쪽(<see cref="MainMenuRoot"/>)이 정한다.
@@ -200,16 +223,30 @@ namespace Game.UI.Ready
             RefreshAuthority();
             SetStatus(string.Empty);
 
+            if (_leaveConfirm != null)
+            {
+                _leaveConfirm.Dismiss();
+            }
+
             if (_panel != null)
             {
                 _panel.Open();
             }
+
+            ApplyNavigation();
+            FocusFirst();
         }
 
         /// <summary>대기실을 닫는다. <b>세션은 건드리지 않는다</b> — 그건 부르는 쪽이 정한다.</summary>
         public void Close()
         {
             _open = false;
+
+            if (_leaveConfirm != null)
+            {
+                _leaveConfirm.Dismiss();
+            }
+
             if (_panel != null)
             {
                 _panel.Close();
@@ -236,6 +273,8 @@ namespace Game.UI.Ready
 
             RefreshAuthority();
             ExpireToast();
+            KeepFocus();
+            RefreshFocusFrame();
         }
 
         private void OnStart()
@@ -323,7 +362,40 @@ namespace Game.UI.Ready
             RefreshDifficulty();
         }
 
+        /// <summary>
+        /// 나가기 — <b>한 번 묻고 나간다</b>(§12 미결 3번, 4차 결정).
+        ///
+        /// <para>호스트든 게스트든 묻는다. 지금은 리스크 9번 때문에 <b>한 번 나가면 그 방으로
+        /// 못 돌아오므로</b>, 되돌릴 수 없기는 양쪽이 같다.</para>
+        ///
+        /// <para>물을 창이 없으면(구버전 프리팹) 곧바로 나간다 — 없다고 나가지 못하게 되면
+        /// 방에 갇힌다.</para>
+        /// </summary>
         private void OnLeave()
+        {
+            if (_leaving)
+            {
+                return;
+            }
+
+            if (_leaveConfirm == null)
+            {
+                Leave();
+                return;
+            }
+
+            if (_leaveConfirm.IsOpen)
+            {
+                return;
+            }
+
+            bool host = _actions != null && _actions.IsHost;
+            _leaveConfirm.Ask(
+                host ? "방을 닫고 나가시겠습니까?\n함께 있는 사람들의 연결이 끊깁니다." : "방에서 나가시겠습니까?",
+                Leave);
+        }
+
+        private void Leave()
         {
             if (_leaving)
             {
@@ -345,6 +417,12 @@ namespace Game.UI.Ready
         private void Depart(string reason)
         {
             _leaving = true;
+
+            if (_focusFrame != null)
+            {
+                _focusFrame.Follow(null);
+            }
+
             Close();
             SetInteractable(true);
             Left?.Invoke(reason);
@@ -459,6 +537,144 @@ namespace Game.UI.Ready
             {
                 _invite.interactable = (steam || host) && !_locked;
             }
+
+            // 잠긴 줄이 달라졌으니 오르내림 경로도 다시 잇는다.
+            ApplyNavigation();
+        }
+
+        /// <summary>
+        /// 오르내림 순서를 다시 잇는다 — <b>못 누르는 줄은 건너뛴다.</b>
+        ///
+        /// <para>유니티의 명시 내비게이션은 <b>비활성 이웃을 건너뛰지 않는다</b>. 게스트 화면에서는
+        /// 난이도 줄과 게임 시작이 잠기는데, 그대로 두면 아래로 두 번 눌러야 초대에 닿고
+        /// 그 사이 두 번은 눌러도 반응이 없어 보인다. 그래서 어디로 갈지는
+        /// <see cref="MenuNavigation"/>이 정하고, 결과만 이웃 링크로 써넣는다 — 배너와 같은 방식이다.</para>
+        /// </summary>
+        private void ApplyNavigation()
+        {
+            _rowOpen[RowDifficulty] = IsUsable(_difficultyNext) || IsUsable(_difficultyPrev);
+            _rowOpen[RowStart] = IsUsable(_start);
+            _rowOpen[RowInvite] = IsUsable(_invite);
+            _rowOpen[RowLeave] = IsUsable(_leave);
+            _rowOpen[RowDev] = IsUsable(_sceneToggle);
+
+            for (int row = 0; row < RowCount; row++)
+            {
+                Selectable up = Representative(MenuNavigation.Move(row, _rowOpen, -1));
+                Selectable down = Representative(MenuNavigation.Move(row, _rowOpen, 1));
+
+                if (row == RowDifficulty)
+                {
+                    // 한 줄 안의 좌우 — 화살표 둘 사이에서만 오간다.
+                    Link(_difficultyPrev, up, down, null, _difficultyNext);
+                    Link(_difficultyNext, up, down, _difficultyPrev, null);
+                    continue;
+                }
+
+                Link(Representative(row), up, down, null, null);
+            }
+        }
+
+        /// <summary>줄을 대표하는 항목 — 다른 줄에서 넘어올 때 여기에 내려앉는다.</summary>
+        private Selectable Representative(int row)
+        {
+            switch (row)
+            {
+                // 난이도 줄에는 왼쪽 화살표로 들어온다 — 읽는 순서와 같다.
+                case RowDifficulty: return IsUsable(_difficultyPrev) ? _difficultyPrev : _difficultyNext;
+                case RowStart: return _start;
+                case RowInvite: return _invite;
+                case RowLeave: return _leave;
+                case RowDev: return _sceneToggle;
+                default: return null;
+            }
+        }
+
+        private static bool IsUsable(Selectable target)
+        {
+            return target != null && target.gameObject.activeInHierarchy && target.interactable;
+        }
+
+        private static void Link(Selectable target, Selectable up, Selectable down, Selectable left, Selectable right)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            Navigation nav = target.navigation;
+            nav.mode = Navigation.Mode.Explicit;
+            nav.selectOnUp = up;
+            nav.selectOnDown = down;
+            nav.selectOnLeft = left;
+            nav.selectOnRight = right;
+            target.navigation = nav;
+        }
+
+        /// <summary>
+        /// 포커스를 화면 안 첫 항목으로 데려온다.
+        ///
+        /// <para><see cref="MenuPanel"/>도 열 때 첫 항목을 고르지만, 그건 <b>직렬화된 한 곳</b>이라
+        /// 게스트 화면에서 잠겨 있는 "게임 시작"을 고를 수 있다. 잠긴 것이 선택되면 눌러도 반응이 없고,
+        /// 무엇보다 <b>거기서 방향키를 눌러도 이동 링크가 잠긴 항목 기준</b>이 된다.</para>
+        /// </summary>
+        private void FocusFirst()
+        {
+            Selectable first = Representative(MenuNavigation.First(_rowOpen));
+            if (first != null && EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(first.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// 선택이 비었으면 되찾아 온다 — <b>키보드·게임패드가 죽지 않게 하는 최후의 보루</b>다.
+        /// 배너 쪽 <c>MainMenuRoot.KeepFocusInsideMenu</c>는 대기실이 떠 있으면 물러나므로
+        /// (그쪽 화면은 지금 꺼져 있다) 여기서 스스로 지킨다.
+        /// </summary>
+        private void KeepFocus()
+        {
+            EventSystem events = EventSystem.current;
+            if (events == null)
+            {
+                return;
+            }
+
+            // 묻는 창이 떠 있으면 포커스는 그쪽 것이다.
+            if (_leaveConfirm != null && _leaveConfirm.IsOpen)
+            {
+                return;
+            }
+
+            GameObject selected = events.currentSelectedGameObject;
+            if (selected == null || !selected.activeInHierarchy)
+            {
+                FocusFirst();
+            }
+        }
+
+        /// <summary>선택된 버튼을 테두리가 따라간다 — 색 없이도 어디에 있는지 읽힌다(§9.2).</summary>
+        private void RefreshFocusFrame()
+        {
+            if (_focusFrame == null)
+            {
+                return;
+            }
+
+            EventSystem events = EventSystem.current;
+            GameObject selected = events != null ? events.currentSelectedGameObject : null;
+
+            // 이 화면 밖(묻는 창 안 포함)이 선택돼 있으면 테두리는 물러난다.
+            Selectable target = selected != null ? selected.GetComponent<Selectable>() : null;
+            bool mine = target != null && Owns(target);
+
+            _focusFrame.Follow(mine ? (RectTransform)target.transform : null);
+        }
+
+        private bool Owns(Selectable target)
+        {
+            return target == _start || target == _invite || target == _leave
+                || target == _difficultyPrev || target == _difficultyNext || target == _sceneToggle;
         }
 
         /// <summary>

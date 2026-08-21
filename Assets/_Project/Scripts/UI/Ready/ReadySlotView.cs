@@ -16,10 +16,24 @@ namespace Game.UI.Ready
     /// 빈자리·참가자는 스프라이트 교체로만 갈린다.</para>
     ///
     /// <para>이름·역할·상태는 전부 TMP다. 그림에 구워진 문구는 칸 스프라이트를 만들 때 지웠다(§5.1-5).</para>
+    ///
+    /// <para><b>사람이 들고 날 때 짧게 밝아졌다 가라앉는다</b>(5차). 로스터는 스스로 움직이지 않는
+    /// 화면이라, 누가 들어왔는지가 <b>한 프레임 만에 갈아치워지면</b> 보고 있지 않던 사람은
+    /// 무엇이 바뀌었는지 모른다. 연출은 그 변화에 시간을 주는 일이다.</para>
+    ///
+    /// <para><b>작아지는 방향으로는 움직이지 않는다.</b> 이 칸은 프레임 그림에 구워진 빈 칸 위에
+    /// 정확히 겹쳐 있어서, 1보다 작게 줄이면 <b>밑에 깔린 그림의 테두리가 삐져나온다</b> —
+    /// 배너 명판이 강조에서 커지는 방향으로만 움직이는 것과 같은 이유다(로비 계획 §4.2-3).</para>
     /// </summary>
     [ExecuteAlways]
     public sealed class ReadySlotView : MonoBehaviour
     {
+        /// <summary>들고 나는 연출에 걸리는 시간(초).</summary>
+        public const float TransitionSeconds = 0.18f;
+
+        /// <summary>연출 시작 배율 — <b>1보다 크다.</b> 밑에 깔린 그림을 덮은 채로만 움직인다.</summary>
+        public const float TransitionScale = 1.035f;
+
         [Header("조각")]
         [SerializeField]
         [Tooltip("칸 바탕. 빈자리·참가자에 따라 스프라이트가 갈린다.")]
@@ -72,7 +86,14 @@ namespace Game.UI.Ready
         [SerializeField]
         private string _connectedText = "접속 중";
 
+        [Header("연출")]
+        [SerializeField]
+        [Tooltip("들고 나는 연출에 쓰는 CanvasGroup. 없으면 연출 없이 즉시 바뀐다.")]
+        private CanvasGroup _group;
+
         private bool _occupied;
+        private bool _known;
+        private float _transition = 1f;
 
         /// <summary>이 칸에 사람이 들어와 있는가.</summary>
         public bool IsOccupied => _occupied;
@@ -84,6 +105,52 @@ namespace Game.UI.Ready
             {
                 SetEmpty();
             }
+
+            // 화면을 새로 열 때는 연출 없이 제자리에서 시작한다 — 처음 뜨는 것은 "변화"가 아니다.
+            _known = false;
+            ApplyTransition(1f);
+        }
+
+        private void Update()
+        {
+            if (_transition >= 1f)
+            {
+                return;
+            }
+
+            float step = TransitionSeconds <= 0f ? 1f : Time.unscaledDeltaTime / TransitionSeconds;
+            ApplyTransition(Mathf.MoveTowards(_transition, 1f, step));
+        }
+
+        /// <summary>
+        /// 상태가 <b>실제로 바뀌었을 때만</b> 연출을 시작한다.
+        ///
+        /// <para>로스터는 멤버 목록이 올 때마다 넉 장을 통째로 다시 그리므로(§7.1의 <c>Changed</c> 하나로
+        /// 멤버도 난이도도 온다), 여기서 거르지 않으면 <b>난이도를 바꿀 때마다 칸 넉 장이 깜빡인다.</b></para>
+        /// </summary>
+        private void Begin(bool occupied)
+        {
+            // 처음 앉히는 것은 "변화"가 아니다 — 화면을 열 때 넉 장이 한꺼번에 깜빡이면 소란스럽다.
+            bool changed = _known && _occupied != occupied;
+            _known = true;
+            _occupied = occupied;
+
+            if (changed && Application.isPlaying)
+            {
+                ApplyTransition(0f);
+            }
+        }
+
+        private void ApplyTransition(float weight)
+        {
+            _transition = Mathf.Clamp01(weight);
+
+            if (_group != null)
+            {
+                _group.alpha = _transition;
+            }
+
+            transform.localScale = Vector3.one * Mathf.LerpUnclamped(TransitionScale, 1f, _transition);
         }
 
 #if UNITY_EDITOR
@@ -123,7 +190,7 @@ namespace Game.UI.Ready
         /// <summary>빈자리로 만든다 — 사람+ 아이콘과 안내 문구만 남는다.</summary>
         public void SetEmpty()
         {
-            _occupied = false;
+            Begin(false);
 
             if (_background != null && _emptySprite != null)
             {
@@ -152,7 +219,7 @@ namespace Game.UI.Ready
         /// <summary>참가자를 앉힌다. 호스트면 왕관과 역할 줄이 함께 온다.</summary>
         public void SetOccupied(string displayName, bool isHost)
         {
-            _occupied = true;
+            Begin(true);
 
             if (_background != null && _occupiedSprite != null)
             {
