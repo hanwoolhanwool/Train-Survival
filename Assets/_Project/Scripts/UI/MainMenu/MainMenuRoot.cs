@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Game.UI.MainMenu
@@ -9,12 +10,18 @@ namespace Game.UI.MainMenu
     /// 로비 화면의 상태 기계 — 표지판과 하위 패널 중 무엇이 떠 있는지, 명판을 누르면 무엇이 열리는지.
     /// [로비·메인 메뉴 구현 계획](docs/plans/features/로비-메인메뉴-구현-계획.md) §5.1 · §5.3.
     ///
-    /// <para><b>명판 4장으로는 부족하다.</b> 시안의 메뉴는 게임 시작·업적·설정·종료뿐인데 이 게임은
-    /// 1~4인 협동이라 "참가"가 없다. 그래서 <b>게임 시작이 하위 패널을 연다</b> — 새 여정 / 친구 참가 /
-    /// (개발 빌드) 인게임 씬 선택.</para>
+    /// <para><b>메뉴는 방 만들기 · 참가하기 · 설정 · 종료다</b>(7차 개편). 시안의 원안은
+    /// "게임 시작 · 업적 · 설정 · 종료"였지만 이 게임은 1~4인 협동이라, 메뉴의 첫 갈림길이
+    /// <b>"내가 방을 여는가, 남의 방에 드는가"</b>여야 한다. 표지판 원화의 명판이 <b>정확히 4장</b>이라
+    /// 업적은 자리를 내줬다 — 되살릴 때는 새 진입점이 필요하다.</para>
     ///
-    /// <para><b>세션 서비스가 준비되기 전에는 게임 시작을 잠근다</b>(§5.2). Boot 씬을 거치지 않고
-    /// Main만 열어 본 경우가 여기 걸리는데, 눌러도 아무 일이 없는 것보다 잠겨 있는 편이 정직하다.</para>
+    /// <para>두 항목 모두 하위 패널을 연다. <b>방 만들기</b> = 호스트 시작 · 친구 초대 ·
+    /// (개발 빌드) 인게임 씬 선택. <b>참가하기</b> = 주소 접속. Steam 모드에서는 주소 칸 대신
+    /// 오버레이 친구 목록이 참가를 맡으므로 안내 문구만 남는다.</para>
+    ///
+    /// <para><b>세션 서비스가 준비되기 전에는 방 만들기와 참가하기를 둘 다 잠근다</b>(§5.2).
+    /// Boot 씬을 거치지 않고 Main만 열어 본 경우가 여기 걸리는데, 눌러도 아무 일이 없는 것보다
+    /// 잠겨 있는 편이 정직하다.</para>
     ///
     /// <para>무엇을 실행할지는 <see cref="MenuSessionActions"/>가 알고, 어떻게 보일지는
     /// <see cref="MenuBannerView"/>와 <see cref="MenuPanel"/>이 안다. 이 클래스는 <b>둘을 잇는
@@ -22,17 +29,33 @@ namespace Game.UI.MainMenu
     /// </summary>
     public sealed class MainMenuRoot : MonoBehaviour
     {
-        /// <summary>명판 순서 — 시안의 위에서부터.</summary>
-        private const int SlotStart = 0;
-        private const int SlotAchievements = 1;
+        /// <summary>
+        /// 명판 순서 — 표지판 위에서부터.
+        ///
+        /// <para><b>7차에 1·2번이 바뀌었다.</b> "게임 시작 → 업적"이 <b>"방 만들기 → 참가하기"</b>가 됐다.
+        /// 1~4인 협동이라 메뉴의 첫 갈림길이 "혼자 시작/업적"이 아니라 <b>"내가 방을 여는가,
+        /// 남의 방에 드는가"</b>이기 때문이다. 표지판 원화의 명판이 <b>정확히 4장</b>이라
+        /// 업적은 메뉴에서 빠졌다 — 되살릴 때는 자리를 새로 마련해야 한다.</para>
+        /// </summary>
+        private const int SlotHost = 0;
+        private const int SlotJoin = 1;
         private const int SlotSettings = 2;
         private const int SlotQuit = 3;
 
         [Header("화면")]
         [SerializeField] private MenuBannerView _banner;
         [SerializeField] private MenuSessionActions _actions;
-        [SerializeField] private MenuPanel _panelPlay;
-        [SerializeField] private MenuPanel _panelAchievements;
+
+        [SerializeField]
+        [FormerlySerializedAs("_panelPlay")]
+        [Tooltip("방 만들기 — 호스트 시작·친구 초대·(개발) 씬 선택.")]
+        private MenuPanel _panelHost;
+
+        [SerializeField]
+        [FormerlySerializedAs("_panelAchievements")]
+        [Tooltip("참가하기 — 주소 접속. Steam 모드에서는 오버레이 친구 목록이 대신한다.")]
+        private MenuPanel _panelJoin;
+
         [SerializeField] private MenuPanel _panelSettings;
 
         [Header("주변 UI")]
@@ -75,8 +98,8 @@ namespace Game.UI.MainMenu
                 _banner.PlateClicked += OnPlateClicked;
             }
 
-            Subscribe(_panelPlay);
-            Subscribe(_panelAchievements);
+            Subscribe(_panelHost);
+            Subscribe(_panelJoin);
             Subscribe(_panelSettings);
             Subscribe(_panelNotice);
 
@@ -114,8 +137,8 @@ namespace Game.UI.MainMenu
                 _banner.PlateClicked -= OnPlateClicked;
             }
 
-            Unsubscribe(_panelPlay);
-            Unsubscribe(_panelAchievements);
+            Unsubscribe(_panelHost);
+            Unsubscribe(_panelJoin);
             Unsubscribe(_panelSettings);
             Unsubscribe(_panelNotice);
 
@@ -177,8 +200,8 @@ namespace Game.UI.MainMenu
         /// <summary>지금 열려 있는 패널. 없으면 <c>null</c>.</summary>
         private MenuPanel OpenPanel()
         {
-            if (_panelPlay != null && _panelPlay.IsOpen) { return _panelPlay; }
-            if (_panelAchievements != null && _panelAchievements.IsOpen) { return _panelAchievements; }
+            if (_panelHost != null && _panelHost.IsOpen) { return _panelHost; }
+            if (_panelJoin != null && _panelJoin.IsOpen) { return _panelJoin; }
             if (_panelSettings != null && _panelSettings.IsOpen) { return _panelSettings; }
             if (_panelNotice != null && _panelNotice.IsOpen) { return _panelNotice; }
             return null;
@@ -197,7 +220,8 @@ namespace Game.UI.MainMenu
             }
 
             _lastReady = ready;
-            _interactable[SlotStart] = ready;
+            _interactable[SlotHost] = ready;
+            _interactable[SlotJoin] = ready;
 
             if (_banner != null)
             {
@@ -260,11 +284,11 @@ namespace Game.UI.MainMenu
         {
             switch (plate.Slot)
             {
-                case SlotStart:
-                    Open(_panelPlay);
+                case SlotHost:
+                    Open(_panelHost);
                     break;
-                case SlotAchievements:
-                    Open(_panelAchievements);
+                case SlotJoin:
+                    Open(_panelJoin);
                     break;
                 case SlotSettings:
                     Open(_panelSettings);
@@ -334,8 +358,8 @@ namespace Game.UI.MainMenu
                 return;
             }
 
-            Close(_panelPlay);
-            Close(_panelAchievements);
+            Close(_panelHost);
+            Close(_panelJoin);
             Close(_panelSettings);
             Close(_panelNotice);
             panel.Open();
@@ -349,8 +373,8 @@ namespace Game.UI.MainMenu
         /// <summary>패널을 모두 닫고 표지판으로 돌아간다 — 포커스도 돌려준다.</summary>
         public void ShowBanner()
         {
-            Close(_panelPlay);
-            Close(_panelAchievements);
+            Close(_panelHost);
+            Close(_panelJoin);
             Close(_panelSettings);
             Close(_panelNotice);
 
