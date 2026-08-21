@@ -234,6 +234,16 @@ namespace Game.Tests.EditMode
             AssertInsideUnitSquare(ReadyPanelLayout.RosterTitle, "타이틀");
         }
 
+        [Test]
+        public void 칸_연출은_커지는_방향으로만_움직인다()
+        {
+            // 칸은 프레임 그림에 구워진 빈 칸 위에 정확히 겹쳐 있다. 1보다 작게 줄이면
+            // 밑에 깔린 그림의 테두리가 삐져나온다 — 배너 명판에서 실제로 겪은 함정이다
+            // (로비 계획 §4.2-3). "0.96에서 커지며 나타난다"로 고치고 싶어지는 자리라 못박는다.
+            Assert.Greater(ReadySlotView.TransitionScale, 1f, "칸 연출이 밑그림을 드러낸다");
+            Assert.Greater(ReadySlotView.TransitionSeconds, 0f, "연출 시간이 0 이하면 변화를 볼 틈이 없다");
+        }
+
         private static float Area(Rect r)
         {
             return r.width * r.height;
