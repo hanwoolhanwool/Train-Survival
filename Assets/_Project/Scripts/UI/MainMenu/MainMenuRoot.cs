@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Game.UI.MainMenu
@@ -132,6 +133,55 @@ namespace Game.UI.MainMenu
         private void Update()
         {
             RefreshReadiness(false);
+            KeepFocusInsideMenu();
+        }
+
+        /// <summary>
+        /// 선택된 항목이 없으면 되찾아 온다 — <b>키보드·게임패드가 죽지 않게 하는 최후의 보루</b>다.
+        ///
+        /// <para><b>왜 필요한가</b>(7차 실측). <see cref="OnEnable"/>이 이미 시작 슬롯을 선택하지만,
+        /// <b>Boot → Main 전환에서는 그 선택이 살아남지 못한다</b> — Main의 컴포넌트가 깨어나는
+        /// 시점에 <see cref="EventSystem.current"/>가 아직 곧 파괴될 Boot 쪽이거나 비어 있어서다.
+        /// 실제로 Main 단독 실행은 선택이 잡혀 있었고 Boot를 거치면 <c>null</c>이었다.
+        /// 선택이 비면 유니티 입력 모듈은 이동·확인·취소를 <b>한 줄도 보내지 않는다</b> —
+        /// "UI를 한 번 클릭해야 방향키가 듣는다"는 증상의 정체가 이것이다.</para>
+        ///
+        /// <para>배경을 클릭해 선택이 풀리는 경우(입력 모듈의 기본 동작)도 같이 막힌다.
+        /// 메뉴 화면에서는 <b>언제나 무언가가 선택돼 있어야 한다.</b></para>
+        /// </summary>
+        private void KeepFocusInsideMenu()
+        {
+            EventSystem events = EventSystem.current;
+            if (events == null)
+            {
+                return;
+            }
+
+            GameObject selected = events.currentSelectedGameObject;
+            if (selected != null && selected.activeInHierarchy)
+            {
+                return;
+            }
+
+            MenuPanel open = OpenPanel();
+            if (open != null)
+            {
+                open.Open();
+            }
+            else if (_banner != null)
+            {
+                _banner.FocusCurrent();
+            }
+        }
+
+        /// <summary>지금 열려 있는 패널. 없으면 <c>null</c>.</summary>
+        private MenuPanel OpenPanel()
+        {
+            if (_panelPlay != null && _panelPlay.IsOpen) { return _panelPlay; }
+            if (_panelAchievements != null && _panelAchievements.IsOpen) { return _panelAchievements; }
+            if (_panelSettings != null && _panelSettings.IsOpen) { return _panelSettings; }
+            if (_panelNotice != null && _panelNotice.IsOpen) { return _panelNotice; }
+            return null;
         }
 
         /// <summary>

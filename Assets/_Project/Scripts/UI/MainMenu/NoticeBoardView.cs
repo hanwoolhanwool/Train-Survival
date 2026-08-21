@@ -48,17 +48,24 @@ namespace Game.UI.MainMenu
         // 배너와 같은 이유로 **높이로 폭을 정한다** — 폭 기준으로 잡으면 21:9에서 공고대가
         // 같이 커져 화면을 파고든다. 높이가 1을 넘는 것은 의도다: 받침이 화면 아래로 나간다.
 
-        /// <summary>공고대 높이 ÷ 화면 높이. <b>1을 넘는다</b> — 받침을 화면 밖으로 밀어낸다.</summary>
-        public const float HeightScale = 1.0455f;
+        /// <summary>
+        /// 공고대 높이 ÷ 화면 높이. 여전히 <b>받침이 화면 아래로 나가도록</b> 잡혀 있다.
+        ///
+        /// <para>7차 초안은 1.0455였고, 사용자가 씬에서 직접 잡은 값
+        /// (크기 518.4273×1129.14 · 배율 0.674 · 위치 −190, −228)을 상수로 환산한 것이 지금 값이다.
+        /// 배율은 여기서 흡수했다 — <see cref="ApplyRect"/>가 <c>localScale</c>을 1로 되돌리므로
+        /// 씬에 배율을 남겨 두면 다음 실행에서 사라진다.</para>
+        /// </summary>
+        public const float HeightScale = 0.70467f;
 
         /// <summary>공고대 스프라이트의 가로÷세로 (764:1664).</summary>
         public const float Aspect = 764f / 1664f;
 
         /// <summary>오른쪽 가장자리에서 띄우는 거리 — <b>화면 폭이 아니라 공고대 폭</b>에 비례한다.</summary>
-        public const float RightMarginInWidths = 0.1636f;
+        public const float RightMarginInWidths = 0.04376f;
 
         /// <summary>공고대 중심의 세로 위치 (화면 높이 대비, 아래 원점).</summary>
-        public const float CenterY = 0.472f;
+        public const float CenterY = 0.26089f;
 
         // ── 스프라이트 안의 종이 ─────────────────────────────────────────
         //
