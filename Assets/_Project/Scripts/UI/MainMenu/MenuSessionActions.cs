@@ -48,6 +48,14 @@ namespace Game.UI.MainMenu
         /// <summary>Steam 로비 서비스가 살아 있는가 — 초기화에 실패하면 초대를 열 수 없다.</summary>
         public bool IsSteamReady => ServiceLocator.TryGet(out ISteamLobbyService _);
 
+        /// <summary>
+        /// 직결 모드에서 남에게 건넬 접속 주소 — <c>"주소:포트"</c>.
+        ///
+        /// <para>대기실의 "초대 하기"가 이걸 클립보드에 넣는다(§12 미결 8번). Steam 모드에서는
+        /// 오버레이가 초대를 맡으므로 쓰이지 않는다.</para>
+        /// </summary>
+        public string RoomAddress => HostJoinAddress.Resolve(DefaultAddress, DefaultPort);
+
         /// <summary>이번에 들어갈 인게임 씬 이름.</summary>
         public string GameplayScene => GameplaySceneRoute.Current;
 

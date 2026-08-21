@@ -23,8 +23,10 @@ namespace Game.UI.Ready
     /// <para><b>취소(Esc·게임패드 B)는 나가기와 같은 뜻이다.</b> 이 화면에서 "닫기"는 곧
     /// "방을 떠나기"이기 때문이다(§6.5). 확인 대화상자는 §12 미결 3번으로 남아 있다.</para>
     ///
-    /// <para>난이도 순환·초대·게스트 권한 분리는 4차 몫이라 여기 없다. 지금은
-    /// <b>혼자 방을 열고 출발하는 경로</b>가 끝까지 이어지는 데까지다.</para>
+    /// <para><b>시안은 호스트 화면이다.</b> 게스트에게는 시안에 없는 상태가 둘 생긴다(§6.3) —
+    /// 게임 시작이 눌리지 않고, 난이도 화살표가 사라진다. <b>버튼을 숨기지는 않는다</b>:
+    /// 그림에 자리가 파여 있어 숨기면 패널이 비고, 무엇을 기다리는지도 알 수 없다.
+    /// 그래서 비활성 + 라벨 교체로 남긴다.</para>
     /// </summary>
     public sealed class ReadyScreenRoot : MonoBehaviour
     {
@@ -47,8 +49,21 @@ namespace Game.UI.Ready
         [SerializeField] private Button _leave;
 
         [SerializeField]
-        [Tooltip("게임 시작 버튼의 라벨 — 게스트에게는 문구가 바뀐다(4차).")]
+        [Tooltip("게임 시작 버튼의 라벨 — 게스트에게는 \"호스트를 기다리는 중\"으로 바뀐다(§6.3).")]
         private TMP_Text _startLabel;
+
+        [Header("난이도")]
+        [SerializeField]
+        [Tooltip("난이도 감소 (◀) — 게스트에게는 보이지 않는다.")]
+        private Button _difficultyPrev;
+
+        [SerializeField]
+        [Tooltip("난이도 증가 (▶) — 게스트에게는 보이지 않는다.")]
+        private Button _difficultyNext;
+
+        [SerializeField]
+        [Tooltip("현재 단계 이름. 게스트에게도 그대로 보인다.")]
+        private TMP_Text _difficultyValue;
 
         [Header("문구")]
         [SerializeField] private TMP_Text _roomStatus;
@@ -67,6 +82,21 @@ namespace Game.UI.Ready
         private bool _open;
         private bool _leaving;
 
+        /// <summary>지금 보여 주고 있는 난이도 단계. 방이 서기 전에도 시안대로 "보통"이 떠 있어야 한다.</summary>
+        private int _difficulty = DifficultyStepper.DefaultIndex;
+
+        /// <summary>마지막으로 화면에 반영한 권한. <c>-1</c>은 "아직 한 번도 안 그렸다".</summary>
+        private int _shownAuthority = -1;
+
+        /// <summary>토스트가 사라질 시각. 0이면 지금 문구는 토스트가 아니다.</summary>
+        private float _statusClearAt;
+
+        /// <summary>출발·이탈로 버튼을 잠갔는가 — 잠근 뒤에는 권한 계산이 이걸 덮어쓰면 안 된다.</summary>
+        private bool _locked;
+
+        /// <summary>토스트가 떠 있는 시간(초).</summary>
+        private const float ToastSeconds = 3f;
+
         /// <summary>
         /// 방을 떠났다 — 배너로 돌아갈지는 듣는 쪽(<see cref="MainMenuRoot"/>)이 정한다.
         /// 인자는 <b>밖에서 끊긴 사유</b>이고, 스스로 나갔으면 비어 있다.
@@ -82,6 +112,8 @@ namespace Game.UI.Ready
             Bind(_invite, OnInvite);
             Bind(_leave, OnLeave);
             Bind(_sceneToggle, OnToggleScene);
+            Bind(_difficultyPrev, OnDifficultyPrev);
+            Bind(_difficultyNext, OnDifficultyNext);
 
             if (_panel != null)
             {
@@ -101,7 +133,7 @@ namespace Game.UI.Ready
 
             if (_room != null)
             {
-                _room.Changed -= RefreshRoster;
+                _room.Changed -= OnRoomChanged;
             }
         }
 
@@ -113,15 +145,22 @@ namespace Game.UI.Ready
         {
             if (_room != null)
             {
-                _room.Changed -= RefreshRoster;
+                _room.Changed -= OnRoomChanged;
                 _room = null;
             }
 
             if (ServiceLocator.TryGet(out ILobbyRoomService room))
             {
                 _room = room;
-                _room.Changed += RefreshRoster;
+                _room.Changed += OnRoomChanged;
             }
+        }
+
+        /// <summary>대기실 상태가 바뀌었다 — 멤버든 난이도든 한 신호로 온다(§7.1).</summary>
+        private void OnRoomChanged()
+        {
+            RefreshRoster();
+            RefreshDifficulty();
         }
 
         /// <summary>
@@ -144,12 +183,19 @@ namespace Game.UI.Ready
         {
             _open = true;
             _leaving = false;
+            _locked = false;
             gameObject.SetActive(true);
+
+            _shownAuthority = -1;
+
+            // 새 방은 언제나 "보통"에서 시작한다 — 상태가 서 있으면 곧 그쪽 값이 덮는다.
+            _difficulty = DifficultyStepper.DefaultIndex;
 
             BindRoom();
             ApplyDevGroup();
             RefreshSceneLabel();
             RefreshRoster();
+            RefreshDifficulty();
             RefreshAuthority();
             SetStatus(string.Empty);
 
@@ -188,6 +234,7 @@ namespace Game.UI.Ready
             }
 
             RefreshAuthority();
+            ExpireToast();
         }
 
         private void OnStart()
@@ -208,9 +255,71 @@ namespace Game.UI.Ready
             SetStatus("여정을 준비하는 중...");
         }
 
+        /// <summary>
+        /// 친구를 부른다 — 모드에 따라 <b>하는 일이 다르다</b>(§6.2).
+        ///
+        /// <para>Steam 모드에서는 오버레이 친구 목록을 연다. 직결 모드에는 부를 창이 없으므로
+        /// <b>접속 주소를 클립보드에 넣는다</b>(§12 미결 8번) — 버튼이 살아 있어 패널이 비지 않고,
+        /// 같은 PC 두 벌 테스트에서 실제로 쓸모가 있다.</para>
+        ///
+        /// <para>직결 모드의 복사는 <b>호스트만</b>이다. 게스트는 호스트 주소의 출처가 아니라
+        /// 자기가 접속한 주소밖에 모르고, 그걸 남에게 건네면 맞을 수도 틀릴 수도 있다.</para>
+        /// </summary>
         private void OnInvite()
         {
-            // 4차 — Steam 오버레이 / 직결 모드 주소 복사.
+            if (_actions == null || _leaving)
+            {
+                return;
+            }
+
+            if (_actions.IsSteamMode)
+            {
+                ShowToast(_actions.InviteFriends()
+                    ? "친구 목록을 열었습니다."
+                    : "친구 목록을 열지 못했습니다.");
+                return;
+            }
+
+            if (!_actions.IsHost)
+            {
+                return;
+            }
+
+            string address = _actions.RoomAddress;
+            GUIUtility.systemCopyBuffer = address;
+            ShowToast("접속 주소를 복사했습니다 — " + address);
+        }
+
+        private void OnDifficultyPrev()
+        {
+            StepDifficulty(DifficultyStepper.Prev(_difficulty, DifficultyStepper.Count));
+        }
+
+        private void OnDifficultyNext()
+        {
+            StepDifficulty(DifficultyStepper.Next(_difficulty, DifficultyStepper.Count));
+        }
+
+        /// <summary>
+        /// 난이도를 옮긴다 — <b>호스트만</b>. 값은 대기실 상태에 실려 전원에게 같이 간다.
+        ///
+        /// <para>상태 객체가 아직 서기 전(방을 연 직후 한두 프레임)에도 화면은 움직여야 하므로
+        /// 로컬 값을 먼저 옮기고, 서비스가 살아 있으면 그쪽 값이 다시 덮는다.</para>
+        /// </summary>
+        private void StepDifficulty(int index)
+        {
+            if (_leaving || _actions == null || !_actions.IsHost)
+            {
+                return;
+            }
+
+            _difficulty = index;
+            if (_room != null)
+            {
+                _room.SetDifficulty(DifficultyStepper.ToLevel(index));
+            }
+
+            RefreshDifficulty();
         }
 
         private void OnLeave()
@@ -294,13 +403,85 @@ namespace Game.UI.Ready
             _roster.Show(_names, hostSlot);
         }
 
-        /// <summary>호스트만 출발할 수 있다. 게스트 라벨 교체와 난이도 잠금은 4차다(§6.3).</summary>
+        /// <summary>현재 난이도를 화면에 옮긴다 — 값은 게스트에게도 보인다(§6.3).</summary>
+        private void RefreshDifficulty()
+        {
+            if (_room != null && _room.IsActive)
+            {
+                _difficulty = DifficultyStepper.ToIndex(_room.Difficulty);
+            }
+
+            if (_difficultyValue != null)
+            {
+                _difficultyValue.text = DifficultyStepper.Name(_difficulty);
+            }
+        }
+
+        /// <summary>
+        /// 호스트와 게스트의 화면을 가른다(§6.2 · §6.3).
+        ///
+        /// <para>매 프레임 불리므로 <b>권한이 바뀔 때만</b> 실제로 그린다 — 세션이 서기까지
+        /// 몇 프레임이 걸려 처음에는 게스트로 보였다가 호스트가 되는 경우가 있고,
+        /// 그때 한 번만 다시 그리면 된다.</para>
+        /// </summary>
         private void RefreshAuthority()
         {
             bool host = _actions != null && _actions.IsHost;
+            bool steam = _actions != null && _actions.IsSteamMode;
+
+            // 호스트 여부·모드·잠금이 함께 화면을 정한다 — 셋을 한 값으로 묶어 변화만 잡는다.
+            int authority = (host ? 1 : 0) | (steam ? 2 : 0) | (_locked ? 4 : 0);
+            if (authority == _shownAuthority)
+            {
+                return;
+            }
+
+            _shownAuthority = authority;
+
             if (_start != null)
             {
-                _start.interactable = host && !_leaving;
+                _start.interactable = host && !_locked;
+            }
+
+            if (_startLabel != null)
+            {
+                // 숨기지 않고 문구를 바꾼다 — 무엇을 기다리는지 알 수 있어야 한다(§6.3).
+                _startLabel.text = host ? "게임 시작" : "호스트를 기다리는 중";
+            }
+
+            // 화살표는 게스트에게서 사라지되 값은 남는다.
+            SetArrow(_difficultyPrev, host && !_locked);
+            SetArrow(_difficultyNext, host && !_locked);
+
+            // Steam 모드에서는 로비 멤버도 초대할 수 있지만, 직결 모드의 주소 복사는 호스트만이다.
+            if (_invite != null)
+            {
+                _invite.interactable = (steam || host) && !_locked;
+            }
+        }
+
+        /// <summary>
+        /// 화살표를 보이거나 감춘다 — <b>비활성이 아니라 투명</b>이다(§6.3).
+        ///
+        /// <para><c>SetActive(false)</c>로 지우지 않는 이유는 5차의 내비게이션 때문이다.
+        /// 꺼진 오브젝트는 포커스 이동 경로에서 사라지고, 그러면 게스트와 호스트의 이동 순서가
+        /// 달라진다. 투명하게 두고 <see cref="Selectable.interactable"/>만 끄면 경로가 같다.</para>
+        /// </summary>
+        private static void SetArrow(Button button, bool on)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.interactable = on;
+
+            Graphic graphic = button.targetGraphic;
+            if (graphic != null)
+            {
+                Color color = graphic.color;
+                color.a = on ? 1f : 0f;
+                graphic.color = color;
             }
         }
 
@@ -326,6 +507,30 @@ namespace Game.UI.Ready
 
         private void SetStatus(string text)
         {
+            _statusClearAt = 0f;
+            WriteStatus(text);
+        }
+
+        /// <summary>
+        /// 잠깐 떴다 사라지는 알림 — 주소를 복사했다는 것 같은, <b>남아 있을 이유가 없는 문구</b>다.
+        /// 상태 줄을 그대로 쓴다: 이 화면에 뜨는 글자는 한 자리로 모여 있는 편이 읽힌다.
+        /// </summary>
+        private void ShowToast(string text)
+        {
+            WriteStatus(text);
+            _statusClearAt = Time.unscaledTime + ToastSeconds;
+        }
+
+        private void ExpireToast()
+        {
+            if (_statusClearAt > 0f && Time.unscaledTime >= _statusClearAt)
+            {
+                SetStatus(string.Empty);
+            }
+        }
+
+        private void WriteStatus(string text)
+        {
             if (_roomStatus == null)
             {
                 return;
@@ -337,10 +542,15 @@ namespace Game.UI.Ready
 
         private void SetInteractable(bool on)
         {
+            _locked = !on;
+            _shownAuthority = -1;
+
             SetButton(_start, on);
             SetButton(_invite, on);
             SetButton(_leave, on);
             SetButton(_sceneToggle, on);
+            SetArrow(_difficultyPrev, on && _actions != null && _actions.IsHost);
+            SetArrow(_difficultyNext, on && _actions != null && _actions.IsHost);
         }
 
         private static void SetButton(Button button, bool on)
