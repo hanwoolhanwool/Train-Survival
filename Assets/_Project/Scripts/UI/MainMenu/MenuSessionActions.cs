@@ -1,5 +1,6 @@
 using Game.Core.Services;
 using Game.Systems.Networking;
+using Game.Systems.Networking.Lobby;
 using Game.Systems.Networking.Steam;
 using UnityEngine;
 
@@ -79,6 +80,19 @@ namespace Game.UI.MainMenu
         }
 
         /// <summary>
+        /// 접속이 <b>완료</b>됐는가. 게스트가 대기실에 도착했는지를 이 값으로 판단한다 —
+        /// 주소를 누른 직후에는 <see cref="IsSessionActive"/>만 참이고 승인은 아직이다(§3.3).
+        /// </summary>
+        public bool IsConnected
+        {
+            get
+            {
+                INetworkSessionService session = Session;
+                return session != null && session.IsConnectedClient;
+            }
+        }
+
+        /// <summary>
         /// 방을 연다 — 호스트 세션을 시작하고, Steam 모드에서는 친구 전용 로비까지 만든다.
         ///
         /// <para><b>인게임으로 넘어가지 않는다.</b> 여기가 <see cref="BeginJourney"/>와 갈리는 지점이고,
@@ -101,6 +115,12 @@ namespace Game.UI.MainMenu
             if (ActiveTransportMode.IsSteam && ServiceLocator.TryGet(out ISteamLobbyService lobby))
             {
                 lobby.CreateLobby();
+            }
+
+            // 대기실 상태를 띄운다 — 늦게 들어온 사람도 스폰 시 전체 목록을 받는다(§7.2).
+            if (ServiceLocator.TryGet(out ILobbyRoomService room))
+            {
+                room.Open();
             }
 
             return true;

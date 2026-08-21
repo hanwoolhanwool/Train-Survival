@@ -1,4 +1,6 @@
 using System;
+using Game.Core.Services;
+using Game.Systems.Networking.Lobby;
 using Game.UI.MainMenu;
 using TMPro;
 using UnityEngine;
@@ -59,11 +61,17 @@ namespace Game.UI.Ready
         [SerializeField] private Button _sceneToggle;
         [SerializeField] private TMP_Text _sceneToggleLabel;
 
+        private readonly string[] _names = new string[Systems.Networking.Lobby.RosterOrdering.Capacity];
+
+        private ILobbyRoomService _room;
         private bool _open;
         private bool _leaving;
 
-        /// <summary>방을 떠났다 — 배너로 돌아갈지는 듣는 쪽(<see cref="MainMenuRoot"/>)이 정한다.</summary>
-        public event Action Left;
+        /// <summary>
+        /// 방을 떠났다 — 배너로 돌아갈지는 듣는 쪽(<see cref="MainMenuRoot"/>)이 정한다.
+        /// 인자는 <b>밖에서 끊긴 사유</b>이고, 스스로 나갔으면 비어 있다.
+        /// </summary>
+        public event Action<string> Left;
 
         /// <summary>지금 이 화면이 떠 있는가.</summary>
         public bool IsOpen => _open && gameObject.activeSelf;
@@ -80,6 +88,8 @@ namespace Game.UI.Ready
                 _panel.Cancelled -= OnLeave;
                 _panel.Cancelled += OnLeave;
             }
+
+            BindRoom();
         }
 
         private void OnDisable()
@@ -87,6 +97,30 @@ namespace Game.UI.Ready
             if (_panel != null)
             {
                 _panel.Cancelled -= OnLeave;
+            }
+
+            if (_room != null)
+            {
+                _room.Changed -= RefreshRoster;
+            }
+        }
+
+        /// <summary>
+        /// 대기실 상태 서비스를 붙인다. <b>UI가 NGO를 직접 보지 않는 자리</b>이고,
+        /// 서비스는 Boot에서 등록되므로 화면이 켜질 때 찾는다.
+        /// </summary>
+        private void BindRoom()
+        {
+            if (_room != null)
+            {
+                _room.Changed -= RefreshRoster;
+                _room = null;
+            }
+
+            if (ServiceLocator.TryGet(out ILobbyRoomService room))
+            {
+                _room = room;
+                _room.Changed += RefreshRoster;
             }
         }
 
@@ -112,6 +146,7 @@ namespace Game.UI.Ready
             _leaving = false;
             gameObject.SetActive(true);
 
+            BindRoom();
             ApplyDevGroup();
             RefreshSceneLabel();
             RefreshRoster();
@@ -148,7 +183,7 @@ namespace Game.UI.Ready
             // 호스트가 방을 닫으면 게스트에게는 세션이 조용히 죽는 것 말고 신호가 없다.
             if (_actions != null && !_actions.IsSessionActive)
             {
-                Depart();
+                Depart("방이 닫혔습니다.");
                 return;
             }
 
@@ -193,16 +228,16 @@ namespace Game.UI.Ready
                 _actions.CloseRoom();
             }
 
-            Depart();
+            Depart(string.Empty);
         }
 
         /// <summary>화면을 닫고 떠났음을 알린다. 세션 종료는 비동기라 여기서 기다리지 않는다.</summary>
-        private void Depart()
+        private void Depart(string reason)
         {
             _leaving = true;
             Close();
             SetInteractable(true);
-            Left?.Invoke();
+            Left?.Invoke(reason);
         }
 
         private void OnToggleScene()
@@ -217,8 +252,10 @@ namespace Game.UI.Ready
         }
 
         /// <summary>
-        /// 로스터를 다시 그린다. 3차 전까지는 <b>호스트 한 명뿐</b>이다 —
-        /// 누가 들어와 있는지는 <c>ILobbyRoomService</c>가 서고 나서야 알 수 있다(§7).
+        /// 로스터를 다시 그린다 — 방에 누가 있는지는 <see cref="ILobbyRoomService"/>만 안다.
+        ///
+        /// <para><b>호스트는 언제나 첫 칸</b>이고 빈자리는 뒤로 몰린다 — 그 규칙은 서비스 뒤의
+        /// <c>RosterOrdering</c>이 세우고, 여기서는 받은 대로 앉힌다(§7.3).</para>
         /// </summary>
         private void RefreshRoster()
         {
@@ -227,8 +264,34 @@ namespace Game.UI.Ready
                 return;
             }
 
-            bool host = _actions != null && _actions.IsHost;
-            _roster.Show(new[] { host ? "플레이어 1" : null, null, null, null }, 0);
+            for (int i = 0; i < _names.Length; i++)
+            {
+                _names[i] = null;
+            }
+
+            int hostSlot = -1;
+            if (_room != null && _room.IsActive)
+            {
+                for (int i = 0; i < _names.Length; i++)
+                {
+                    if (_room.TryGetSlot(i, out string name, out bool isHost))
+                    {
+                        _names[i] = name;
+                        if (isHost)
+                        {
+                            hostSlot = i;
+                        }
+                    }
+                }
+            }
+            else if (_actions != null && _actions.IsHost)
+            {
+                // 상태 객체가 아직 스폰되기 전 — 방을 연 사람은 이미 방에 있다.
+                _names[0] = Systems.Networking.Lobby.RosterOrdering.DisplayName(0);
+                hostSlot = 0;
+            }
+
+            _roster.Show(_names, hostSlot);
         }
 
         /// <summary>호스트만 출발할 수 있다. 게스트 라벨 교체와 난이도 잠금은 4차다(§6.3).</summary>

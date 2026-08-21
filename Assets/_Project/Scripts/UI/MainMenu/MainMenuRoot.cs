@@ -102,8 +102,8 @@ namespace Game.UI.MainMenu
             {
                 // 대기실은 프리팹이라 씬의 MenuSessionActions를 직렬화로 물 수 없다.
                 _readyScreen.Bind(_actions);
-                _readyScreen.Left -= ShowBanner;
-                _readyScreen.Left += ShowBanner;
+                _readyScreen.Left -= OnLeftRoom;
+                _readyScreen.Left += OnLeftRoom;
             }
 
             if (_noticeBoard != null)
@@ -142,12 +142,25 @@ namespace Game.UI.MainMenu
 
             if (_readyScreen != null)
             {
-                _readyScreen.Left -= ShowBanner;
+                _readyScreen.Left -= OnLeftRoom;
             }
 
             if (_noticeBoard != null)
             {
                 _noticeBoard.Clicked -= OnNoticeClicked;
+            }
+        }
+
+        /// <summary>
+        /// 대기실에서 나왔다. <paramref name="reason"/>이 있으면 <b>내가 나간 게 아니라 끊긴 것</b>이라
+        /// 사유를 배너 아래에 남긴다 — 호스트가 방을 닫으면 게스트에게는 그것 말고 설명이 없다(§6.5).
+        /// </summary>
+        private void OnLeftRoom(string reason)
+        {
+            ShowBanner();
+            if (!string.IsNullOrEmpty(reason))
+            {
+                ShowStatus(reason);
             }
         }
 
@@ -159,7 +172,32 @@ namespace Game.UI.MainMenu
         private void Update()
         {
             RefreshReadiness(false);
+            CheckRoomArrival();
             KeepFocusInsideMenu();
+        }
+
+        /// <summary>
+        /// 방에 들어갔으면 대기실을 연다 — <b>게스트가 도착하는 유일한 경로</b>다(§3.3).
+        ///
+        /// <para>주소 접속·Steam 초대 수락·<c>+connect_lobby</c> 부팅이 전부 여기로 모인다.
+        /// 셋 다 "접속이 완료됐다"는 같은 신호로 끝나므로 경로별 분기가 필요 없다.
+        /// <b>초대로 게임을 켠 사람은 메뉴 배너를 볼 이유가 없다</b> — 그래서 도착 즉시 넘긴다.</para>
+        ///
+        /// <para>호스트는 <see cref="OnCreateRoom"/>에서 이미 열었으므로 여기 걸리지 않는다.</para>
+        /// </summary>
+        private void CheckRoomArrival()
+        {
+            if (_readyScreen == null || _readyScreen.IsOpen || _actions == null || !_actions.IsConnected)
+            {
+                return;
+            }
+
+            Close(_panelJoin);
+            Close(_panelSettings);
+            Close(_panelNotice);
+            ShowStatus(string.Empty);
+            ShowMenuScenery(false);
+            _readyScreen.Open();
         }
 
         /// <summary>
