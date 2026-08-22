@@ -1,9 +1,9 @@
 # 열차 아트 배치 참조 (Game_ArtTest)
 
 QA 중 열차 아트를 교체·정렬할 때 빠르게 고치기 위한 참조표.
-대상 씬: `Assets/_Project/Scenes/Game_ArtTest.unity` / 최종 확인 2026-08-19.
+대상 씬: `Assets/_Project/Scenes/Game_ArtTest.unity` / 최종 확인 2026-08-23.
 
-**현재 기관차: `Train_Locomotive_Open`** (교체 이력은 2절, 되돌리는 명령은 5절).
+**현재 기관차: `Train_Locomotive_HQ_Open`** (2026-08-23 교체 — 이력은 2절, 되돌리는 명령은 5절).
 **기찻길·접지 높이는 7절** — 이 씬의 열차는 궤도 위에 얹히느라 `Game.unity`보다 **y가 0.916 높다**.
 **그 높이를 통째로 올리고 내리는 축(QA 3단계 토글 — F2)은 [열차·궤도 높이 규약](train-elevation.md)**이 다룬다.
 
@@ -46,19 +46,19 @@ QA 중 열차 아트를 교체·정렬할 때 빠르게 고치기 위한 참조�
 
 씬 경로: `Train / Car_Locomotive / Locomotive_Art / Locomotive / <모델>`
 
-| 항목 | HQ (초기) | HQ_Open (1차 교체) | **Open (현재)** |
+| 항목 | HQ (초기) | **HQ_Open (현재)** | Open (2차 교체 이력) |
 |---|---|---|---|
-| 모델 | `Train_Locomotive_HQ.fbx` | `Train_Locomotive_HQ_Open.fbx` | **`Train_Locomotive_Open.fbx`** |
-| 머티리얼 | `M_Train_Locomotive` | `M_Train_Locomotive_HQ_Open` | **`M_Train_Locomotive_Open`** |
+| 모델 | `Train_Locomotive_HQ.fbx` | **`Train_Locomotive_HQ_Open.fbx`** | `Train_Locomotive_Open.fbx` |
+| 머티리얼 | `M_Train_Locomotive` | **`M_Train_Locomotive_HQ_Open`** | `M_Train_Locomotive_Open` |
 | 텍스처 | `T_Train_Locomotive_BaseColor` | `T_Train_Locomotive_HQ_Open_BaseColor` | `T_Train_Locomotive_Open_BaseColor` |
-| 메시 이름 | `zz_src_Train_Locomotive` | `Train_Locomotive_HQ_Open` | `Train_Locomotive_Open` |
-| 버텍스 / 트라이앵글 | 20,814 / 28,117 | 36,097 / 48,523 | **33,096 / 47,640** |
+| 메시 이름 | `zz_src_Train_Locomotive` | **`Train_Locomotive_HQ_Open`** | `Train_Locomotive_Open` |
+| 버텍스 / 트라이앵글 | 20,814 / 28,117 | **36,097 / 48,523** | 33,096 / 47,640 |
 | 모델 로컬 길이축 | **X** | **Y** | **Y** (HQ_Open과 동일) |
 | 씬 회전 (Euler) | (−90, 180, **0**) | (−90, 180, **90**) | (−90, 180, **90**) |
 | 씬 회전 (Quaternion) | (0, 0.7071068, 0.7071068, w 0) | (0.5, 0.5, 0.5, w −0.5) | (0.5, 0.5, 0.5, w −0.5) |
 | localPosition | (1.94, 0, 0) | 동일 | 동일 |
 | localScale | 200 | 동일 | 동일 |
-| 월드 크기 (폭·높이·길이) | 6.004 × 9.094 × 13.603 | 5.710 × 7.309 × 13.563 | **5.372 × 8.594 × 13.587** |
+| 월드 크기 (폭·높이·길이) | 6.004 × 9.094 × 13.603 | **5.710 × 7.309 × 13.563** | 5.372 × 8.594 × 13.587 |
 | 월드 중심 | (0, 4.607, 13.862) | (0, 3.714, 13.862) | (0, 4.357, 13.862) |
 | 접지 y | 0.060 | 0.060 | 0.060 (전부 동일) |
 
@@ -106,15 +106,15 @@ Car_Locomotive   p(0, 1.70, 13.862)  s(4.6, 3.4, 13.603)
 |---|---|---|---|---|
 | `Train_Locomotive` | 12,278 / 14,057 | (0.0679, 0.0300, 0.0454) | X | 미사용 (구형) |
 | `Train_Locomotive_HQ` | 20,814 / 28,117 | (0.0680, 0.0300, 0.0455) | X | 미사용 (초기 기관차) |
-| `Train_Locomotive_HQ_Open` | 36,097 / 48,523 | (0.0285, 0.0678, 0.0365) | **Y** | 미사용 (1차 교체 이력) |
-| `Train_Locomotive_Open` | 33,096 / 47,640 | (0.0269, 0.0679, 0.0430) | **Y** | **현재 기관차** |
+| `Train_Locomotive_HQ_Open` | 36,097 / 48,523 | (0.0285, 0.0678, 0.0365) | **Y** | **현재 사용 중** |
+| `Train_Locomotive_Open` | 33,096 / 47,640 | (0.0269, 0.0679, 0.0430) | **Y** | 미사용 (2차 교체 이력) |
 | `Train_Flatbed_A` | 7,102 / 4,773 | (0.0600, 0.0328, 0.0102) | X | 칸 바닥, 칸당 2개 |
 | `Train_Flatbed_B` | 7,102 / 4,773 | (0.0600, 0.0328, 0.0102) | X | 미사용 (정점·삼각형·바운즈가 A와 동일, 텍스처만 다른 변형) |
 | `Train_Wheel` | 1,506 / 1,486 | (0.0200, 0.0077, 0.0200) | X | 칸당 8개 |
 | `Train_CarModule` | 4,195 / 2,308 | (0.0400, 0.0292, 0.0092) | X | 미사용 |
 | `Train_RailTrack` | 8,876 / 7,668 | (6.4577, 34.6727, 1.4756) | Y | **`TerrainTile_Rail` 프리팹** (7절 — 루트 스케일 1로 예외) |
 
-씬/프리팹에 실제로 배치된 것은 `Train_Locomotive_Open`, `Train_Flatbed_A`, `Train_Wheel`,
+씬/프리팹에 실제로 배치된 것은 `Train_Locomotive_HQ_Open`, `Train_Flatbed_A`, `Train_Wheel`,
 `Train_RailTrack` 4종이다. 나머지는 반입만 되어 있는 후보 에셋이라 교체 대상으로 바로 쓸 수 있다.
 `Train_RailTrack`만 씬이 아니라 **지형 타일 프리팹**에 들어 있다 (런타임 스트리밍 — 7.1).
 
@@ -128,8 +128,8 @@ Car_Locomotive   p(0, 1.70, 13.862)  s(4.6, 3.4, 13.603)
 |---|---|
 | `Train_Locomotive` | `1572e0280b4d62a459487d2a03abc5de` |
 | `Train_Locomotive_HQ` | `c49d0fe89871f7f45abb58130ba10f9f` |
-| **`Train_Locomotive_Open`** | **`7eba08cf73d53c6b485936e46894fbe7`** |
-| `Train_Locomotive_HQ_Open` | `098021ce449c33715242f8eb235571d2` |
+| `Train_Locomotive_Open` | `7eba08cf73d53c6b485936e46894fbe7` |
+| **`Train_Locomotive_HQ_Open`** | **`098021ce449c33715242f8eb235571d2`** |
 | `Train_Flatbed_A` | `e93875a54fbd5c942aaac1aa17096146` |
 | `Train_Flatbed_B` | `69666e88f2ca8a64286f85d491550334` |
 | `Train_Wheel` | `f2999edef6182e9498b1aa2fafc5e357` |
@@ -144,8 +144,8 @@ Car_Locomotive   p(0, 1.70, 13.862)  s(4.6, 3.4, 13.603)
 | 머티리얼 | GUID | BaseMap 텍스처 |
 |---|---|---|
 | `M_Train_Locomotive` | `e0fdfd8fb45ae0549bb354b06d1b786d` | `T_Train_Locomotive_BaseColor` (`25c48da444a5e4f489144f0aa3b2297e`) |
-| **`M_Train_Locomotive_Open`** | **`14e4eb30480c9ab01607e4a007ab3d88`** | `T_Train_Locomotive_Open_BaseColor` (`3e2adc38ab37db5e7602b07365e93206`) |
-| `M_Train_Locomotive_HQ_Open` | `b3c9156091aae8b4c99f9c61d87f59a2` | `T_Train_Locomotive_HQ_Open_BaseColor` (`48202c76339f0c8303fc2579d719bae1`) |
+| `M_Train_Locomotive_Open` | `14e4eb30480c9ab01607e4a007ab3d88` | `T_Train_Locomotive_Open_BaseColor` (`3e2adc38ab37db5e7602b07365e93206`) |
+| **`M_Train_Locomotive_HQ_Open`** | **`b3c9156091aae8b4c99f9c61d87f59a2`** | `T_Train_Locomotive_HQ_Open_BaseColor` (`48202c76339f0c8303fc2579d719bae1`) |
 | `M_Train_Flatbed_A` | `f46a3e9c7cca3a14f8ed542f056be44f` | `T_Train_Flatbed_A_BaseColor` (`a679134b5e9e40444944b9ce6a4d64d3`) |
 | `M_Train_Flatbed_B` | `c2fc95342f0cb8f4c96ac0fe383fcdab` | `T_Train_Flatbed_B_BaseColor` (`3277dfe093b4526488df18f169a07254`) |
 | `M_Train_Wheel` | `b39f4766a917a6d439f5843048bbd6c6` | `T_Train_Wheel_BaseColor` (`43f81b015fe6a8d469ad41ce521d398e`) |
@@ -191,12 +191,12 @@ grep -n "&160204739" Assets/_Project/Scenes/Game_ArtTest.unity                  
 ```bash
 S="Assets/_Project/Scenes/Game_ArtTest.unity"
 
-# 현재(Open) → HQ_Open
+# Open → HQ_Open (2026-08-23 이 방향으로 교체함 — 현재는 HQ_Open)
 sed -i -e 's/7eba08cf73d53c6b485936e46894fbe7/098021ce449c33715242f8eb235571d2/g' \
        -e 's/guid: 14e4eb30480c9ab01607e4a007ab3d88, type: 2/guid: b3c9156091aae8b4c99f9c61d87f59a2, type: 2/' \
        -e 's/value: Train_Locomotive_Open$/value: Train_Locomotive_HQ_Open/' "$S"
 
-# HQ_Open → Open (되돌리기)
+# 현재(HQ_Open) → Open (되돌리기)
 sed -i -e 's/098021ce449c33715242f8eb235571d2/7eba08cf73d53c6b485936e46894fbe7/g' \
        -e 's/guid: b3c9156091aae8b4c99f9c61d87f59a2, type: 2/guid: 14e4eb30480c9ab01607e4a007ab3d88, type: 2/' \
        -e 's/value: Train_Locomotive_HQ_Open$/value: Train_Locomotive_Open/' "$S"
@@ -323,9 +323,12 @@ UnityEngine.Debug.Log(mr.bounds.size + " / " + mr.bounds.center + " / minY=" + m
 - 칸 안쪽 값(`Car_*`의 y 1.70, `Locomotive`의 접지 0.06 등 1·2절 표)은 **그대로다.**
   올린 것은 편성 루트뿐이라, 모델 교체 절차(5절)는 영향받지 않는다.
 
-> **`Game.unity`에는 이 이동이 적용되지 않았다.** 본편 이식(M8 1차 §6.5 잔여) 때
-> **궤도 타일 배선(7.2)과 열차 +0.916(7.3)을 함께** 옮겨야 한다. 한쪽만 옮기면
-> 열차가 궤도에 파묻히거나(타일만) 공중에 뜬다(높이만).
+> **`Game.unity`에는 이 이동이 적용되지 않았다.** 다만 **2026-08-23부로 `Game_ArtTest`가
+> 본 씬이 되어**([레벨 디자인 구현 계획 결정 ⑥](../../plans/features/레벨-디자인-구현-계획.md)),
+> 이 표의 값이 곧 **현행 기준선**이다 — 이식은 더 이상 잔여 작업이 아니다.
+>
+> `Game.unity`를 다시 쓰기로 하면 그때 **궤도 타일 배선(7.2)과 열차 +0.916(7.3)을 함께**
+> 옮긴다. 한쪽만 옮기면 열차가 궤도에 파묻히거나(타일만) 공중에 뜬다(높이만).
 
 ### 7.4 에디터 검수용 프리뷰 — 플레이 중에는 꺼진다
 
