@@ -121,7 +121,7 @@ namespace Game.Gameplay.Harpoon
         {
             get
             {
-                MuzzleAnchor anchor = HarpoonMuzzleRules.ResolveAnchor(
+                MuzzleAnchor anchor = WeaponMuzzleRules.ResolveAnchor(
                     IsOwner, _fpMuzzle != null, _tpMuzzle != null);
 
                 switch (anchor)

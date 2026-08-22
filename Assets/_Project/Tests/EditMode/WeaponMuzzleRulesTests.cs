@@ -1,4 +1,4 @@
-using Game.Gameplay.Harpoon;
+using Game.Gameplay.Combat;
 using NUnit.Framework;
 
 namespace Game.Tests.EditMode
@@ -11,7 +11,7 @@ namespace Game.Tests.EditMode
     /// 모드 축을 얹는 것은 1인칭 통합 시점 전환 계획 §3.5의 몫이며, 그때 인자가 하나 는다.
     /// </para>
     /// </summary>
-    public sealed class HarpoonMuzzleRulesTests
+    public sealed class WeaponMuzzleRulesTests
     {
         private const bool Owner = true;
         private const bool Remote = false;
@@ -21,18 +21,18 @@ namespace Game.Tests.EditMode
         [Test]
         public void 소유자는_FP_총구를_쓴다()
         {
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Owner, Wired, Wired),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Owner, Wired, Wired),
                 Is.EqualTo(MuzzleAnchor.Fp), "둘 다 있으면 소유자는 FP");
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Owner, Wired, Missing),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Owner, Wired, Missing),
                 Is.EqualTo(MuzzleAnchor.Fp), "FP만 있어도 FP");
         }
 
         [Test]
         public void 원격_피어는_TP_총구를_쓴다()
         {
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Remote, Wired, Wired),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Remote, Wired, Wired),
                 Is.EqualTo(MuzzleAnchor.Tp), "둘 다 있으면 원격은 TP");
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Remote, Missing, Wired),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Remote, Missing, Wired),
                 Is.EqualTo(MuzzleAnchor.Tp), "TP만 있어도 TP");
         }
 
@@ -43,9 +43,9 @@ namespace Game.Tests.EditMode
         [Test]
         public void 선호_앵커가_없으면_반대쪽으로_물러선다()
         {
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Owner, Missing, Wired),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Owner, Missing, Wired),
                 Is.EqualTo(MuzzleAnchor.Tp), "소유자인데 FP가 없으면 TP");
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Remote, Wired, Missing),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Remote, Wired, Missing),
                 Is.EqualTo(MuzzleAnchor.Fp), "원격인데 TP가 없으면 FP");
         }
 
@@ -53,9 +53,9 @@ namespace Game.Tests.EditMode
         [Test]
         public void 앵커가_하나도_없으면_폴백이다()
         {
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Owner, Missing, Missing),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Owner, Missing, Missing),
                 Is.EqualTo(MuzzleAnchor.Fallback));
-            Assert.That(HarpoonMuzzleRules.ResolveAnchor(Remote, Missing, Missing),
+            Assert.That(WeaponMuzzleRules.ResolveAnchor(Remote, Missing, Missing),
                 Is.EqualTo(MuzzleAnchor.Fallback));
         }
 
@@ -69,8 +69,8 @@ namespace Game.Tests.EditMode
                 {
                     foreach (bool tp in new[] { Wired, Missing })
                     {
-                        MuzzleAnchor first = HarpoonMuzzleRules.ResolveAnchor(isOwner, fp, tp);
-                        Assert.That(HarpoonMuzzleRules.ResolveAnchor(isOwner, fp, tp),
+                        MuzzleAnchor first = WeaponMuzzleRules.ResolveAnchor(isOwner, fp, tp);
+                        Assert.That(WeaponMuzzleRules.ResolveAnchor(isOwner, fp, tp),
                             Is.EqualTo(first), $"owner={isOwner} fp={fp} tp={tp}");
 
                         // 배선된 앵커만 선택된다 — 없는 쪽을 고르면 로프 시작점이 원점으로 튄다.

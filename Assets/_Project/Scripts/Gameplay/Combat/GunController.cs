@@ -24,7 +24,15 @@ namespace Game.Gameplay.Combat
     {
         [SerializeField] private GunSettings _settings;
         [SerializeField] private Transform _aimSource;
+
+        [Tooltip("레거시 총구 (카메라 아래 고정점) — FP·TP 앵커가 모두 비었을 때의 폴백.")]
         [SerializeField] private Transform _muzzle;
+
+        [Tooltip("FP 뷰모델 총구 — 소유자 화면이 쓴다 (AimPivot/<무기>Pivot/<모델>/MuzzleTip).")]
+        [SerializeField] private Transform _fpMuzzle;
+
+        [Tooltip("TP 월드모델 총구 — 원격 피어가 쓴다 (손 본 소켓의 무기 아래 MuzzleTip).")]
+        [SerializeField] private Transform _tpMuzzle;
 
         // 한 발사의 펠릿 명중을 대상별로 모은다 — 발사 시에만 쓰는 작업 버퍼.
         private struct PelletGroup
@@ -47,6 +55,37 @@ namespace Game.Gameplay.Combat
 
         /// <summary>이 총이 차지하는 핫바 아이템 종류 — 핫바 게이트가 조회한다.</summary>
         public HotbarItemType WeaponItem => _settings != null ? _settings.WeaponItem : HotbarItemType.None;
+
+        /// <summary>
+        /// 트레이서가 나갈 총구 위치 (집게 발사위치 통합 계획 §5). 소유자는 자기 화면의 FP 뷰모델
+        /// 총구를, 원격 피어는 캐릭터가 손에 쥔 TP 모델의 총구를 쓴다 —
+        /// <see cref="PlayFireCosmetics"/>는 각 피어가 로컬로 재생하므로 이 프로퍼티 하나로 축이 갈린다.
+        /// 앵커가 없는 총(모델 미반입)은 레거시 총구로 물러선다.
+        /// </summary>
+        private Vector3 MuzzlePosition
+        {
+            get
+            {
+                MuzzleAnchor anchor = WeaponMuzzleRules.ResolveAnchor(
+                    IsOwner, _fpMuzzle != null, _tpMuzzle != null);
+
+                Transform muzzle;
+                switch (anchor)
+                {
+                    case MuzzleAnchor.Fp:
+                        muzzle = _fpMuzzle;
+                        break;
+                    case MuzzleAnchor.Tp:
+                        muzzle = _tpMuzzle;
+                        break;
+                    default:
+                        muzzle = _muzzle;
+                        break;
+                }
+
+                return muzzle != null ? muzzle.position : transform.position;
+            }
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -202,7 +241,7 @@ namespace Game.Gameplay.Combat
                 return;
             }
 
-            Vector3 muzzle = _muzzle != null ? _muzzle.position : transform.position;
+            Vector3 muzzle = MuzzlePosition;
             int pellets = Mathf.Max(1, _settings.PelletCount);
             uint state = seed;
 

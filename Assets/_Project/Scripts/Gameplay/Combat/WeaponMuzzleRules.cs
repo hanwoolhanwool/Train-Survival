@@ -1,4 +1,4 @@
-namespace Game.Gameplay.Harpoon
+namespace Game.Gameplay.Combat
 {
     /// <summary>
     /// 훅·로프가 나갈 총구 앵커의 종류 (집게 발사위치 통합 계획 §2 결정 ①).
@@ -23,7 +23,7 @@ namespace Game.Gameplay.Harpoon
     /// 판정을 순수 함수가 소유한다 (아키텍처 규칙 — EditMode 테스트가 <c>Game.Editor</c>를 참조하지 않는다).
     /// <see cref="UnityEngine.Transform"/>을 인자로 받지 않고 가용성만 받는 이유도 같다.
     /// </summary>
-    public static class HarpoonMuzzleRules
+    public static class WeaponMuzzleRules
     {
         /// <summary>
         /// 이 피어가 쓸 총구 앵커를 고른다.
