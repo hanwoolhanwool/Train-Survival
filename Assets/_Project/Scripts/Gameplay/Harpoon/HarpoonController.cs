@@ -34,7 +34,16 @@ namespace Game.Gameplay.Harpoon
     {
         [SerializeField] private HarpoonSettings _settings;
         [SerializeField] private Transform _aimSource;
+
+        [Tooltip("레거시 총구 (카메라 아래 고정점) — FP·TP 앵커가 모두 비었을 때의 폴백.")]
         [SerializeField] private Transform _muzzle;
+
+        [Tooltip("FP 뷰모델 총구 — 소유자 화면이 쓴다 (AimPivot/HarpoonPivot/MuzzleTip).")]
+        [SerializeField] private Transform _fpMuzzle;
+
+        [Tooltip("TP 월드모델 총구 — 원격 피어가 쓴다 (손 본 소켓의 집게 아래 MuzzleTip).")]
+        [SerializeField] private Transform _tpMuzzle;
+
         [SerializeField] private HarpoonProjectile _projectilePrefab;
         [SerializeField] private HarpoonRopeRenderer _rope;
 
@@ -101,6 +110,41 @@ namespace Game.Gameplay.Harpoon
 
         /// <summary>현재 등급의 수치 묶음 — 사거리·릴 속도·페널티·무게 상한.</summary>
         private HarpoonSettings.Tier CurrentTier => _settings.GetTier(Tier);
+
+        /// <summary>
+        /// 이 피어가 쓸 총구 — 훅 스폰·로프 시작·되감기·릴 앵커가 모두 이것 하나를 본다
+        /// (집게 발사위치 통합 계획 §3 단계 3). 소유자는 FP 뷰모델의 총구를, 원격 피어는
+        /// 캐릭터가 손에 쥔 TP 모델의 총구를 쓴다 — 각자 <b>자기 화면에 보이는 집게</b>에서 훅이 나간다.
+        /// 손 소켓은 매 프레임 본을 좇으므로 캐싱하지 않고 그때그때 고른다.
+        /// </summary>
+        private Transform ActiveMuzzle
+        {
+            get
+            {
+                MuzzleAnchor anchor = HarpoonMuzzleRules.ResolveAnchor(
+                    IsOwner, _fpMuzzle != null, _tpMuzzle != null);
+
+                switch (anchor)
+                {
+                    case MuzzleAnchor.Fp:
+                        return _fpMuzzle;
+                    case MuzzleAnchor.Tp:
+                        return _tpMuzzle;
+                    default:
+                        return _muzzle;
+                }
+            }
+        }
+
+        /// <summary>총구 위치 — 앵커가 하나도 배선되지 않았을 때만 자기 위치로 물러선다.</summary>
+        private Vector3 MuzzlePosition
+        {
+            get
+            {
+                Transform muzzle = ActiveMuzzle;
+                return muzzle != null ? muzzle.position : transform.position;
+            }
+        }
 
         /// <summary>
         /// 날씨를 반영한 실효 사거리 (M7 3차 폭설 — 기획서 §7.4). 훅이 <b>실제로 나는 거리</b>이므로
@@ -221,8 +265,7 @@ namespace Game.Gameplay.Harpoon
                 // Q3 계측 — 견인 중 대상(=부착된 훅) 이동의 워프/역행 검출 (소유자 화면 기준, §3.2).
                 if (_activeProjectile != null && _activeProjectile.IsAttached)
                 {
-                    Vector3 anchor = _muzzle != null ? _muzzle.position : transform.position;
-                    HarpoonSliceMetrics.RecordTowSample(_activeProjectile.transform.position, anchor, Time.deltaTime);
+                    HarpoonSliceMetrics.RecordTowSample(_activeProjectile.transform.position, MuzzlePosition, Time.deltaTime);
                 }
             }
         }
@@ -380,7 +423,9 @@ namespace Game.Gameplay.Harpoon
             // Q1: 발사 연출은 입력 즉시 로컬 발행 (지연 0).
             EventBus<HarpoonFiredLocalEvent>.Publish(new HarpoonFiredLocalEvent(OwnerClientId));
 
-            Vector3 origin = _muzzle != null ? _muzzle.position : _lastFirePosition;
+            // 소유자 화면의 총구 = FP 뷰모델 앵커 (§2 결정 ①). 조준점 수렴 방향도 이 지점을 기준으로 잡힌다.
+            Transform muzzle = ActiveMuzzle;
+            Vector3 origin = muzzle != null ? muzzle.position : _lastFirePosition;
             Vector3 direction = ComputeFireDirection(origin);
 
             // 발사 시점 사수의 기준 프레임을 훅에 물려준다 — 지상(월드 프레임) 발사분은 컨베이어를 따라
@@ -403,7 +448,7 @@ namespace Game.Gameplay.Harpoon
             _activeProjectile.Launch(
                 origin, direction,
                 _settings.ProjectileSpeed, _settings.ProjectileRadius, EffectiveMaxRange,
-                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld,
+                transform.root, ActiveMuzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld,
                 OnProjectileHit, OnProjectileMiss);
         }
 
@@ -480,7 +525,7 @@ namespace Game.Gameplay.Harpoon
                 return;
             }
 
-            Vector3 start = _muzzle != null ? _muzzle.position : transform.position;
+            Vector3 start = MuzzlePosition;
             float slack = _activeProjectile.IsWaitingForServer ? 1f : (_activeProjectile.IsFailing ? 0.5f : 0.15f);
             _rope.Show(start, _activeProjectile.transform.position, slack, _activeProjectile.IsFailing);
         }
@@ -840,11 +885,19 @@ namespace Game.Gameplay.Harpoon
         [Rpc(SendTo.NotOwner)]
         private void PlayRemoteFireRpc(Vector3 origin, Vector3 direction, bool scrollWithWorld)
         {
+            // 훅은 보내온 origin이 아니라 이 화면의 총구에서 띄운다 (§3 단계 4) — 원격 피어가 보는 것은
+            // 사수가 손에 쥔 TP 집게이므로, 훅도 거기서 나가야 무기와 로프가 이어져 보인다.
+            // 보내온 origin은 TP 앵커가 없을 때의 폴백으로만 쓴다.
+            Transform muzzle = ActiveMuzzle;
+            Vector3 localOrigin = muzzle != null ? muzzle.position : origin;
+
+            // direction은 받은 값을 그대로 쓴다 — 원격은 사수의 조준점을 모르므로 재계산할 수 없고,
+            // 명중 시 GrabApprovedNotOwnerRpc의 AttachTo가 전 피어를 같은 대상으로 수렴시킨다 (§2.1).
             DiscardActiveProjectile();
-            _activeProjectile = PoolManager.Spawn(_projectilePrefab, origin, Quaternion.LookRotation(direction));
+            _activeProjectile = PoolManager.Spawn(_projectilePrefab, localOrigin, Quaternion.LookRotation(direction));
             _activeProjectile.LaunchCosmetic(
-                origin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, EffectiveMaxRange,
-                transform.root, _muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld);
+                localOrigin, direction, _settings.ProjectileSpeed, _settings.ProjectileRadius, EffectiveMaxRange,
+                transform.root, muzzle, _settings.RetractSpeed, _settings.ImpactPauseDuration, _settings.WaitingForServerTimeout, scrollWithWorld);
         }
 
         [Rpc(SendTo.NotOwner)]
