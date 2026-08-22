@@ -212,6 +212,8 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 3f521a47264d1ef479efb088b5845785, type: 2}
   _aimSource: {fileID: 1609037139869776444}
   _muzzle: {fileID: 7925440856569755618}
+  _fpMuzzle: {fileID: 377736487219341972}
+  _tpMuzzle: {fileID: 9194142780301074373}
 --- !u!114 &8811223344556677001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -228,6 +230,8 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: aa00dd4e371e62849534c8b6ee5a196c, type: 2}
   _aimSource: {fileID: 1609037139869776444}
   _muzzle: {fileID: 7925440856569755618}
+  _fpMuzzle: {fileID: 4264966054023992575}
+  _tpMuzzle: {fileID: 7162381383197947701}
 --- !u!114 &8811223344556677002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,6 +248,8 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: ae44d831ef4b3a786ff5df843efd9e00, type: 2}
   _aimSource: {fileID: 1609037139869776444}
   _muzzle: {fileID: 7925440856569755618}
+  _fpMuzzle: {fileID: 0}
+  _tpMuzzle: {fileID: 0}
 --- !u!114 &8811223344556677003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -531,6 +537,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerGrabTarget
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!1 &937886420088004974
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7162381383197947701}
+  m_Layer: 0
+  m_Name: MuzzleTip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7162381383197947701
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 937886420088004974}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0.00006734146, y: 0.0057154754, z: 0.002611902}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5383158328880193517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2635673702125266619
 GameObject:
   m_ObjectHideFlags: 0
@@ -562,6 +599,37 @@ Transform:
   m_Children:
   - {fileID: 1609037139869776444}
   m_Father: {fileID: 7534862156400754249}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2728416581994649981
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 377736487219341972}
+  m_Layer: 0
+  m_Name: MuzzleTip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &377736487219341972
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2728416581994649981}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -0.0000001516164, y: 0.0012568878, z: 0.0008779328}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5383158328880189514}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3877519062468645117
 GameObject:
@@ -669,6 +737,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerCameraTuner
   _settings: {fileID: 11400000, guid: 23498d83eb06b924093dbb4bb3c793e7, type: 2}
+--- !u!1 &4375267642308410406
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4264966054023992575}
+  m_Layer: 0
+  m_Name: MuzzleTip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4264966054023992575
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4375267642308410406}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0.00006734146, y: 0.0057154754, z: 0.002611902}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5383158328880189504}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5133943987321804592
 GameObject:
   m_ObjectHideFlags: 0
@@ -1471,6 +1570,37 @@ Transform:
   - {fileID: 7925440856569755618}
   m_Father: {fileID: 2479519262619146647}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8782814350289321096
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9194142780301074373}
+  m_Layer: 0
+  m_Name: MuzzleTip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9194142780301074373
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8782814350289321096}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -0.0000001516164, y: 0.0012568878, z: 0.0008779328}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5383158328880193519}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8821010466022303266
 GameObject:
   m_ObjectHideFlags: 0
@@ -1566,7 +1696,10 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 82d08fc28be390a4ea53e1aee18b5359, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 377736487219341972}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
 --- !u!4 &5383158328880189514 stripped
@@ -1600,7 +1733,10 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: b071c9fb2d00a0c4eab1e8b1515b4180, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4264966054023992575}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
 --- !u!4 &5383158328880189504 stripped
@@ -1901,7 +2037,10 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 82d08fc28be390a4ea53e1aee18b5359, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9194142780301074373}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4a8114889bf82ef4e94f0bfb3365d579, type: 3}
 --- !u!4 &5383158328880193519 stripped
@@ -1935,7 +2074,10 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: b071c9fb2d00a0c4eab1e8b1515b4180, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7162381383197947701}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4722dd4e51665cb43a8d31847862b1de, type: 3}
 --- !u!4 &5383158328880193517 stripped
