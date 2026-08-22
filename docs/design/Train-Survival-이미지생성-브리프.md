@@ -1,6 +1,12 @@
 # 이미지 생성 브리프 — Train Survival
 
-작성일: 2026-08-20 · 버전: **v1.1** · 용도: **외부 이미지 생성 AI(ChatGPT 등) 입력용 발췌본**
+작성일: 2026-08-20 · 버전: **v1.2** · 용도: **외부 이미지 생성 AI(ChatGPT 등) 입력용 발췌본**
+
+> **v1.2 변경 요약 (2026-08-23)** — **지면 텍스처 경로 신설.**
+> - **§M** 지면 텍스처 생성 지시 시트 — 3D를 거치지 않고 **그대로 반복해 까는 평면**이라
+>   §G9(3D 입력)와 규칙이 정반대다. 무지 회색 배경·3/4 시점을 적용하면 못 쓰는 그림이 나온다.
+>   **심리스가 절대 조건**이고 반복 크기가 배선(타일링 6×4 = 10 m)에 묶여 있다
+> - **§L** 열차 부품 시트에 반입 결과 반영 — 실측 정정 3건
 
 > **v1.1 변경 요약 (2026-08-22)** — **3D 생성 경로 신설.** 기존 §G1~G8은 전부 *보여주기 위한 장면*이고,
 > image-to-3D(Tripo·Meshy)에 먹일 *입력*은 규칙이 정반대라 별도 모듈이 필요했다.
@@ -17,7 +23,8 @@
 > | 목적 | 첫 메시지 | 이후 |
 > |---|---|---|
 > | **장면·컨셉아트** (키비주얼·환경·UI 목업) | §A~**§F** 전부 | §G1~G8 중 하나 |
-> | **3D 생성 입력** (Tripo·Meshy에 먹일 것) | §A~**§E** + **§G9** (§F는 **쓰지 않는다**) | §J(자원) · §K(배경)의 한 줄 |
+> | **3D 생성 입력** (Tripo·Meshy에 먹일 것) | §A~**§E** + **§G9** (§F는 **쓰지 않는다**) | §J(자원) · §K(배경) · §L(열차 부품)의 한 줄 |
+> | **지면 텍스처** (3D를 안 거치고 그대로 까는 것) | §A~**§E** + **§M** (§F·§G9 **둘 다 쓰지 않는다**) | §M.4의 지역 한 줄 |
 >
 > 매번 전체를 다시 붙일 필요 없다. 참조 이미지는 `docs/Game design/InGame/*`, `docs/Game design/UI/*`를 첨부.
 > 3D 입력용은 참조 이미지에 **기존 반입 에셋의 텍스처**(`Assets/_Project/Art/Textures/T_Structure_*.png`)를
@@ -519,3 +526,110 @@ K.3~K.5 12종을 이 순서대로 돌린 결과. 원본 33,484 → **6,184 tris 
 |---|---|---|
 | `BoardingRamp` | 큐브 2.0 × 0.2 × 8.34 m | 승·하차 동선. 이번 시트 밖이지만 같은 이유로 교체 대상 |
 | `Connector_*`의 `M_Default` | 회색 기본 머티리얼 | 모델을 넣으면 `M_Train_Coupler`로 함께 교체한다 |
+
+---
+
+## M. 지면 텍스처 — 생성 지시 시트 *(§G9를 쓰지 않는다 — 규칙이 다르다)*
+
+**§G9·§K·§L과 용도가 다르다.** 그쪽은 image-to-3D에 먹일 **오브젝트 한 개**의 입력이고,
+이것은 3D를 거치지 않고 **그대로 반복해 까는 평면 텍스처**다. 무지 회색 배경·3/4 시점·
+단일 오브젝트 같은 §G9 규격을 여기에 적용하면 못 쓰는 그림이 나온다.
+
+### M.1 현행 배선 — 이 수치를 바꾸면 안 된다
+
+| 항목 | 값 | 근거 |
+|---|---|---|
+| 지면 판 | **60(X) × 40(Z) m** 큐브 상면, UV 0..1 | `TerrainTile` 계열의 `Ground` |
+| 머티리얼 | `M_Ground`(숲·기본) · `M_GroundDesert` · `M_GroundGrassland` · `M_GroundArctic` | 지역마다 1장 |
+| **타일링** | **(6, 4) = 축마다 10 m 반복** | 10 m가 60·40 **둘 다의 정수배**라 타일이 40 m씩 재배치돼도 이음매에서 무늬가 안 끊긴다 |
+| 텍스처 | `T_Env_Ground_<지역>_BaseColor.png` · **1024²** | 10 m에 1024 px = **102 px/m**. 2 cm보다 잔 디테일은 어차피 안 보인다 |
+| 셰이더 | URP **Simple Lit** · `_BaseColor` 흰색 | BaseColor만 쓴다(M8 결정 ⑦). 텍스처가 색을 갖고 온다 |
+
+> **타일링 (6, 4)를 깨면 스크롤 중 타일 경계가 줄무늬로 드러난다.** 숫자를 바꾸고 싶으면
+> 60과 40을 동시에 나누는 값(10 · 20 · 5 …)에서 고른다.
+
+### M.2 이 시트의 절대 조건 — **심리스**
+
+생성한 그림은 **좌우가 이어지고 위아래가 이어져야 한다.** 한 장이 곧 10 m 패치이고
+그것을 24번(6×4) 깔기 때문에, 가장자리가 안 맞으면 **바둑판 격자가 화면에 그대로 뜬다.**
+
+**ChatGPT·DALL·E는 심리스를 신뢰할 수 없다.** "seamless tileable"이라고 적어도 대개 안 맞는다.
+그래서 아래 셋 중 하나로 간다 — **①을 먼저 시도하고, 실패하면 ②로 내린다.**
+
+| # | 방법 | 언제 |
+|---|---|---|
+| **①** | 생성 → **이음매 검사(M.5)** 통과하면 그대로 반입 | 운이 좋으면 여기서 끝난다 |
+| **②** | 생성물을 **룩 레퍼런스**로만 쓰고, 색·얼룩 크기·대비를 절차 생성 쪽에 옮긴다 | 현행 숲 지면이 이 경로다(계획 §10.11). **가장 확실하다** |
+| ③ | 이미지 편집기에서 50% 오프셋 → 나타난 십자 이음매를 힐링으로 지운다 | 도구가 있을 때만. 손이 많이 간다 |
+
+> **②가 후퇴가 아니다.** 절차 생성은 심리스가 공짜이고 타일링·색을 나중에 조절할 수 있다.
+> AI에게서 얻고 싶은 것은 **"어떤 얼룩이 어떤 크기로 있어야 하는가"** 라는 판단이지 픽셀이 아니다.
+
+### M.3 생성 지시 — 공통 (영문 코어 §H 뒤에 이어 붙인다)
+
+```
+IMPORTANT — this is a TILING GROUND TEXTURE, not concept art and not a 3D input.
+Ignore any scene, camera, character or lighting-direction rules from the brief above.
+
+FRAMING (critical)
+- Perfectly TOP-DOWN orthographic view of flat ground, square canvas
+- The image represents a 10m x 10m patch of terrain
+- SEAMLESS TILEABLE: left edge continues into right edge, top edge into bottom edge
+- Fill the whole frame with ground only — no horizon, no sky, no vignette, no border
+
+CONTENT
+- Ground surface material only: NO trees, NO rocks, NO props, NO rails, NO path,
+  NO footprints, NO man-made marks, NO creatures
+- Large soft patches at roughly 2-4m scale, plus medium 0.5m breakup
+- Irregular torn patch edges — no circular blobs, no repeating motifs
+
+LIGHTING (critical — do NOT bake light into the texture)
+- Flat even ambient light, NO sun direction, NO cast shadows, NO highlights
+- Soft contact AO in crevices only
+- No color grading, no bloom, no vignette
+
+STYLE
+Stylized semi-cartoon hand-painted game texture. Large simple value shapes,
+gentle gradients, high roughness. NOT a photo scan, NOT PBR, no fine grain,
+no tiny speckle noise, no visible brush strokes at pixel scale.
+
+NEGATIVE
+seams, grid lines, tiling artifacts, horizon, sky, perspective, shadows,
+sun direction, vignette, border, frame, trees, rocks, props, path, footprints,
+photorealism, photo scan, PBR, fine noise, text, watermark, logo
+```
+
+### M.4 지역별 내용 — 4종
+
+색은 **§D.2 지역 팔레트 안에서만** 고른다. 지면은 화면 아래 절반을 차지하므로
+여기서 팔레트를 벗어나면 지역 정체성이 통째로 흔들린다.
+
+| 지역 | 파일명 | 영문 지시 (§M.3 뒤에 이어 쓴다) |
+|---|---|---|
+| **숲 (봄)** | `T_Env_Ground_Forest_BaseColor` | mossy forest floor, deep shade green `#33523A` mixed with sunlit grass `#5E8C46`, torn patches of bare earth `#6E5136`, scattered dry leaves in warm tan, damp and soft |
+| **사막 (여름)** | `T_Env_Ground_Desert_BaseColor` | dry desert hardpan, pale sand `#DCA85C` with rust-stained gravel `#A9613A`, wide cracked clay plates, wind ripples in the sand, bleached and dusty |
+| **대초원 (가을)** | `T_Env_Ground_Grassland_BaseColor` | dry autumn prairie, golden grain `#D9A441` laid flat in drifts, amber patches `#B87A2C`, straw-colored dead grass `#EBD9A6`, worn earth showing through |
+| **북극 (겨울)** | `T_Env_Ground_Arctic_BaseColor` | wind-packed snow field, glacier white `#E6EEF2` with blue shadow hollows `#9EC2D6`, deep frost crevices `#3E5A72`, hard crust and sastrugi ridges, no sparkle |
+
+### M.5 검수 — **이음매 검사가 먼저다**
+
+- ☐ **이음매**: 이미지를 가로·세로 **50% 오프셋**했을 때 십자 이음매가 보이는가 →
+  보이면 M.2 ②·③으로 간다. **이것을 통과 못 하면 나머지는 볼 필요가 없다**
+- ☐ **반복 인지**: 2×2로 붙여 놓고 봤을 때 눈에 띄는 특징 하나가 격자로 반복되지 않는가
+  (밝은 반점·큰 균열 하나가 범인이다)
+- ☐ **그림자 없음**: 한쪽에서 온 빛의 방향이 읽히는가 → 읽히면 Unity 조명과 이중으로 겹친다
+- ☐ **소품 없음**: 나무·바위·발자국·길이 들어가지 않았는가 (그것들은 3D 프롭이 따로 담당한다)
+- ☐ **미세 노이즈 없음**: 사진 스캔처럼 잘게 지글거리지 않는가 (가이드 §8.2 비권장)
+- ☐ **팔레트**: §D.2 안에 있는가
+- ☐ **밝기**: 열차(무쇠 `#3A3A3C`)가 지면 위에서 실루엣으로 읽히는가 — 지면이 너무 어두우면
+  편성이 배경에 묻힌다 (§C 세 겹의 대비)
+
+### M.6 반입
+
+1. `Assets/_Project/Art/Textures/T_Env_Ground_<지역>_BaseColor.png` (1024²)
+2. 해당 지역 머티리얼(`M_Ground*`)의 `_BaseMap`·`_MainTex`에 물리고 **타일링 (6, 4)**
+3. `_BaseColor`는 **흰색** — 텍스처가 색을 갖고 오므로 단색을 곱하면 어두워진다
+4. `TerrainTile` 계열 프리팹은 건드리지 않는다 (머티리얼만 갈면 10종이 전부 따라온다)
+
+> **현행 숲 지면은 절차 생성본이다**(계획 §10.11). ChatGPT본이 이음매 검사를 통과하면
+> 같은 파일명으로 덮어써 guid 보존으로 무수정 교체가 된다.
