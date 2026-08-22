@@ -99,6 +99,7 @@ classDiagram
         +float DayAmbientTemperature
         +float NightAmbientTemperature
         +GameObject TerrainTilePrefab
+        +TerrainSegmentPalette SegmentPalette
         +float ResourceSpawnIntervalMultiplier
     }
     class RegionTimelineSettings {
@@ -138,6 +139,7 @@ classDiagram
 | `NightAmbientTemperature` | 15 ℃ | 2 ℃ | 확정 사망이라 9 ℃로 임시 조정했다가(2026-08-03), 난방 건축물 도입으로 2 ℃ 복원 (2026-08-06, M5 3차) |
 | `_weathers` / `WeatherChancePerDay` | [] / 0 | [모래폭풍] / 0.6 | → [weather-events](weather-events.md) |
 | `TerrainTilePrefab` | 숲 타일 | 사막 타일 | 비우면 이전 지역 타일 유지 |
+| `SegmentPalette` | **`TerrainSegmentPalette_Forest`** (10종) | 미설정 | **팔레트가 우선한다** — 있으면 `SegmentPickLogic`이 인덱스에서 가중 추첨하고, 없으면 위의 단일 프리팹으로 내려간다 (2026-08-23 신설) |
 | `ResourceSpawnIntervalMultiplier` | 1 | 2 | 클수록 희소 — 기획서 §4 자원 등급(숲 3/사막 1)의 구현 |
 
 ## 6. 상세 로직·상태

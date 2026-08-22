@@ -56,6 +56,10 @@
 | `WorldScrollController` | 호스트 권위 소유 + 클라이언트 외삽·스무딩 | `NetworkBehaviour` |
 | `WorldScrollMath` | 스크롤 좌표 유도·스무딩 순수 함수 | 순수 C# static |
 | `TileStreamingLogic` | 타일 가시 구간·Z 좌표 계산 순수 함수 | 순수 C# static |
+| `SegmentPickLogic` | 타일 인덱스 → 세그먼트 결정론 추첨 (가중·인접 반복 방지) 순수 함수 | 순수 C# static |
+| `TerrainSegmentPalette` | 지역 1종의 세그먼트 목록 + 가중치 + `NoRepeatAdjacent` | `ScriptableObject` |
+| `ResourceAnchor` | 세그먼트가 제공하는 자원 배치 지점 (`Kind` 4종) | `MonoBehaviour` + 정적 레지스트리 |
+| `LandmarkSlot` / `ScatterSlot` | 랜드마크 자리 · 변주 슬롯(확률·회전 지터·배율) | `MonoBehaviour` |
 | `TerrainTileStreamer` | 타일 전방 생성/후방 회수 구동 | `MonoBehaviour` |
 | `WorldFrameSurface` | "이 위에 서면 컨베이어 밀림 적용" 마커 | `MonoBehaviour` |
 | `ResourceNode` | 그랩 가능 지상 자원 엔티티 (`IGrabbable` 구현) | `NetworkBehaviour` + `IPoolable` |
@@ -157,6 +161,29 @@ flowchart LR
 
 `TileStreamingLogic.GetVisibleRange`가 순수하게 구간을 계산하고, `TerrainTileStreamer`는 그 구간과 현재 활성 타일 딕셔너리를 비교해 벗어난 타일만 `PoolManager.Despawn`, 새로 들어온 인덱스만 `PoolManager.Spawn`한다 — 매 프레임 전체 재생성이 아니라 차집합만 갱신.
 
+### 6.3 세그먼트 추첨 (2026-08-23)
+
+타일 프리팹은 **3단으로 결정된다** — `TerrainTileStreamer.ResolveTilePrefab`.
+
+1. 지역 팔레트(`RegionDefinition._segmentPalette`)가 있으면 `SegmentPickLogic`이 **타일 인덱스에서**
+   가중 추첨한다. `NoRepeatAdjacent` 세그먼트는 같은 것이 연달아 나오지 않는다.
+2. 없으면 지역의 단일 프리팹.
+3. 그것도 없으면 씬의 `_tilePrefab`.
+
+**추첨은 인덱스 시드라 네트워크 상태를 만들지 않는다.** 지역·낮밤과 같은 규약(복제 값 하나에서
+순수 파생)이므로 전 피어가 같은 지형을 본다 — 콜라이더가 갈리면 없는 벽을 도는 몬스터가 생긴다.
+
+### 6.4 자원 앵커 스폰 (2026-08-23)
+
+`GroundResourceSpawner`는 좌표를 랜덤으로 만드는 대신 전방 타일의 **미사용 `ResourceAnchor`**를 고른다.
+앵커는 지형 높이를 이미 반영한 자리라 자원이 바위를 뚫거나 절개면 공중에 뜨지 않는다.
+
+- **종류를 위치보다 먼저 추첨한다** — 종류가 앵커 `Kind`(지면/암반/수변/잔해)를 고르는 입력이다.
+- 앵커가 없으면 **기존 랜덤으로 폴백**한다 — 팔레트 없는 지역에서도 자원이 끊기지 않는다.
+- 세션 첫 프레임에는 타일이 아직 없어 앵커가 0개다. `AnchorWarmupSeconds`(0.5 s) 동안 스폰을 미루고,
+  그 뒤에는 앵커가 없어도 폴백으로 진행한다.
+- **풀 정합**: 앵커는 `OnEnable`에서 사용 플래그를 리셋한다. 빠뜨리면 재사용 타일에 자원이 영영 안 심긴다.
+
 ## 7. 인터페이스·의존성 (경계)
 
 - **`IWorldScrollService`** — World가 제공하고 Harpoon·Player·UI가 `ServiceLocator.TryGet`으로 소비하는 유일한 스크롤 진입점. 소비자는 `WorldScrollController`의 존재를 몰라도 된다.
@@ -195,7 +222,7 @@ flowchart LR
 | ~~게스트 견인 전환 순간이동~~ → **수정안 A 구현 완료** (2026-07-21, 실플레이 재검증 대기) | `ResourceNode`에 `BeginPredictedTow/CancelPredictedTow`(IGrabbable 계약 추가분) 구현 — 쏜 클라이언트가 로컬 명중 시점에 호출하면 컨베이어 유도를 멈추고 현재 표시 위치에 고정(`_predictedTow`, 비동기화 로컬 상태), `_isTowed` 스냅샷 수신 시 자동 해제 후 견인 보간으로 수렴, 거부·타임아웃 시 컨베이어 유도로 복귀. 서버에서는 무시. 원인 분석·훅 측 수정안 B(구현 후 롤백)는 [harpoon 스펙 §11](../harpoon/grapple-pipeline.md) 참조 |
 | 트랙 커브·경사 표현 미결 → **M4에서 보류, M7로 이월** (2026-08-01) | 네트워크 문서 §8 — 배경 연출만 vs 스크롤 벡터 회전. M4는 직선 스크롤을 유지하고 지역 정체성을 지형 프리팹 교체(`RegionDefinition.TerrainTilePrefab`)로만 표현한다. 벡터 회전은 `GetScrolledPosition` 위치 유도 공식·몬스터 조향·손잡이 이탈 시뮬을 모두 재검증해야 해 후반부 지역 설계 시점으로 미뤘다 |
 | 동시 존재 자원/타일 상한 미계측 | 4인 세션 기준 대역폭 실측 전 — 밤 웨이브 몬스터와 별개로 자원 스폰량도 M2 이후 함께 점검 필요 |
-| 지형 지오메트리가 더미 | 현재 `TerrainTile.prefab`은 평면 큐브 — 실제 아트 리소스 교체 시 콜라이더·`WorldFrameSurface` 배치 재확인 필요 |
+| ~~지형 지오메트리가 더미~~ → **해소 (2026-08-23)** | 숲 팔레트 **10종**이 서고 `Region_Forest._segmentPalette`에 배선됐다. 타일당 오브젝트 28.4개(앵커 5~7 · 스캐터 5~8). 콜라이더·`WorldFrameSurface` 배치는 **클리어 존 검사기**(`Game/QA/Clear Zone Audit`)가 자동 판정한다 — [레벨 디자인 가이드 §9.3](../../design/Train-Survival-레벨디자인-가이드.md). 나머지 3지역은 계획 4차 |
 
 ## 12. 확장 여지
 
