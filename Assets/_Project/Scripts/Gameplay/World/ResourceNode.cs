@@ -13,14 +13,39 @@ namespace Game.Gameplay.World
     /// </summary>
     public sealed class ResourceNode : SettleableGrabbable
     {
+        /// <summary>
+        /// 자원 1종의 전용 외형 — 종류별 메시를 한 프리팹 안에 담고 활성만 토글한다
+        /// (몬스터 변종과 같은 규약: 네트워크 프리팹 목록을 늘리지 않는다).
+        /// 등록되지 않은 종류는 <see cref="_fallbackVisual"/> + 카탈로그 색 틴트로 폴백하므로,
+        /// 모델이 준비된 종류부터 하나씩 채워 넣을 수 있다.
+        /// </summary>
+        [System.Serializable]
+        public sealed class ResourceVisual
+        {
+            [SerializeField] private Inventory.ResourceType _type = Inventory.ResourceType.Wood;
+
+            [Tooltip("이 종류일 때만 활성화할 메시 루트 (Visual 아래).")]
+            [SerializeField] private GameObject _root;
+
+            public Inventory.ResourceType Type => _type;
+
+            public GameObject Root => _root;
+        }
+
         [Tooltip("서버가 종류를 주입하지 않았을 때의 기본 자원 종류.")]
         [SerializeField] private Inventory.ResourceType _defaultResourceType = Inventory.ResourceType.Wood;
 
         [Tooltip("종류 식별 색·표시명 조회용 카탈로그 — 전 종류가 한 프리팹을 공유하므로 색이 외형 구분이다.")]
         [SerializeField] private Inventory.ResourceCatalog _catalog;
 
-        [Tooltip("종류 색을 칠할 렌더러 (Visual).")]
+        [Tooltip("종류 색을 칠할 렌더러 (Visual) — 폴백 외형에만 쓴다. 전용 메시는 텍스처가 색을 담는다.")]
         [SerializeField] private Renderer[] _tintRenderers;
+
+        [Tooltip("종류별 전용 메시. 등록된 종류는 이 메시를 쓰고 색 틴트를 칠하지 않는다.")]
+        [SerializeField] private ResourceVisual[] _typeVisuals;
+
+        [Tooltip("전용 메시가 없는 종류에 쓰는 기본 외형(프리미티브). 비우면 종류 메시 토글을 하지 않는다 — 배선 전 회귀 방지.")]
+        [SerializeField] private GameObject _fallbackVisual;
 
         // 자원 종류 — 몬스터 변종과 같은 규약: 프리팹을 늘리지 않고 인덱스(byte)를 복제해 각 피어가 카탈로그를 조회한다.
         private readonly NetworkVariable<byte> _syncedResourceType = new NetworkVariable<byte>();
@@ -61,7 +86,7 @@ namespace Game.Gameplay.World
 
             _acquired = false;
             _syncedResourceType.OnValueChanged += OnResourceTypeChanged;
-            ApplyTint();
+            ApplyVisual();
         }
 
         public override void OnNetworkDespawn()
@@ -72,7 +97,46 @@ namespace Game.Gameplay.World
 
         private void OnResourceTypeChanged(byte previous, byte current)
         {
-            ApplyTint();
+            ApplyVisual();
+        }
+
+        /// <summary>
+        /// 종류 외형을 고른다 — 전용 메시가 등록돼 있으면 그것만 켜고, 없으면 폴백 프리미티브 +
+        /// 카탈로그 색 틴트(기존 동작)로 돌아간다. 풀에서 재사용되는 인스턴스도 스폰마다 이 경로를 타므로
+        /// 이전 종류의 메시가 남지 않는다.
+        /// </summary>
+        private void ApplyVisual()
+        {
+            GameObject chosen = null;
+            if (_typeVisuals != null)
+            {
+                for (int i = 0; i < _typeVisuals.Length; i++)
+                {
+                    ResourceVisual entry = _typeVisuals[i];
+                    if (entry == null || entry.Root == null)
+                    {
+                        continue;
+                    }
+
+                    bool match = entry.Type == ResourceType;
+                    entry.Root.SetActive(match);
+                    if (match)
+                    {
+                        chosen = entry.Root;
+                    }
+                }
+            }
+
+            // 폴백이 배선되지 않았으면(기존 프리팹) 토글을 하지 않고 색 틴트만 — 회귀 없음.
+            if (_fallbackVisual != null)
+            {
+                _fallbackVisual.SetActive(chosen == null);
+            }
+
+            if (chosen == null)
+            {
+                ApplyTint();
+            }
         }
 
         /// <summary>종류 색을 렌더러에 칠한다 — 전 종류 공유 프리팹의 외형 구분 (URP Lit _BaseColor).</summary>
