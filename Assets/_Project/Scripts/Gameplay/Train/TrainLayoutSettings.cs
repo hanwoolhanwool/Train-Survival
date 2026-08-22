@@ -14,7 +14,8 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(1f)] private float _carLength = 12f;
         [SerializeField, Min(1f)] private float _carWidth = 3f;
         [Tooltip("갑판 상면의 월드 y — 건축물·몬스터 착지·조준 평면이 전부 이 높이를 밟는 면으로 본다. "
-            + "씬에서 열차를 올리거나 내리면 반드시 함께 맞춘다.")]
+            + "씬에서 열차를 올리거나 내리면 반드시 함께 맞춘다. QA 높이 토글(F2)은 "
+            + "이 값을 고치지 않고 런타임 오프셋만 얹는다.")]
         [SerializeField, Min(1f)] private float _deckHeight = 3f;
 
         [Tooltip("칸 몸통의 세로 크기(m) — 바닥에서 갑판 상면까지. 증설·재결합 프리뷰 상자의 높이다. "
@@ -39,14 +40,37 @@ namespace Game.Gameplay.Train
         [SerializeField, Min(1f)] private float _fallBehindWarningMeters = 30f;
         [SerializeField, Min(1f)] private float _fallBehindDeathMeters = 40f;
 
+        // ── QA 높이 토글 (열차 높이 스펙 — docs/specs/world/train-elevation.md) ──────────
+        // 직렬화하지 않는다: 플레이 세션에서만 살고 에셋 파일을 더럽히지 않는다.
+        // 씬 표현은 TrainElevationFollower가, 규칙은 이 오프셋이 얹힌 아래 프로퍼티들이 따라간다.
+        [System.NonSerialized] private float _elevationOffset;
+
         public int CarCount => _carCount;
 
         public float CarLength => _carLength;
 
         public float CarWidth => _carWidth;
 
-        /// <summary>갑판 상면의 월드 y — 밟는 면·설치 면의 단일 기준.</summary>
-        public float DeckHeight => _deckHeight;
+        /// <summary>
+        /// 갑판 상면의 월드 y — 밟는 면·설치 면의 단일 기준.
+        /// QA 높이 오프셋(<see cref="ElevationOffset"/>)이 반영된 <b>지금</b>의 값이다.
+        /// </summary>
+        public float DeckHeight => _deckHeight + _elevationOffset;
+
+        /// <summary>씬에 굳어 있는 기준 갑판 높이 — 오프셋 0단계의 값(에셋에 적힌 그대로).</summary>
+        public float BaseDeckHeight => _deckHeight;
+
+        /// <summary>지금 적용 중인 QA 높이 오프셋(m) — 0이 기준, 음수가 내려간 상태다.</summary>
+        public float ElevationOffset => _elevationOffset;
+
+        /// <summary>
+        /// QA 높이 오프셋을 갈아 끼운다 — <see cref="TrainElevationController"/> 전용이다.
+        /// 열차 표현과 <b>같은 오프셋</b>이 들어와야 갑판 판정이 실제 갑판면과 맞는다.
+        /// </summary>
+        public void SetElevationOffset(float offset)
+        {
+            _elevationOffset = offset;
+        }
 
         /// <summary>칸 몸통의 세로 크기 (m) — 프리뷰 상자 높이. 갑판 높이와 달리 열차를 올려도 변하지 않는다.</summary>
         public float CarBodyHeight => _carBodyHeight;
@@ -64,8 +88,13 @@ namespace Game.Gameplay.Train
         public float DeckLength =>
             Mathf.Max(_structureCellSize, _carLength - 2f * _deckEdgeRows * _structureCellSize);
 
-        /// <summary>열차 하부 즉사 존의 높이 상한 (M5 6차). 0 = 비활성.</summary>
-        public float WheelKillHeight => _wheelKillHeight;
+        /// <summary>
+        /// 열차 하부 즉사 존의 높이 상한 (M5 6차). 0 = 비활성.
+        /// 존은 <b>바퀴 밑 공간</b>을 뜻하므로 열차가 내려가면 같이 내려온다 — 안 내리면
+        /// 낮아진 갑판 밑이 필요 이상으로 넓게 즉사 판정을 받는다. 오프셋이 커도 0 밑으로는 안 간다.
+        /// </summary>
+        public float WheelKillHeight =>
+            _wheelKillHeight <= 0f ? 0f : Mathf.Max(0f, _wheelKillHeight + _elevationOffset);
 
         /// <summary>연결부 포함 총 길이 (기관차 + 2칸 기본 구성 ≈ 39 m). 증설 칸은 여기 안 들어간다 — 초기 편성 기준.</summary>
         public float TotalLength => _carCount * _carLength + (_carCount - 1) * _couplingGap;
@@ -113,7 +142,7 @@ namespace Game.Gameplay.Train
         public float DeathZ => RearZ - _fallBehindDeathMeters;
 
         /// <summary>부활 지점 — 후미 칸 지붕 (§4.2).</summary>
-        public Vector3 RespawnPosition => new Vector3(0f, _deckHeight + 1f, RearZ + _carLength * 0.5f);
+        public Vector3 RespawnPosition => new Vector3(0f, DeckHeight + 1f, RearZ + _carLength * 0.5f);
 
         /// <summary>
         /// 스폰이 올라서는 편성 인덱스 — 0은 기관차다. 기관차는 걸어 다닐 지붕이 아니라 차체가
@@ -125,7 +154,7 @@ namespace Game.Gameplay.Train
         /// <summary>접속 순서별 초기 스폰 지점 — 첫 화차 갑판에서 뒤로 2 m 간격 나열.</summary>
         public Vector3 GetSpawnPosition(int playerIndex)
         {
-            return new Vector3(0f, _deckHeight + 1f, CarCenterZ(SpawnCarIndex) - playerIndex * 2f);
+            return new Vector3(0f, DeckHeight + 1f, CarCenterZ(SpawnCarIndex) - playerIndex * 2f);
         }
     }
 }
