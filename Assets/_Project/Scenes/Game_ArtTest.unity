@@ -4674,6 +4674,7 @@ GameObject:
   - component: {fileID: 1071275283}
   - component: {fileID: 1071275282}
   - component: {fileID: 1071275284}
+  - component: {fileID: 710000004}
   m_Layer: 0
   m_Name: EngineFuelPort
   m_TagString: Untagged
@@ -5506,6 +5507,7 @@ GameObject:
   - component: {fileID: 1358319426}
   - component: {fileID: 1358319425}
   - component: {fileID: 1358319427}
+  - component: {fileID: 710000005}
   m_Layer: 0
   m_Name: CraftingStation
   m_TagString: Untagged
@@ -7097,7 +7099,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.TerrainTileStreamer
   _settings: {fileID: 11400000, guid: 72244273e97469146b04a9d73faca50f, type: 2}
-  _tilePrefab: {fileID: 1252452786822148501, guid: 8f25cf9c8ed70a04cbc5a26c983ab9ee, type: 3}
+  _tilePrefab: {fileID: 6175232296279316983, guid: 78eccb4724fad8545a5820c7d5fc245c, type: 3}
 --- !u!4 &1830727643
 Transform:
   m_ObjectHideFlags: 0
@@ -7420,6 +7422,8 @@ GameObject:
   - component: {fileID: 1904839125}
   - component: {fileID: 1904839126}
   - component: {fileID: 1904839127}
+  - component: {fileID: 710000001}
+  - component: {fileID: 710000002}
   m_Layer: 0
   m_Name: Train
   m_TagString: Untagged
@@ -8112,6 +8116,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2128020725}
+  - component: {fileID: 710000003}
   m_Layer: 0
   m_Name: Train_Handrails
   m_TagString: Untagged
@@ -8307,3 +8312,69 @@ SceneRoots:
   - {fileID: 2017756350}
   - {fileID: 1358319426}
   - {fileID: 1596019926}
+--- !u!114 &710000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 979ddeb6e8acdba4b8f29b180aff89cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainElevationController
+  _layoutSettings: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
+  _stepOffsets:
+  - 0
+  - -0.3
+  - -0.6
+  _logStepChange: 1
+--- !u!114 &710000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f23b24dc31fe25448dec14854bca5d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainElevationFollower
+--- !u!114 &710000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2128020724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f23b24dc31fe25448dec14854bca5d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainElevationFollower
+--- !u!114 &710000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071275281}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f23b24dc31fe25448dec14854bca5d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainElevationFollower
+--- !u!114 &710000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1358319424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f23b24dc31fe25448dec14854bca5d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainElevationFollower
