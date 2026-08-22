@@ -6888,6 +6888,7 @@ GameObject:
   - component: {fileID: 1704432524}
   - component: {fileID: 1704432525}
   - component: {fileID: 1704432526}
+  - component: {fileID: 1704432527}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -7149,6 +7150,19 @@ MonoBehaviour:
   _skyboxSource: {fileID: 2100000, guid: 331276a2277feaa459253e3c5c5aa3ad, type: 2}
   _mode: 1
   _enableModeToggleKey: 1
+--- !u!114 &1704432527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca608764338e961429287e0eb701f339, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionSkyController
+  _fallbackSkybox: {fileID: 0}
 --- !u!1 &1707067726
 GameObject:
   m_ObjectHideFlags: 0
