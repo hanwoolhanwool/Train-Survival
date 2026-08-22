@@ -64,6 +64,10 @@ namespace Game.Gameplay.Region
         [SerializeField] private Monsters.BossDefinition _bossDefinition;
 
         [Header("지형·자원")]
+        [Tooltip("이 지역의 지형 세그먼트 팔레트 (레벨 디자인 가이드 §4.6). 설정하면 타일마다 " +
+            "인덱스에서 결정론적으로 추첨한다 — 아래 단일 프리팹보다 우선한다. 비우면 종전대로 단일 타일.")]
+        [SerializeField] private World.TerrainSegmentPalette _segmentPalette;
+
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
 
@@ -108,6 +112,9 @@ namespace Game.Gameplay.Region
 
         /// <summary>이 지역의 마지막 밤 보스 (M7 2차). null = 보스 없음 (하위 호환).</summary>
         public Monsters.BossDefinition BossDefinition => _bossDefinition;
+
+        /// <summary>지형 세그먼트 팔레트 (레벨 디자인). null이면 <see cref="TerrainTilePrefab"/>을 쓴다.</summary>
+        public World.TerrainSegmentPalette SegmentPalette => _segmentPalette;
 
         public GameObject TerrainTilePrefab => _terrainTilePrefab;
 

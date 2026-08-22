@@ -30,10 +30,22 @@ namespace Game.Gameplay.World
         [Tooltip("보따리의 지면·갑판 위 안착 오프셋 (m) — 시각 절반 높이만큼 띄운다.")]
         [SerializeField, Min(0f)] private float _bundleRestOffsetY = 0.35f;
 
+        // 앵커를 찾을 Z 허용 오차 (m) — 타일 반길이. 이보다 멀면 "그 자리에 심은 것"이 아니게 되므로
+        // 랜덤 폴백이 낫다 (레벨 디자인 가이드 §4.1 — 타일 길이 40 m).
+        private const float AnchorSearchZRange = 20f;
+
+        // 지형 타일이 깔리기를 기다리는 상한 (초). 이 시간이 지나면 앵커가 없어도 폴백으로 심는다.
+        private const float AnchorWarmupSeconds = 0.5f;
+
         private static readonly List<SettleableGrabbable> RemovalBuffer = new List<SettleableGrabbable>(8);
 
         private readonly List<SettleableGrabbable> _activeNodes = new List<SettleableGrabbable>(64);
         private float _nextSpawnDistance;
+
+        private float _anchorWarmup;
+
+        // 폴백(앵커 미발견) 경고 횟수 — 5회까지만 찍는다 (매 스폰 로그는 스팸이 된다).
+        private int _fallbackLogCount;
 
         private GameObject _activeResourcePrefab;
         private float _activeIntervalMultiplier = 1f;
@@ -143,6 +155,15 @@ namespace Game.Gameplay.World
 
             float distance = scroll.TraveledDistance;
 
+            // 세션 첫 프레임에는 지형 타일이 아직 깔리지 않아 앵커가 하나도 없다 — 그대로 심으면
+            // 초기 구간(전방 60 m)이 통째로 폴백 랜덤 좌표가 된다. 잠깐 기다렸다 심는다.
+            // 팔레트가 없는 지역에서도 자원이 끊기면 안 되므로 대기에는 상한을 둔다.
+            if (_anchorWarmup < AnchorWarmupSeconds && ResourceAnchor.Active.Count == 0)
+            {
+                _anchorWarmup += Time.deltaTime;
+                return;
+            }
+
             SpawnAhead(distance);
             DespawnBehind(distance);
         }
@@ -151,11 +172,49 @@ namespace Game.Gameplay.World
         {
             while (_nextSpawnDistance <= distance + _settings.SpawnAheadMeters)
             {
-                float lateral = Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset);
-                float side = Random.value < 0.5f ? -1f : 1f;
+                // 종류를 위치보다 먼저 정한다 — 어울리는 지형 성격(앵커 Kind)을 고르는 입력이기 때문이다
+                // (레벨 디자인 가이드 §5.2 — "자원은 지형의 결과다").
+                Inventory.ResourceType pickedType = Inventory.ResourceType.None;
+                if (_activeWeights != null)
+                {
+                    int picked = ResourceSpawnPicker.Pick(_activeWeights, Random.value);
+                    if (picked >= 0)
+                    {
+                        pickedType = _activeTypePool[picked];
+                    }
+                }
 
                 // 스폰 위치 z = (심는 거리 마커 − 현재 누적 거리): 누적 거리와 함께 -Z로 흘러간다.
-                var spawnPosition = new Vector3(side * lateral, _settings.SpawnHeight, _nextSpawnDistance - distance);
+                float targetZ = _nextSpawnDistance - distance;
+
+                // 지형 세그먼트가 심어둔 앵커를 먼저 찾는다 — 지형 높이가 반영된 자리라
+                // 자원이 바위를 뚫거나 절개면 공중에 뜨지 않는다. 없으면 기존 랜덤 좌표로 폴백한다
+                // (팔레트가 아직 없는 지역에서도 자원이 끊기지 않는다).
+                ResourceAnchor anchor = ResourceAnchor.TryPick(
+                    targetZ, _settings.MinLateralOffset, _settings.MaxLateralOffset,
+                    AnchorSearchZRange, ResourceAnchor.PreferredKindFor(pickedType));
+
+                Vector3 spawnPosition;
+                if (anchor != null)
+                {
+                    spawnPosition = anchor.transform.position;
+                    anchor.MarkUsed();
+                }
+                else
+                {
+                    float lateral = Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset);
+                    float side = Random.value < 0.5f ? -1f : 1f;
+                    spawnPosition = new Vector3(side * lateral, _settings.SpawnHeight, targetZ);
+
+                    // 폴백이 계속 쓰이면 앵커가 없거나 조건이 안 맞는다는 뜻이다 —
+                    // 세그먼트가 깔려 있는데도 이 로그가 나오면 배치·조건을 의심한다.
+                    if (_fallbackLogCount < 5)
+                    {
+                        _fallbackLogCount++;
+                        Debug.Log($"[GroundResourceSpawner] 폴백 스폰 #{_fallbackLogCount} " +
+                            $"targetZ={targetZ:F1} 활성앵커={ResourceAnchor.Active.Count}");
+                    }
+                }
 
                 GameObject instance = PoolManager.Spawn(_activeResourcePrefab, spawnPosition, Quaternion.identity);
                 var node = instance.GetComponent<ResourceNode>();
@@ -168,14 +227,10 @@ namespace Game.Gameplay.World
 
                 node.ServerSetSpawnBinding(spawnPosition, distance);
 
-                // 지역 후보에서 종류를 가중 추첨해 주입한다 — 후보가 없으면 노드 기본 종류.
-                if (_activeWeights != null)
+                // 위에서 추첨한 종류를 주입한다 — 후보가 없으면 노드 기본 종류.
+                if (pickedType != Inventory.ResourceType.None)
                 {
-                    int picked = ResourceSpawnPicker.Pick(_activeWeights, Random.value);
-                    if (picked >= 0)
-                    {
-                        node.ServerSetResourceType(_activeTypePool[picked]);
-                    }
+                    node.ServerSetResourceType(pickedType);
                 }
 
                 node.NetworkObject.Spawn();

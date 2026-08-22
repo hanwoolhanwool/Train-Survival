@@ -84,6 +84,14 @@ namespace Game.Gameplay.World
                 if (regionIndex >= 0 && ServiceLocator.TryGet(out IRegionService region))
                 {
                     RegionDefinition definition = region.GetRegion(regionIndex);
+
+                    // 팔레트가 우선한다 — 있으면 타일 인덱스에서 결정론적으로 뽑는다 (미결 ① 확정).
+                    GameObject fromPalette = TryPickFromPalette(definition, index);
+                    if (fromPalette != null)
+                    {
+                        return fromPalette;
+                    }
+
                     if (definition != null && definition.TerrainTilePrefab != null)
                     {
                         return definition.TerrainTilePrefab;
@@ -93,7 +101,41 @@ namespace Game.Gameplay.World
                 }
             }
 
+            // 경계 기록이 없는 구간 — 현재 지역 팔레트가 있으면 그것부터, 없으면 현행 단일 타일.
+            if (ServiceLocator.TryGet(out IRegionService current))
+            {
+                GameObject fromPalette = TryPickFromPalette(current.CurrentRegion, index);
+                if (fromPalette != null)
+                {
+                    return fromPalette;
+                }
+            }
+
             return _activeTilePrefab;
+        }
+
+        /// <summary>
+        /// 지역 팔레트에서 이 타일 인덱스의 세그먼트를 고른다 (없으면 null).
+        /// 직전 인덱스의 선택을 함께 계산해 "같은 세그먼트가 연달아" 나오는 것을 막는다 —
+        /// 순수 함수라 전 피어가 같은 결과에 도달한다.
+        /// </summary>
+        private GameObject TryPickFromPalette(RegionDefinition definition, int index)
+        {
+            TerrainSegmentPalette palette = definition == null ? null : definition.SegmentPalette;
+            if (palette == null || palette.Count == 0)
+            {
+                return null;
+            }
+
+            float[] weights = palette.GetWeights();
+            if (weights == null)
+            {
+                return null;
+            }
+
+            int previous = SegmentPickLogic.WeightedPick(weights, SegmentPickLogic.Hash01(index - 1, 1), -1);
+            int picked = SegmentPickLogic.Pick(index, weights, previous, palette.GetNoRepeatFlags());
+            return picked < 0 ? null : palette.GetPrefab(picked);
         }
 
         private void Update()
