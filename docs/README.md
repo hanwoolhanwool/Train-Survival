@@ -26,5 +26,6 @@
 | [기획서](design/Train-Survival-기획서.md) | 게임 내용 — 코어 루프·집게·지역·전투·최종장 |
 | [네트워크 아키텍처](design/Train-Survival-네트워크-아키텍처.md) | 호스트 권위 모델·동기화 전략·스택 선택 근거 |
 | [아키텍처 규칙](conventions/architecture-rules.md) | 폴더 배치·어셈블리 단방향 의존·인프라 사용 원칙 |
+| [QA 디버그 키 참조표](guide/qa-debug-keys.md) | 플레이 검증용 디버그 키 전체 — 숫자패드 12종·F 키 5종·에디터 메뉴, 씬별 가용 범위와 끄는 스위치 |
 | [명세 허브](specs/README.md) | as-built 도메인 인덱스 |
 | [계획 지도](plans/README.md) | 마일스톤별 구현 계획·검증 항목 인덱스 |

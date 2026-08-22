@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 740" width="1240" height="740" font-family="'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Segoe UI',sans-serif">
+<style>
+    :root{--bg:#ffffff;--fg:#1f2328;--muted:#6b7280;--card:#f6f8fa;--line:#d0d7de;--key:#ffffff;--off:#eceff2;--offfg:#98a1ac;}
+    @media (prefers-color-scheme: dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9aa5b1;--card:#161b22;--line:#30363d;--key:#161b22;--off:#1c2128;--offfg:#6e7781;}}
+    .t{fill:var(--fg)} .m{fill:var(--muted)} .o{fill:var(--offfg)}
+  </style>
+<rect width="1240" height="740" fill="var(--bg)"/>
+<text x="30" y="34" class="t" font-size="19" font-weight="700">QA 디버그 키 지도</text>
+<text x="30" y="56" class="m" font-size="12.5">한 행 = 한 기능 그룹 · 색 = 그룹 · 회색 = QA 미사용</text>
+<path d="M 458 300 C 418 300, 445 234.5, 405 234.5" fill="none" stroke="#DD7C2F" stroke-width="2.4" stroke-opacity="0.75" stroke-linecap="round"/>
+<circle cx="458" cy="300" r="6.5" fill="#DD7C2F"/>
+<path d="M 458 376 C 418 376, 445 422, 405 422" fill="none" stroke="#2E9E6B" stroke-width="2.4" stroke-opacity="0.75" stroke-linecap="round"/>
+<circle cx="458" cy="376" r="6.5" fill="#2E9E6B"/>
+<path d="M 752 114 C 797.65 114, 789.35 209.5, 835 209.5" fill="none" stroke="#8B5CC7" stroke-width="2.4" stroke-opacity="0.75" stroke-linecap="round"/>
+<circle cx="752" cy="114" r="6.5" fill="#8B5CC7"/>
+<path d="M 782 224 C 822 224, 795 392, 835 392" fill="none" stroke="#D94F55" stroke-width="2.4" stroke-opacity="0.75" stroke-linecap="round"/>
+<circle cx="782" cy="224" r="6.5" fill="#D94F55"/>
+<path d="M 782 452 C 822 452, 795 572, 835 572" fill="none" stroke="#3E7BC4" stroke-width="2.4" stroke-opacity="0.75" stroke-linecap="round"/>
+<circle cx="782" cy="452" r="6.5" fill="#3E7BC4"/>
+<rect x="458" y="176" width="324" height="400" rx="12" fill="var(--card)" stroke="var(--line)"/>
+<text x="620" y="596" class="m" font-size="12" text-anchor="middle">숫자패드 — NumLock·Enter를 빼면 15키가 전부 QA다</text>
+<rect x="472" y="190" width="68" height="68" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="506" y="229" class="o" font-size="14" text-anchor="middle">Num</text>
+<rect x="548" y="190" width="68" height="68" rx="8" fill="#D94F55" fill-opacity="0.16" stroke="#D94F55" stroke-width="2"/>
+<text x="582" y="220" class="t" font-size="21" font-weight="700" text-anchor="middle">/</text>
+<text x="582" y="239" class="m" font-size="10.5" text-anchor="middle">보스 소환</text>
+<circle cx="605" cy="201" r="6" fill="#D94F55"/>
+<text x="605" y="204.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">3</text>
+<rect x="624" y="190" width="68" height="68" rx="8" fill="#D94F55" fill-opacity="0.16" stroke="#D94F55" stroke-width="2"/>
+<text x="658" y="220" class="t" font-size="21" font-weight="700" text-anchor="middle">*</text>
+<text x="658" y="239" class="m" font-size="10.5" text-anchor="middle">몬스터 1기</text>
+<circle cx="681" cy="201" r="6" fill="#D94F55"/>
+<text x="681" y="204.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">3</text>
+<rect x="700" y="190" width="68" height="68" rx="8" fill="#D94F55" fill-opacity="0.16" stroke="#D94F55" stroke-width="2"/>
+<text x="734" y="220" class="t" font-size="21" font-weight="700" text-anchor="middle">−</text>
+<text x="734" y="239" class="m" font-size="10.5" text-anchor="middle">웨이브 토글</text>
+<circle cx="757" cy="201" r="6" fill="#D94F55"/>
+<text x="757" y="204.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">3</text>
+<rect x="472" y="266" width="68" height="68" rx="8" fill="#DD7C2F" fill-opacity="0.16" stroke="#DD7C2F" stroke-width="2"/>
+<text x="506" y="296" class="t" font-size="21" font-weight="700" text-anchor="middle">7</text>
+<text x="506" y="315" class="m" font-size="10.5" text-anchor="middle">연결부 파괴</text>
+<circle cx="529" cy="277" r="6" fill="#DD7C2F"/>
+<text x="529" y="280.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">1</text>
+<rect x="548" y="266" width="68" height="68" rx="8" fill="#DD7C2F" fill-opacity="0.16" stroke="#DD7C2F" stroke-width="2"/>
+<text x="582" y="296" class="t" font-size="21" font-weight="700" text-anchor="middle">8</text>
+<text x="582" y="315" class="m" font-size="10.5" text-anchor="middle">칸 건설</text>
+<circle cx="605" cy="277" r="6" fill="#DD7C2F"/>
+<text x="605" y="280.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">1</text>
+<rect x="624" y="266" width="68" height="68" rx="8" fill="#DD7C2F" fill-opacity="0.16" stroke="#DD7C2F" stroke-width="2"/>
+<text x="658" y="296" class="t" font-size="21" font-weight="700" text-anchor="middle">9</text>
+<text x="658" y="315" class="m" font-size="10.5" text-anchor="middle">부위 피해</text>
+<circle cx="681" cy="277" r="6" fill="#DD7C2F"/>
+<text x="681" y="280.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">1</text>
+<rect x="700" y="266" width="68" height="144" rx="8" fill="#DD7C2F" fill-opacity="0.16" stroke="#DD7C2F" stroke-width="2"/>
+<text x="734" y="334" class="t" font-size="21" font-weight="700" text-anchor="middle">+</text>
+<text x="734" y="353" class="m" font-size="10.5" text-anchor="middle">재시작</text>
+<circle cx="757" cy="277" r="6" fill="#DD7C2F"/>
+<text x="757" y="280.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">1</text>
+<rect x="472" y="342" width="68" height="68" rx="8" fill="#2E9E6B" fill-opacity="0.16" stroke="#2E9E6B" stroke-width="2"/>
+<text x="506" y="372" class="t" font-size="21" font-weight="700" text-anchor="middle">4</text>
+<text x="506" y="391" class="m" font-size="10.5" text-anchor="middle">자원 지급</text>
+<circle cx="529" cy="353" r="6" fill="#2E9E6B"/>
+<text x="529" y="356.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">2</text>
+<rect x="548" y="342" width="68" height="68" rx="8" fill="#2E9E6B" fill-opacity="0.16" stroke="#2E9E6B" stroke-width="2"/>
+<text x="582" y="372" class="t" font-size="21" font-weight="700" text-anchor="middle">5</text>
+<text x="582" y="391" class="m" font-size="10.5" text-anchor="middle">피해 실측</text>
+<circle cx="605" cy="353" r="6" fill="#2E9E6B"/>
+<text x="605" y="356.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">2</text>
+<rect x="624" y="342" width="68" height="68" rx="8" fill="#2E9E6B" fill-opacity="0.16" stroke="#2E9E6B" stroke-width="2"/>
+<text x="658" y="372" class="t" font-size="21" font-weight="700" text-anchor="middle">6</text>
+<text x="658" y="391" class="m" font-size="10.5" text-anchor="middle">창고 경합</text>
+<circle cx="681" cy="353" r="6" fill="#2E9E6B"/>
+<text x="681" y="356.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">2</text>
+<rect x="472" y="418" width="68" height="68" rx="8" fill="#3E7BC4" fill-opacity="0.16" stroke="#3E7BC4" stroke-width="2"/>
+<text x="506" y="448" class="t" font-size="21" font-weight="700" text-anchor="middle">1</text>
+<text x="506" y="467" class="m" font-size="10.5" text-anchor="middle">낮으로</text>
+<circle cx="529" cy="429" r="6" fill="#3E7BC4"/>
+<text x="529" y="432.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">4</text>
+<rect x="548" y="418" width="68" height="68" rx="8" fill="#3E7BC4" fill-opacity="0.16" stroke="#3E7BC4" stroke-width="2"/>
+<text x="582" y="448" class="t" font-size="21" font-weight="700" text-anchor="middle">2</text>
+<text x="582" y="467" class="m" font-size="10.5" text-anchor="middle">밤으로</text>
+<circle cx="605" cy="429" r="6" fill="#3E7BC4"/>
+<text x="605" y="432.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">4</text>
+<rect x="624" y="418" width="68" height="68" rx="8" fill="#3E7BC4" fill-opacity="0.16" stroke="#3E7BC4" stroke-width="2"/>
+<text x="658" y="448" class="t" font-size="21" font-weight="700" text-anchor="middle">3</text>
+<text x="658" y="467" class="m" font-size="10.5" text-anchor="middle">다음 Day</text>
+<circle cx="681" cy="429" r="6" fill="#3E7BC4"/>
+<text x="681" y="432.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">4</text>
+<rect x="700" y="418" width="68" height="144" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="734" y="495" class="o" font-size="14" text-anchor="middle">↵</text>
+<rect x="472" y="494" width="144" height="68" rx="8" fill="#2E9E6B" fill-opacity="0.16" stroke="#2E9E6B" stroke-width="2"/>
+<text x="544" y="524" class="t" font-size="21" font-weight="700" text-anchor="middle">0</text>
+<text x="544" y="543" class="m" font-size="10.5" text-anchor="middle">동시 그랩</text>
+<circle cx="605" cy="505" r="6" fill="#2E9E6B"/>
+<text x="605" y="508.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">2</text>
+<rect x="624" y="494" width="68" height="68" rx="8" fill="#D94F55" fill-opacity="0.16" stroke="#D94F55" stroke-width="2"/>
+<text x="658" y="524" class="t" font-size="21" font-weight="700" text-anchor="middle">.</text>
+<text x="658" y="543" class="m" font-size="10.5" text-anchor="middle">보스 처치</text>
+<circle cx="681" cy="505" r="6" fill="#D94F55"/>
+<text x="681" y="508.5" fill="#ffffff" font-size="8.5" font-weight="700" text-anchor="middle">3</text>
+<rect x="310" y="54" width="620" height="72" rx="10" fill="var(--card)" stroke="var(--line)"/>
+<rect x="322" y="66" width="44" height="48" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="344" y="95" class="o" font-size="11" text-anchor="middle">F1</text>
+<rect x="370" y="66" width="44" height="48" rx="8" fill="#DD7C2F" fill-opacity="0.16" stroke="#DD7C2F" stroke-width="2"/>
+<text x="392" y="86" class="t" font-size="13" font-weight="700" text-anchor="middle">F2</text>
+<text x="392" y="102" class="m" font-size="8.5" text-anchor="middle">열차 높이</text>
+<circle cx="405" cy="75" r="5.2" fill="#DD7C2F"/>
+<text x="405" y="78" fill="#ffffff" font-size="7.5" font-weight="700" text-anchor="middle">1</text>
+<rect x="418" y="66" width="44" height="48" rx="8" fill="#3E7BC4" fill-opacity="0.16" stroke="#3E7BC4" stroke-width="2"/>
+<text x="440" y="86" class="t" font-size="13" font-weight="700" text-anchor="middle">F3</text>
+<text x="440" y="102" class="m" font-size="8.5" text-anchor="middle">시간 배속</text>
+<circle cx="453" cy="75" r="5.2" fill="#3E7BC4"/>
+<text x="453" y="78" fill="#ffffff" font-size="7.5" font-weight="700" text-anchor="middle">4</text>
+<rect x="466" y="66" width="44" height="48" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="488" y="95" class="o" font-size="11" text-anchor="middle">F4</text>
+<rect x="526" y="66" width="44" height="48" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="548" y="95" class="o" font-size="11" text-anchor="middle">F5</text>
+<rect x="574" y="66" width="44" height="48" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="596" y="95" class="o" font-size="11" text-anchor="middle">F6</text>
+<rect x="622" y="66" width="44" height="48" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="644" y="95" class="o" font-size="11" text-anchor="middle">F7</text>
+<rect x="670" y="66" width="44" height="48" rx="8" fill="#8B5CC7" fill-opacity="0.16" stroke="#8B5CC7" stroke-width="2" stroke-dasharray="5 3"/>
+<text x="692" y="86" class="t" font-size="13" font-weight="700" text-anchor="middle">F8</text>
+<text x="692" y="102" class="m" font-size="8.5" text-anchor="middle">연출 모드</text>
+<circle cx="705" cy="75" r="5.2" fill="#8B5CC7"/>
+<text x="705" y="78" fill="#ffffff" font-size="7.5" font-weight="700" text-anchor="middle">5</text>
+<rect x="730" y="66" width="44" height="48" rx="8" fill="#8B5CC7" fill-opacity="0.16" stroke="#8B5CC7" stroke-width="2"/>
+<text x="752" y="86" class="t" font-size="13" font-weight="700" text-anchor="middle">F9</text>
+<text x="752" y="102" class="m" font-size="8.5" text-anchor="middle">구속</text>
+<circle cx="765" cy="75" r="5.2" fill="#8B5CC7"/>
+<text x="765" y="78" fill="#ffffff" font-size="7.5" font-weight="700" text-anchor="middle">5</text>
+<rect x="778" y="66" width="44" height="48" rx="8" fill="#8B5CC7" fill-opacity="0.16" stroke="#8B5CC7" stroke-width="2" stroke-dasharray="5 3"/>
+<text x="800" y="86" class="t" font-size="13" font-weight="700" text-anchor="middle">F10</text>
+<text x="800" y="102" class="m" font-size="8.5" text-anchor="middle">시점</text>
+<circle cx="813" cy="75" r="5.2" fill="#8B5CC7"/>
+<text x="813" y="78" fill="#ffffff" font-size="7.5" font-weight="700" text-anchor="middle">5</text>
+<rect x="826" y="66" width="44" height="48" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="848" y="95" class="o" font-size="11" text-anchor="middle">F11</text>
+<rect x="874" y="66" width="44" height="48" rx="8" fill="var(--off)" stroke="var(--line)" stroke-width="1.2"/>
+<text x="896" y="95" class="o" font-size="11" text-anchor="middle">F12</text>
+<path d="M 418 123 L 418 128 L 618 128 L 618 123" fill="none" stroke="var(--line)" stroke-width="1.2"/>
+<text x="518" y="141" class="m" font-size="10.5" text-anchor="middle">비어 있다 — 새 QA 키는 여기로</text>
+<rect x="30" y="150" width="375" height="169" rx="10" fill="var(--card)" stroke="#DD7C2F" stroke-width="1.6" stroke-opacity="0.55"/>
+<circle cx="54" cy="172" r="9" fill="#DD7C2F"/>
+<text x="54" y="175.5" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">1</text>
+<text x="71" y="177" class="t" font-size="15" font-weight="700">편성·건축</text>
+<rect x="44" y="186" width="22" height="18" rx="5" fill="#DD7C2F" fill-opacity="0.18" stroke="#DD7C2F" stroke-width="1.2"/>
+<text x="55" y="199.5" class="t" font-size="11" font-weight="700" text-anchor="middle">7</text>
+<text x="82" y="199.5" class="t" font-size="12.5">후미 연결부 1개 즉사 → 연쇄 이탈</text>
+<rect x="44" y="211" width="22" height="18" rx="5" fill="#DD7C2F" fill-opacity="0.18" stroke="#DD7C2F" stroke-width="1.2"/>
+<text x="55" y="224.5" class="t" font-size="11" font-weight="700" text-anchor="middle">8</text>
+<text x="82" y="224.5" class="t" font-size="12.5">칸 1칸 무료 건설, 빈 슬롯 우선</text>
+<rect x="44" y="236" width="22" height="18" rx="5" fill="#DD7C2F" fill-opacity="0.18" stroke="#DD7C2F" stroke-width="1.2"/>
+<text x="55" y="249.5" class="t" font-size="11" font-weight="700" text-anchor="middle">9</text>
+<text x="82" y="249.5" class="t" font-size="12.5">샘플 피해 30, 망치 조준 부위 우선</text>
+<rect x="44" y="261" width="22" height="18" rx="5" fill="#DD7C2F" fill-opacity="0.18" stroke="#DD7C2F" stroke-width="1.2"/>
+<text x="55" y="274.5" class="t" font-size="11" font-weight="700" text-anchor="middle">+</text>
+<text x="82" y="274.5" class="t" font-size="12.5">현재 인게임 씬 재로드 = 전체 초기화</text>
+<rect x="44" y="286" width="28" height="18" rx="5" fill="#DD7C2F" fill-opacity="0.18" stroke="#DD7C2F" stroke-width="1.2"/>
+<text x="58" y="299.5" class="t" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="88" y="299.5" class="t" font-size="12.5">열차·궤도 높이 순환 ⟨ArtTest 전용⟩</text>
+<rect x="30" y="350" width="375" height="144" rx="10" fill="var(--card)" stroke="#2E9E6B" stroke-width="1.6" stroke-opacity="0.55"/>
+<circle cx="54" cy="372" r="9" fill="#2E9E6B"/>
+<text x="54" y="375.5" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">2</text>
+<text x="71" y="377" class="t" font-size="15" font-weight="700">자원·피해</text>
+<rect x="44" y="386" width="22" height="18" rx="5" fill="#2E9E6B" fill-opacity="0.18" stroke="#2E9E6B" stroke-width="1.2"/>
+<text x="55" y="399.5" class="t" font-size="11" font-weight="700" text-anchor="middle">4</text>
+<text x="82" y="399.5" class="t" font-size="12.5">자원 9종 일괄 지급 (건설·요리·방한)</text>
+<rect x="44" y="411" width="22" height="18" rx="5" fill="#2E9E6B" fill-opacity="0.18" stroke="#2E9E6B" stroke-width="1.2"/>
+<text x="55" y="424.5" class="t" font-size="11" font-weight="700" text-anchor="middle">5</text>
+<text x="82" y="424.5" class="t" font-size="12.5">자기 피해 20 — 장비 감산 실측용</text>
+<rect x="44" y="436" width="22" height="18" rx="5" fill="#2E9E6B" fill-opacity="0.18" stroke="#2E9E6B" stroke-width="1.2"/>
+<text x="55" y="449.5" class="t" font-size="11" font-weight="700" text-anchor="middle">6</text>
+<text x="82" y="449.5" class="t" font-size="12.5">창고 동시 경합 → 총량 보존 콘솔</text>
+<rect x="44" y="461" width="22" height="18" rx="5" fill="#2E9E6B" fill-opacity="0.18" stroke="#2E9E6B" stroke-width="1.2"/>
+<text x="55" y="474.5" class="t" font-size="11" font-weight="700" text-anchor="middle">0</text>
+<text x="82" y="474.5" class="t" font-size="12.5">동시 그랩 경합 → 승인·거부 콘솔</text>
+<rect x="835" y="150" width="375" height="119" rx="10" fill="var(--card)" stroke="#8B5CC7" stroke-width="1.6" stroke-opacity="0.55"/>
+<circle cx="859" cy="172" r="9" fill="#8B5CC7"/>
+<text x="859" y="175.5" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">5</text>
+<text x="876" y="177" class="t" font-size="15" font-weight="700">연출·플레이어</text>
+<rect x="849" y="186" width="28" height="18" rx="5" fill="#8B5CC7" fill-opacity="0.18" stroke="#8B5CC7" stroke-width="1.2"/>
+<text x="863" y="199.5" class="t" font-size="11" font-weight="700" text-anchor="middle">F8</text>
+<text x="893" y="199.5" class="t" font-size="12.5">낮/밤 연출 모드 Off→A→B ⟨ArtTest⟩</text>
+<rect x="849" y="211" width="28" height="18" rx="5" fill="#8B5CC7" fill-opacity="0.18" stroke="#8B5CC7" stroke-width="1.2"/>
+<text x="863" y="224.5" class="t" font-size="11" font-weight="700" text-anchor="middle">F9</text>
+<text x="893" y="224.5" class="t" font-size="12.5">구속(Grabbed) 상태 토글 ⟨상시 켜짐⟩</text>
+<rect x="849" y="236" width="34" height="18" rx="5" fill="#8B5CC7" fill-opacity="0.18" stroke="#8B5CC7" stroke-width="1.2"/>
+<text x="866" y="249.5" class="t" font-size="11" font-weight="700" text-anchor="middle">F10</text>
+<text x="899" y="249.5" class="t" font-size="12.5">시점 전환: 1인칭 통합 ↔ 분리</text>
+<rect x="835" y="320" width="375" height="144" rx="10" fill="var(--card)" stroke="#D94F55" stroke-width="1.6" stroke-opacity="0.55"/>
+<circle cx="859" cy="342" r="9" fill="#D94F55"/>
+<text x="859" y="345.5" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">3</text>
+<text x="876" y="347" class="t" font-size="15" font-weight="700">몬스터·보스</text>
+<rect x="849" y="356" width="22" height="18" rx="5" fill="#D94F55" fill-opacity="0.18" stroke="#D94F55" stroke-width="1.2"/>
+<text x="860" y="369.5" class="t" font-size="11" font-weight="700" text-anchor="middle">/</text>
+<text x="887" y="369.5" class="t" font-size="12.5">지역 보스 즉시 소환, 새벽 보류 없음</text>
+<rect x="849" y="381" width="22" height="18" rx="5" fill="#D94F55" fill-opacity="0.18" stroke="#D94F55" stroke-width="1.2"/>
+<text x="860" y="394.5" class="t" font-size="11" font-weight="700" text-anchor="middle">*</text>
+<text x="887" y="394.5" class="t" font-size="12.5">요청자 전방 10 m에 몬스터 1마리</text>
+<rect x="849" y="406" width="22" height="18" rx="5" fill="#D94F55" fill-opacity="0.18" stroke="#D94F55" stroke-width="1.2"/>
+<text x="860" y="419.5" class="t" font-size="11" font-weight="700" text-anchor="middle">−</text>
+<text x="887" y="419.5" class="t" font-size="12.5">웨이브 스폰 토글, 끄면 진행분 회수</text>
+<rect x="849" y="431" width="22" height="18" rx="5" fill="#D94F55" fill-opacity="0.18" stroke="#D94F55" stroke-width="1.2"/>
+<text x="860" y="444.5" class="t" font-size="11" font-weight="700" text-anchor="middle">.</text>
+<text x="887" y="444.5" class="t" font-size="12.5">지역 보스 즉시 처치 → 드랍·배너</text>
+<rect x="835" y="500" width="375" height="144" rx="10" fill="var(--card)" stroke="#3E7BC4" stroke-width="1.6" stroke-opacity="0.55"/>
+<circle cx="859" cy="522" r="9" fill="#3E7BC4"/>
+<text x="859" y="525.5" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">4</text>
+<text x="876" y="527" class="t" font-size="15" font-weight="700">사이클·시간</text>
+<rect x="849" y="536" width="22" height="18" rx="5" fill="#3E7BC4" fill-opacity="0.18" stroke="#3E7BC4" stroke-width="1.2"/>
+<text x="860" y="549.5" class="t" font-size="11" font-weight="700" text-anchor="middle">1</text>
+<text x="887" y="549.5" class="t" font-size="12.5">현재 Day의 낮 시작으로 점프</text>
+<rect x="849" y="561" width="22" height="18" rx="5" fill="#3E7BC4" fill-opacity="0.18" stroke="#3E7BC4" stroke-width="1.2"/>
+<text x="860" y="574.5" class="t" font-size="11" font-weight="700" text-anchor="middle">2</text>
+<text x="887" y="574.5" class="t" font-size="12.5">현재 Day의 밤 시작으로 점프</text>
+<rect x="849" y="586" width="22" height="18" rx="5" fill="#3E7BC4" fill-opacity="0.18" stroke="#3E7BC4" stroke-width="1.2"/>
+<text x="860" y="599.5" class="t" font-size="11" font-weight="700" text-anchor="middle">3</text>
+<text x="887" y="599.5" class="t" font-size="12.5">다음 Day 아침으로 (지역 전환용)</text>
+<rect x="849" y="611" width="28" height="18" rx="5" fill="#3E7BC4" fill-opacity="0.18" stroke="#3E7BC4" stroke-width="1.2"/>
+<text x="863" y="624.5" class="t" font-size="11" font-weight="700" text-anchor="middle">F3</text>
+<text x="893" y="624.5" class="t" font-size="12.5">시간 배속 ×1 → ×4 → ×16 가속</text>
+<line x1="30" y1="638" x2="1210" y2="638" stroke="var(--line)"/>
+<text x="30" y="660" class="m" font-size="12.5">점선 테두리 = 로컬 전용(F7·F10). 나머지 키는 클라이언트에서 눌러도 호스트가 확정해 전 피어에 반영된다.</text>
+<text x="30" y="679" class="m" font-size="12.5">⟨ArtTest⟩ = Game_ArtTest 씬에만 배선 — Game.unity에서는 눌러도 무효 로그만 남는다.</text>
+<text x="30" y="698" class="m" font-size="12.5">F9만 끄는 스위치가 없다. 나머지는 인스펙터 bool 또는 PlayerViewSettings로 끈다 — 릴리스 전 확인.</text>
+</svg>
