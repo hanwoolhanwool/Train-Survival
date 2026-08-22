@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Game.Core.Pooling;
 using Unity.Netcode;
 using UnityEngine;
@@ -156,7 +157,7 @@ namespace Game.Gameplay.Combat
             float maxDistance = _settings.MaxRange + _settings.RangeTolerance;
             if ((hitPoint - swingPosition).sqrMagnitude > maxDistance * maxDistance)
             {
-                Debug.Log($"[MeleeWeaponController] 명중 보고 기각(리치 초과): client={rpcParams.Receive.SenderClientId}");
+                GameLog.Info(LogCategory.Combat, $"명중 보고 기각(리치 초과): client={rpcParams.Receive.SenderClientId}");
                 return;
             }
 

@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Pooling;
@@ -44,8 +45,9 @@ namespace Game.Gameplay.World
 
         private float _anchorWarmup;
 
-        // 폴백(앵커 미발견) 경고 횟수 — 5회까지만 찍는다 (매 스폰 로그는 스팸이 된다).
-        private int _fallbackLogCount;
+        // 폴백(앵커 미발견) 경고 — 5회까지만 찍는다 (매 스폰 로그는 스팸이 된다).
+        private const string FallbackSpawnKey = "world.ground-fallback-spawn";
+        private const int FallbackSpawnLimit = 5;
 
         private GameObject _activeResourcePrefab;
         private float _activeIntervalMultiplier = 1f;
@@ -208,19 +210,15 @@ namespace Game.Gameplay.World
 
                     // 폴백이 계속 쓰이면 앵커가 없거나 조건이 안 맞는다는 뜻이다 —
                     // 세그먼트가 깔려 있는데도 이 로그가 나오면 배치·조건을 의심한다.
-                    if (_fallbackLogCount < 5)
-                    {
-                        _fallbackLogCount++;
-                        Debug.Log($"[GroundResourceSpawner] 폴백 스폰 #{_fallbackLogCount} " +
-                            $"targetZ={targetZ:F1} 활성앵커={ResourceAnchor.Active.Count}");
-                    }
+                    GameLog.InfoLimited(LogCategory.World, FallbackSpawnKey, FallbackSpawnLimit,
+                        $"폴백 스폰 targetZ={targetZ:F1} 활성앵커={ResourceAnchor.Active.Count}");
                 }
 
                 GameObject instance = PoolManager.Spawn(_activeResourcePrefab, spawnPosition, Quaternion.identity);
                 var node = instance.GetComponent<ResourceNode>();
                 if (node == null)
                 {
-                    Debug.LogError("[GroundResourceSpawner] 자원 프리팹에 ResourceNode가 없습니다.", _activeResourcePrefab);
+                    GameLog.Error(LogCategory.World, "자원 프리팹에 ResourceNode가 없습니다.", _activeResourcePrefab);
                     PoolManager.Despawn(instance);
                     return;
                 }
@@ -430,7 +428,7 @@ namespace Game.Gameplay.World
             var bundle = instance.GetComponent<StorageBundle>();
             if (bundle == null)
             {
-                Debug.LogError("[GroundResourceSpawner] 보따리 프리팹에 StorageBundle이 없습니다.", _bundlePrefab);
+                GameLog.Error(LogCategory.World, "보따리 프리팹에 StorageBundle이 없습니다.", _bundlePrefab);
                 PoolManager.Despawn(instance);
                 return null;
             }

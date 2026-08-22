@@ -1,6 +1,6 @@
+using Game.Core.Logging;
 using System.Diagnostics;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace Game.Gameplay.Harpoon
 {
@@ -34,7 +34,7 @@ namespace Game.Gameplay.Harpoon
         {
             _fireCount++;
             int delta = Time.frameCount - inputFrame;
-            Debug.Log($"[SliceMetrics] Q1 — 발사 입력 프레임 {inputFrame} → 로컬 연출 발행 프레임 {Time.frameCount} (Δ {delta} 프레임, 목표 ≤ 1)");
+            GameLog.Info(LogCategory.Harpoon, $"Q1 — 발사 입력 프레임 {inputFrame} → 로컬 연출 발행 프레임 {Time.frameCount} (Δ {delta} 프레임, 목표 ≤ 1)");
         }
 
         /// <summary>Q4 분모 — 로컬 명중 판정 1회 기록.</summary>
@@ -61,7 +61,7 @@ namespace Game.Gameplay.Harpoon
             _latencyMaxMs = System.Math.Max(_latencyMaxMs, latencyMs);
 
             double avg = _latencySumMs / _approvedCount;
-            Debug.Log($"[SliceMetrics] Q2 — 로컬 명중 → 그랩 승인 수신: {latencyMs:F0} ms (n={_approvedCount}, 최소 {_latencyMinMs:F0} / 평균 {avg:F0} / 최대 {_latencyMaxMs:F0} ms, 목표 프로파일 ② ≤ 250 ms)");
+            GameLog.Info(LogCategory.Harpoon, $"Q2 — 로컬 명중 → 그랩 승인 수신: {latencyMs:F0} ms (n={_approvedCount}, 최소 {_latencyMinMs:F0} / 평균 {avg:F0} / 최대 {_latencyMaxMs:F0} ms, 목표 프로파일 ② ≤ 250 ms)");
             LogTallySummary();
         }
 
@@ -75,12 +75,12 @@ namespace Game.Gameplay.Harpoon
         {
             if (verdict == GrabVerdict.InsufficientTier)
             {
-                Debug.Log("[SliceMetrics] 그랩 거부 — 집게 등급 부족 (규칙 거부, Q4 불일치 아님)");
+                GameLog.Info(LogCategory.Harpoon, "그랩 거부 — 집게 등급 부족 (규칙 거부, Q4 불일치 아님)");
                 return;
             }
 
             _rejectedCount++;
-            Debug.Log($"[SliceMetrics] Q4 — 호스트 거부 발생: {verdict}");
+            GameLog.Info(LogCategory.Harpoon, $"Q4 — 호스트 거부 발생: {verdict}");
             LogTallySummary();
         }
 
@@ -103,7 +103,7 @@ namespace Game.Gameplay.Harpoon
             TowSampleVerdict verdict = _towAnalyzer.Feed(hookPosition, anchorPosition, deltaTime);
             if (verdict != TowSampleVerdict.Normal)
             {
-                Debug.LogWarning($"[SliceMetrics] Q3 이상 — {verdict}: 프레임 이동 {_towAnalyzer.LastStep:F2} m, 총구 거리 {_towAnalyzer.LastDistance:F2} m (프레임 {Time.frameCount})");
+                GameLog.Warn(LogCategory.Harpoon, $"Q3 이상 — {verdict}: 프레임 이동 {_towAnalyzer.LastStep:F2} m, 총구 거리 {_towAnalyzer.LastDistance:F2} m (프레임 {Time.frameCount})");
             }
         }
 
@@ -119,7 +119,7 @@ namespace Game.Gameplay.Harpoon
             if (_towAnalyzer.SampleCount > 0)
             {
                 string result = _towAnalyzer.IsClean ? "정상 (워프/역행 없음)" : "이상 감지";
-                Debug.Log($"[SliceMetrics] Q3 — 견인 종료({reason}): 샘플 {_towAnalyzer.SampleCount} 프레임, 워프 {_towAnalyzer.WarpCount} · 역행 {_towAnalyzer.RegressionCount}, 최대 프레임 이동 {_towAnalyzer.MaxStep:F2} m → {result}");
+                GameLog.Info(LogCategory.Harpoon, $"Q3 — 견인 종료({reason}): 샘플 {_towAnalyzer.SampleCount} 프레임, 워프 {_towAnalyzer.WarpCount} · 역행 {_towAnalyzer.RegressionCount}, 최대 프레임 이동 {_towAnalyzer.MaxStep:F2} m → {result}");
             }
 
             _towAnalyzer = null;
@@ -143,7 +143,7 @@ namespace Game.Gameplay.Harpoon
         {
             // 불일치율 = 거부 / 로컬 명중 (§3.2 Q4 — 클라 명중 표시가 전제이므로 분모는 발사가 아닌 로컬 명중).
             double rate = _localHitCount > 0 ? _rejectedCount * 100.0 / _localHitCount : 0.0;
-            Debug.Log($"[SliceMetrics] Q4 — 발사 {_fireCount} · 빗나감 {_missCount} · 로컬 명중 {_localHitCount} · 승인 {_approvedCount} · 거부 {_rejectedCount} → 불일치율 {rate:F1} % (목표 < 1 %, 표본 100회+)");
+            GameLog.Info(LogCategory.Harpoon, $"Q4 — 발사 {_fireCount} · 빗나감 {_missCount} · 로컬 명중 {_localHitCount} · 승인 {_approvedCount} · 거부 {_rejectedCount} → 불일치율 {rate:F1} % (목표 < 1 %, 표본 100회+)");
         }
     }
 }

@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections;
 using Game.Core.Events;
 using Game.Core.Services;
@@ -614,7 +615,7 @@ namespace Game.Gameplay.Player
         private void DebugSetMovementStateServerRpc(PlayerMovementState state)
         {
             _movementState.Value = state;
-            Debug.Log($"[NetworkPlayerController] 디버그 상태 전환 확정: client={OwnerClientId} state={state}");
+            GameLog.Info(LogCategory.Player, $"디버그 상태 전환 확정: client={OwnerClientId} state={state}");
         }
 
         // ── 재접속 위치 복원 (M6 결정 ① 개정 — 2026-08-13 사용자 승인 ⓐ) ──────────

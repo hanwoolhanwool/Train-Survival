@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Steamworks;
 using UnityEngine;
 
@@ -20,8 +21,8 @@ namespace Game.Systems.Networking.Steam
                 {
                     if (!SteamService.IsInitialized)
                     {
-                        Debug.LogWarning("[SteamIdentityProvider] SteamAPI 미초기화 — 식별 토큰 없음. "
-                            + "재접속 복귀가 동작하지 않습니다.");
+                        GameLog.Warn(LogCategory.Steam, "SteamAPI 미초기화 — 식별 토큰 없음. "
+                                           + "재접속 복귀가 동작하지 않습니다.");
                         return null;
                     }
 

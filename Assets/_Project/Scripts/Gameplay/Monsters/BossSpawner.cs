@@ -1,4 +1,5 @@
 using Game.Core.Events;
+using Game.Core.Logging;
 using Game.Core.Pooling;
 using Game.Core.Services;
 using Game.Gameplay.Cycle;
@@ -111,9 +112,9 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
-            Debug.Log($"[BossSpawner] 지역 보스 등장: Day {dayNumber} " +
-                $"({definition.DisplayName} — {boss.DisplayName}), 체력 ×{healthMultiplier:F2}. " +
-                "처치 전까지 새벽이 오지 않는다.");
+            GameLog.Info(LogCategory.Monsters, $"지역 보스 등장: Day {dayNumber} " +
+                                         $"({definition.DisplayName} — {boss.DisplayName}), 체력 ×{healthMultiplier:F2}. " +
+                                         "처치 전까지 새벽이 오지 않는다.");
         }
 
         /// <summary>
@@ -134,7 +135,7 @@ namespace Game.Gameplay.Monsters
 
             if (!ServiceLocator.TryGet(out IRegionService region))
             {
-                Debug.Log("[BossSpawner] QA 소환 무효: 지역 서비스 없음");
+                GameLog.Info(LogCategory.Monsters, "QA 소환 무효: 지역 서비스 없음");
                 return;
             }
 
@@ -143,14 +144,14 @@ namespace Game.Gameplay.Monsters
             BossDefinition boss = definition == null ? null : definition.BossDefinition;
             if (boss == null)
             {
-                Debug.Log("[BossSpawner] QA 소환 무효: 현재 지역에 배정된 보스가 없습니다.");
+                GameLog.Info(LogCategory.Monsters, "QA 소환 무효: 현재 지역에 배정된 보스가 없습니다.");
                 return;
             }
 
             if (ServerSpawnBoss(boss, ServerComputeHealthMultiplier(dayNumber, region), false))
             {
-                Debug.Log($"[BossSpawner] QA 보스 소환: {definition.DisplayName} — {boss.DisplayName} " +
-                    "(새벽 보류 비등록 — 낮에도 검증 가능)");
+                GameLog.Info(LogCategory.Monsters, $"QA 보스 소환: {definition.DisplayName} — {boss.DisplayName} " +
+                                             "(새벽 보류 비등록 — 낮에도 검증 가능)");
             }
         }
 
@@ -168,12 +169,12 @@ namespace Game.Gameplay.Monsters
 
             if (_boss == null || !_boss.IsSpawned || !_boss.IsAlive)
             {
-                Debug.Log("[BossSpawner] QA 처치 무효: 살아 있는 보스가 없습니다.");
+                GameLog.Info(LogCategory.Monsters, "QA 처치 무효: 살아 있는 보스가 없습니다.");
                 return;
             }
 
             string label = _bossDefinition == null ? "보스" : _bossDefinition.DisplayName;
-            Debug.Log($"[BossSpawner] QA 즉시 처치: {label}");
+            GameLog.Info(LogCategory.Monsters, $"QA 즉시 처치: {label}");
 
             _boss.ApplyDamage(float.MaxValue, killerClientId);
         }
@@ -182,7 +183,7 @@ namespace Game.Gameplay.Monsters
         {
             if (definition.Prefab == null)
             {
-                Debug.LogError($"[BossSpawner] 보스 정의 '{definition.DisplayName}'에 프리팹이 배선되지 않았습니다.", definition);
+                GameLog.Error(LogCategory.Monsters, $"보스 정의 '{definition.DisplayName}'에 프리팹이 배선되지 않았습니다.", definition);
                 return false;
             }
 
@@ -193,7 +194,7 @@ namespace Game.Gameplay.Monsters
             var health = instance.GetComponent<BossHealth>();
             if (health == null)
             {
-                Debug.LogError("[BossSpawner] 보스 프리팹에 BossHealth가 없습니다.", definition.Prefab);
+                GameLog.Error(LogCategory.Monsters, "보스 프리팹에 BossHealth가 없습니다.", definition.Prefab);
                 PoolManager.Despawn(instance);
                 return false;
             }
@@ -254,7 +255,7 @@ namespace Game.Gameplay.Monsters
 
             if (wasHolding)
             {
-                Debug.Log($"[BossSpawner] {label} 처치 — 새벽 보류 해제, 시간이 다시 흐른다.");
+                GameLog.Info(LogCategory.Monsters, $"{label} 처치 — 새벽 보류 해제, 시간이 다시 흐른다.");
             }
         }
 
@@ -269,7 +270,7 @@ namespace Game.Gameplay.Monsters
             {
                 // 사망이 아니므로 보상·이벤트 없이 풀로 회수한다 (새벽 도주와 같은 규약).
                 _boss.NetworkObject.Despawn(true);
-                Debug.Log($"[BossSpawner] 보스 회수: {reason}");
+                GameLog.Info(LogCategory.Monsters, $"보스 회수: {reason}");
             }
 
             _boss = null;

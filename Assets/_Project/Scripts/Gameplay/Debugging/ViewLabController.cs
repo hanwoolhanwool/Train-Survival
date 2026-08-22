@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Gameplay.Combat;
 using Game.Gameplay.Harpoon;
@@ -128,7 +129,7 @@ namespace Game.Gameplay.Debugging
             PlayerAimView aim = FindAnyObjectByType<PlayerAimView>(FindObjectsInactive.Include);
             if (aim == null)
             {
-                Debug.LogError("[ViewLab] 씬에 Player.prefab 인스턴스가 없다 — PlayerAimView 미발견");
+                GameLog.Error(LogCategory.ViewLab, "씬에 Player.prefab 인스턴스가 없다 — PlayerAimView 미발견");
                 return false;
             }
 
@@ -143,7 +144,7 @@ namespace Game.Gameplay.Debugging
 
             if (_aimPivot == null)
             {
-                Debug.LogError("[ViewLab] AimPivot을 찾지 못했다 — Player.prefab 계층 변경 여부 확인");
+                GameLog.Error(LogCategory.ViewLab, "AimPivot을 찾지 못했다 — Player.prefab 계층 변경 여부 확인");
                 return false;
             }
 
@@ -488,7 +489,7 @@ namespace Game.Gameplay.Debugging
             Transform source = FindAssetPivot(pivot.name);
             if (source == null)
             {
-                Debug.LogWarning($"[ViewLab] 프리팹에서 {pivot.name}을 찾지 못해 리셋을 건너뛴다");
+                GameLog.Warn(LogCategory.ViewLab, $"프리팹에서 {pivot.name}을 찾지 못해 리셋을 건너뛴다");
                 return;
             }
 
@@ -510,7 +511,7 @@ namespace Game.Gameplay.Debugging
                 Transform assetAimPivot = contents.transform.Find("AimPivot");
                 if (assetAimPivot == null)
                 {
-                    Debug.LogError("[ViewLab] 프리팹에서 AimPivot을 찾지 못해 저장을 중단한다");
+                    GameLog.Error(LogCategory.ViewLab, "프리팹에서 AimPivot을 찾지 못해 저장을 중단한다");
                     return;
                 }
 
@@ -521,7 +522,7 @@ namespace Game.Gameplay.Debugging
                     Transform asset = ViewLabMath.FindChildByName(assetAimPivot, pivot.name);
                     if (asset == null)
                     {
-                        Debug.LogWarning($"[ViewLab] 프리팹에 {pivot.name}이 없어 건너뛴다");
+                        GameLog.Warn(LogCategory.ViewLab, $"프리팹에 {pivot.name}이 없어 건너뛴다");
                         continue;
                     }
 
@@ -530,9 +531,9 @@ namespace Game.Gameplay.Debugging
                         asset.localPosition, asset.localRotation, asset.localScale))
                     {
                         // 변경 전→후 로그 — 커밋 메시지 재료 (계획 §4-⑤).
-                        Debug.Log($"[ViewLab] {pivot.name}  pos {asset.localPosition:F4} → {pivot.localPosition:F4}"
-                            + $"  rot {asset.localEulerAngles:F2} → {pivot.localEulerAngles:F2}"
-                            + $"  scale {asset.localScale:F3} → {pivot.localScale:F3}");
+                        GameLog.Info(LogCategory.ViewLab, $"{pivot.name}  pos {asset.localPosition:F4} → {pivot.localPosition:F4}"
+                                                    + $"  rot {asset.localEulerAngles:F2} → {pivot.localEulerAngles:F2}"
+                                                    + $"  scale {asset.localScale:F3} → {pivot.localScale:F3}");
                         written++;
                     }
 
@@ -542,7 +543,7 @@ namespace Game.Gameplay.Debugging
                 }
 
                 UnityEditor.PrefabUtility.SaveAsPrefabAsset(contents, PlayerPrefabPath);
-                Debug.Log($"[ViewLab] 저장 완료 — 변경 {written}건 ({PlayerPrefabPath})");
+                GameLog.Info(LogCategory.ViewLab, $"저장 완료 — 변경 {written}건 ({PlayerPrefabPath})");
             }
             finally
             {
@@ -609,7 +610,7 @@ namespace Game.Gameplay.Debugging
                 & float.TryParse(_fields[5], out float rz);
             if (!ok)
             {
-                Debug.LogWarning("[ViewLab] 입력 값 해석 실패 — 숫자만 입력하세요.");
+                GameLog.Warn(LogCategory.ViewLab, "입력 값 해석 실패 — 숫자만 입력하세요.");
                 return;
             }
 

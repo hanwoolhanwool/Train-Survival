@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System;
 using System.IO;
 using UnityEngine;
@@ -46,8 +47,8 @@ namespace Game.Systems.Networking
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                Debug.LogWarning(
-                    $"[LocalGuidIdentityProvider] 토큰 파일 접근 실패({e.Message}) — 이번 실행 한정 임시 토큰을 사용합니다.");
+                GameLog.Warn(LogCategory.Net, 
+                    $"토큰 파일 접근 실패({e.Message}) — 이번 실행 한정 임시 토큰을 사용합니다.");
                 return Guid.NewGuid().ToString("N");
             }
         }

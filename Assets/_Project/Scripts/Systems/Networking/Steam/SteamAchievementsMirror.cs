@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Systems.Meta;
 using Steamworks;
@@ -50,11 +51,11 @@ namespace Game.Systems.Networking.Steam
             // 미러 실패는 게임을 막지 않는다 — 로컬이 원천이라 다음 해금 때 다시 시도된다.
             if (!SteamUserStats.SetAchievement(steamId) || !SteamUserStats.StoreStats())
             {
-                Debug.LogWarning($"[SteamAchievementsMirror] Steam 업적 미러 실패: {achievementId} → {steamId}");
+                GameLog.Warn(LogCategory.Steam, $"Steam 업적 미러 실패: {achievementId} → {steamId}");
                 return;
             }
 
-            Debug.Log($"[SteamAchievementsMirror] Steam 업적 미러: {achievementId} → {steamId}");
+            GameLog.Info(LogCategory.Steam, $"Steam 업적 미러: {achievementId} → {steamId}");
         }
     }
 }

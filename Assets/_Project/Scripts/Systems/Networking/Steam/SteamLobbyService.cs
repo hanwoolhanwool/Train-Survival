@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Game.Core.Services;
 using Steamworks;
 using Unity.Netcode;
@@ -72,11 +73,11 @@ namespace Game.Systems.Networking.Steam
 
             if (ServiceLocator.TryGet(out INetworkSessionService session) && session.IsSessionActive)
             {
-                Debug.LogWarning("[SteamLobbyService] 세션 중 로비 참가 요청 무시 — 먼저 세션을 종료하세요.");
+                GameLog.Warn(LogCategory.Steam, "세션 중 로비 참가 요청 무시 — 먼저 세션을 종료하세요.");
                 return;
             }
 
-            Debug.Log($"[SteamLobbyService] 로비 참가 시도: {lobbyId}");
+            GameLog.Info(LogCategory.Steam, $"로비 참가 시도: {lobbyId}");
             _lobbyEntered.Set(SteamMatchmaking.JoinLobby(new CSteamID(lobbyId)));
         }
 
@@ -84,7 +85,7 @@ namespace Game.Systems.Networking.Steam
         {
             if (HasLobby)
             {
-                Debug.Log($"[SteamLobbyService] 로비 이탈: {_currentLobby.m_SteamID}");
+                GameLog.Info(LogCategory.Steam, $"로비 이탈: {_currentLobby.m_SteamID}");
                 SteamMatchmaking.LeaveLobby(_currentLobby);
                 _currentLobby = default;
             }
@@ -94,16 +95,16 @@ namespace Game.Systems.Networking.Steam
         {
             if (ioFailure || result.m_eResult != EResult.k_EResultOK)
             {
-                Debug.LogError($"[SteamLobbyService] 로비 생성 실패 — ioFailure={ioFailure} "
-                    + $"result={result.m_eResult}");
+                GameLog.Error(LogCategory.Steam, $"로비 생성 실패 — ioFailure={ioFailure} "
+                                      + $"result={result.m_eResult}");
                 return;
             }
 
             _currentLobby = new CSteamID(result.m_ulSteamIDLobby);
             SteamMatchmaking.SetLobbyData(
                 _currentLobby, HostSteamIdKey, SteamUser.GetSteamID().m_SteamID.ToString());
-            Debug.Log($"[SteamLobbyService] 친구 전용 로비 생성: {_currentLobby.m_SteamID} — "
-                + "오버레이(Shift+Tab) 또는 초대 버튼으로 친구를 부르세요.");
+            GameLog.Info(LogCategory.Steam, $"친구 전용 로비 생성: {_currentLobby.m_SteamID} — "
+                                      + "오버레이(Shift+Tab) 또는 초대 버튼으로 친구를 부르세요.");
         }
 
         /// <summary>실행 중 초대 수락·친구 목록 "게임 참가" — Steam이 로비 id를 넘겨준다.</summary>
@@ -118,8 +119,8 @@ namespace Game.Systems.Networking.Steam
                 || (EChatRoomEnterResponse)result.m_EChatRoomEnterResponse
                     != EChatRoomEnterResponse.k_EChatRoomEnterResponseSuccess)
             {
-                Debug.LogError($"[SteamLobbyService] 로비 입장 실패 — ioFailure={ioFailure} "
-                    + $"response={result.m_EChatRoomEnterResponse}");
+                GameLog.Error(LogCategory.Steam, $"로비 입장 실패 — ioFailure={ioFailure} "
+                                      + $"response={result.m_EChatRoomEnterResponse}");
                 return;
             }
 
@@ -137,10 +138,10 @@ namespace Game.Systems.Networking.Steam
                 return;
             }
 
-            Debug.Log($"[SteamLobbyService] 로비 입장 완료 — 호스트({hostId})로 릴레이 접속을 시작합니다.");
+            GameLog.Info(LogCategory.Steam, $"로비 입장 완료 — 호스트({hostId})로 릴레이 접속을 시작합니다.");
             if (!session.StartClient(hostId, 0))
             {
-                Debug.LogError("[SteamLobbyService] 릴레이 접속 시작 실패.");
+                GameLog.Error(LogCategory.Steam, "릴레이 접속 시작 실패.");
             }
         }
     }

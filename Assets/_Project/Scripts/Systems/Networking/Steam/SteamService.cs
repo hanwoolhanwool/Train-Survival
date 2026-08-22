@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Steamworks;
 using UnityEngine;
 
@@ -21,14 +22,14 @@ namespace Game.Systems.Networking.Steam
 
             if (!SteamAPI.Init())
             {
-                Debug.LogError("[SteamService] SteamAPI.Init 실패 — Steam 클라이언트 로그인 상태와 "
-                    + "steam_appid.txt(개발: 480)를 확인하세요. Steam 모드는 폴백하지 않습니다.");
+                GameLog.Error(LogCategory.Steam, "SteamAPI.Init 실패 — Steam 클라이언트 로그인 상태와 "
+                                      + "steam_appid.txt(개발: 480)를 확인하세요. Steam 모드는 폴백하지 않습니다.");
                 return false;
             }
 
             IsInitialized = true;
-            Debug.Log($"[SteamService] 초기화 완료 — {SteamFriends.GetPersonaName()} "
-                + $"({SteamUser.GetSteamID().m_SteamID})");
+            GameLog.Info(LogCategory.Steam, $"초기화 완료 — {SteamFriends.GetPersonaName()} "
+                                      + $"({SteamUser.GetSteamID().m_SteamID})");
             return true;
         }
 

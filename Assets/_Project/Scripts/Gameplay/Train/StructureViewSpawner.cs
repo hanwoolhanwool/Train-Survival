@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Pooling;
@@ -124,7 +125,7 @@ namespace Game.Gameplay.Train
             GameObject prefab = _catalog.GetViewPrefab(entry.Kind);
             if (prefab == null)
             {
-                Debug.LogWarning($"[StructureViewSpawner] {entry.Kind} 실물 프리팹이 카탈로그에 없다 — 항목 #{entry.Id} 표현 생략");
+                GameLog.Warn(LogCategory.Train, $"{entry.Kind} 실물 프리팹이 카탈로그에 없다 — 항목 #{entry.Id} 표현 생략");
                 return;
             }
 
@@ -142,7 +143,7 @@ namespace Game.Gameplay.Train
                 .GetComponent<StructureView>();
             if (view == null)
             {
-                Debug.LogWarning($"[StructureViewSpawner] {entry.Kind} 프리팹 루트에 StructureView가 없다 — 항목 #{entry.Id}");
+                GameLog.Warn(LogCategory.Train, $"{entry.Kind} 프리팹 루트에 StructureView가 없다 — 항목 #{entry.Id}");
                 return;
             }
 

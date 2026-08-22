@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections;
 using Game.Core.Services;
 using Game.Gameplay.Harpoon;
@@ -67,7 +68,7 @@ namespace Game.Gameplay.Session
                 GetComponent<NetworkPlayerController>(),
                 GetComponent<PlayerFrostbite>());
             PlayerSessionRegistry.GetOrRegister().Store(token, snapshot);
-            Debug.Log($"[PlayerSessionAgent] 끊김 스냅샷 캡처: client={OwnerClientId}");
+            GameLog.Info(LogCategory.Session, $"끊김 스냅샷 캡처: client={OwnerClientId}");
         }
 
         private IEnumerator ServerRestoreAfterInitialGive()
@@ -95,8 +96,8 @@ namespace Game.Gameplay.Session
                 GetComponent<NetworkPlayerController>(),
                 NetworkManager.ServerTime.Time,
                 GetComponent<PlayerFrostbite>());
-            Debug.Log($"[PlayerSessionAgent] 재접속 복원 적용: client={OwnerClientId} "
-                + $"respawnPending={snapshot.RespawnPending}");
+            GameLog.Info(LogCategory.Session, $"재접속 복원 적용: client={OwnerClientId} "
+                                        + $"respawnPending={snapshot.RespawnPending}");
 
             // 복원으로 부활 대기가 재개됐을 수 있다 — 전멸 재평가 (M6 3차 §2.2 트리거 ⓓ,
             // 스폰~복원 1프레임 창 동안 초기 지급 상태로 보이던 것의 보정).

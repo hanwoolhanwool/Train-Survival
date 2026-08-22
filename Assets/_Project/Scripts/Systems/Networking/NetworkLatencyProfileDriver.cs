@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Game.Core.Services;
 using Unity.Multiplayer.Tools.NetworkSimulator.Runtime;
 using UnityEngine;
@@ -59,7 +60,7 @@ namespace Game.Systems.Networking
 
             _appliedProfile = desired;
             _simulator.ConnectionPreset = CreatePreset(desired);
-            Debug.Log($"[NetworkLatencyProfileDriver] 지연 프로파일 적용: {desired} ({DescribePreset(desired)})");
+            GameLog.Info(LogCategory.Net, $"지연 프로파일 적용: {desired} ({DescribePreset(desired)})");
         }
 
         private static INetworkSimulatorPreset CreatePreset(LatencyProfile profile)

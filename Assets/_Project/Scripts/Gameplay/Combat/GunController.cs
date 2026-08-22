@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Pooling;
@@ -313,7 +314,7 @@ namespace Game.Gameplay.Combat
             float maxDistance = _settings.MaxRange + _settings.RangeTolerance;
             if ((hitPoint - firePosition).sqrMagnitude > maxDistance * maxDistance)
             {
-                Debug.Log($"[GunController] 명중 보고 기각(사거리 초과): client={rpcParams.Receive.SenderClientId}");
+                GameLog.Info(LogCategory.Combat, $"명중 보고 기각(사거리 초과): client={rpcParams.Receive.SenderClientId}");
                 return;
             }
 

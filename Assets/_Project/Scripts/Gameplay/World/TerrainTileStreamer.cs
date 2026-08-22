@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Pooling;
@@ -68,8 +69,8 @@ namespace Game.Gameplay.World
             }
 
             _activeTilePrefab = prefab;
-            Debug.Log($"[TerrainTileStreamer] 지형 타일 전환: {(region == null ? "기본" : region.DisplayName)} " +
-                "— 이후 생성되는 전방 타일부터 반영됩니다.");
+            GameLog.Info(LogCategory.World, $"지형 타일 전환: {(region == null ? "기본" : region.DisplayName)} " +
+                                      "— 이후 생성되는 전방 타일부터 반영됩니다.");
         }
 
         /// <summary>
@@ -214,7 +215,7 @@ namespace Game.Gameplay.World
 
             if (RemovalBuffer.Count > 0)
             {
-                Debug.Log($"[TerrainTileStreamer] 지역 경계 재판정 — 타일 {RemovalBuffer.Count}장 교체.");
+                GameLog.Info(LogCategory.World, $"지역 경계 재판정 — 타일 {RemovalBuffer.Count}장 교체.");
             }
         }
 

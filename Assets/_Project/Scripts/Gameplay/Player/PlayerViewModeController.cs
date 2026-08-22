@@ -1,4 +1,5 @@
 using Game.Core.Events;
+using Game.Core.Logging;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -89,7 +90,7 @@ namespace Game.Gameplay.Player
 
         private void Publish()
         {
-            Debug.Log($"[PlayerViewModeController] 시점 모드 = {Mode}");
+            GameLog.Info(LogCategory.Player, $"시점 모드 = {Mode}");
             EventBus<PlayerViewModeChangedLocalEvent>.Publish(new PlayerViewModeChangedLocalEvent(Mode));
         }
     }

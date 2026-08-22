@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Pooling;
@@ -65,7 +66,7 @@ namespace Game.Gameplay.Monsters
                 ServerRetreatAll();
             }
 
-            Debug.Log($"[MonsterWaveSpawner] QA 스폰 토글: {(enabled ? "켜짐 — 다음 밤부터 웨이브 재개" : "꺼짐 — 웨이브 회수·중지")}");
+            GameLog.Info(LogCategory.Monsters, $"QA 스폰 토글: {(enabled ? "켜짐 — 다음 밤부터 웨이브 재개" : "꺼짐 — 웨이브 회수·중지")}");
         }
 
         /// <summary>
@@ -86,7 +87,7 @@ namespace Game.Gameplay.Monsters
             var health = instance.GetComponent<MonsterHealth>();
             if (health == null)
             {
-                Debug.LogError("[MonsterWaveSpawner] 몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
+                GameLog.Error(LogCategory.Monsters, "몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
                 PoolManager.Despawn(instance);
                 return;
             }
@@ -98,7 +99,7 @@ namespace Game.Gameplay.Monsters
 
             health.NetworkObject.Spawn();
             _activeMonsters.Add(health);
-            Debug.Log($"[MonsterWaveSpawner] QA 단건 스폰: {position} (기본 변종 · 체력 배율 1)");
+            GameLog.Info(LogCategory.Monsters, $"QA 단건 스폰: {position} (기본 변종 · 체력 배율 1)");
         }
 
         public override void OnNetworkSpawn()
@@ -143,7 +144,7 @@ namespace Game.Gameplay.Monsters
                 // QA 토글로 꺼져 있으면 밤 웨이브를 계획하지 않는다 (M5 4차 — 밤 노숙 검증성).
                 if (!_spawnEnabled)
                 {
-                    Debug.Log($"[MonsterWaveSpawner] QA 스폰 꺼짐 — Day {evt.DayNumber} 밤 웨이브 생략");
+                    GameLog.Info(LogCategory.Monsters, $"QA 스폰 꺼짐 — Day {evt.DayNumber} 밤 웨이브 생략");
                     return;
                 }
 
@@ -168,10 +169,10 @@ namespace Game.Gameplay.Monsters
                     ? ", 지역 마지막 밤"
                     : (_plan.IsReinforcedNight ? ", 지역 중간 강화 밤" : string.Empty);
 
-                Debug.Log($"[MonsterWaveSpawner] 밤 웨이브 시작: Day {evt.DayNumber} ({regionLabel}" +
-                    $"{nightLabel}), " +
-                    $"총 {_plan.TotalCount}마리, 간격 {_plan.SpawnInterval:F1}s, 동시 상한 {_plan.MaxAlive}, " +
-                    $"체력 ×{_plan.HealthMultiplier:F2}");
+                GameLog.Info(LogCategory.Monsters, $"밤 웨이브 시작: Day {evt.DayNumber} ({regionLabel}" +
+                                             $"{nightLabel}), " +
+                                             $"총 {_plan.TotalCount}마리, 간격 {_plan.SpawnInterval:F1}s, 동시 상한 {_plan.MaxAlive}, " +
+                                             $"체력 ×{_plan.HealthMultiplier:F2}");
             }
             else
             {
@@ -216,7 +217,7 @@ namespace Game.Gameplay.Monsters
             var health = instance.GetComponent<MonsterHealth>();
             if (health == null)
             {
-                Debug.LogError("[MonsterWaveSpawner] 몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
+                GameLog.Error(LogCategory.Monsters, "몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
                 PoolManager.Despawn(instance);
                 return;
             }

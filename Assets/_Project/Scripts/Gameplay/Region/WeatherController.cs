@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System;
 using Game.Core.Events;
 using Game.Core.Services;
@@ -173,9 +174,9 @@ namespace Game.Gameplay.Region
 
             ApplyScrollMultiplier(weather.ScrollSpeedMultiplier);
 
-            Debug.Log($"[WeatherController] 날씨 시작: {weather.DisplayName} " +
-                $"({_serverRemainingSeconds:F0}s, 속도 ×{weather.ScrollSpeedMultiplier:F2}, " +
-                $"온도 {weather.AmbientTemperatureOffset:+0.#;-0.#;0}℃, 집게 ×{weather.HarpoonRangeMultiplier:F2})");
+            GameLog.Info(LogCategory.Cycle, $"날씨 시작: {weather.DisplayName} " +
+                                      $"({_serverRemainingSeconds:F0}s, 속도 ×{weather.ScrollSpeedMultiplier:F2}, " +
+                                      $"온도 {weather.AmbientTemperatureOffset:+0.#;-0.#;0}℃, 집게 ×{weather.HarpoonRangeMultiplier:F2})");
         }
 
         private void ServerClearWeather()

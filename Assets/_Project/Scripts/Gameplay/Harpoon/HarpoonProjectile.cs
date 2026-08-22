@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System;
 using Game.Core.Pooling;
 using Game.Core.Services;
@@ -18,6 +19,11 @@ namespace Game.Gameplay.Harpoon
         private const float ArriveEpsilon = 0.1f;
 
         private static readonly Collider[] OverlapBuffer = new Collider[8];
+
+        // 훅이 결론(명중·빗나감) 없이 사라지는 지점을 가리는 진단 (증상 해소 후 제거).
+        // 훅은 풀에서 재사용되므로 인스턴스가 아니라 하나의 키로 전체 상한을 건다.
+        private const string LifecycleKey = "harpoon.hook-lifecycle";
+        private const int LifecycleLimit = 24;
 
         private HarpoonHookMotion _motion;
         private Vector3 _direction;
@@ -68,6 +74,10 @@ namespace Game.Gameplay.Harpoon
             _collisionEnabled = true;
             _onHit = onHit;
             _onMiss = onMiss;
+
+            GameLog.InfoLimited(LogCategory.Diagnostics, LifecycleKey, LifecycleLimit,
+                $"Launch — 권위 발사 onMiss={(onMiss != null)} onHit={(onHit != null)} " +
+                $"speed={speed} maxRange={maxRange} origin={origin:F1}");
         }
 
         /// <summary>
@@ -87,6 +97,9 @@ namespace Game.Gameplay.Harpoon
             _collisionEnabled = true;
             _onHit = null;
             _onMiss = null;
+
+            GameLog.WarnLimited(LogCategory.Diagnostics, LifecycleKey, LifecycleLimit,
+                "LaunchCosmetic — 연출 사본으로 재발사됐다 (콜백이 지워진다).");
         }
 
         private void SetupCommon(
@@ -133,6 +146,10 @@ namespace Game.Gameplay.Harpoon
             {
                 return;
             }
+
+            GameLog.WarnLimited(LogCategory.Diagnostics, LifecycleKey, LifecycleLimit,
+                $"Cancel — 훅이 결론 없이 즉시 회수된다 (phase={_motion.Phase}, " +
+                $"onMiss={(_onMiss != null)}). 아래 스택이 호출자다.");
 
             _motion.Cancel();
             ClearCallbacks();
@@ -210,6 +227,9 @@ namespace Game.Gameplay.Harpoon
             _traveled += step;
             if (_traveled >= _maxRange)
             {
+                GameLog.InfoLimited(LogCategory.Diagnostics, LifecycleKey, LifecycleLimit,
+                    $"사거리 도달 — {_traveled:F2}m / {_maxRange:F2}m, onMiss={(_onMiss != null)}");
+
                 _motion.NotifyMiss();
                 _onMiss?.Invoke();
                 return;
@@ -261,6 +281,11 @@ namespace Game.Gameplay.Harpoon
         {
             transform.position = hitPoint;
             var grabbable = collider.GetComponentInParent<IGrabbable>();
+
+            GameLog.InfoLimited(LogCategory.Diagnostics, LifecycleKey, LifecycleLimit,
+                $"ResolveHit — 충돌체={collider.name} 그랩가능={(grabbable != null)} " +
+                $"onMiss={(_onMiss != null)} 이동거리={_traveled:F2}m");
+
             if (grabbable != null)
             {
                 _motion.NotifyGrabbableHit();
@@ -343,6 +368,10 @@ namespace Game.Gameplay.Harpoon
 
         public void OnDespawned()
         {
+            GameLog.WarnLimited(LogCategory.Diagnostics, LifecycleKey, LifecycleLimit,
+                $"OnDespawned — 풀 회수 (phase={(_motion != null ? _motion.Phase.ToString() : "null")}, " +
+                $"onMiss={(_onMiss != null)}). 아래 스택이 호출자다.");
+
             _motion?.Cancel();
             ClearCallbacks();
         }

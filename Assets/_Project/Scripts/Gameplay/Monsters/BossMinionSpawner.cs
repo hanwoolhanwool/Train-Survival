@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Pooling;
 using Game.Core.Services;
@@ -139,7 +140,7 @@ namespace Game.Gameplay.Monsters
             var health = instance.GetComponent<MonsterHealth>();
             if (health == null)
             {
-                Debug.LogError("[BossMinionSpawner] 몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
+                GameLog.Error(LogCategory.Monsters, "몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
                 PoolManager.Despawn(instance);
                 return false;
             }

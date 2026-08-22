@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Services;
@@ -132,8 +133,8 @@ namespace Game.Gameplay.Session
             _dayReached.Value = ServiceLocator.TryGet(out IDayCycleService cycle) ? cycle.DayNumber : 1;
             _elapsedSeconds.Value = (float)NetworkManager.ServerTime.Time;
             _gameOver.Value = true;
-            Debug.Log($"[GameOverMonitor] 전멸 확정: day={_dayReached.Value} "
-                + $"elapsed={_elapsedSeconds.Value:F0}s players={_evaluationBuffer.Count}");
+            GameLog.Info(LogCategory.Session, $"전멸 확정: day={_dayReached.Value} "
+                                        + $"elapsed={_elapsedSeconds.Value:F0}s players={_evaluationBuffer.Count}");
         }
 
         private void OnGameOverChanged(bool previous, bool current)

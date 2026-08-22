@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System;
 using System.IO;
 using Game.Utilities;
@@ -28,7 +29,7 @@ namespace Game.Systems.Meta
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException)
             {
-                Debug.LogWarning($"[MetaProgressStore] 메타 진행 읽기 실패({e.Message}) — 새 진행으로 시작합니다.");
+                GameLog.Warn(LogCategory.Meta, $"메타 진행 읽기 실패({e.Message}) — 새 진행으로 시작합니다.");
             }
 
             return new MetaProgress();
@@ -44,7 +45,7 @@ namespace Game.Systems.Meta
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                Debug.LogWarning($"[MetaProgressStore] 메타 진행 저장 실패({e.Message}) — 이번 기록을 건너뜁니다.");
+                GameLog.Warn(LogCategory.Meta, $"메타 진행 저장 실패({e.Message}) — 이번 기록을 건너뜁니다.");
             }
         }
 

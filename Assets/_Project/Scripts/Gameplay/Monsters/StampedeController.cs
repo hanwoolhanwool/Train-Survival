@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Pooling;
@@ -101,9 +102,9 @@ namespace Game.Gameplay.Monsters
             _spawnedCount = 0;
             _spawnTimer = 0f;
 
-            Debug.Log($"[StampedeController] 스탬피드 시작: Day {dayNumber} ({definition.DisplayName}), " +
-                $"총 {_plan.TotalCount}마리, 간격 {_plan.SpawnInterval:F1}s, 동시 상한 {_plan.MaxAlive}, " +
-                $"측면 {(_side < 0f ? "좌" : "우")}, 체력 ×{_healthMultiplier:F2}");
+            GameLog.Info(LogCategory.Monsters, $"스탬피드 시작: Day {dayNumber} ({definition.DisplayName}), " +
+                                         $"총 {_plan.TotalCount}마리, 간격 {_plan.SpawnInterval:F1}s, 동시 상한 {_plan.MaxAlive}, " +
+                                         $"측면 {(_side < 0f ? "좌" : "우")}, 체력 ×{_healthMultiplier:F2}");
         }
 
         private void Update()
@@ -121,7 +122,7 @@ namespace Game.Gameplay.Monsters
                 if (_activeMonsters.Count == 0)
                 {
                     _stampedeActive = false;
-                    Debug.Log("[StampedeController] 스탬피드 종료 — 무리가 모두 지나갔다");
+                    GameLog.Info(LogCategory.Monsters, "스탬피드 종료 — 무리가 모두 지나갔다");
                 }
 
                 return;
@@ -148,7 +149,7 @@ namespace Game.Gameplay.Monsters
             var health = instance.GetComponent<MonsterHealth>();
             if (health == null)
             {
-                Debug.LogError("[StampedeController] 몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
+                GameLog.Error(LogCategory.Monsters, "몬스터 프리팹에 MonsterHealth가 없습니다.", _monsterPrefab);
                 PoolManager.Despawn(instance);
                 return;
             }

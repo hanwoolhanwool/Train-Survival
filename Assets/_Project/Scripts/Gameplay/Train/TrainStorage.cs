@@ -1,4 +1,5 @@
 using Game.Core.Events;
+using Game.Core.Logging;
 using Game.Core.Services;
 using Game.Gameplay.Inventory;
 using Game.Gameplay.Player;
@@ -478,7 +479,7 @@ namespace Game.Gameplay.Train
             int storageId = FindAnyAliveStorage();
             if (storageId < 0)
             {
-                Debug.Log("[TrainStorage] QA 동시 경합: 살아 있는 창고가 없다 — 창고를 먼저 설치한다.");
+                GameLog.Info(LogCategory.Train, "QA 동시 경합: 살아 있는 창고가 없다 — 창고를 먼저 설치한다.");
                 return;
             }
 
@@ -486,8 +487,8 @@ namespace Game.Gameplay.Train
             // 못한다 — 시작 전에 전제를 막아 헛된 통과를 만들지 않는다.
             if (GetSlot(storageId, 0).IsEmpty)
             {
-                Debug.Log($"[TrainStorage] QA 동시 경합: 창고 #{storageId}의 0번 칸이 비어 있다 — " +
-                    "경합할 대상이 없다. 0번 칸에 자원을 넣고 다시 누른다.");
+                GameLog.Info(LogCategory.Train, $"QA 동시 경합: 창고 #{storageId}의 0번 칸이 비어 있다 — " +
+                                          "경합할 대상이 없다. 0번 칸에 자원을 넣고 다시 누른다.");
                 return;
             }
 
@@ -526,7 +527,7 @@ namespace Game.Gameplay.Train
 
             if (toIndex < 0)
             {
-                Debug.Log("[TrainStorage] QA 동시 경합: 인벤토리에 빈 칸이 없어 이 피어는 요청을 보내지 않는다.");
+                GameLog.Info(LogCategory.Train, "QA 동시 경합: 인벤토리에 빈 칸이 없어 이 피어는 요청을 보내지 않는다.");
                 return;
             }
 
@@ -577,8 +578,8 @@ namespace Game.Gameplay.Train
                 }
             }
 
-            Debug.Log($"[TrainStorage] QA 동시 경합 ({phase}) — 창고 #{storageId} {storageTotal} + " +
-                $"플레이어 합계 {playerTotal} = 총 {storageTotal + playerTotal}");
+            GameLog.Info(LogCategory.Train, $"QA 동시 경합 ({phase}) — 창고 #{storageId} {storageTotal} + " +
+                                      $"플레이어 합계 {playerTotal} = 총 {storageTotal + playerTotal}");
         }
 
         private static int CountItems(HotbarSlotView[] slots)

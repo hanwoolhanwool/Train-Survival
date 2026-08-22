@@ -1,4 +1,5 @@
 using Game.Core.Events;
+using Game.Core.Logging;
 using Game.Core.Pooling;
 using Game.Core.Services;
 using Game.Gameplay.Combat;
@@ -66,6 +67,21 @@ namespace Game.Gameplay.Harpoon
 
         /// <summary>무기 슬롯 활성 여부 — 무기 전환 시스템이 제어한다. 소유자 입력 게이트 (M2).</summary>
         public bool InputEnabled { get; set; } = true;
+
+        // 발사 입력이 막히는 지점을 가리는 진단 (증상 해소 후 제거).
+        // 상한이 걸린 로그는 GameLog의 키로 세므로 카운터 필드를 두지 않는다.
+        // 열림/닫힘 전이만 자체 플래그로 본다 — 왕복해서 다시 알려야 하므로 횟수 상한과는 성격이 다르다.
+        private const string OwnerReadyKey = "harpoon.owner-ready";
+        private const string FireKey = "harpoon.fire-input";
+        private const int FireLimit = 10;
+        private const string OutcomeKey = "harpoon.hook-outcome";
+        private const int OutcomeLimit = 5;
+
+        private bool _diagInputDisabled;
+
+        // 소유자 전용 — Firing 상태가 이어진 시간 (초). 훅 통지 유실 복구 판정에 쓴다.
+        private float _firingElapsed;
+
 
         /// <summary>
         /// 견인 앵커의 높이 오프셋 (m) — 대상을 사수의 발밑이 아니라 몸 높이로 끌어당긴다.
@@ -186,7 +202,12 @@ namespace Game.Gameplay.Harpoon
 
             if (IsOwner && _settings != null)
             {
+                GameLog.InfoOnce(LogCategory.Diagnostics, OwnerReadyKey, "소유자 입력 경로 진입 (IsOwner + settings 정상).");
+
                 _stateMachine.Tick(Time.deltaTime);
+
+                // 입력보다 먼저 고착을 푼다 — 복구된 프레임에 곧바로 다시 쏠 수 있어야 한다.
+                UpdateFiringWatchdog(Time.deltaTime);
                 UpdateOwnerInput();
 
                 // 예측 고정 안전장치 — 승인/거부가 끝내 오지 않아 훅이 타임아웃 되감기로
@@ -217,6 +238,44 @@ namespace Game.Gameplay.Harpoon
 
         // ── 소유자: 입력·로컬 선반영 계층 ──────────────────────────────────
 
+        /// <summary>
+        /// 발사 고착 복구 — <see cref="HarpoonState.Firing"/>에서 벗어나는 길은 훅의 명중·빗나감
+        /// 콜백뿐인데, 훅은 <b>풀링 객체</b>라 그 통지가 보장되지 않는다: 풀에 반환되면
+        /// <see cref="HarpoonProjectile.OnDespawned"/>가 콜백을 지우므로, 결론을 알리기 전에
+        /// 회수된 훅은 아무 통지도 남기지 않고 사라진다. 그러면 상태 머신이 Firing에 갇혀
+        /// <see cref="HarpoonStateMachine.TryFire"/>가 영구히 거부되고 — 집게가 두 번 다시 나가지 않는다.
+        /// 훅이 사라졌거나 비행이 물리적 상한을 넘겼으면 빗나감으로 되돌려 잠금을 푼다.
+        /// </summary>
+        private void UpdateFiringWatchdog(float deltaTime)
+        {
+            if (_stateMachine.State != HarpoonState.Firing)
+            {
+                _firingElapsed = 0f;
+                return;
+            }
+
+            _firingElapsed += deltaTime;
+
+            // 훅이 살아 있는 동안은 정상 비행이다 — 통지를 기다린다.
+            bool hookLost = _activeProjectile == null || !_activeProjectile.IsAlive;
+
+            // 상한 = 최대 사거리를 다 나는 시간 + 확정 대기 타임아웃 (여유를 두 배로 잡는다).
+            float flightLimit = EffectiveMaxRange / Mathf.Max(1f, _settings.ProjectileSpeed)
+                + _settings.WaitingForServerTimeout;
+
+            if (!hookLost && _firingElapsed <= flightLimit * 2f)
+            {
+                return;
+            }
+
+            GameLog.Warn(LogCategory.Diagnostics, $"발사 고착 복구 — 훅이 결론을 알리지 못했다 " +
+                                     $"(훅 소실={hookLost}, 경과 {_firingElapsed:F2}s / 상한 {flightLimit * 2f:F2}s). 빗나감으로 되돌린다.");
+
+            _firingElapsed = 0f;
+            DiscardActiveProjectile();
+            _stateMachine.NotifyMiss();
+        }
+
         private void UpdateOwnerInput()
         {
             // 무기를 바꿔도 파지는 유지된다 (M5 6차 2차 — 사용자 결정으로 "놓기 ② 무기 교체" 철회).
@@ -226,17 +285,35 @@ namespace Game.Gameplay.Harpoon
             // 여기서 유지되는 것은 "한손 무기로 바꾼 뒤에도 파지가 살아 있다"는 그 규약이다.
             if (!InputEnabled)
             {
+                // 진단 — 발사가 막히는 지점을 1회만 알린다 (핫바 선택이 집게가 아닐 때 여기서 끊긴다).
+                if (!_diagInputDisabled)
+                {
+                    _diagInputDisabled = true;
+                    GameLog.Info(LogCategory.Diagnostics, "InputEnabled=false — 핫바 선택이 집게가 아니라 발사 입력이 닫혔다.");
+                }
+
                 return;
+            }
+
+            if (_diagInputDisabled)
+            {
+                _diagInputDisabled = false;
+                GameLog.Info(LogCategory.Diagnostics, "InputEnabled=true — 발사 입력이 열렸다.");
             }
 
             Mouse mouse = Mouse.current;
             if (mouse == null)
             {
+                GameLog.Warn(LogCategory.Diagnostics, "Mouse.current 가 null — 입력 장치가 잡히지 않았다.");
                 return;
             }
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
+                // 고착 여부는 연타 몇 번으로 갈리므로 3회로는 부족했다 — 표본을 넓힌다.
+                GameLog.InfoLimited(LogCategory.Diagnostics, FireKey, FireLimit,
+                    $"좌클릭 감지 state={_stateMachine.State}");
+
                 if (_stateMachine.State == HarpoonState.Holding)
                 {
                     // 파지 중 좌클릭 = 든 몬스터 투척 (M5 6차 2차) — 재발사가 아니라 슬램이다.
@@ -348,6 +425,11 @@ namespace Game.Gameplay.Harpoon
 
         private void OnProjectileHit(IGrabbable grabbable, Vector3 hitPoint)
         {
+            // Unity의 null 비교를 타야 파괴된 대상도 걸러진다 (?. 는 fake null을 못 잡는다).
+            // 인자 안에서 읽어야 릴리스 빌드에서 호출과 함께 통째로 사라진다.
+            GameLog.InfoLimited(LogCategory.Diagnostics, OutcomeKey, OutcomeLimit,
+                $"훅 결말: 로컬 명중 — 대상={(grabbable.NetworkObject != null ? grabbable.NetworkObject.name : "null")}");
+
             _localHitTime = Time.realtimeSinceStartupAsDouble;
             _stateMachine.NotifyLocalHit();
             HarpoonSliceMetrics.RecordLocalHit();
@@ -371,6 +453,9 @@ namespace Game.Gameplay.Harpoon
 
         private void OnProjectileMiss()
         {
+            GameLog.InfoLimited(LogCategory.Diagnostics, OutcomeKey, OutcomeLimit,
+                "훅 결말: 빗나감 — 미스 회복 후 재발사 가능해진다.");
+
             _stateMachine.NotifyMiss();
             HarpoonSliceMetrics.RecordMiss();
             EventBus<HarpoonMissLocalEvent>.Publish(new HarpoonMissLocalEvent(false));
@@ -451,7 +536,7 @@ namespace Game.Gameplay.Harpoon
             if (verdict == GrabVerdict.Approved && grabbable.TryClaimGrab(senderClientId))
             {
                 // 승인도 남긴다 — 동시 그랩 QA(I1·I2)가 "한쪽 승인 + 한쪽 거부"를 콘솔로 확인한다.
-                Debug.Log($"[HarpoonController] 그랩 승인: client={senderClientId} target={targetObject.name}");
+                GameLog.Info(LogCategory.Harpoon, $"그랩 승인: client={senderClientId} target={targetObject.name}");
                 _serverTowTarget = grabbable;
                 GrabApprovedOwnerRpc(targetRef);
                 GrabApprovedNotOwnerRpc(targetRef);
@@ -463,7 +548,7 @@ namespace Game.Gameplay.Harpoon
                     verdict = GrabVerdict.TargetClaimed;
                 }
 
-                Debug.Log($"[HarpoonController] 그랩 거부: client={senderClientId} verdict={verdict}");
+                GameLog.Info(LogCategory.Harpoon, $"그랩 거부: client={senderClientId} verdict={verdict}");
                 GrabRejectedOwnerRpc(verdict);
                 GrabRejectedNotOwnerRpc();
             }

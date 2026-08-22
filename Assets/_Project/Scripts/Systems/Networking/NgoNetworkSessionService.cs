@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Text;
 using Game.Systems.Networking.Steam;
 using Netcode.Transports;
@@ -62,7 +63,7 @@ namespace Game.Systems.Networking
             NetworkManager networkManager = NetworkManager.Singleton;
             if (networkManager == null)
             {
-                Debug.LogError("[NgoNetworkSessionService] NetworkManager가 없습니다. Boot 씬 구성을 확인하세요.");
+                GameLog.Error(LogCategory.Net, "NetworkManager가 없습니다. Boot 씬 구성을 확인하세요.");
                 return false;
             }
 
@@ -73,8 +74,8 @@ namespace Game.Systems.Networking
 
             if (!networkManager.NetworkConfig.ConnectionApproval)
             {
-                Debug.LogWarning(
-                    "[NgoNetworkSessionService] ConnectionApproval이 꺼져 있습니다 — 재접속 식별이 동작하지 않습니다. "
+                GameLog.Warn(LogCategory.Net, 
+                    "ConnectionApproval이 꺼져 있습니다 — 재접속 식별이 동작하지 않습니다. "
                     + "Boot 씬 NetworkManager 설정을 확인하세요.");
             }
 
@@ -94,7 +95,7 @@ namespace Game.Systems.Networking
             NetworkManager networkManager = NetworkManager.Singleton;
             if (networkManager == null)
             {
-                Debug.LogError("[NgoNetworkSessionService] NetworkManager가 없습니다. Boot 씬 구성을 확인하세요.");
+                GameLog.Error(LogCategory.Net, "NetworkManager가 없습니다. Boot 씬 구성을 확인하세요.");
                 return false;
             }
 
@@ -130,15 +131,15 @@ namespace Game.Systems.Networking
             {
                 if (!SteamService.IsInitialized)
                 {
-                    Debug.LogError("[NgoNetworkSessionService] Steam 모드지만 SteamAPI가 초기화되지 않았습니다.");
+                    GameLog.Error(LogCategory.Net, "Steam 모드지만 SteamAPI가 초기화되지 않았습니다.");
                     return false;
                 }
 
                 var steamTransport = networkManager.GetComponent<SteamNetworkingSocketsTransport>();
                 if (steamTransport == null)
                 {
-                    Debug.LogError("[NgoNetworkSessionService] SteamNetworkingSocketsTransport가 없습니다. "
-                        + "Boot 씬 NetworkManager 구성을 확인하세요.");
+                    GameLog.Error(LogCategory.Net, "SteamNetworkingSocketsTransport가 없습니다. "
+                                        + "Boot 씬 NetworkManager 구성을 확인하세요.");
                     return false;
                 }
 
@@ -146,7 +147,7 @@ namespace Game.Systems.Networking
                 {
                     if (!ulong.TryParse(steamTargetId, out ulong target) || target == 0)
                     {
-                        Debug.LogError($"[NgoNetworkSessionService] 호스트 SteamID 해석 실패: '{steamTargetId}'");
+                        GameLog.Error(LogCategory.Net, $"호스트 SteamID 해석 실패: '{steamTargetId}'");
                         return false;
                     }
 
@@ -160,7 +161,7 @@ namespace Game.Systems.Networking
             var unityTransport = networkManager.GetComponent<UnityTransport>();
             if (unityTransport == null)
             {
-                Debug.LogError("[NgoNetworkSessionService] UnityTransport가 없습니다. NetworkManager 구성을 확인하세요.");
+                GameLog.Error(LogCategory.Net, "UnityTransport가 없습니다. NetworkManager 구성을 확인하세요.");
                 return false;
             }
 
@@ -173,7 +174,7 @@ namespace Game.Systems.Networking
             NetworkManager networkManager = NetworkManager.Singleton;
             if (networkManager == null || !networkManager.IsHost || networkManager.SceneManager == null)
             {
-                Debug.LogError("[NgoNetworkSessionService] 호스트 세션이 아니어서 씬 전환을 요청할 수 없습니다.");
+                GameLog.Error(LogCategory.Net, "호스트 세션이 아니어서 씬 전환을 요청할 수 없습니다.");
                 return false;
             }
 
@@ -217,8 +218,8 @@ namespace Game.Systems.Networking
                     && existingClientId != request.ClientNetworkId
                     && networkManager.ConnectedClients.ContainsKey(existingClientId))
                 {
-                    Debug.Log(
-                        $"[NgoNetworkSessionService] 중복 식별 토큰 접속 — 기존 연결(clientId={existingClientId})을 "
+                    GameLog.Info(LogCategory.Net, 
+                        $"중복 식별 토큰 접속 — 기존 연결(clientId={existingClientId})을 "
                         + $"킥하고 새 접속(clientId={request.ClientNetworkId})을 승인합니다.");
                     networkManager.DisconnectClient(existingClientId, "duplicate identity reconnect");
                 }

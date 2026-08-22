@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System;
 using System.Collections.Generic;
 using Game.Core.Events;
@@ -1295,8 +1296,8 @@ namespace Game.Gameplay.Train
                 if (logDrift)
                 {
                     // 검증 R9 수치화 — "세기 비교"를 육안이 아닌 수치로: 복제 원값과 표시의 차·저항 입력.
-                    Debug.Log($"[TrainState] 이탈 표시 드리프트 #{i}: 복제={target:F2}m 표시={_displayOffsets[i]:F2}m "
-                        + $"차={target - _displayOffsets[i]:+0.00;-0.00}m 인원={grabbers} 표시속도={netVelocity:F2}m/s");
+                    GameLog.Info(LogCategory.Train, $"이탈 표시 드리프트 #{i}: 복제={target:F2}m 표시={_displayOffsets[i]:F2}m "
+                                              + $"차={target - _displayOffsets[i]:+0.00;-0.00}m 인원={grabbers} 표시속도={netVelocity:F2}m/s");
                 }
             }
 

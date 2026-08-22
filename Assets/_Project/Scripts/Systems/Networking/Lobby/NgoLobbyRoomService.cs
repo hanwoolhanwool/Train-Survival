@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System;
 using Unity.Netcode;
 using UnityEngine;
@@ -74,8 +75,8 @@ namespace Game.Systems.Networking.Lobby
 
             if (_statePrefab == null)
             {
-                Debug.LogError("[NgoLobbyRoomService] 대기실 상태 프리팹이 연결되지 않았습니다. "
-                    + "Boot 씬 GameBootstrapper 구성을 확인하세요.");
+                GameLog.Error(LogCategory.Net, "대기실 상태 프리팹이 연결되지 않았습니다. "
+                                    + "Boot 씬 GameBootstrapper 구성을 확인하세요.");
                 return false;
             }
 
@@ -83,7 +84,7 @@ namespace Game.Systems.Networking.Lobby
             var netObject = instance.GetComponent<NetworkObject>();
             if (netObject == null)
             {
-                Debug.LogError("[NgoLobbyRoomService] 대기실 상태 프리팹에 NetworkObject가 없습니다.");
+                GameLog.Error(LogCategory.Net, "대기실 상태 프리팹에 NetworkObject가 없습니다.");
                 UnityEngine.Object.Destroy(instance);
                 return false;
             }

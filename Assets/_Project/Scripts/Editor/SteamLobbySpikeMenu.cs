@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Threading;
 using Steamworks;
 using UnityEditor;
@@ -16,8 +17,8 @@ namespace Game.Editor
         {
             if (!SteamAPI.Init())
             {
-                Debug.LogError("[SteamLobbySpike] SteamAPI.Init 실패 — Steam 클라이언트 로그인과 " +
-                    "프로젝트 루트 steam_appid.txt(480)를 확인하세요.");
+                GameLog.Error(LogCategory.Steam, "SteamAPI.Init 실패 — Steam 클라이언트 로그인과 " +
+                                      "프로젝트 루트 steam_appid.txt(480)를 확인하세요.");
                 return;
             }
 
@@ -46,8 +47,8 @@ namespace Game.Editor
 
                 if (!done || failed)
                 {
-                    Debug.LogError($"[SteamLobbySpike] 로비 생성 실패 — done={done} failed={failed} " +
-                        $"(me={me}/{persona})");
+                    GameLog.Error(LogCategory.Steam, $"로비 생성 실패 — done={done} failed={failed} " +
+                                          $"(me={me}/{persona})");
                     return;
                 }
 
@@ -56,8 +57,8 @@ namespace Game.Editor
                 int memberCount = SteamMatchmaking.GetNumLobbyMembers(lobbyId);
                 SteamMatchmaking.LeaveLobby(lobbyId);
 
-                Debug.Log($"[SteamLobbySpike] OK — lobby={lobbyId.m_SteamID} members={memberCount} " +
-                    $"data왕복={(readBack == me ? "일치" : "불일치")} me={me}({persona})");
+                GameLog.Info(LogCategory.Steam, $"OK — lobby={lobbyId.m_SteamID} members={memberCount} " +
+                                          $"data왕복={(readBack == me ? "일치" : "불일치")} me={me}({persona})");
             }
             finally
             {

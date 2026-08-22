@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using UnityEngine;
 
 namespace Game.Core.Singletons
@@ -29,7 +30,7 @@ namespace Game.Core.Singletons
         {
             if (_instance != null && _instance != this)
             {
-                Debug.LogWarning($"[{typeof(T).Name}] 인스턴스가 이미 존재하여 중복 오브젝트를 파괴합니다.", this);
+                GameLog.Warn(LogCategory.Core, $"{typeof(T).Name} — 인스턴스가 이미 존재하여 중복 오브젝트를 파괴합니다.", this);
                 Destroy(gameObject);
                 return;
             }

@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Pooling;
 using Unity.Netcode;
@@ -27,13 +28,13 @@ namespace Game.Systems.Networking
             _networkManager = NetworkManager.Singleton;
             if (_networkManager == null)
             {
-                Debug.LogError("[NetworkPrefabPoolRegistrar] NetworkManager가 없습니다. Boot 씬 구성을 확인하세요.", this);
+                GameLog.Error(LogCategory.Net, "NetworkManager가 없습니다. Boot 씬 구성을 확인하세요.", this);
                 return;
             }
 
             if (_config == null)
             {
-                Debug.LogError("[NetworkPrefabPoolRegistrar] NetworkPoolConfig가 연결되지 않았습니다.", this);
+                GameLog.Error(LogCategory.Net, "NetworkPoolConfig가 연결되지 않았습니다.", this);
                 return;
             }
 
@@ -52,13 +53,13 @@ namespace Game.Systems.Networking
                 NetworkPoolConfig.Entry entry = _config.Entries[i];
                 if (entry.Prefab == null)
                 {
-                    Debug.LogWarning($"[NetworkPrefabPoolRegistrar] 비어 있는 항목을 건너뜁니다 (index {i}).", this);
+                    GameLog.Warn(LogCategory.Net, $"비어 있는 항목을 건너뜁니다 (index {i}).", this);
                     continue;
                 }
 
                 if (!_networkManager.PrefabHandler.AddHandler(entry.Prefab, new PooledNetworkPrefabHandler(entry.Prefab)))
                 {
-                    Debug.LogWarning($"[NetworkPrefabPoolRegistrar] 핸들러 등록 실패: {entry.Prefab.name}", this);
+                    GameLog.Warn(LogCategory.Net, $"핸들러 등록 실패: {entry.Prefab.name}", this);
                     continue;
                 }
 

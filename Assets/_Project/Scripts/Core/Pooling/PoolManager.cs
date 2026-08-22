@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Singletons;
 using UnityEngine;
@@ -122,14 +123,14 @@ namespace Game.Core.Pooling
 
             if (!_instanceToPrefab.TryGetValue(instance, out GameObject prefab))
             {
-                Debug.LogWarning($"[PoolManager] 풀에서 생성되지 않은 오브젝트를 Despawn 했습니다. Destroy로 대체합니다: {instance.name}", instance);
+                GameLog.Warn(LogCategory.Core, $"풀에서 생성되지 않은 오브젝트를 Despawn 했습니다. Destroy로 대체합니다: {instance.name}", instance);
                 Destroy(instance);
                 return;
             }
 
             if (!_inactiveInstances.Add(instance))
             {
-                Debug.LogWarning($"[PoolManager] 이미 풀에 반환된 오브젝트입니다: {instance.name}", instance);
+                GameLog.Warn(LogCategory.Core, $"이미 풀에 반환된 오브젝트입니다: {instance.name}", instance);
                 return;
             }
 
