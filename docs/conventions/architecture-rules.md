@@ -77,6 +77,32 @@ Game.Tests.EditMode / Game.Tests.PlayMode → 전 어셈블리 참조 가능 (UN
 - `T`는 가능하면 **인터페이스**로 등록해 사용처가 추상에 의존하게 한다.
 - 등록은 Boot 씬(진입점)에서 일괄 수행한다.
 
+### 로그 — GameLog
+
+- **`Debug.Log`/`LogWarning`/`LogError`를 직접 부르지 않는다.** 항상 `Game.Core.Logging.GameLog` 경유.
+- 첫 인자로 계통을 나타내는 `LogCategory`를 넘긴다. **태그 문자열은 쓰지 않는다** —
+  접두어 `[카테고리/스크립트명]`은 `[CallerFilePath]`로 자동 생성된다.
+
+  ```csharp
+  GameLog.Info(LogCategory.Monsters, $"지역 보스 등장: Day {dayNumber}");
+  // → [Monsters/BossSpawner] 지역 보스 등장: Day 3
+  ```
+
+- **수준 선택** — `Info`는 흐름 확인, `Warn`은 비정상이지만 진행되는 상황,
+  `Error`는 **고쳐야 하는 상황**(배선 누락·계약 위반)에만.
+  `Info`·`Warn`은 `[Conditional]`로 릴리스 빌드에서 호출이 사라지지만
+  **`Error`는 릴리스에도 남고 카테고리 필터도 무시**한다. 남발하면 배포판 콘솔이 오염된다.
+- **반복 경로의 로그는 `InfoLimited`/`WarnLimited`/`InfoOnce`로 상한을 건다.**
+  호출부에 카운터 필드를 새로 만들지 않는다. 키는 `"harpoon.fire-input"`처럼 계통을 앞에 둔다.
+  매 프레임 경로라 문자열 보간조차 아까우면 `GameLog.IsEnabled(cat)`로 먼저 가드한다.
+- **버그 추적용 임시 로그는 `LogCategory.Diagnostics`에 넣는다.** 통째로 끌 수 있고,
+  증상이 해소되면 이 카테고리를 검색해 함께 지운다 — 상시 로그와 섞이면 지울 시점을 놓친다.
+- 새 카테고리는 `LogCategory`의 남는 비트에 추가한다. 에디터에서 켜고 끄는 창은 `Game/QA/Log Categories`
+  (설정은 EditorPrefs에 남는다).
+- **예외 둘** — 벤더링한 서드파티 코드(원본 대비 diff를 키우지 않는다)와
+  사용자가 메뉴로 실행한 툴의 결과 출력(진단 로그가 아니라 명령에 대한 응답이므로 필터에 걸리면 안 된다)은
+  `Debug.Log`를 그대로 둔다.
+
 ## 4. 테스트 배치
 
 - 순수 로직 테스트는 `Tests/EditMode/`, 씬·GameObject 수명주기가 필요한 테스트는 `Tests/PlayMode/`에 둔다.
