@@ -146,6 +146,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 77de94e710b060a4dbdcad660329fbf8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2274984728255272594}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 77de94e710b060a4dbdcad660329fbf8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1837460925103381267}
   m_SourcePrefab: {fileID: 100100000, guid: 77de94e710b060a4dbdcad660329fbf8, type: 3}
 --- !u!1 &5827988597494919426 stripped
 GameObject:
@@ -220,3 +223,15 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 77de94e710b060a4dbdcad660329fbf8, type: 3}
   m_PrefabInstance: {fileID: 6638381793160137811}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1837460925103381267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5827988597494919426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f23b24dc31fe25448dec14854bca5d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainElevationFollower
