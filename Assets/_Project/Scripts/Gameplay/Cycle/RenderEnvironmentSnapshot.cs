@@ -77,10 +77,18 @@ namespace Game.Gameplay.Cycle
             RenderSettings.ambientIntensity = _ambientIntensity;
         }
 
-        /// <summary>하늘·태양 지정과 광원의 색·강도·각도를 원래대로.</summary>
-        public void RestoreSkyAndSun()
+        /// <summary>
+        /// 하늘 슬롯만 원래대로. <b>슬롯을 지역이 소유한 경우에는 부르면 안 된다</b>
+        /// (레벨 3차 · 미결 ② B안 — 판정은 <see cref="SkySlotOwnership.ShouldRestoreSlot"/>).
+        /// </summary>
+        public void RestoreSkybox()
         {
             RenderSettings.skybox = _skybox;
+        }
+
+        /// <summary>태양 지정과 광원의 색·강도·각도를 원래대로. 하늘 슬롯과 소유자가 다르므로 따로 놓는다.</summary>
+        public void RestoreSun()
+        {
             RenderSettings.sun = _renderSun;
 
             if (_light == null)

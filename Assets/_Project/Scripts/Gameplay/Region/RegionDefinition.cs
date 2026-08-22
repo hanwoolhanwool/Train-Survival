@@ -68,6 +68,12 @@ namespace Game.Gameplay.Region
             "인덱스에서 결정론적으로 추첨한다 — 아래 단일 프리팹보다 우선한다. 비우면 종전대로 단일 타일.")]
         [SerializeField] private World.TerrainSegmentPalette _segmentPalette;
 
+        [Header("하늘")]
+        [Tooltip("이 지역의 스카이박스 머티리얼 (레벨 3차 · 미결 ② B안 — 슬롯은 지역이 소유한다). " +
+            "RegionSkyController 가 복제본을 걸고, 낮/밤 연출은 그 위에 색만 쓴다. " +
+            "비우면 슬롯을 건드리지 않는다 — 종전 하늘 그대로.")]
+        [SerializeField] private Material _skyboxMaterial;
+
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
 
@@ -117,6 +123,9 @@ namespace Game.Gameplay.Region
         public World.TerrainSegmentPalette SegmentPalette => _segmentPalette;
 
         public GameObject TerrainTilePrefab => _terrainTilePrefab;
+
+        /// <summary>이 지역의 하늘. null 이면 하늘 슬롯을 건드리지 않는다.</summary>
+        public Material SkyboxMaterial => _skyboxMaterial;
 
         public GameObject ResourcePrefab => _resourcePrefab;
 

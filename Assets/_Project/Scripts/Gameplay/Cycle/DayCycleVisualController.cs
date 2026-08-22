@@ -21,8 +21,14 @@ namespace Game.Gameplay.Cycle
     /// </para>
     /// <para>
     /// <b>fog는 건드리지 않는다</b> (M8 착수 준비 결정 ② ㉮) — <c>RenderSettings.fog*</c>는
-    /// <c>WeatherVisualController</c> 단독 소유다. 이 컴포넌트가 쓰는 것은 ambient·skybox·sun과
-    /// 방향광 하나뿐이라 두 컨트롤러의 소유 집합이 겹치지 않는다.
+    /// <c>WeatherVisualController</c> 단독 소유다.
+    /// </para>
+    /// <para>
+    /// <b>하늘은 슬롯이 아니라 프로퍼티만 소유한다</b> (레벨 3차 · 미결 ② <b>B안</b>) —
+    /// <see cref="RenderSettings.skybox"/>에 <b>어떤 머티리얼을 거는가</b>는
+    /// <c>RegionSkyController</c>(지역)가, <b>거기에 무슨 색을 쓰는가</b>는 이 컴포넌트가 정한다.
+    /// 지역 하늘이 없는 씬에서는 종전대로 자기 복제본을 걸어 쓰므로 <b>동작이 같다</b>.
+    /// 판정은 <see cref="SkySlotOwnership"/>이 갖는다.
     /// </para>
     /// Game 씬에 1개 배치한다.
     /// </summary>
@@ -57,8 +63,14 @@ namespace Game.Gameplay.Cycle
 
         private Material _skyboxInstance;
 
+        /// <summary>하늘 슬롯의 현재 주인 — 놓을 때 슬롯까지 되돌릴지를 이 값이 정한다 (미결 ② B안).</summary>
+        private SkySlotOwner _skySlotOwner = SkySlotOwner.None;
+
         /// <summary>현재 모드 — 검증·디버그 표시용.</summary>
         public DayVisualMode Mode => _mode;
+
+        /// <summary>하늘 슬롯의 현재 주인 — 검증·디버그 표시용.</summary>
+        public SkySlotOwner CurrentSkySlotOwner => _skySlotOwner;
 
         private void OnEnable()
         {
@@ -171,40 +183,88 @@ namespace Game.Gameplay.Cycle
             }
         }
 
+        /// <summary>
+        /// 하늘에 <b>색만</b> 쓴다 — 슬롯에 어떤 머티리얼이 걸리는지는 지역이 정한다
+        /// (레벨 3차 · 미결 ② <b>B안</b>). 지역 하늘이 <c>Skybox/Procedural</c>이 아닐 수 있으므로
+        /// <b>있는 프로퍼티만</b> 쓴다 — 없는 것을 쓰면 조용히 무시되는 대신 의도가 흐려진다.
+        /// </summary>
         private void ApplySky(in SkyTone tone)
         {
-            if (!EnsureSkyboxInstance())
+            Material sky = ResolveSkyTarget();
+
+            if (sky == null)
             {
                 return;
             }
 
-            _skyboxInstance.SetColor(SkyTintId, tone.Tint);
-            _skyboxInstance.SetColor(GroundColorId, tone.Ground);
-            _skyboxInstance.SetFloat(AtmosphereThicknessId, tone.AtmosphereThickness);
-            _skyboxInstance.SetFloat(ExposureId, tone.Exposure);
+            if (sky.HasProperty(SkyTintId))
+            {
+                sky.SetColor(SkyTintId, tone.Tint);
+            }
+
+            if (sky.HasProperty(GroundColorId))
+            {
+                sky.SetColor(GroundColorId, tone.Ground);
+            }
+
+            if (sky.HasProperty(AtmosphereThicknessId))
+            {
+                sky.SetFloat(AtmosphereThicknessId, tone.AtmosphereThickness);
+            }
+
+            if (sky.HasProperty(ExposureId))
+            {
+                sky.SetFloat(ExposureId, tone.Exposure);
+            }
         }
 
         /// <summary>
-        /// 하늘 복제본을 만들어 <see cref="RenderSettings.skybox"/>에 걸어 둔다. 원본 에셋에 직접 쓰면
-        /// 에디터에서 값이 그대로 남아 다른 씬까지 물들기 때문에 <b>복제본에만</b> 쓴다.
-        /// (풀링 규약의 대상은 GameObject 스폰이며, 머티리얼 인스턴스는 여기서 직접 관리한다.)
+        /// 색을 쓸 대상을 정하고, 필요하면 자기 복제본을 만든다.
+        ///
+        /// <para>
+        /// <b>지역이 건 하늘이 있으면 그것을 그대로 쓴다</b> — 복제본을 새로 만들어 슬롯을 빼앗지 않는다.
+        /// 지역 하늘이 없을 때만 종전대로 <see cref="_skyboxSource"/> 복제본을 걸어 쓴다
+        /// (지역 하늘을 아무도 안 걸어 둔 씬에서 M8 2차와 동일하게 동작하는 회귀 방어선).
+        /// </para>
+        ///
+        /// <para>
+        /// 원본 에셋에 직접 쓰면 에디터에서 값이 그대로 남아 다른 씬까지 물들기 때문에
+        /// <b>어느 경로든 복제본에만</b> 쓴다. (풀링 규약의 대상은 GameObject 스폰이며,
+        /// 머티리얼 인스턴스는 각 소유자가 직접 관리한다.)
+        /// </para>
         /// </summary>
-        private bool EnsureSkyboxInstance()
+        private Material ResolveSkyTarget()
         {
-            if (_skyboxInstance != null)
+            Material slot = RenderSettings.skybox;
+            Material regionSky = ServiceLocator.TryGet(out Region.IRegionSkyProvider provider)
+                ? provider.CurrentSky
+                : null;
+
+            bool slotIsRegionSky = regionSky != null && ReferenceEquals(slot, regionSky);
+            bool slotIsOwnInstance = _skyboxInstance != null && ReferenceEquals(slot, _skyboxInstance);
+
+            _skySlotOwner = SkySlotOwnership.Resolve(slotIsRegionSky, slotIsOwnInstance, _skyboxSource != null);
+
+            switch (_skySlotOwner)
             {
-                return true;
+                case SkySlotOwner.Region:
+                    // 지역이 슬롯을 가져갔다 — 내 복제본은 더 이상 화면에 없으니 들고 있을 이유가 없다.
+                    DestroySkyboxInstance();
+                    return regionSky;
+
+                case SkySlotOwner.DayCycle:
+                    return _skyboxInstance;
+
+                case SkySlotOwner.DayCycleNeedsInstance:
+                    DestroySkyboxInstance();
+                    _skyboxInstance = new Material(_skyboxSource);
+                    RenderSettings.skybox = _skyboxInstance;
+                    _skySlotOwner = SkySlotOwner.DayCycle;
+                    return _skyboxInstance;
+
+                default:
+                    return null;
             }
-
-            if (_skyboxSource == null)
-            {
-                return false;
-            }
-
-            _skyboxInstance = new Material(_skyboxSource);
-            RenderSettings.skybox = _skyboxInstance;
-
-            return true;
         }
 
         // ── 소유 해제 ───────────────────────────────────────────────────────
@@ -223,8 +283,16 @@ namespace Game.Gameplay.Cycle
             // 태양·하늘은 B안에서만 소유한다.
             if (next != DayVisualMode.B)
             {
-                _backup.RestoreSkyAndSun();
+                // 슬롯은 내가 건 복제본일 때만 되돌린다 — 지역이 건 하늘을 되돌리면
+                // 지역이 바뀐 적도 없는데 하늘이 씬 기본값으로 튄다 (미결 ② B안).
+                if (SkySlotOwnership.ShouldRestoreSlot(_skySlotOwner))
+                {
+                    _backup.RestoreSkybox();
+                }
+
+                _backup.RestoreSun();
                 DestroySkyboxInstance();
+                _skySlotOwner = SkySlotOwner.None;
             }
 
             // 환경광은 A·B 공통이므로 Off로 갈 때만 놓는다.
