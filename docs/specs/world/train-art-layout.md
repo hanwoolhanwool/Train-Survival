@@ -5,6 +5,7 @@ QA 중 열차 아트를 교체·정렬할 때 빠르게 고치기 위한 참조�
 
 **현재 기관차: `Train_Locomotive_Open`** (교체 이력은 2절, 되돌리는 명령은 5절).
 **기찻길·접지 높이는 7절** — 이 씬의 열차는 궤도 위에 얹히느라 `Game.unity`보다 **y가 0.916 높다**.
+**그 높이를 통째로 올리고 내리는 축(QA 3단계 토글 — F2)은 [열차·궤도 높이 규약](train-elevation.md)**이 다룬다.
 
 ---
 
@@ -256,6 +257,9 @@ UnityEngine.Debug.Log(mr.bounds.size + " / " + mr.bounds.center + " / minY=" + m
 열차 밑에 궤도가 깔리면서 **접지 기준선이 지면(y 0)에서 레일 상면(y 0.976)으로 올라갔다.**
 `Game_ArtTest`에만 적용된 상태이며, **`Game.unity`는 아직 옛 높이다** (7.3 경고).
 
+> 이 절은 **기준선이 어떻게 생겼는지**를 적는다. 그 기준선을 QA 중에 통째로 내려 보고
+> 최종값을 굳히는 절차는 [열차·궤도 높이 규약](train-elevation.md)에 있다 (F2 = 현재/아래/더 아래).
+
 ### 7.1 궤도는 지형 타일이 만든다 — `TerrainTile_Rail`
 
 궤도는 씬에 놓인 오브젝트가 아니라 **스트리밍되는 지형 타일의 일부**다. 열차는 원점 고정이고
@@ -349,6 +353,7 @@ UnityEngine.Debug.Log(mr.bounds.size + " / " + mr.bounds.center + " / minY=" + m
 
 ## 관련 문서
 
+- [열차·궤도 높이 규약](train-elevation.md) — 7절 기준선을 함께 올리고 내리는 축·QA 3단계 토글
 - [아트·렌더링 예산](../../design/Train-Survival-아트-렌더링-예산.md) — 폴리곤/드로우콜 기준
 - [월드 스크롤·스트리밍](scroll-and-streaming.md) — 지형 타일 풀링·재배치 규약 (7.1의 전제)
 - [아키텍처 규칙](../../conventions/architecture-rules.md)
