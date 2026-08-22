@@ -30,8 +30,10 @@ QA 중 열차 아트를 교체·정렬할 때 빠르게 고치기 위한 참조�
 | `Car_2` | (0, 1.70, −16.5) | (4.6, 3.4, 15) | |
 | `Car_3` | (0, 1.70, −33.0) | (4.6, 3.4, 15) | |
 | `Car_4` | (0, 1.70, −49.5) | (4.6, 3.4, 15) | |
-| `Connector_2 / _3 / _4` | z = −8.25 / −24.75 / −41.25 | (1.4, 0.2, 1.6) | Cube + `M_Default` |
-| `BoardingRamp` | (0, 0.85, −26.0), rot(335, 0, 0) | (2, 0.2, 8.747) | Cube + `M_Default` |
+| `Connector_2 / _3 / _4` | (0, **1.952**, −8.25 / −24.75 / −41.25) | (1.4, 0.2, 1.6) | `Train_Coupler` FBX (8절) |
+| `BoardingRamp` | (5.8212, 0.9368, −16.5), rot(0, 270, 335) | (2, 0.2, 8.3393) | **아직 Cube + `M_Default`** |
+
+> `Train_Handrails`는 `Train` 밖의 별도 루트다 (localPos (0, 0.916, 0), `TrainElevationFollower`). 8.2절 참조.
 
 ### 칸 내부 아트 구성
 
@@ -135,6 +137,8 @@ Car_Locomotive   p(0, 1.70, 13.862)  s(4.6, 3.4, 13.603)
 | `Train_Wheel` | `f2999edef6182e9498b1aa2fafc5e357` |
 | `Train_CarModule` | `c2ad7830f85db314d9c8c626dee2d22b` |
 | `Train_RailTrack` | `77de94e710b060a4dbdcad660329fbf8` |
+| **`Train_Coupler`** | **`3f1c8a24d9b7e5a1c40e2b6f7d95a318`** |
+| **`Train_Handrail`** | **`6b2d47e0f81a3c9d5e07b4a2c86f1d53`** |
 
 | 프리팹 | GUID | 비고 |
 |---|---|---|
@@ -151,6 +155,8 @@ Car_Locomotive   p(0, 1.70, 13.862)  s(4.6, 3.4, 13.603)
 | `M_Train_Wheel` | `b39f4766a917a6d439f5843048bbd6c6` | `T_Train_Wheel_BaseColor` (`43f81b015fe6a8d469ad41ce521d398e`) |
 | `M_Train_CarModule` | `e9e454fd66532de4f84e72e146663442` | `T_Train_CarModule_BaseColor` (`2de49817221c5474799f96887118ed07`) |
 | `M_Train_RailTrack` | `b11c36800c4893044b5519a2bb909f5a` | `T_Train_RailTrack_BaseColor` (`95e4b9de74748724b8717c61dffbba89`) |
+| **`M_Train_Coupler`** | **`b034a58810969d27aa094bfa3706be4c`** | `T_Train_Coupler_BaseColor` (`7526b34ad8ef1f16a3a4aa47b7dc585a`) |
+| **`M_Train_Handrail`** | **`08de460118c626256c9401bac8f306b2`** | `T_Train_Handrail_BaseColor` (`867e656c53ef03afea5ad2e6dd848ab1`) |
 
 ---
 
@@ -351,6 +357,84 @@ UnityEngine.Debug.Log(mr.bounds.size + " / " + mr.bounds.center + " / minY=" + m
 - `BoardingRampPositioner._zOffsetFromRearEdge` → `_zOffset` 개명 (`FormerlySerializedAs`로 흡수).
 - `Game_ArtTest`: anchor `RearCenter` · 위치 (5.8212423, 0.9367982, −16.5) — 하단이 지면에 닿게 길이 재조정.
 - **`Game.unity`는 기본값 `RearEdge`라 계산 결과가 이전과 같다** — 이식 전까지 회귀 없음.
+
+---
+
+## 8. 연결부·손잡이 — 프리미티브 교체 (2026-08-23 반입)
+
+밤 방어전이 직접 겨누는 두 부위를 큐브·구체에서 모델로 바꿨다.
+생성 지시는 [이미지 생성 브리프 §L](../../design/Train-Survival-이미지생성-브리프.md).
+
+**공통 규약** — 프리미티브의 `MeshFilter`/`MeshRenderer`만 걷어내고 **콜라이더는 그대로 둔다.**
+`CouplingPart`·`HandrailAnchor` 둘 다 `GetComponentsInChildren<Renderer>`로 렌더러를 모아 토글하므로,
+FBX를 자식으로 넣으면 표현 on/off가 새 모델을 자동으로 따라간다. 렌더러를 남기면 다시 켜지므로 반드시 지운다.
+
+| 에셋 | tris | globalScale | 실치수 (X, Y, Z) | 감축 |
+|---|---:|---:|---|---|
+| `Train_Coupler` | 3,044 | 1.6 | 0.41 × 0.56 × **1.60**(길이) | **무감축** |
+| `Train_Handrail` | 1,490 | 0.8 | **0.80**(U 폭) × 0.72 × 0.45 | 0.5 |
+
+> **감축 한계는 자연물과 정반대다.** 0.5·0.35 비교 렌더 결과, 연결부는 **0.5에서도 볼트·너클이 뭉개졌고**
+> 손잡이는 파이프 곡면이라 0.35까지 버텼다. [브리프 §K.7.1](../../design/Train-Survival-이미지생성-브리프.md)의
+> "직각이 뜻을 가지는 것은 감축하지 않는다"가 그대로 재현된 사례다.
+
+### 8.1 연결부 — `Train/Connector_2 / _3 / _4`
+
+```
+Connector_N   p(0, 1.952, z)  s(1.4, 0.2, 1.6)   ← BoxCollider · CouplingPart
+└ Coupler_Art p(0,0,0)  s(0.714286, 5, 0.625) = 1/(1.4, 0.2, 1.6)
+  └ Train_Coupler  p(0, −0.1, 0)  s(150)
+```
+
+- **높이 기준은 갑판이 아니라 칸의 범퍼 돌출부다.** 실측 y **2.794~2.942**(중심 2.868).
+  브리프 §L.1이 적은 "갑판 y 3.47"에 맞추면 연결부가 0.6 m 떠서 범퍼와 안 맞물린다.
+  Train 로컬 y = 2.868 − 0.916 = **1.952**.
+- 칸 끝면은 z ∓7.503(범퍼 끝), 프레임은 ∓7.059. **칸 사이 범퍼 끝 간격 1.497 m.**
+- 모델은 Blender에서 **Z축 yaw 90°를 구워** 길이축을 Unity Z로 맞췄다 — 씬 회전 오버라이드가 필요 없다.
+
+⚠️ **콜라이더가 실물을 다 못 덮는다 (판정 유보 · 2026-08-23).**
+모델 스케일을 150(1.5배)으로 키우고 y −0.1 내린 결과 실물이 **0.62 × 0.83 × 2.40 m**가 되어,
+`BoxCollider`(월드 1.4 × 0.6 × 1.6)를 **Z로 양 끝 0.40 m씩, Y로 0.12 m씩 벗어난다.**
+삐져나온 부분은 칸 몸통에 파묻히는 구간이라 연출로는 문제가 없으나,
+**눈에 보이는 연결부 끝을 조준해도 피격·수리 판정에 안 걸린다.**
+판정을 실물에 맞추려면 `m_Size`를 `{x: 1, y: 4.2, z: 1.5}`로 (폭은 유지 → 좁아지는 방향 없음).
+
+### 8.2 손잡이 — `Train_Handrails/*` (6기, 8기가 아니다)
+
+`Train_Handrails`는 `Train` 밖의 별도 루트(localPos (0, 0.916, 0) + `TrainElevationFollower`)이고,
+그 밑에 `HandrailAnchor.prefab` 인스턴스 6기가 있다. **기관차 칸에는 없다** — 브리프 §L.1의 "칸당 2 = 8"은 오기.
+
+```
+HandrailAnchor  p(±1.529, 2.313, z)  rot(90, 0, 0)  s(1, 1, 0.9)   ← SphereCollider r0.5 · NetworkObject
+└ Handrail_Art  p(0, −0.4497, 0)  s(1.25)                          ← 프리팹 스케일 0.8 상쇄
+  └ Train_Handrail  p(0,0,0)  s(100)
+```
+
+| 앵커 | `_carIndex` | localPos |
+|---|---:|---|
+| `Anchor_Car2_Front_Right` / `_Left` | 2 | (±1.529, 2.313, **−9.554**) |
+| `HandrailAnchor_Car3_R` / `_L` | 3 | (±1.529, 2.313, **−26.054**) |
+| `HandrailAnchor_Car4_R` / `_L` | 4 | (±1.529, 2.313, **−42.554**) |
+
+- **z는 칸 앞끝에서 0.554 m 안쪽**이 기준이다 (칸 앞끝 = 칸 중심 z + 7.5). 칸이 늘어나도 이 규칙으로 잡는다.
+- **rot(90, 0, 0)으로 눕혀 갑판 아래 앞면 시(sill)에 붙인다** — U 고리가 후방을 향해 가로로 눕는다.
+  이탈 칸은 후방 수십 m로 밀려나므로 그 시점에서 정면으로 보이는 방향이다(브리프 §L.3-2).
+  세워 두면 옆에서 말뚝으로만 읽혀 집게 표적 어포던스가 죽는다.
+- 좌측은 **x 부호만 뒤집는다.** 회전에 yaw가 없어 좌우가 그대로 대칭이다.
+- 실물 `1.000 × 0.502 × 0.899` 6기 동일, **실물 중심 = 그랩 구체 중심**(거리 0.000).
+
+⚠️ **앵커를 옮기면 `GlobalObjectIdHash`가 재발급된다.** 씬 내 배치 `NetworkObject`라
+YAML을 직접 고치면 해시가 낡은 채 남아 클라 접속이 거부될 수 있다 —
+**이 6기만은 5절의 YAML 직접 편집 예외로, 에디터에서 옮기고 씬을 저장한다.**
+(6기 해시: 682072729 / 1790809304 / 2944382052 / 2771162288 / 1741638086 / 3782114178)
+
+### 8.3 남은 프리미티브
+
+| 오브젝트 | 현재 | 실치수 |
+|---|---|---|
+| `Train/BoardingRamp` | Cube + `M_Default` | 7.64 × 3.71 × 2.00 m — 광각 화면에서 가장 먼저 눈에 띈다 |
+| `EngineFuelPort/Visual` | Cube + `EngineFurnace` | 0.8³ — 기관차 연료 투입구, 상호작용 지점 |
+| `CraftingStation/Visual` | Cube + `M_Default` | 0.9 × 0.5 × 0.6 — 제작 지점, 상호작용 지점 |
 
 ---
 
