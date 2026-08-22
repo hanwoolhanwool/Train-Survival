@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Game.Core.Services;
 using Game.Gameplay.Inventory;
 using Game.Systems.Networking;
@@ -10,23 +11,43 @@ namespace Game.Gameplay.Train
 {
     /// <summary>
     /// QA 테스트용 디버그 핫키 (릴리스에서는 <see cref="_enableQaKeys"/>를 끈다).
-    /// - 숫자패드 + : 게임 재시작(지금 돌고 있는 인게임 씬 재로드, 호스트 권위로 편성·웨이브·사이클 초기화).
+    /// <para>
+    /// 키는 숫자패드의 <b>한 행 = 한 기능 그룹</b>으로 맞춰 두었다 — 손이 행을 기억하면 키를 외울 필요가 없다.
+    /// <code>
+    ///   Num │ / 보스 소환  │ * 몬스터 1기 │ − 웨이브 토글   ← 몬스터·보스
+    ///    7  │ 8 칸 건설    │ 9 부위 피해  │ + 재시작        ← 편성·건축
+    ///  연결부│              │              │
+    ///    4  │ 5 피해 실측  │ 6 창고 경합  │                ← 자원·피해
+    /// 자원지급│             │              │
+    ///    1 낮│ 2 밤         │ 3 다음 Day   │  ↵             ← 사이클(DayCycleController 소유)
+    ///    0 동시 그랩        │ . 보스 처치  │
+    /// </code>
+    /// 사이클 행(1·2·3)만 <c>DayCycleController</c>가 소유하므로 이 컴포넌트에서 다시 쓰면 안 된다.
+    /// </para>
+    /// <b>편성·건축 (7·8·9 행 + F2)</b>
     /// - 숫자패드 7 : 현재 표적 가능한(후미) 연결부 1개 파괴(후방 연쇄 이탈 테스트).
     /// - 숫자패드 8 : 칸 1칸 무료 건설 — 빈 슬롯(파괴·소실) 재건 우선, 없으면 후미 증설(비용 경로는 건설 포트로 검증).
-    /// - 숫자패드 9 : 요청자에게 자원 지급(건자재·제작 재료·식재료 — 증설 비용·연료 투입·요리 테스트).
-    /// - 숫자패드 6 : 샘플 데미지 30 — <b>망치로 겨눈 부위</b>가 있으면 그 부위에, 없으면
+    /// - 숫자패드 9 : 샘플 데미지 30 — <b>망치로 겨눈 부위</b>가 있으면 그 부위에, 없으면
     ///   표적 연결부·후미 칸·건축물 순의 폴백(특정 건축물을 골라 손상시킬 수 있게 한다, M5 4차 C7).
-    /// - 숫자패드 5 : 몬스터 웨이브 스폰 토글(M5 4차 — 밤 노숙 체온 검증용).
-    /// - 숫자패드 4 : 공유 창고 동시 경합 재현(M5 5차 — 검증 G2). 전 피어가 같은 프레임에
-    ///   같은 이동(창고 0 → 개인 0)을 요청하고, 총량 보존 여부를 호스트 콘솔에 찍는다.
-    /// - 숫자패드 0 : 피해 실측(M5 6차 — 검증 H7). 요청자에게 고정 피해 20을 물리 경로로 넣는다 —
+    /// - 숫자패드 + : 게임 재시작(지금 돌고 있는 인게임 씬 재로드, 호스트 권위로 편성·웨이브·사이클 초기화).
+    /// - <b>F2</b> : 열차·궤도 높이 단계 순환 — 현재 → 아래 → 더 아래 → 현재
+    ///   (열차 높이 스펙 <c>docs/specs/world/train-elevation.md</c>). 편성·손잡이·설비·궤도 타일과
+    ///   갑판 기준선이 <b>같은 오프셋</b>으로 함께 움직이므로 건설·콜라이더 판정이 어긋나지 않는다.
+    ///   숫자패드는 이미 다 찼으므로 새 키는 F 계열(F4~F7이 비어 있다)에 붙인다.
+    /// <b>자원·피해 (4·5·6 행 + 0)</b>
+    /// - 숫자패드 4 : 요청자에게 자원 지급(건자재·제작 재료·식재료 — 증설 비용·연료 투입·요리 테스트).
+    /// - 숫자패드 5 : 피해 실측(M5 6차 — 검증 H7). 요청자에게 고정 피해 20을 물리 경로로 넣는다 —
     ///   장비 감산이 적용되므로 맨몸 20 vs 가죽 옷 17을 실측할 수 있다.
-    /// - 숫자패드 − : 동시 그랩 경합 재현(M5 6차 — 검증 I1·I2). 호스트가 최근접 그랩 가능 자원을
+    /// - 숫자패드 6 : 공유 창고 동시 경합 재현(M5 5차 — 검증 G2). 전 피어가 같은 프레임에
+    ///   같은 이동(창고 0 → 개인 0)을 요청하고, 총량 보존 여부를 호스트 콘솔에 찍는다.
+    /// - 숫자패드 0 : 동시 그랩 경합 재현(M5 6차 — 검증 I1·I2). 호스트가 최근접 그랩 가능 자원을
     ///   골라 전 피어에 뿌리고, 각 피어가 수신 프레임에 자기 집게로 그랩을 요청한다.
+    /// <b>몬스터·보스 (윗줄 연산자 + .)</b>
+    /// - 숫자패드 / : 현재 지역 보스 즉시 소환(M7 2차). 밤·웨이브와 무관하게 1기를 세운다 —
+    ///   숫자패드 −(웨이브 토글)와 조합하면 보스 단독 격리가 된다. <b>새벽 보류에는 걸리지 않는다.</b>
     /// - 숫자패드 * : 몬스터 단건 스폰(M5 6차). 요청자 전방 10 m 지상에 기본 변종 1마리 —
     ///   파지·투척·즉사 존 검증을 몬스터 1마리로 통제한다.
-    /// - 숫자패드 / : 현재 지역 보스 즉시 소환(M7 2차). 밤·웨이브와 무관하게 1기를 세운다 —
-    ///   숫자패드 5(웨이브 토글)와 조합하면 보스 단독 격리가 된다. <b>새벽 보류에는 걸리지 않는다.</b>
+    /// - 숫자패드 − : 몬스터 웨이브 스폰 토글(M5 4차 — 밤 노숙 체온 검증용).
     /// - 숫자패드 . : 지역 보스 즉시 처치(M7 2차). 보스전을 치르지 않고 <b>처치 이후</b>를 검증한다 —
     ///   보스 핵 드랍·새벽 보류 해제·HUD 종료·처치 배너.
     /// 클라이언트 입력도 ServerRpc 경유로 호스트가 확정한다. Train(씬 NetworkObject)에 배치한다.
@@ -37,10 +58,10 @@ namespace Game.Gameplay.Train
         private const float SelfDamage = 20f;
         private const float SingleMonsterSpawnDistance = 10f;
 
-        [Tooltip("켜면 숫자패드 + = 재시작, 7 = 연결부 파괴, 8 = 온실칸 증설, 9 = 자원·식재료 지급, 6 = 부위 데미지, 5 = 몬스터 스폰 토글, 4 = 창고 동시 경합, 0 = 피해 실측, − = 동시 그랩, * = 몬스터 단건 스폰, / = 지역 보스 소환, . = 지역 보스 즉시 처치. QA 전용이므로 릴리스에서는 끈다.")]
+        [Tooltip("켜면 숫자패드가 행 단위로 묶인다 — [편성·건축] 7 = 연결부 파괴, 8 = 칸 건설, 9 = 부위 데미지, + = 재시작, F2 = 열차·궤도 높이 단계 / [자원·피해] 4 = 자원·식재료 지급, 5 = 피해 실측, 6 = 창고 동시 경합, 0 = 동시 그랩 / [몬스터·보스] / = 지역 보스 소환, * = 몬스터 단건 스폰, − = 웨이브 스폰 토글, . = 지역 보스 즉시 처치. QA 전용이므로 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableQaKeys = true;
 
-        // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 6의 데미지 대상 선택에 쓴다.
+        // 로컬 망치가 마지막으로 알린 조준 부위 — 숫자패드 9의 데미지 대상 선택에 쓴다.
         private bool _hasHammerTarget;
         private TrainPartKind _hammerTargetKind;
         private int _hammerTargetIndex;
@@ -75,11 +96,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            if (keyboard.numpadPlusKey.wasPressedThisFrame)
-            {
-                RequestRestartServerRpc();
-            }
-
+            // ── 편성·건축 : 7·8·9 행 + 재시작(+) + F2 ────────────────────────
             if (keyboard.numpad7Key.wasPressedThisFrame)
             {
                 RequestBreakCouplingServerRpc();
@@ -91,11 +108,6 @@ namespace Game.Gameplay.Train
             }
 
             if (keyboard.numpad9Key.wasPressedThisFrame)
-            {
-                RequestGrantResourcesServerRpc();
-            }
-
-            if (keyboard.numpad6Key.wasPressedThisFrame)
             {
                 // 망치로 겨눈 부위가 있으면 그것을 때린다 — 폴백은 "뒤에서 첫 부위"라
                 // 특정 건축물(예: 앞 칸의 화덕)을 손상시킬 수 없었다 (M5 4차 C7).
@@ -109,24 +121,42 @@ namespace Game.Gameplay.Train
                 }
             }
 
-            if (keyboard.numpad5Key.wasPressedThisFrame)
+            if (keyboard.numpadPlusKey.wasPressedThisFrame)
             {
-                RequestToggleMonsterSpawnServerRpc();
+                RequestRestartServerRpc();
             }
 
+            // 숫자패드가 아니라 F2다 — 숫자패드 12키는 위 세 그룹이 이미 만석으로 쓰고 있다.
+            if (keyboard.f2Key.wasPressedThisFrame)
+            {
+                RequestCycleTrainElevationServerRpc();
+            }
+
+            // ── 자원·피해 : 4·5·6 행 + 동시 그랩(0) ──────────────────────────
             if (keyboard.numpad4Key.wasPressedThisFrame)
+            {
+                RequestGrantResourcesServerRpc();
+            }
+
+            if (keyboard.numpad5Key.wasPressedThisFrame)
+            {
+                RequestSelfDamageServerRpc();
+            }
+
+            if (keyboard.numpad6Key.wasPressedThisFrame)
             {
                 RequestStorageContentionServerRpc();
             }
 
             if (keyboard.numpad0Key.wasPressedThisFrame)
             {
-                RequestSelfDamageServerRpc();
+                RequestSimultaneousGrabServerRpc();
             }
 
-            if (keyboard.numpadMinusKey.wasPressedThisFrame)
+            // ── 몬스터·보스 : 윗줄 연산자(/ * −) + 보스 처치(.) ──────────────
+            if (keyboard.numpadDivideKey.wasPressedThisFrame)
             {
-                RequestSimultaneousGrabServerRpc();
+                RequestSpawnBossServerRpc();
             }
 
             if (keyboard.numpadMultiplyKey.wasPressedThisFrame)
@@ -134,9 +164,9 @@ namespace Game.Gameplay.Train
                 RequestSpawnSingleMonsterServerRpc();
             }
 
-            if (keyboard.numpadDivideKey.wasPressedThisFrame)
+            if (keyboard.numpadMinusKey.wasPressedThisFrame)
             {
-                RequestSpawnBossServerRpc();
+                RequestToggleMonsterSpawnServerRpc();
             }
 
             if (keyboard.numpadPeriodKey.wasPressedThisFrame)
@@ -156,7 +186,7 @@ namespace Game.Gameplay.Train
             if (!ServiceLocator.TryGet(out Cycle.INightHoldGate gate)
                 || !(gate is Monsters.BossSpawner spawner))
             {
-                Debug.Log("[QaDebugHotkeys] 보스 처치 무효: 보스 스포너가 없다");
+                GameLog.Info(LogCategory.Qa, "보스 처치 무효: 보스 스포너가 없다");
                 return;
             }
 
@@ -174,7 +204,7 @@ namespace Game.Gameplay.Train
             if (!ServiceLocator.TryGet(out Cycle.INightHoldGate gate)
                 || !(gate is Monsters.BossSpawner spawner))
             {
-                Debug.Log("[QaDebugHotkeys] 보스 소환 무효: 보스 스포너가 없다");
+                GameLog.Info(LogCategory.Qa, "보스 소환 무효: 보스 스포너가 없다");
                 return;
             }
 
@@ -200,7 +230,7 @@ namespace Game.Gameplay.Train
             if (!ServiceLocator.TryGet(out Monsters.IWaveSpawnToggle toggle)
                 || !(toggle is Monsters.MonsterWaveSpawner spawner))
             {
-                Debug.Log("[QaDebugHotkeys] 단건 스폰 무효: 웨이브 스포너가 없다");
+                GameLog.Info(LogCategory.Qa, "단건 스폰 무효: 웨이브 스포너가 없다");
                 return;
             }
 
@@ -233,14 +263,14 @@ namespace Game.Gameplay.Train
             var health = client.PlayerObject.GetComponent<Player.PlayerHealth>();
             if (health == null || !health.IsAlive)
             {
-                Debug.Log($"[QaDebugHotkeys] 피해 실측 무효: client={senderId} — 플레이어가 살아 있지 않다");
+                GameLog.Info(LogCategory.Qa, $"피해 실측 무효: client={senderId} — 플레이어가 살아 있지 않다");
                 return;
             }
 
             float before = health.Health;
             health.ApplyDamage(SelfDamage, senderId);
-            Debug.Log($"[QaDebugHotkeys] 피해 실측: client={senderId} 기준 {SelfDamage} → " +
-                $"체력 {before:F1} → {health.Health:F1} (적용 {before - health.Health:F1})");
+            GameLog.Info(LogCategory.Qa, $"피해 실측: client={senderId} 기준 {SelfDamage} → " +
+                                   $"체력 {before:F1} → {health.Health:F1} (적용 {before - health.Health:F1})");
         }
 
         /// <summary>
@@ -256,11 +286,11 @@ namespace Game.Gameplay.Train
             NetworkObject target = FindNearestGrabbableResource(rpcParams.Receive.SenderClientId);
             if (target == null)
             {
-                Debug.Log("[QaDebugHotkeys] 동시 그랩 무효: 그랩 가능한 자원 노드가 없다");
+                GameLog.Info(LogCategory.Qa, "동시 그랩 무효: 그랩 가능한 자원 노드가 없다");
                 return;
             }
 
-            Debug.Log($"[QaDebugHotkeys] 동시 그랩 트리거: 대상={target.name} — 전 피어가 같은 프레임에 그랩을 요청한다");
+            GameLog.Info(LogCategory.Qa, $"동시 그랩 트리거: 대상={target.name} — 전 피어가 같은 프레임에 그랩을 요청한다");
             TriggerSimultaneousGrabRpc(target);
         }
 
@@ -308,6 +338,23 @@ namespace Game.Gameplay.Train
                 : null;
             var harpoon = player != null ? player.GetComponent<Harpoon.HarpoonController>() : null;
             harpoon?.QaRequestGrab(target);
+        }
+
+        /// <summary>
+        /// 열차·궤도 높이 단계 순환 (열차 높이 스펙) — 편성·손잡이·설비·궤도 타일과 갑판 기준선을
+        /// 한 오프셋으로 함께 내린다. 호스트가 단계를 확정하고 복제하므로 전 피어가 같은 높이를 보고,
+        /// 후발 접속도 접속 시점의 단계를 그대로 받는다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestCycleTrainElevationServerRpc()
+        {
+            if (!ServiceLocator.TryGet(out ITrainElevation elevation))
+            {
+                GameLog.Info(LogCategory.Qa, "높이 단계 무효: 높이 컨트롤러가 없다 — 이 씬에는 배선되지 않았다");
+                return;
+            }
+
+            elevation.ServerCycleStep();
         }
 
         /// <summary>

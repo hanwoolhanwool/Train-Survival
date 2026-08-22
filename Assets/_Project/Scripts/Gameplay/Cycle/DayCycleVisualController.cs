@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Game.Core.Services;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -45,7 +46,7 @@ namespace Game.Gameplay.Cycle
         [Tooltip("Off = 아무것도 쓰지 않는다(회귀 기준선) / A = 국면 전환 크로스페이드 / B = 태양·하늘 상시 보간.")]
         [SerializeField] private DayVisualMode _mode = DayVisualMode.A;
 
-        [Tooltip("켜면 F7로 Off → A → B → Off 순환. 같은 장면에서 즉시 비교하는 것이 이 차수의 검증 방식이다.")]
+        [Tooltip("켜면 F8로 Off → A → B → Off 순환. 같은 장면에서 즉시 비교하는 것이 이 차수의 검증 방식이다.")]
         [SerializeField] private bool _enableModeToggleKey = true;
 
         /// <summary>지금 화면에 실제로 반영돼 있는 모드 — <see cref="_mode"/>가 바뀌면 그 차이만큼만 원복·적용한다.</summary>
@@ -255,8 +256,8 @@ namespace Game.Gameplay.Cycle
         // ── 디버그: 모드 순환 ───────────────────────────────────────────────
 
         /// <summary>
-        /// F7 = Off → A → B → Off. 숫자패드는 국면 점프(1·2·3)와 QA 핫키 12종이 전부 점유하고 있어
-        /// 남는 키가 없다.
+        /// F8 = Off → A → B → Off. 숫자패드는 국면 점프(1·2·3)와 QA 핫키 12종이 전부 점유하고 있어
+        /// 남는 키가 없다. F8·F9(구속)·F10(시점)이 연출·플레이어 그룹으로 연속이다.
         /// </summary>
         private void HandleModeToggleInput()
         {
@@ -266,7 +267,7 @@ namespace Game.Gameplay.Cycle
             }
 
             Keyboard keyboard = Keyboard.current;
-            if (keyboard == null || !keyboard.f7Key.wasPressedThisFrame)
+            if (keyboard == null || !keyboard.f8Key.wasPressedThisFrame)
             {
                 return;
             }
@@ -275,7 +276,7 @@ namespace Game.Gameplay.Cycle
                 ? DayVisualMode.A
                 : _mode == DayVisualMode.A ? DayVisualMode.B : DayVisualMode.Off;
 
-            Debug.Log($"[DayVisual] 모드 → {_mode}");
+            GameLog.Info(LogCategory.Cycle, $"모드 → {_mode}");
         }
     }
 }
