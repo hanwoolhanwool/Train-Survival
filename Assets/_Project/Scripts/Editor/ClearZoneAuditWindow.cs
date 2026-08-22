@@ -302,7 +302,8 @@ namespace Game.Editor
                     collider.isTrigger,
                     collider is MeshCollider,
                     HasComponentUpTo<WorldFrameSurface>(collider.transform, rootTransform),
-                    IsUnderTrackStructure(collider.transform, rootTransform));
+                    IsUnderTrackStructure(collider.transform, rootTransform),
+                    HasComponentUpTo<ScatterSlot>(collider.transform, rootTransform));
 
                 ClearZoneIssue issues = ClearZoneRules.Evaluate(probe);
                 if (issues == ClearZoneIssue.None)
@@ -396,6 +397,30 @@ namespace Game.Editor
                     ".",
                     $"자원 앵커 {anchors.Length}개 — 기준은 타일당 " +
                     $"{ClearZoneRules.MinAnchorsPerTile}~{ClearZoneRules.MaxAnchorsPerTile}개다",
+                    isError: false,
+                    target: null);
+            }
+
+            // 랜드마크·스캐터 슬롯 (가이드 §4.4) — 개수만 본다. 자리의 적절함은 사람이 정한다.
+            int landmarks = root.GetComponentsInChildren<LandmarkSlot>(true).Length;
+            if (!ClearZoneRules.IsLandmarkSlotCountValid(landmarks))
+            {
+                report.Add(
+                    ".",
+                    $"랜드마크 슬롯 {landmarks}개 — 타일당 " +
+                    $"{ClearZoneRules.MaxLandmarkSlotsPerTile}개까지다",
+                    isError: false,
+                    target: null);
+            }
+
+            int scatters = root.GetComponentsInChildren<ScatterSlot>(true).Length;
+            if (!ClearZoneRules.IsScatterSlotCountValid(scatters))
+            {
+                report.Add(
+                    ".",
+                    $"스캐터 슬롯 {scatters}개 — 기준은 타일당 " +
+                    $"{ClearZoneRules.MinScatterSlotsPerTile}~{ClearZoneRules.MaxScatterSlotsPerTile}개다" +
+                    " (반복 인지를 줄이는 주 장치라 비워 두면 팔레트로만 버티게 된다)",
                     isError: false,
                     target: null);
             }
@@ -567,11 +592,13 @@ namespace Game.Editor
         {
             switch (issue)
             {
-                // 이 셋은 게임플레이가 즉시 깨진다 — 열차가 파묻히고, 웨이브가 갇히고, 매 교체마다 굽는다.
+                // 게임플레이가 즉시 깨지는 것들 — 열차가 파묻히고, 웨이브가 갇히고,
+                // 매 교체마다 콜라이더를 굽고, 피어마다 다른 벽이 생긴다(계획 리스크 3).
                 case ClearZoneIssue.TrackCorridor:
                 case ClearZoneIssue.DropZone:
                 case ClearZoneIssue.LongWall:
                 case ClearZoneIssue.MeshColliderUsed:
+                case ClearZoneIssue.ColliderUnderScatterSlot:
                     return true;
 
                 default:
@@ -587,6 +614,7 @@ namespace Game.Editor
             ClearZoneIssue.MeshColliderUsed,
             ClearZoneIssue.MissingWorldFrameSurface,
             ClearZoneIssue.OutsideTileFootprint,
+            ClearZoneIssue.ColliderUnderScatterSlot,
         };
 
         private static readonly AnchorIssue[] AllAnchorIssues =

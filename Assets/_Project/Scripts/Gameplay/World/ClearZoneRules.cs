@@ -29,6 +29,11 @@ namespace Game.Gameplay.World
 
         /// <summary>타일 규격(60 × 40 m)을 벗어난다 — 이음매가 벌어지거나 옆 타일과 겹친다.</summary>
         OutsideTileFootprint = 1 << 5,
+
+        /// <summary>
+        /// 스캐터 슬롯 아래의 콜라이더 — 변주는 피어마다 다르므로 <b>없는 벽을 도는 몬스터</b>가 생긴다.
+        /// </summary>
+        ColliderUnderScatterSlot = 1 << 6,
     }
 
     /// <summary>자원 앵커 하나가 어긴 배치 규격 (가이드 §4.2 자원 대역).</summary>
@@ -66,14 +71,22 @@ namespace Game.Gameplay.World
         /// </summary>
         public readonly bool IsTrackStructure;
 
+        /// <summary>
+        /// <see cref="ScatterSlot"/> 아래에 있는지. 스캐터 변주는 각 피어 로컬이라,
+        /// 그 아래 콜라이더는 피어마다 있고 없고가 갈린다 (가이드 §4.5 결정론 주의).
+        /// </summary>
+        public readonly bool IsUnderScatterSlot;
+
         public ColliderProbe(
-            Bounds bounds, bool isTrigger, bool isMesh, bool hasSurfaceMarker, bool isTrackStructure)
+            Bounds bounds, bool isTrigger, bool isMesh, bool hasSurfaceMarker, bool isTrackStructure,
+            bool isUnderScatterSlot = false)
         {
             Bounds = bounds;
             IsTrigger = isTrigger;
             IsMesh = isMesh;
             HasSurfaceMarker = hasSurfaceMarker;
             IsTrackStructure = isTrackStructure;
+            IsUnderScatterSlot = isUnderScatterSlot;
         }
     }
 
@@ -122,6 +135,13 @@ namespace Game.Gameplay.World
         /// <summary>타일당 자원 앵커 개수 기준 (가이드 §4.4).</summary>
         public const int MinAnchorsPerTile = 5;
         public const int MaxAnchorsPerTile = 7;
+
+        /// <summary>타일당 랜드마크 슬롯 상한 (가이드 §4.4) — 0~1개. 없는 타일이 있어도 좋다.</summary>
+        public const int MaxLandmarkSlotsPerTile = 1;
+
+        /// <summary>타일당 스캐터 슬롯 기준 (가이드 §4.4) — 변주가 반복 인지를 줄이는 주 장치다.</summary>
+        public const int MinScatterSlotsPerTile = 4;
+        public const int MaxScatterSlotsPerTile = 10;
 
         /// <summary>궤도 본체 — 자식 이름이 규격으로 고정돼 있다 (가이드 §4.1 · train-art-layout §7.1).</summary>
         public const string RailTrackName = "RailTrack";
@@ -248,6 +268,11 @@ namespace Game.Gameplay.World
                 issues |= ClearZoneIssue.MissingWorldFrameSurface;
             }
 
+            if (probe.IsUnderScatterSlot)
+            {
+                issues |= ClearZoneIssue.ColliderUnderScatterSlot;
+            }
+
             return issues;
         }
 
@@ -278,6 +303,18 @@ namespace Game.Gameplay.World
         public static bool IsAnchorCountValid(int count)
         {
             return count >= MinAnchorsPerTile && count <= MaxAnchorsPerTile;
+        }
+
+        /// <summary>랜드마크 슬롯 개수가 상한(0~1개) 안인가 — 없는 타일이 대부분이다.</summary>
+        public static bool IsLandmarkSlotCountValid(int count)
+        {
+            return count <= MaxLandmarkSlotsPerTile;
+        }
+
+        /// <summary>스캐터 슬롯 개수가 기준(4~10개) 안인가.</summary>
+        public static bool IsScatterSlotCountValid(int count)
+        {
+            return count >= MinScatterSlotsPerTile && count <= MaxScatterSlotsPerTile;
         }
 
         /// <summary>
@@ -314,6 +351,8 @@ namespace Game.Gameplay.World
                     return "WorldFrameSurface 누락 — 밟았을 때 땅이 안 흐른다";
                 case ClearZoneIssue.OutsideTileFootprint:
                     return $"타일 규격({TileHalfWidthX * 2} × {TileHalfLengthZ * 2} m) 밖 — 이음매가 어긋난다";
+                case ClearZoneIssue.ColliderUnderScatterSlot:
+                    return "스캐터 슬롯 아래의 콜라이더 — 변주는 피어마다 달라 없는 벽이 생긴다";
                 default:
                     return issue.ToString();
             }
