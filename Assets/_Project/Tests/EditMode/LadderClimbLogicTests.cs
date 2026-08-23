@@ -177,6 +177,27 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(0f, correction.magnitude, 1e-4f);
         }
 
+        // ── 재부착 차단 ──────────────────────────────────────────────
+
+        [Test]
+        public void 떨어진_직후에는_다시_붙지_못한다()
+        {
+            // 볼륨 이탈 콜백이 한 프레임 늦어, 이 창이 없으면 꼭대기에서 1 m 왕복이 생긴다.
+            Assert.IsTrue(LadderClimbLogic.IsReattachBlocked(10.0f, 10.3f));
+        }
+
+        [Test]
+        public void 대기가_끝나면_다시_붙을_수_있다()
+        {
+            Assert.IsFalse(LadderClimbLogic.IsReattachBlocked(10.31f, 10.3f));
+        }
+
+        [Test]
+        public void 한_번도_붙은_적_없으면_차단되지_않는다()
+        {
+            Assert.IsFalse(LadderClimbLogic.IsReattachBlocked(0f, 0f));
+        }
+
         [Test]
         public void 작은_보정은_따라간다()
         {

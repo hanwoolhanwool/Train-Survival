@@ -48,6 +48,12 @@ namespace Game.Gameplay.Player
         // 한 프레임 평면 보정의 상한(m). 넘으면 사다리가 통째로 옮겨간 것이라 따라가지 않는다.
         private const float LadderMaxPlaneCorrection = 0.5f;
 
+        // 떨어진 뒤 같은 사다리에 다시 붙기까지의 대기(초) — 볼륨 이탈 콜백이 한 프레임 늦는 것을 덮는다.
+        private const float LadderReattachDelay = 0.3f;
+
+        // 갑판으로 올려놓는 데 쓰는 시간(초). 1 m를 한 프레임에 옮기면 1인칭 카메라가 툭 튄다.
+        private const float LadderMantleDuration = 0.18f;
+
         private static readonly RaycastHit[] GroundProbeHits = new RaycastHit[8];
 
         private CharacterController _characterController;
@@ -92,6 +98,14 @@ namespace Game.Gameplay.Player
         private Train.BoardingLadder _ladder;
 
         private bool _climbing;
+
+        /// <summary>이 시각까지는 사다리에 다시 붙지 않는다 — 꼭대기·점프 탈출 직후의 재부착 왕복을 막는다.</summary>
+        private float _ladderReattachAt;
+
+        // 갑판으로 올려놓는 중 — 남은 시간과 초당 이동량(수평만). 진행 중에는 일반 이동·중력을 멈춘다.
+        private float _mantleTimer;
+        private Vector3 _mantleVelocity;
+
         private CarView _ridingCar;
         private Vector3 _ridingCarLastPos;
         private bool _ridingCarTracked;
@@ -294,6 +308,7 @@ namespace Game.Gameplay.Player
             {
                 // 견인과 오르기가 같은 프레임에 트랜스폼을 다투면 안 된다 (계획 §3.7).
                 DetachLadder();
+                CancelMantle();
 
                 if (lookAllowed)
                 {
@@ -375,13 +390,21 @@ namespace Game.Gameplay.Player
             }
 
             // ── 사다리 (계획 §3.5·§3.6) ──
+            if (_mantleTimer > 0f)
+            {
+                UpdateMantle();
+                return;
+            }
+
             if (_climbing)
             {
                 UpdateLadderClimb(z, keyboard.spaceKey.wasPressedThisFrame);
                 return;
             }
 
-            if (_ladder != null && LadderClimbLogic.ShouldAttach(
+            if (_ladder != null
+                && !LadderClimbLogic.IsReattachBlocked(Time.time, _ladderReattachAt)
+                && LadderClimbLogic.ShouldAttach(
                     true, wishDirection, _ladder.ApproachDirection, false, LadderClimbLogic.DefaultApproachDot))
             {
                 AttachLadder();
@@ -517,6 +540,10 @@ namespace Game.Gameplay.Player
 
             _climbing = false;
 
+            // 볼륨 이탈 콜백이 한 프레임 늦게 오므로, 그 사이 오르던 입력이 그대로면 곧바로 다시 붙는다.
+            // 그러면 평면 보정이 몸을 사다리 앞으로 되돌려 꼭대기에서 1 m 왕복이 생긴다.
+            _ladderReattachAt = Time.time + LadderReattachDelay;
+
             // 떨어진 직후를 접지로 오인하면 공중에서 걷는 속도가 나온다.
             _groundGraceTimer = 0f;
         }
@@ -548,7 +575,7 @@ namespace Game.Gameplay.Player
 
             if (reason == LadderDetachReason.TopReached)
             {
-                PerformMantle();
+                BeginMantle();
                 DetachLadder();
                 return;
             }
@@ -576,20 +603,49 @@ namespace Game.Gameplay.Player
         }
 
         /// <summary>
-        /// 꼭대기에서 갑판으로 올려놓는다 (계획 §3.8) — 그냥 놓으면 갑판 <b>옆</b> 허공이라 떨어진다.
-        /// <b>수직을 먼저, 수평을 나중에</b> 옮긴다: 한 벡터로 주면 대각선 이동이 갑판 모서리에 걸린다.
+        /// 꼭대기에서 갑판으로 올려놓기를 시작한다 (계획 §3.8) — 그냥 놓으면 갑판 <b>옆</b> 허공이라 떨어진다.
+        ///
+        /// <para><b>수직은 즉시, 수평은 나눠서.</b> 발을 갑판면에 맞추는 것은 몇 cm라 한 프레임에 해도
+        /// 안 보이지만, 갑판 안쪽으로 1 m를 한 프레임에 옮기면 1인칭 카메라가 툭 튄다.
+        /// 한 벡터로 합쳐 주지 않는 이유이기도 하다 — 대각선 이동은 갑판 모서리에 걸린다.</para>
         /// </summary>
-        private void PerformMantle()
+        private void BeginMantle()
         {
             Vector3 mantle = LadderClimbLogic.ComputeMantleMotion(
                 _ladder.Normal, transform.position.y, _ladder.TopY,
                 _ladder.MantleInwardDistance, LadderMantleClearance);
 
             _characterController.Move(new Vector3(0f, mantle.y, 0f));
-            _characterController.Move(new Vector3(mantle.x, 0f, mantle.z));
 
-            _verticalSpeed = -2f;
+            Vector3 horizontal = new Vector3(mantle.x, 0f, mantle.z);
+            _mantleTimer = LadderMantleDuration;
+            _mantleVelocity = horizontal / LadderMantleDuration;
+
+            _verticalSpeed = 0f;
             _horizontalVelocity = Vector3.zero;
+        }
+
+        /// <summary>올려놓기를 중단한다 — 구속·사망·순간이동이 끼어들면 남은 이동을 버린다.</summary>
+        private void CancelMantle()
+        {
+            _mantleTimer = 0f;
+            _mantleVelocity = Vector3.zero;
+        }
+
+        /// <summary>올려놓기 진행 — 끝날 때까지 일반 이동·중력을 멈춘다. 중력이 끼면 모서리에서 미끄러진다.</summary>
+        private void UpdateMantle()
+        {
+            float step = Mathf.Min(Time.deltaTime, _mantleTimer);
+            _mantleTimer -= step;
+
+            _characterController.Move(_mantleVelocity * step);
+
+            if (_mantleTimer <= 0f)
+            {
+                _mantleTimer = 0f;
+                _mantleVelocity = Vector3.zero;
+                _verticalSpeed = -2f;
+            }
         }
 
         /// <summary>접지 표면 판정 — 지상(월드 프레임) 여부와 밟고 있는 칸(무빙 플랫폼)을 함께 갱신한다.</summary>
@@ -869,6 +925,7 @@ namespace Game.Gameplay.Player
             // 사망·부활·재접속 복원으로 몸이 통째로 옮겨간다 — 사다리에 매달린 상태를 끌고 가면
             // 다음 프레임 평면 보정이 옛 사다리로 되당긴다.
             DetachLadder();
+            CancelMantle();
             _ladder = null;
 
             _characterController.enabled = false;
