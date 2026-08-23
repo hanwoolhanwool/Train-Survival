@@ -9,7 +9,7 @@
 
 ---
 
-## 포트폴리오 — 설계 결정 · 문제 해결 · QA · 아트
+## 포트폴리오
 
 ### **[hanwoolhanwool.github.io/Train-Survival](https://hanwoolhanwool.github.io/Train-Survival/)**
 
