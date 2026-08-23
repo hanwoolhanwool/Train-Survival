@@ -92,6 +92,11 @@ namespace Game.UI.Ready
         [Tooltip("인게임 씬 선택 줄. Panel_Host에서 이관해 왔다(§6.4).")]
         private GameObject _devGroup;
 
+        [Tooltip("개발 줄을 실제로 띄울지 — 끄면 에디터·개발 빌드에서도 감춘다. "
+            + "기능을 지우는 것이 아니라 체크 하나로 되살릴 수 있게 남겨 둔 스위치다. "
+            + "릴리스 빌드는 이 값과 무관하게 항상 감춘다.")]
+        [SerializeField] private bool _showDevGroup;
+
         [SerializeField] private Button _sceneToggle;
         [SerializeField] private TMP_Text _sceneToggleLabel;
 
@@ -776,11 +781,17 @@ namespace Game.UI.Ready
             }
         }
 
+        /// <summary>
+        /// 개발 줄(인게임 씬 토글)의 표시 여부를 정한다.
+        ///
+        /// <para><b>프리팹에서 오브젝트를 꺼 두는 것으로는 감출 수 없다</b> — 여기서 매번
+        /// <see cref="GameObject.SetActive"/>로 덮어쓰기 때문이다. 감추려면 <c>_showDevGroup</c>을 끈다.</para>
+        /// </summary>
         private void ApplyDevGroup()
         {
             bool dev = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            dev = true;
+            dev = _showDevGroup;
 #endif
             if (_devGroup != null)
             {
