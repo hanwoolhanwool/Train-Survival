@@ -17,6 +17,26 @@ namespace Game.Gameplay.Train
     }
 
     /// <summary>
+    /// 연료 투입이 성사됨 — 호스트가 인벤토리 차감과 충전을 확정한 뒤 전 피어에 발행되는 연출 전용 이벤트
+    /// (화구 연료구 교체 계획 §3.2). 화구 화염이 이를 받아 순간적으로 타오른다.
+    /// <para>
+    /// 잔량 변화(<see cref="World.FuelChangedEvent"/>)로 대신할 수 없다 — 호스트가 매 프레임 연료를
+    /// 깎으므로 한 프레임의 증가가 소모와 상쇄돼 씹히고, 관측 시점도 복제 지연에 흔들린다.
+    /// </para>
+    /// 게임 상태는 담지 않는다. 이 이벤트를 놓쳐도 연출만 빠질 뿐 연료는 이미 확정돼 있다.
+    /// </summary>
+    public readonly struct EngineFuelDepositedEvent
+    {
+        /// <summary>투입한 자원의 발열량 — 클수록 크게 타오른다(통나무 vs 넝마).</summary>
+        public readonly float FuelValue;
+
+        public EngineFuelDepositedEvent(float fuelValue)
+        {
+            FuelValue = fuelValue;
+        }
+    }
+
+    /// <summary>
     /// 편성 상태가 준비됨 — TrainState 스폰 시 모든 피어에서 발행(신규·후발 접속 공통). CarView·UI가 현재 편성으로 재동기화한다.
     /// </summary>
     public readonly struct TrainInitializedEvent

@@ -155,6 +155,20 @@ namespace Game.Gameplay.Train
             {
                 fuel.AddFuel(fuelValue);
             }
+
+            // 투입이 성사된 사실 자체를 연출용으로 되돌려준다 — 잔량 복제만으로는 이 순간을 못 짚는다
+            // (호스트가 매 프레임 깎으므로 한 프레임의 증가가 소모와 상쇄된다).
+            PlayDepositEffectRpc(fuelValue);
+        }
+
+        /// <summary>
+        /// 투입 성사 연출 — 모든 피어의 화구가 같은 순간 타오른다. 게임 상태는 담지도 바꾸지도 않으므로
+        /// 유실돼도 연료 확정에는 영향이 없다.
+        /// </summary>
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PlayDepositEffectRpc(float fuelValue)
+        {
+            EventBus<EngineFuelDepositedEvent>.Publish(new EngineFuelDepositedEvent(fuelValue));
         }
 
         /// <summary>종류의 발열량 — 카탈로그 미배선 시 기존 고정값(FuelPerResource)으로 폴백한다.</summary>
