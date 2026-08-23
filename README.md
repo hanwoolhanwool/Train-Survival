@@ -21,12 +21,6 @@
 
 ![Train Survival 대표 화면](docs/images/hero.png)
 
-## 게임 플레이 영상
-
-<video src="docs/videos/gameplay.mp4" controls width="100%" poster="docs/images/hero.png"></video>
-
-[영상 파일 직접 보기](docs/videos/gameplay.mp4)
-
 ---
 
 ## 코어 루프
