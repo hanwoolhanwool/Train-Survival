@@ -9,6 +9,9 @@ namespace Game.Gameplay.Player
     /// 틴트 색을 로컬 적용한다. 색은 머티리얼 인스턴스 분기 대신
     /// <see cref="MaterialPropertyBlock"/>으로 칠한다 (SRP Batcher 규약 — M8 1차 §2.4).
     ///
+    /// <para><b>슬롯 틴트는 현재 꺼져 있다</b> (<c>PlayerAnimationSettings.TintPlayersBySlot</c>) —
+    /// 늦게 들어온 사람만 몸이 물들어 보였다. 색표와 이 경로는 그대로 남아 있어 설정 하나로 되살아난다.</para>
+    ///
     /// <para><b>소유자 자신의 몸은 시점 모드와 무관하게 언제나 그림자만 남긴다</b>
     /// (1인칭 통합 시점 전환 계획 §3.2 — 2026-08-19 사용자 확정). 화면에 보이는 것은 무기뿐이고,
     /// 몸은 그림자로만 존재한다. 메시를 켜지 않으므로 <b>그림자가 머리까지 온전</b>하다.</para>
@@ -74,7 +77,9 @@ namespace Game.Gameplay.Player
             SkinnedMeshRenderer renderer = useGirl ? _girlRenderer : _manRenderer;
             if (renderer != null)
             {
-                if (_settings != null)
+                // 슬롯 틴트가 꺼져 있으면 _BaseColor 를 <b>아예 건드리지 않는다</b> — 흰색으로 덮어쓰면
+                // 머티리얼이 원래 흰색이 아닐 때 색이 달라진다. 안 칠하는 것과 흰색으로 칠하는 것은 다르다.
+                if (_settings != null && _settings.TintPlayersBySlot)
                 {
                     var block = new MaterialPropertyBlock();
                     renderer.GetPropertyBlock(block);

@@ -29,6 +29,10 @@ namespace Game.Gameplay.Player
         [SerializeField, Range(-45f, 45f)] private float _headPitchOffsetDegrees = -22f;
 
         [Header("4인 색 구분 (MaterialPropertyBlock)")]
+        [Tooltip("스폰 순번대로 몸체에 틴트를 입힐지 — 끄면 모두 원본 색으로 보인다. "
+            + "아래 색표는 되살릴 때를 위해 남겨 둔다.")]
+        [SerializeField] private bool _tintPlayersBySlot;
+
         [SerializeField] private Color[] _playerColors =
         {
             new Color(1f, 1f, 1f),
@@ -78,6 +82,12 @@ namespace Game.Gameplay.Player
         /// 고개 숙임 편향(판정 §2.4.6)을 상쇄해, 피치 0에서 시선이 수평이 되게 한다.
         /// </summary>
         public float HeadPitchOffsetDegrees => _headPitchOffsetDegrees;
+
+        /// <summary>
+        /// 스폰 순번대로 몸체 틴트를 입히는가. 꺼 두면 <see cref="GetPlayerColor"/>를 아예 부르지 않아
+        /// 머티리얼 원래 색이 그대로 나온다 — 색표는 지우지 않고 남겨 둔다.
+        /// </summary>
+        public bool TintPlayersBySlot => _tintPlayersBySlot;
 
         /// <summary>스폰 순번 → 몸체 틴트 색 (순번 % 길이). 텍스처 위에 곱해진다.</summary>
         public Color GetPlayerColor(int visualSlot)
