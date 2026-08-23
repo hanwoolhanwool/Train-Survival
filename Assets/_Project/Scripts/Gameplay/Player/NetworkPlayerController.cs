@@ -33,8 +33,20 @@ namespace Game.Gameplay.Player
             new NetworkVariable<PlayerMovementState>(PlayerMovementState.Normal);
 
         // 접지 프로브에서 최근접 정적 면과 칸 지붕을 '같은 평면'으로 간주하는 높이 차(m) —
-        // 승차 램프 상단이 지붕보다 최대 ~15cm 높게 겹치는 저작 여유를 흡수한다.
+        // 이탈 칸이 정적 지형과 같은 평면으로 겹치는 구간에서 정적 면이 몇 cm 먼저 잡히는 것을 흡수한다.
+        // (승차 램프가 사다리로 교체되기 전에는 램프 상단 겹침이 근거였다 — 사다리 계획 §3.11)
         private const float CoplanarSurfaceTolerance = 0.3f;
+
+        // ── 사다리 오르기 (사다리 승하차 계획 §3) ─────────────────────────
+        // 점프 탈출은 법선 쪽으로 밀어내야 한다 — 안 그러면 다음 프레임에 다시 붙어 제자리에서 튄다.
+        private const float LadderJumpPushSpeed = 3f;
+        private const float LadderJumpUpRatio = 0.7f;
+
+        // 꼭대기에서 갑판에 올려놓을 때 갑판면에서 띄우는 여유(m).
+        private const float LadderMantleClearance = 0.05f;
+
+        // 한 프레임 평면 보정의 상한(m). 넘으면 사다리가 통째로 옮겨간 것이라 따라가지 않는다.
+        private const float LadderMaxPlaneCorrection = 0.5f;
 
         private static readonly RaycastHit[] GroundProbeHits = new RaycastHit[8];
 
@@ -72,6 +84,14 @@ namespace Game.Gameplay.Player
         private bool _storagePanelOpen;
         private bool _bundlePanelOpen;
         private bool _standingOnWorldFrame;
+
+        /// <summary>
+        /// 지금 겹쳐 있는 사다리 볼륨 — 소유자 로컬이다. 붙을지 말지는 전적으로 소유자가 아는 정보
+        /// (내 캡슐이 볼륨 안인가 · 내 입력이 어디를 향하나)로 정해지므로 복제하지 않는다 (계획 §3.2).
+        /// </summary>
+        private Train.BoardingLadder _ladder;
+
+        private bool _climbing;
         private CarView _ridingCar;
         private Vector3 _ridingCarLastPos;
         private bool _ridingCarTracked;
@@ -272,6 +292,9 @@ namespace Game.Gameplay.Player
             // 시선은 남긴다: 끌려가는 동안 주변을 볼 수 없으면 구조가 사고처럼 보인다.
             if (_movementState.Value != PlayerMovementState.Normal)
             {
+                // 견인과 오르기가 같은 프레임에 트랜스폼을 다투면 안 된다 (계획 §3.7).
+                DetachLadder();
+
                 if (lookAllowed)
                 {
                     UpdateLook();
@@ -351,6 +374,20 @@ namespace Game.Gameplay.Player
                 wishDirection.Normalize();
             }
 
+            // ── 사다리 (계획 §3.5·§3.6) ──
+            if (_climbing)
+            {
+                UpdateLadderClimb(z, keyboard.spaceKey.wasPressedThisFrame);
+                return;
+            }
+
+            if (_ladder != null && LadderClimbLogic.ShouldAttach(
+                    true, wishDirection, _ladder.ApproachDirection, false, LadderClimbLogic.DefaultApproachDot))
+            {
+                AttachLadder();
+                return;
+            }
+
             float targetSpeed = (run ? _settings.RunSpeed : _settings.WalkSpeed) * ResolveSpeedMultiplier();
 
             // 스트리밍 타일 지면은 이음새·회수 순간 isGrounded가 깜빡인다 — 코요테 유예로 접지 상태를 유지해
@@ -418,6 +455,141 @@ namespace Game.Gameplay.Player
             }
 
             _characterController.Move(motion);
+        }
+
+        // ── 사다리 오르기 (사다리 승하차 계획 §3) ─────────────────────────
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            var ladder = other.GetComponent<Train.BoardingLadder>();
+            if (ladder != null)
+            {
+                _ladder = ladder;
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            var ladder = other.GetComponent<Train.BoardingLadder>();
+            if (ladder != null && ladder == _ladder)
+            {
+                _ladder = null;
+            }
+        }
+
+        /// <summary>
+        /// 사다리에 붙는다. <b>여기서 컨베이어 밀림을 끄는 것이 이 기능의 핵심</b>이다 (계획 §3.1) —
+        /// 안 끄면 붙자마자 몸이 초당 6 m로 뒤로 흘러 사다리를 뚫고 나간다.
+        /// </summary>
+        private void AttachLadder()
+        {
+            _climbing = true;
+
+            // 낙하 속도를 끌고 들어가면 붙자마자 미끄러진다.
+            _verticalSpeed = 0f;
+            _horizontalVelocity = Vector3.zero;
+            _standingOnWorldFrame = false;
+            _groundGraceTimer = 0f;
+            _ridingCar = null;
+            _ridingCarTracked = false;
+
+            Vector3 snap = LadderClimbLogic.ResolvePlaneCorrection(
+                transform.position, _ladder.Origin, _ladder.Normal, _ladder.HoldDistance);
+            _characterController.Move(snap);
+        }
+
+        private void DetachLadder()
+        {
+            if (!_climbing)
+            {
+                return;
+            }
+
+            _climbing = false;
+
+            // 떨어진 직후를 접지로 오인하면 공중에서 걷는 속도가 나온다.
+            _groundGraceTimer = 0f;
+        }
+
+        private void UpdateLadderClimb(float verticalInput, bool jumpPressed)
+        {
+            // 볼륨이 사라졌다 = 사다리가 없어졌다 (칸 이탈·파괴).
+            if (_ladder == null)
+            {
+                DetachLadder();
+                return;
+            }
+
+            // transform.position.y 가 곧 발 높이다 — CharacterController center (0, 0.9, 0) · height 1.8.
+            LadderDetachReason reason = LadderClimbLogic.ResolveDetach(
+                transform.position.y, _ladder.BottomY, _ladder.TopY, jumpPressed, true);
+
+            if (reason == LadderDetachReason.Jump)
+            {
+                Vector3 jumpOff = LadderClimbLogic.ComputeJumpOffVelocity(
+                    _ladder.Normal, LadderJumpPushSpeed,
+                    PlayerMotor.GetJumpSpeed(_settings.JumpHeight, _settings.Gravity) * LadderJumpUpRatio);
+
+                _horizontalVelocity = new Vector3(jumpOff.x, 0f, jumpOff.z);
+                _verticalSpeed = jumpOff.y;
+                DetachLadder();
+                return;
+            }
+
+            if (reason == LadderDetachReason.TopReached)
+            {
+                PerformMantle();
+                DetachLadder();
+                return;
+            }
+
+            if (reason == LadderDetachReason.BottomReached || reason == LadderDetachReason.LeftVolume)
+            {
+                DetachLadder();
+                return;
+            }
+
+            Vector3 correction = LadderClimbLogic.ResolvePlaneCorrection(
+                transform.position, _ladder.Origin, _ladder.Normal, _ladder.HoldDistance);
+
+            // 사다리가 통째로 옮겨갔다 — 따라가면 사람이 순간이동한다 (계획 §6).
+            if (LadderClimbLogic.IsPlaneCorrectionTooFar(correction, LadderMaxPlaneCorrection))
+            {
+                DetachLadder();
+                return;
+            }
+
+            Vector3 motion = LadderClimbLogic.ComputeClimbMotion(
+                verticalInput, _ladder.ClimbSpeed, Time.deltaTime) + correction;
+
+            _characterController.Move(motion);
+        }
+
+        /// <summary>
+        /// 꼭대기에서 갑판으로 올려놓는다 (계획 §3.8) — 그냥 놓으면 갑판 <b>옆</b> 허공이라 떨어진다.
+        /// <b>수직을 먼저, 수평을 나중에</b> 옮긴다: 한 벡터로 주면 대각선 이동이 갑판 모서리에 걸린다.
+        /// </summary>
+        private void PerformMantle()
+        {
+            Vector3 mantle = LadderClimbLogic.ComputeMantleMotion(
+                _ladder.Normal, transform.position.y, _ladder.TopY,
+                _ladder.MantleInwardDistance, LadderMantleClearance);
+
+            _characterController.Move(new Vector3(0f, mantle.y, 0f));
+            _characterController.Move(new Vector3(mantle.x, 0f, mantle.z));
+
+            _verticalSpeed = -2f;
+            _horizontalVelocity = Vector3.zero;
         }
 
         /// <summary>접지 표면 판정 — 지상(월드 프레임) 여부와 밟고 있는 칸(무빙 플랫폼)을 함께 갱신한다.</summary>
@@ -694,6 +866,11 @@ namespace Game.Gameplay.Player
 
         private void TeleportTo(Vector3 position)
         {
+            // 사망·부활·재접속 복원으로 몸이 통째로 옮겨간다 — 사다리에 매달린 상태를 끌고 가면
+            // 다음 프레임 평면 보정이 옛 사다리로 되당긴다.
+            DetachLadder();
+            _ladder = null;
+
             _characterController.enabled = false;
             transform.position = position;
             _characterController.enabled = true;
