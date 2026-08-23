@@ -31,7 +31,7 @@ QA 중 열차 아트를 교체·정렬할 때 빠르게 고치기 위한 참조�
 | `Car_3` | (0, 1.70, −33.0) | (4.6, 3.4, 15) | |
 | `Car_4` | (0, 1.70, −49.5) | (4.6, 3.4, 15) | |
 | `Connector_2 / _3 / _4` | (0, **1.952**, −8.25 / −24.75 / −41.25) | (1.4, 0.2, 1.6) | `Train_Coupler` FBX (8절) |
-| `BoardingRamp` | (5.8212, 0.9368, −16.5), rot(0, 270, 335) | (2, 0.2, 8.3393) | **아직 Cube + `M_Default`** |
+| `BoardingLadder` | (2.45, **0.496**, −16.5), rot(0, **90**, 0) | (1, 1, 1) | `Train_Ladder` FBX (10절) — 램프를 대체했다 |
 
 > `Train_Handrails`는 `Train` 밖의 별도 루트다 (localPos (0, 0.916, 0), `TrainElevationFollower`). 8.2절 참조.
 
@@ -347,7 +347,13 @@ UnityEngine.Debug.Log(mr.bounds.size + " / " + mr.bounds.center + " / minY=" + m
   `RailTrack_F1` z +33.729 / `RailTrack_F0` z 0 / `RailTrack_B1` z −33.729 / `RailTrack_B2` z −67.458
 - 검수용 지면 판 `Ground_Preview` (0, 0.4, −17.3) 도 같은 프리뷰 묶음 아래 둔다.
 
-### 7.5 승차 램프 — 궤도를 관통하지 않도록 옆면으로
+### 7.5 ~~승차 램프~~ → **사다리로 교체됨 (2026-08-23)** · 10절 참조
+
+아래는 램프 시절의 기록이다. 램프는 씬에서 제거됐고 같은 자리·같은 추적 로직을 사다리가 물려받았다
+([사다리 승하차 계획](../../plans/features/사다리-승하차-구현-계획.md)). `BoardingRampPositioner`는
+`BoardingAccessPositioner`로, `BoardingRampAnchor`는 `BoardingAccessAnchor`로 개명됐다.
+
+#### 7.5.1 (기록) 램프는 궤도를 관통하지 않도록 옆면으로 놓았다
 
 램프가 열차 뒤로 내려가면 궤도를 뚫는다. `Game_ArtTest`에서는 **칸 옆면(+X)으로 돌렸고**,
 그러려면 배치 기준점이 갑판 뒤끝이 아니라 **칸 중심**이어야 한다.
@@ -432,7 +438,7 @@ YAML을 직접 고치면 해시가 낡은 채 남아 클라 접속이 거부될 
 
 | 오브젝트 | 현재 | 실치수 |
 |---|---|---|
-| `Train/BoardingRamp` | Cube + `M_Default` | 7.64 × 3.71 × 2.00 m — 광각 화면에서 가장 먼저 눈에 띈다 |
+| ~~`Train/BoardingRamp`~~ ✅ | **해소 (2026-08-23)** — 오브젝트째 제거하고 사다리로 대체 (10절) | |
 | `EngineFuelPort/Visual` | Cube + `EngineFurnace` | 0.8³ — 기관차 연료 투입구, 상호작용 지점 |
 | `CraftingStation/Visual` | Cube + `M_Default` | 0.9 × 0.5 × 0.6 — 제작 지점, 상호작용 지점 |
 
@@ -493,6 +499,45 @@ Meshy 생성물 `Bronze Sky Lantern`(이름과 달리 **천장 부착형 실링 
 | `globalScale` | **0.8** → 실치수 지름 0.8 m · 두께 0.24 m |
 | tris | 2,914 · Mesh LOD 3단 |
 | 머티리얼 | `M_Train_CabLamp` (URP Simple Lit) · `externalObjects` 매핑 |
+
+---
+
+## 10. 승하차 사다리 — `Train/BoardingLadder` (2026-08-23)
+
+승차 램프를 대체했다. 설계·판정 규칙은
+[사다리 승하차 구현 계획](../../plans/features/사다리-승하차-구현-계획.md)에 있고, 여기에는 as-built 만 적는다.
+
+### 10.1 계층과 축 약속
+
+```
+Train/BoardingLadder          world (2.45, 0.496, −16.5) · yaw 90
+  ├ BoxCollider (isTrigger)   진입 볼륨
+  ├ BoardingLadder            구간·방향·속도를 알려 준다 (판정은 LadderClimbLogic)
+  ├ BoardingAccessPositioner  anchor = RearCenter · _zOffset = 0 — 후미 칸을 따라간다
+  └ Train_Ladder              FBX 인스턴스 · 로컬 yaw 180 (갈고리를 바깥으로)
+```
+
+> **홀더의 forward(+Z)가 오르는 사람이 서는 쪽이다.** 모델은 자식으로 넣고 제 축에 맞게 돌린다 —
+> 그래야 모델 축이 어떻든 배치가 이 규칙 하나로 끝난다. yaw 90 이면 forward = +X 다.
+
+### 10.2 실측
+
+| 항목 | 값 | 맞물리는 것 |
+|---|---|---|
+| 사다리 메시 | x 2.317~2.583 · y 0.496~**3.566** · z −16.85~−16.15 | 꼭대기가 갑판 상면·`Car_2` 콜라이더 상면(3.566)과 정확히 일치 |
+| 볼륨 | x 2.300~3.150 · y 0.200~3.766 | 최대 \|x\| **3.150** < 3.3 — 하차·낙하 대역을 안 건드린다 |
+| 매달린 몸 | x **2.900** | 사다리 중심선 2.45 + 유지 거리 0.45 |
+| 올라선 몸 | x **1.900** (캡슐 바깥 끝 2.250) | 갑판 끝 2.300 안 — 안쪽 이동 **1.0** 이 필요하다 |
+
+### 10.3 모델 — `Train_Ladder`
+
+Meshy `Worn Brass Ladder`(1.9 m 한 단, 상단 갈고리)를 **두 단으로 이어 붙였다.** 한 단을 3.07 m 로
+키우면 폭이 1.39 m 가 되고 **가로대 간격이 0.57 m 로 벌어져** 사람 사다리가 아니게 된다.
+
+- 아래 단은 갈고리 정점 194개 삭제(이음매에 튀어나온다), 위 단은 갈고리 유지 · z +1.87 로 살짝 겹침
+- 정규화 최대 치수 1 · **원점 = 발치** · `globalScale` **3.07** → 높이 3.070 · 폭 0.699 · 가로대 간격 0.31
+- 4,957 tris · Mesh LOD 3단 · `M_Train_Ladder`(URP Simple Lit)
+- **갈고리는 씬에서 yaw 180 으로 뒤집었다** — 반입 상태로는 −X(칸 쪽)를 향해 칸 몸통에 파묻힌다
 
 ---
 
