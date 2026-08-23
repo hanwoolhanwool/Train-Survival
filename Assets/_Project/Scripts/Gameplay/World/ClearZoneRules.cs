@@ -27,7 +27,7 @@ namespace Game.Gameplay.World
         /// <summary>밟을 수 있는데 <see cref="WorldFrameSurface"/>가 없다 — 밟아도 땅이 안 흐른다.</summary>
         MissingWorldFrameSurface = 1 << 4,
 
-        /// <summary>타일 규격(60 × 40 m)을 벗어난다 — 이음매가 벌어지거나 옆 타일과 겹친다.</summary>
+        /// <summary>타일 규격(120 × 40 m)을 벗어난다 — 이음매가 벌어지거나 옆 타일과 겹친다.</summary>
         OutsideTileFootprint = 1 << 5,
 
         /// <summary>
@@ -118,9 +118,16 @@ namespace Game.Gameplay.World
         /// <summary>벽으로 읽히는 최소 높이. 이보다 낮으면 넘어 다닐 수 있어 장벽이 아니다.</summary>
         public const float WallMinHeightY = 0.5f;
 
-        /// <summary>타일 규격 — 길이 40 m(±20) · 폭 60 m(±30).</summary>
+        /// <summary>
+        /// 타일 규격 — 길이 40 m(±20) · 폭 120 m(±60).
+        ///
+        /// <para><b>폭이 60에서 120으로 넓어진 이유.</b> 판 끝이 ±30이면 열차 위 눈높이에서
+        /// 바깥 나무 사이로 판 너머 <b>스카이박스 하반구</b>가 그대로 보였다. 판을 두 배로 넓혀
+        /// 나무 틈으로 보이는 것이 "하늘"이 아니라 "더 먼 지면"이 되게 한 것이 근본 처방이고,
+        /// 바깥 대역의 트리라인·절벽 벽은 그 위에 얹힌 차폐다.</para>
+        /// </summary>
         public const float TileHalfLengthZ = 20f;
-        public const float TileHalfWidthX = 30f;
+        public const float TileHalfWidthX = 60f;
 
         /// <summary>지면 상면 y = 0의 허용 오차. 이 안이면 "솟은 것"이 아니라 지면이다.</summary>
         public const float GroundHeightTolerance = 0.05f;
@@ -199,7 +206,7 @@ namespace Game.Gameplay.World
             return bounds.size.y >= WallMinHeightY && RisesAboveGround(bounds);
         }
 
-        /// <summary>타일 규격(60 × 40 m)을 벗어나는가 — 이음매 규칙 §4.3.</summary>
+        /// <summary>타일 규격(120 × 40 m)을 벗어나는가 — 이음매 규칙 §4.3.</summary>
         public static bool ExceedsTileFootprint(Bounds bounds)
         {
             return bounds.max.x > TileHalfWidthX || bounds.min.x < -TileHalfWidthX

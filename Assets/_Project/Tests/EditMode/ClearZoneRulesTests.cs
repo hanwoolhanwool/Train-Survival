@@ -192,6 +192,20 @@ namespace Game.Tests.EditMode
             Assert.IsFalse(ClearZoneRules.ExceedsTileFootprint(Box(27f, 5f, 0f, 6f, 10f, 8f)));
         }
 
+        [Test]
+        public void 넓힌_폭_안의_바깥_대역은_이음매_결함이_아니다()
+        {
+            // 판이 ±60으로 넓어진 뒤 절벽 벽이 서는 자리 — 예전 규격(±30)이었다면 결함으로 잡혔다.
+            Assert.IsFalse(ClearZoneRules.ExceedsTileFootprint(Box(51f, 5f, 0f, 12f, 16f, 12f)));
+        }
+
+        [Test]
+        public void 넓힌_폭을_넘으면_이음매_결함이다()
+        {
+            // 판 밖은 지면이 없다 — 여기에 놓인 것은 공중에 뜬다.
+            Assert.IsTrue(ClearZoneRules.ExceedsTileFootprint(Box(58f, 5f, 0f, 8f, 10f, 8f)));
+        }
+
         // ── 자원 앵커 ───────────────────────────────────────────────
 
         [Test]
