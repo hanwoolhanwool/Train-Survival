@@ -114,3 +114,52 @@ echo "문서:       $(git ls-files 'docs/**/*.md' | wc -l)"
    git config merge.unityyamlmerge.name "Unity SmartMerge"
    git config merge.unityyamlmerge.driver '"C:/Program Files/Unity/Hub/Editor/6000.5.3f1/Editor/Data/Tools/UnityYAMLMerge.exe" merge -p %O %B %A %A'
    ```
+
+3. **무기 파지 애니메이션 3종을 Mixamo에서 받는다.** Adobe 약관상 재배포가 금지돼
+   저장소에 포함하지 않았다. 절차는 [`Art/Animations/NOTICE.md`](Assets/_Project/Art/Animations/NOTICE.md)
+   — 받아서 같은 이름으로 두면 Animator 참조가 그대로 살아난다.
+   (없어도 프로젝트는 열린다 — 클립을 이름으로 참조하는 C# 코드가 없어서 컴파일과
+   EditMode 테스트에는 영향이 없다. `AC_Player`의 파지 모션 슬롯 3곳만 비어 있게 된다.)
+
+## 라이선스
+
+**이중 라이선스**다 — 코드는 열려 있고, 게임 에셋은 이 프로젝트 전용이다.
+
+| 대상 | 라이선스 |
+|---|---|
+| **소스 코드 · 문서** — `Scripts/**` · `Tests/**` · `Art/Shaders/**` · `docs/**` | **[MIT License](LICENSE)** — 자유롭게 읽고 가져다 쓸 수 있다 |
+| **게임 에셋** — 모델 · 텍스처 · 머티리얼 · 프리팹 · 씬 · 밸런스 데이터 | **[All Rights Reserved](LICENSE-ASSETS)** — 열람·포크·로컬 빌드만 허용 |
+| **제3자 저작물** | 각 원저작자의 라이선스 — **[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)** |
+
+파일별 적용 범위는 [`LICENSE`](LICENSE)의 "적용 범위"가 정한다. 경로가 겹치면 제3자 저작물이 우선한다.
+
+### 외부 라이브러리·에셋 출처
+
+| 구분 | 항목 | 라이선스 |
+|---|---|---|
+| 엔진 | Unity 6000.5.3f1 · 공식 패키지 (URP · Netcode for GameObjects · Input System · uGUI · Timeline · Test Framework) | Unity Companion License / Unity Package Distribution License |
+| 네트워크 | [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) 2025.164.1 — Steam 로비·릴레이·업적 | MIT · Valve Steamworks SDK는 [별도 약관](https://partner.steamgames.com/documentation/sdk_access_agreement) |
+| 개발 도구 | [MCP for Unity](https://github.com/CoplayDev/unity-mcp) 10.1.0 — **에디터 전용, 게임 빌드 미포함** | MIT |
+| 폰트 | Noto Sans KR (v2.004) · Liberation Sans (TMP 동봉) | SIL OFL 1.1 — 전문 동봉 |
+| **3D 모델 · 텍스처** | ChatGPT 이미지 → **Tripo AI / Meshy** (image-to-3D) → Blender 정규화·감축 | Tripo Pro · Meshy Pro — **상업 이용 허용 등급** ([근거](THIRD-PARTY-NOTICES.md)) |
+| 애니메이션 | 캐릭터 기본 동작 = Tripo 리깅 프리셋 | Tripo Pro — 상업 이용 허용 |
+| 무기 파지 3종 | **Adobe Mixamo** — 약관상 재배포 금지라 **저장소에 포함하지 않는다** | 상업 이용 무료 · [반입 절차](Assets/_Project/Art/Animations/NOTICE.md) |
+
+전체 목록과 각 항목의 근거는 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)에 있다.
+
+### 직접 만든 것 / 가져온 것
+
+**직접 제작** — 게임플레이 코드 전부(322 파일 · 43,913줄) · 테스트(71 파일 · 10,915줄) ·
+셰이더(지역 하늘 · 양식화 물) · 게임 디자인과 설계 문서 95개 · 머티리얼 · 프리팹 구성 · 씬 배치 ·
+애니메이터 스테이트 머신 · 밸런스 데이터.
+
+**가져온 것** — **3D 모델과 텍스처의 원본 메시는 AI 생성물이다.** 직접 모델링하지 않았다.
+Blender에서의 정규화 · 폴리곤 감축 · 머티리얼 통합 · 리깅 검수와, Unity 반입 후의
+프리팹 구성 · 콜라이더 · 소켓 배치는 직접 했다. 무기 파지 애니메이션 3종은 Mixamo 클립을
+리타게팅한 것이며, **약관상 재배포가 금지돼 저장소에는 없다** — 받는 방법만
+[`Art/Animations/NOTICE.md`](Assets/_Project/Art/Animations/NOTICE.md)에 적어 뒀다.
+클론 후 빌드하려면 이 절차가 필요하다.
+
+> 생성형 3D 도구 출력물의 상업 이용 권리는 구독 등급에 달려 있다. Tripo AI와 Meshy 모두
+> **상업 이용이 허용되는 Pro 등급**에서 생성했다 — 근거는
+> [THIRD-PARTY-NOTICES.md §5.4](THIRD-PARTY-NOTICES.md).

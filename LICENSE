@@ -1,0 +1,75 @@
+Train Survival — 라이선스
+=========================
+
+이 저장소는 **이중 라이선스**다. 파일이 어느 쪽에 속하는지는 아래 "적용 범위"로 정한다.
+제3자 저작물은 어느 쪽에도 속하지 않고, 각 원저작자의 라이선스를 그대로 따른다
+(`THIRD-PARTY-NOTICES.md`).
+
+This repository is dual-licensed: source code and documentation under the MIT License
+(full text below), game assets under a proprietary all-rights-reserved license
+(see `LICENSE-ASSETS`). Third-party material is governed by its own license
+(see `THIRD-PARTY-NOTICES.md`).
+
+
+적용 범위
+---------
+
+### 1. 소스 코드 · 문서 — MIT License (아래 전문)
+
+  - `Assets/_Project/Scripts/**`      C# 소스 전체
+  - `Assets/_Project/Tests/**`        테스트 코드
+  - `Assets/_Project/Art/Shaders/**`  직접 작성한 셰이더 소스
+  - `docs/**`                         기획 · 설계 · 컨벤션 문서
+  - `README.md` · `CLAUDE.md` · `Assets/SETUP.md`
+  - `.github/**` · `.editorconfig` · `.gitattributes` · `.gitmessage` 등 저장소 설정
+
+  단, 위 경로 안에 있더라도 제3자 저작물(예: `Assets/TextMesh Pro/**`의 Unity 배포본)은
+  제외한다.
+
+### 2. 게임 에셋 — All Rights Reserved (`LICENSE-ASSETS`)
+
+  - `Assets/_Project/Art/Models/**` · `Textures/**` · `Materials/**` · `Animations/**`
+  - `Assets/_Project/Art/*.mat` (루트 머티리얼)
+  - `Assets/_Project/Prefabs/**` · `Assets/_Project/Scenes/**`
+  - `Assets/_Project/Audio/**` · `Assets/_Project/Data/**`
+  - `Assets/Screenshots/**` · `Image/**`
+  - "Train Survival" 명칭 및 관련 로고 · 키아트
+
+### 3. 제3자 저작물 — 각 원저작자의 라이선스 (`THIRD-PARTY-NOTICES.md`)
+
+  - Unity 엔진 및 공식 패키지
+  - `Assets/TextMesh Pro/**` (Unity 배포본 · Liberation Sans 포함)
+  - `Assets/_Project/Art/Fonts/NotoSansKR-VF.ttf` (SIL OFL 1.1 — `Fonts/OFL.txt`)
+  - Adobe Mixamo 애니메이션 — 약관상 재배포 금지라 **저장소에 포함하지 않는다**
+    (`Assets/_Project/Art/Animations/NOTICE.md` 참조)
+  - `Packages/manifest.json`이 참조하는 모든 패키지
+
+경로가 겹칠 때는 **3항이 1·2항보다 우선한다.**
+
+
+---
+
+MIT License
+
+Copyright (c) 2026 hanwoolhanwool
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+여기서 "the Software"는 위 **1항에 열거한 소스 코드와 문서**를 뜻한다.
+게임 에셋(2항)과 제3자 저작물(3항)은 이 허가에 포함되지 않는다.
