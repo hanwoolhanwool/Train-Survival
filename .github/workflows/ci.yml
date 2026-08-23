@@ -1,10 +1,25 @@
 name: CI
 
+# 문서·라이선스 파일만 바뀐 커밋에는 Unity 빌드를 돌리지 않는다.
+# 한 번 실행에 LFS 를 약 892MB 쓰는데, 최근 실패의 상당수가 docs 커밋이었다.
+# (paths-ignore 는 "변경된 파일이 전부 패턴에 걸릴 때"만 건너뛴다 —
+#  코드가 한 파일이라도 섞이면 평소대로 돈다)
+# (GitHub Actions 는 YAML 앵커를 지원하지 않아 목록을 양쪽에 그대로 적는다)
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE'
+      - 'LICENSE-ASSETS'
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE'
+      - 'LICENSE-ASSETS'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -20,6 +35,8 @@ jobs:
         with:
           lfs: true
 
+      # restore-keys 에 잡 공통 접두어(Library-)를 두지 않는다.
+      # 두면 build 잡이 test 잡의 linux-il2cpp Library 를 복원해(또는 그 반대) Unity 가 전량 재임포트한다.
       - name: Cache Library
         uses: actions/cache@v4
         with:
@@ -27,7 +44,6 @@ jobs:
           key: Library-test-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json') }}
           restore-keys: |
             Library-test-
-            Library-
 
       - name: Run tests
         uses: game-ci/unity-test-runner@v4
@@ -46,15 +62,50 @@ jobs:
           name: Test-Results
           path: test-results
 
+      # 실패했을 때 어떤 테스트가 죽었는지 로그 맨 끝에서 바로 보이게 한다.
+      # 결과 XML 자체가 없으면 테스트가 시작되기도 전(라이선스·컴파일)에 실패한 것이다.
+      - name: Summarize failed tests
+        if: failure()
+        run: |
+          if ! ls test-results/*.xml >/dev/null 2>&1; then
+            echo "::warning::테스트 결과 XML 이 없다 — 테스트가 시작되기 전(라이선스 활성화 또는 컴파일)에 실패했다."
+            exit 0
+          fi
+          cat > "$RUNNER_TEMP/summarize-tests.js" <<'NODE_EOF'
+          const fs = require('fs');
+          const pattern = /<test-case\b[^>]*?result="Failed"[^>]*?(?:\/>|>([\s\S]*?)<\/test-case>)/g;
+          let total = 0;
+          for (const file of process.argv.slice(2)) {
+            const xml = fs.readFileSync(file, 'utf8');
+            let match;
+            while ((match = pattern.exec(xml)) !== null) {
+              const head = match[0].slice(0, match[0].indexOf('>') + 1);
+              const name = (head.match(/\bfullname="([^"]*)"/) || head.match(/\bname="([^"]*)"/) || [, '(이름 없음)'])[1];
+              const body = match[1] || '';
+              const raw = (body.match(/<message>([\s\S]*?)<\/message>/) || [, ''])[1];
+              const message = raw.replace(/<!\[CDATA\[|\]\]>/g, '').trim().split('\n')[0];
+              total++;
+              console.log(`::error::${name}${message ? ' — ' + message : ''}`);
+            }
+          }
+          console.log(total === 0
+            ? '실패로 기록된 테스트는 없다 — 잡 실패 원인은 테스트 바깥에 있다.'
+            : `실패한 테스트 ${total}건.`);
+          NODE_EOF
+          node "$RUNNER_TEMP/summarize-tests.js" test-results/*.xml
+
   build:
     name: Build (StandaloneWindows64)
     needs: test
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 — unity-builder 의 기본 versioning(Semantic)이 커밋 수를 세므로
+      # 전체 히스토리가 필요하다. 없으면 액션이 스스로 --unshallow 를 돌려 시간만 더 쓴다.
       - name: Checkout (with LFS)
         uses: actions/checkout@v4
         with:
           lfs: true
+          fetch-depth: 0
 
       - name: Cache Library
         uses: actions/cache@v4
@@ -63,8 +114,9 @@ jobs:
           key: Library-build-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json') }}
           restore-keys: |
             Library-build-
-            Library-
 
+      # buildMethod 를 명시해 로컬 CLI 빌드와 CI 빌드가 같은 코드(BuildScript)를 타게 한다.
+      # BuildScript 가 GameCI 의 -customBuildPath 를 읽으므로 산출물은 아래 업로드 경로에 그대로 떨어진다.
       - name: Build player
         uses: game-ci/unity-builder@v4
         env:
@@ -73,6 +125,7 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: StandaloneWindows64
+          buildMethod: Game.Editor.BuildScript.PerformWindowsBuild
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
