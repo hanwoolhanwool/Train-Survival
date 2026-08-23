@@ -8,6 +8,16 @@
 
 **개발 완료 목표 2027년 1월 중순, 출시 목표 2027년 2월 초.**
 
+---
+
+## 포트폴리오 — 설계 결정 · 문제 해결 · QA · 아트
+
+### **[hanwoolhanwool.github.io/Train-Survival](https://hanwoolhanwool.github.io/Train-Survival/)**
+
+구현 내용 5축, 아키텍처 결정 8건, 트러블슈팅 6건, QA 계측 지표 Q1~Q5, 아트 반입 규격을 한 페이지에 정리했다. 플레이 영상도 이 페이지에서 바로 재생된다.
+
+---
+
 ## 대표 화면
 
 ![Train Survival 대표 화면](docs/images/hero.png)
