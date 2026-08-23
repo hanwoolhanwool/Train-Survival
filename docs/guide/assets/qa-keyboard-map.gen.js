@@ -226,7 +226,7 @@ for (const c of cards) {
 const LY = 660;
 p(`<line x1="30" y1="${LY - 22}" x2="${W - 30}" y2="${LY - 22}" stroke="var(--line)"/>`);
 const legend = [
-  '점선 테두리 = 로컬 전용(F7·F10). 나머지 키는 클라이언트에서 눌러도 호스트가 확정해 전 피어에 반영된다.',
+  '점선 테두리 = 로컬 전용(F8·F10). 나머지 키는 클라이언트에서 눌러도 호스트가 확정해 전 피어에 반영된다.',
   '⟨ArtTest⟩ = Game_ArtTest 씬에만 배선 — Game.unity에서는 눌러도 무효 로그만 남는다.',
   'F9만 끄는 스위치가 없다. 나머지는 인스펙터 bool 또는 PlayerViewSettings로 끈다 — 릴리스 전 확인.',
 ];
