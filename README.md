@@ -89,7 +89,7 @@ echo "문서:       $(git ls-files 'docs/**/*.md' | wc -l)"
 
 ### 기술 부채 관리 — 대형 클래스 5건
 
-현재 주요 기술 부채는 'TrainState', 'InventoryHud', 'RepairHammerController', 'HarpoonController', 'ReadyScreenRoot'에 집중되어 있습니다.
+현재 주요 기술 부채는 `TrainState`, `InventoryHud`, `RepairHammerController`, `HarpoonController`, `ReadyScreenRoot`에 집중되어 있습니다.
 순수 로직은 별도 Math/Logic 계층으로 분리했으며, 2026.09 기반 안정화 단계에서 런타임 컴포넌트의 책임을 분리할 예정입니다.
 
 **[리팩터링 조사 보고서](docs/plans/features/리팩터링-조사-보고서.md)**
