@@ -89,23 +89,10 @@ echo "문서:       $(git ls-files 'docs/**/*.md' | wc -l)"
 
 ### 기술 부채 관리 — 대형 클래스 5건
 
-현재 대형 클래스 5건은 순수 계산 복잡도보다 MonoBehaviour 배선, UI 상태, 네트워크 권한 분기가 한 파일에 집중된 문제다.
+현재 주요 기술 부채는 TrainState, InventoryHud, RepairHammerController, HarpoonController, ReadyScreenRoot에 집중되어 있습니다.
+순수 로직은 별도 Math/Logic 계층으로 분리했으며, 2026.09 기반 안정화 단계에서 런타임 컴포넌트의 책임을 분리할 예정입니다.
 
-| 파일 | 줄 수 | 집중된 책임 |
-|---|---:|---|
-| `Gameplay/Train/TrainState.cs` | 1,531 | 상태 보유 · 조회 · 손상 · 수리 · 건축 3종 · 재결합 · 이탈 시뮬 · 클라이언트 보간 |
-| `UI/InventoryHud.cs` | 1,169 | 이벤트 구독 19개 · `OnGUI` 패널 7개 · 표시 문자열 조립 |
-| `Gameplay/Train/RepairHammerController.cs` | 1,117 | 상호작용 모드 4종 · 조준 4종 · ServerRpc 7개 |
-| `Gameplay/Harpoon/HarpoonController.cs` | 936 | 소유자 예측 · 서버 권위 · 원격 연출 — **실행 주체 3개** · RPC 17개 |
-| `UI/Ready/ReadyScreenRoot.cs` | 866 | 세션 감시 · 화면 상태 · 내비 배선 · 토스트 · 개발 빌드 도구 |
-
-순수 로직은 이미 `*Math`/`*Logic` 35파일로 분리했고, 테스트 선언 844개가 회귀 기준을 제공한다.
-남은 작업은 기능 추가가 아니라 런타임 컴포넌트와 UI 프레젠터를 역할별로 나누는 구조 정리다.
-
-리팩터링은 2026.09 「기반 안정화」 범위에 포함했다(9일 · 순서와 완료 기준 확정).
-M7 최종장 구현 전에 `TrainState`와 `RepairHammerController`의 책임 경계를 먼저 분리해 이후 엔드게임 기능의 회귀 범위를 줄인다.
-진단·분해 순서·완료 기준은
-**[리팩터링 조사 보고서](docs/plans/features/리팩터링-조사-보고서.md)** 에 있다.
+**[리팩터링 조사 보고서](docs/plans/features/리팩터링-조사-보고서.md)**
 
 ## 문서
 
