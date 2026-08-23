@@ -4,6 +4,7 @@ using Game.Gameplay.Combat;
 using Game.Gameplay.Harpoon;
 using Game.Gameplay.Player;
 using Game.Gameplay.Train;
+using Game.Systems.Networking;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -248,7 +249,10 @@ namespace Game.Gameplay.Inventory
 
         private void ApplyWeaponGates()
         {
-            HotbarItemType selected = IsPanelOpen ? HotbarItemType.None : SelectedItemType;
+            // 어느 무기를 열지는 HotbarLogic이 판정한다 — 카메라·커서가 이미 쓰는 것과 같은
+            // 인게임 씬 판정을 함께 넘긴다(NetworkPlayerController).
+            HotbarItemType selected = HotbarLogic.ResolveActiveWeapon(
+                IsPanelOpen, GameplaySceneRoute.IsActiveSceneGameplay(), SelectedItemType);
 
             if (_harpoon != null)
             {

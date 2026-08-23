@@ -284,5 +284,21 @@ namespace Game.Gameplay.Inventory
                 a >= 0 && a < slotCount &&
                 b >= 0 && b < slotCount;
         }
+
+        /// <summary>
+        /// 지금 실제로 입력을 열어 줄 무기 — 무기 게이트의 단일 판정.
+        ///
+        /// <para><b>선택했다고 열리지 않는다.</b> 창이 열려 있으면 닫고(기획서 §3.4),
+        /// <paramref name="inGameplay"/>가 거짓이면 무엇을 골랐든 닫는다. 플레이어는 NGO 접속
+        /// 시점에 스폰되므로 씬 전환 전(준비 화면)부터 월드에 서 있고, 그때는 선택 슬롯이
+        /// 그대로 살아 있어 좌클릭이 발사로 나가 버린다.</para>
+        ///
+        /// <para>조건을 호출부에 흩어 두면 새 상태가 생길 때마다 빠뜨린다 — 대기실이
+        /// 그렇게 빠졌다. 무기를 여는 판정은 여기 하나로 모은다.</para>
+        /// </summary>
+        public static HotbarItemType ResolveActiveWeapon(bool panelOpen, bool inGameplay, HotbarItemType selected)
+        {
+            return panelOpen || !inGameplay ? HotbarItemType.None : selected;
+        }
     }
 }

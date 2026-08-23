@@ -85,7 +85,10 @@ namespace Game.Gameplay.Train
 
         private void Update()
         {
-            if (!_enableQaKeys || !IsSpawned)
+            // 인게임 씬이 아니면 QA 키를 받지 않는다. 지금 이 컴포넌트는 인게임 씬의 Train에만
+            // 얹혀 있어 이 조건은 항상 참이지만, 그 "배치가 곧 게이트"라는 암묵적 전제를 명시로 바꾼다 —
+            // 무기 입력이 바로 그 전제에 기대다가 대기실에서 발사되는 사고를 냈다.
+            if (!_enableQaKeys || !IsSpawned || !GameplaySceneRoute.IsActiveSceneGameplay())
             {
                 return;
             }

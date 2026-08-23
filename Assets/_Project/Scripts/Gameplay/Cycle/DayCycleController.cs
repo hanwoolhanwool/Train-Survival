@@ -1,6 +1,7 @@
 using Game.Core.Events;
 using Game.Core.Logging;
 using Game.Core.Services;
+using Game.Systems.Networking;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -103,7 +104,9 @@ namespace Game.Gameplay.Cycle
 
         private void HandleDebugPhaseInput()
         {
-            if (!_enableDebugPhaseKeys)
+            // 국면 점프·시간 배속도 QA 키다 — 인게임 씬 밖에서는 받지 않는다
+            // (QaDebugHotkeys와 같은 규약).
+            if (!_enableDebugPhaseKeys || !GameplaySceneRoute.IsActiveSceneGameplay())
             {
                 return;
             }

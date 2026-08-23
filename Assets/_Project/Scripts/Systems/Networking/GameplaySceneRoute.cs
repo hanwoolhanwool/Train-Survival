@@ -1,3 +1,5 @@
+using UnityEngine.SceneManagement;
+
 namespace Game.Systems.Networking
 {
     /// <summary>
@@ -43,6 +45,18 @@ namespace Game.Systems.Networking
         public static bool IsGameplayScene(string sceneName)
         {
             return sceneName == Default || sceneName == ArtTest;
+        }
+
+        /// <summary>
+        /// 지금 활성 씬이 인게임인가 — <b>대기실과 인게임을 가르는 판정</b>.
+        ///
+        /// <para>플레이어는 NGO 접속 시점에 스폰되므로 씬 전환 전(메뉴 씬)부터 월드에 존재한다.
+        /// "스폰됐다"와 "조작해도 되는 때다"는 다른 말이므로, 소유자 입력을 여는 쪽은
+        /// <c>IsOwner</c>만 보지 말고 이 판정을 함께 봐야 한다.</para>
+        /// </summary>
+        public static bool IsActiveSceneGameplay()
+        {
+            return IsGameplayScene(SceneManager.GetActiveScene().name);
         }
 
         /// <summary>메뉴 토글용 — 현재 씬의 반대편 이름.</summary>

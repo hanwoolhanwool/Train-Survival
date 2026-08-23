@@ -359,5 +359,39 @@ namespace Game.Tests.EditMode
             Assert.That(HotbarLogic.TryTakeFromResourceSlot(slots, 3, 0, out _, out _), Is.False, "수량 0 기각");
             Assert.That(slots[3].Count, Is.EqualTo(4), "기각 시 무변");
         }
+
+        [Test]
+        public void 인게임_씬에서만_고른_무기가_열린다()
+        {
+            Assert.That(
+                HotbarLogic.ResolveActiveWeapon(false, true, HotbarItemType.Harpoon),
+                Is.EqualTo(HotbarItemType.Harpoon), "인게임 + 창 닫힘 = 선택대로 열린다");
+        }
+
+        [Test]
+        public void 대기실에서는_무엇을_골랐든_무기가_닫힌다()
+        {
+            // 플레이어는 NGO 접속 시점(메뉴 씬)에 이미 스폰된다 — 씬 판정을 빼면 준비 화면에서
+            // 누른 좌클릭이 그대로 집게 발사로 나갔다.
+            Assert.That(
+                HotbarLogic.ResolveActiveWeapon(false, false, HotbarItemType.Harpoon),
+                Is.EqualTo(HotbarItemType.None), "대기실에서는 집게가 닫힌다");
+
+            Assert.That(
+                HotbarLogic.ResolveActiveWeapon(false, false, HotbarItemType.Hammer),
+                Is.EqualTo(HotbarItemType.None), "집게만이 아니라 전 무기가 닫힌다");
+        }
+
+        [Test]
+        public void 창이_열려_있으면_인게임이어도_무기가_닫힌다()
+        {
+            Assert.That(
+                HotbarLogic.ResolveActiveWeapon(true, true, HotbarItemType.Harpoon),
+                Is.EqualTo(HotbarItemType.None), "I 창이 열려 있으면 닫힌다");
+
+            Assert.That(
+                HotbarLogic.ResolveActiveWeapon(true, false, HotbarItemType.Harpoon),
+                Is.EqualTo(HotbarItemType.None), "둘 다 막히면 당연히 닫힌다");
+        }
     }
 }
