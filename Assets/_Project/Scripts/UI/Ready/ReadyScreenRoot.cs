@@ -87,19 +87,6 @@ namespace Game.UI.Ready
         [Tooltip("조작 패널의 등장 연출 — 오른쪽에서 당겨져 온다.")]
         private ReadyPanelSlide _controlsSlide;
 
-        [Header("개발 빌드 전용")]
-        [SerializeField]
-        [Tooltip("인게임 씬 선택 줄. Panel_Host에서 이관해 왔다(§6.4).")]
-        private GameObject _devGroup;
-
-        [Tooltip("개발 줄을 실제로 띄울지 — 끄면 에디터·개발 빌드에서도 감춘다. "
-            + "기능을 지우는 것이 아니라 체크 하나로 되살릴 수 있게 남겨 둔 스위치다. "
-            + "릴리스 빌드는 이 값과 무관하게 항상 감춘다.")]
-        [SerializeField] private bool _showDevGroup;
-
-        [SerializeField] private Button _sceneToggle;
-        [SerializeField] private TMP_Text _sceneToggleLabel;
-
         private readonly string[] _names = new string[Systems.Networking.Lobby.RosterOrdering.Capacity];
 
         private ILobbyRoomService _room;
@@ -129,8 +116,7 @@ namespace Game.UI.Ready
         private const int RowStart = 1;
         private const int RowInvite = 2;
         private const int RowLeave = 3;
-        private const int RowDev = 4;
-        private const int RowCount = 5;
+        private const int RowCount = 4;
 
         private readonly bool[] _rowOpen = new bool[RowCount];
 
@@ -148,7 +134,6 @@ namespace Game.UI.Ready
             Bind(_start, OnStart);
             Bind(_invite, OnInvite);
             Bind(_leave, OnLeave);
-            Bind(_sceneToggle, OnToggleScene);
             Bind(_difficultyPrev, OnDifficultyPrev);
             Bind(_difficultyNext, OnDifficultyNext);
             BindAccents();
@@ -276,8 +261,6 @@ namespace Game.UI.Ready
             _difficulty = DifficultyStepper.DefaultIndex;
 
             BindRoom();
-            ApplyDevGroup();
-            RefreshSceneLabel();
             RefreshRoster();
             RefreshDifficulty();
             RefreshAuthority();
@@ -507,17 +490,6 @@ namespace Game.UI.Ready
             Left?.Invoke(reason);
         }
 
-        private void OnToggleScene()
-        {
-            if (_actions == null)
-            {
-                return;
-            }
-
-            _actions.ToggleGameplayScene();
-            RefreshSceneLabel();
-        }
-
         /// <summary>
         /// 로스터를 다시 그린다 — 방에 누가 있는지는 <see cref="ILobbyRoomService"/>만 안다.
         ///
@@ -635,7 +607,6 @@ namespace Game.UI.Ready
             _rowOpen[RowStart] = IsUsable(_start);
             _rowOpen[RowInvite] = IsUsable(_invite);
             _rowOpen[RowLeave] = IsUsable(_leave);
-            _rowOpen[RowDev] = IsUsable(_sceneToggle);
 
             for (int row = 0; row < RowCount; row++)
             {
@@ -664,7 +635,6 @@ namespace Game.UI.Ready
                 case RowStart: return _start;
                 case RowInvite: return _invite;
                 case RowLeave: return _leave;
-                case RowDev: return _sceneToggle;
                 default: return null;
             }
         }
@@ -753,7 +723,7 @@ namespace Game.UI.Ready
         private bool Owns(Selectable target)
         {
             return target == _start || target == _invite || target == _leave
-                || target == _difficultyPrev || target == _difficultyNext || target == _sceneToggle;
+                || target == _difficultyPrev || target == _difficultyNext;
         }
 
         /// <summary>
@@ -778,32 +748,6 @@ namespace Game.UI.Ready
                 Color color = graphic.color;
                 color.a = on ? 1f : 0f;
                 graphic.color = color;
-            }
-        }
-
-        /// <summary>
-        /// 개발 줄(인게임 씬 토글)의 표시 여부를 정한다.
-        ///
-        /// <para><b>프리팹에서 오브젝트를 꺼 두는 것으로는 감출 수 없다</b> — 여기서 매번
-        /// <see cref="GameObject.SetActive"/>로 덮어쓰기 때문이다. 감추려면 <c>_showDevGroup</c>을 끈다.</para>
-        /// </summary>
-        private void ApplyDevGroup()
-        {
-            bool dev = false;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            dev = _showDevGroup;
-#endif
-            if (_devGroup != null)
-            {
-                _devGroup.SetActive(dev);
-            }
-        }
-
-        private void RefreshSceneLabel()
-        {
-            if (_sceneToggleLabel != null && _actions != null)
-            {
-                _sceneToggleLabel.text = $"인게임 씬: {_actions.GameplayScene}  →  {_actions.OtherGameplayScene}";
             }
         }
 
@@ -850,7 +794,6 @@ namespace Game.UI.Ready
             SetButton(_start, on);
             SetButton(_invite, on);
             SetButton(_leave, on);
-            SetButton(_sceneToggle, on);
             SetArrow(_difficultyPrev, on && _actions != null && _actions.IsHost);
             SetArrow(_difficultyNext, on && _actions != null && _actions.IsHost);
         }

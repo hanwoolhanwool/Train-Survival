@@ -5,7 +5,6 @@ using Game.Systems.Networking;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 namespace Game.Gameplay.Train
 {
@@ -389,19 +388,15 @@ namespace Game.Gameplay.Train
 
         /// <summary>
         /// 게임 재시작 — 호스트가 인게임 씬을 단일 모드로 재로드해 모든 네트워크 상태를 초기화한다.
-        /// 재시작은 <b>지금 돌고 있는 씬</b>을 다시 올린다 — 아트 검증 씬에서 재시작했는데 기본 씬으로
-        /// 튀어 나가지 않게, 호스트가 고른 값(<see cref="GameplaySceneRoute.Current"/>)보다
-        /// 실제 활성 씬을 우선한다.
+        /// 인게임 씬은 <see cref="GameplaySceneRoute.Name"/> 하나뿐이라 재시작이 어느 씬을 올릴지
+        /// 물을 필요가 없다.
         /// </summary>
         [Rpc(SendTo.Server, RequireOwnership = false)]
         private void RequestRestartServerRpc()
         {
             if (ServiceLocator.TryGet(out INetworkSessionService session))
             {
-                string active = SceneManager.GetActiveScene().name;
-                session.LoadGameplayScene(GameplaySceneRoute.IsGameplayScene(active)
-                    ? active
-                    : GameplaySceneRoute.Current);
+                session.LoadGameplayScene(GameplaySceneRoute.Name);
             }
         }
 

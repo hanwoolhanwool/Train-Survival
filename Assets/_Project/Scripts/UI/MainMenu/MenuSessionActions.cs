@@ -56,12 +56,6 @@ namespace Game.UI.MainMenu
         /// </summary>
         public string RoomAddress => HostJoinAddress.Resolve(DefaultAddress, DefaultPort);
 
-        /// <summary>이번에 들어갈 인게임 씬 이름.</summary>
-        public string GameplayScene => GameplaySceneRoute.Current;
-
-        /// <summary>토글하면 갈 반대편 씬 이름.</summary>
-        public string OtherGameplayScene => GameplaySceneRoute.Other;
-
         private static INetworkSessionService Session
         {
             get { return ServiceLocator.TryGet(out INetworkSessionService session) ? session : null; }
@@ -149,7 +143,7 @@ namespace Game.UI.MainMenu
                 return false;
             }
 
-            return session.LoadGameplayScene(GameplaySceneRoute.Current);
+            return session.LoadGameplayScene(GameplaySceneRoute.Name);
         }
 
         /// <summary>
@@ -201,18 +195,6 @@ namespace Game.UI.MainMenu
 
             string target = string.IsNullOrWhiteSpace(address) ? DefaultAddress : address.Trim();
             return session.StartClient(target, port == 0 ? DefaultPort : port);
-        }
-
-        /// <summary>시작할 인게임 씬을 고른다 — 호스트만 고르고 클라이언트는 씬 동기화로 따라온다.</summary>
-        public void SelectGameplayScene(string sceneName)
-        {
-            GameplaySceneRoute.Select(sceneName);
-        }
-
-        /// <summary>기본 편성과 아트 검증 편성을 오간다.</summary>
-        public void ToggleGameplayScene()
-        {
-            GameplaySceneRoute.Select(GameplaySceneRoute.Other);
         }
     }
 }

@@ -43,8 +43,8 @@ namespace Game.Gameplay.Player
 
         private void Apply()
         {
-            // 씬 이름으로 판정한다 — 클라이언트는 호스트가 고른 씬을 NGO 씬 동기화로 받으므로
-            // GameplaySceneRoute.Current 비교가 아니라 이 판정을 써야 양쪽이 같다.
+            // 씬 이름으로 판정한다 — 클라이언트는 호스트가 올린 씬을 NGO 씬 동기화로 받으므로
+            // 자체 상태가 아니라 활성 씬을 봐야 양쪽이 같다.
             bool show = GameplaySceneRoute.IsActiveSceneGameplay();
 
             if (_visualRoots == null)
