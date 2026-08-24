@@ -49,6 +49,16 @@ namespace Game.Gameplay.Combat
             TryCompleteReload();
         }
 
+        /// <summary>
+        /// 장탄을 서버 확정 값으로 맞춘다 (M7 4차 §2.5) — 거치 무기는 장탄 권위가 서버에 있어
+        /// 붙는 순간과 서버가 발사를 기각했을 때 이 값으로 되돌린다. 개인 화기는 쓰지 않는다
+        /// (자기 탄창의 진실이 로컬에 있다).
+        /// </summary>
+        public void SetRounds(int rounds)
+        {
+            RoundsLoaded = Mathf.Clamp(rounds, 0, _capacity);
+        }
+
         /// <summary>발사를 시도한다 — 성공 시 1발 소모 + 발사 간격 쿨다운 시작.</summary>
         public bool TryFire()
         {

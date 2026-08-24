@@ -1,7 +1,6 @@
 using Game.Core.Logging;
 using System.Collections.Generic;
 using Game.Core.Events;
-using Game.Core.Pooling;
 using Game.Gameplay.Inventory;
 using Unity.Netcode;
 using UnityEngine;
@@ -236,35 +235,8 @@ namespace Game.Gameplay.Combat
         /// </summary>
         private void PlayFireCosmetics(Vector3 aimOrigin, Vector3 aimForward, uint seed)
         {
-            if (_settings == null)
-            {
-                return;
-            }
-
-            Vector3 muzzle = MuzzlePosition;
-            int pellets = Mathf.Max(1, _settings.PelletCount);
-            uint state = seed;
-
-            for (int p = 0; p < pellets; p++)
-            {
-                Vector3 direction = WeaponSpreadMath.ApplySpreadSeeded(
-                    aimForward, _settings.SpreadAngle, ref state);
-                bool hit = WeaponRaycast.TryGetClosestHit(
-                    aimOrigin, direction, _settings.MaxRange, transform.root, out RaycastHit hitInfo);
-                Vector3 end = hit ? hitInfo.point : aimOrigin + direction * _settings.MaxRange;
-
-                if (_settings.TracerPrefab != null)
-                {
-                    TracerView tracer = PoolManager.Spawn(_settings.TracerPrefab, muzzle, Quaternion.identity);
-                    tracer.Show(muzzle, end, _settings.TracerFadeSeconds);
-                }
-
-                if (hit && _settings.ImpactEffectPrefab != null)
-                {
-                    ImpactEffectView impact = PoolManager.Spawn(_settings.ImpactEffectPrefab, end, Quaternion.identity);
-                    impact.Play(end, hitInfo.normal);
-                }
-            }
+            // 구현은 거치 무기와 공유한다 (M7 4차) — 다른 것은 총구 위치와 무시할 root뿐이다.
+            WeaponFireCosmetics.Play(_settings, MuzzlePosition, aimOrigin, aimForward, seed, transform.root);
         }
 
         private void AccumulatePellet(NetworkObject target, Vector3 hitPoint)

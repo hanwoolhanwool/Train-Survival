@@ -48,6 +48,9 @@ namespace Game.UI
         private int _capacity;
         private bool _reloading;
         private int _reserveRounds;
+
+        // 거치 무기 탄창 (M7 4차) — 핫바 선택과 무관하게 점유 중에는 이 줄이 뜬다.
+        private bool _ammoMounted;
         private int _killCount;
         private int _detachedCars;
 
@@ -225,6 +228,7 @@ namespace Game.UI
             _capacity = evt.Capacity;
             _reloading = evt.IsReloading;
             _reserveRounds = evt.ReserveRounds;
+            _ammoMounted = evt.IsMounted;
         }
 
         private void OnMonsterDied(MonsterDiedEvent evt)
@@ -463,7 +467,8 @@ namespace Game.UI
         /// </summary>
         private void DrawAmmoLine()
         {
-            if (_ammoWeapon == HotbarItemType.None || _selectedItem != _ammoWeapon)
+            // 거치 무기는 핫바 슬롯을 차지하지 않는다 — 든 무기와 맞출 대상이 애초에 없다.
+            if (!_ammoMounted && (_ammoWeapon == HotbarItemType.None || _selectedItem != _ammoWeapon))
             {
                 return;
             }

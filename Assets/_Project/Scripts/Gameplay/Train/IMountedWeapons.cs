@@ -1,3 +1,6 @@
+using Unity.Netcode;
+using UnityEngine;
+
 namespace Game.Gameplay.Train
 {
     /// <summary>
@@ -33,5 +36,25 @@ namespace Game.Gameplay.Train
         /// 원격 전파는 구현이 10 Hz로 솎아 보낸다.
         /// </summary>
         void PublishLocalAim(int structureId, float yawDeg, float pitchDeg);
+
+        /// <summary>
+        /// 발사를 서버에 보고한다 (§2.4) — 사각 재검증·장탄 차감·연출 중계가 여기서 확정된다.
+        /// 연출은 보고와 무관하게 쏜 사람이 이미 로컬 재생했다(지연 0).
+        /// </summary>
+        void ReportFire(int structureId, uint seed, Vector3 aimOrigin, Vector3 aimForward);
+
+        /// <summary>
+        /// 명중을 서버에 보고한다 — 판정은 <b>좌석 기준 거리</b>로 재검증된다. 같은 발사의 시드를
+        /// 함께 싣는 이유는 <b>승인된 발사의 명중만</b> 피해가 되게 하기 위함이다: 장탄이 바닥나
+        /// 기각된 발사의 명중 보고가 뒤늦게 들어와도 공짜 피해가 되지 않는다.
+        /// </summary>
+        void ReportHit(
+            int structureId, uint seed, NetworkObjectReference target, Vector3 hitPoint, int pelletHits);
+
+        /// <summary>
+        /// 재장전을 요청한다 (§2.5) — 점유자의 개인 인벤에서 차감해 무기 탄창을 채운다.
+        /// 확정 발수는 <see cref="MountedReloadConfirmedLocalEvent"/>로 돌아온다.
+        /// </summary>
+        void RequestReload(int structureId, int requestedRounds);
     }
 }

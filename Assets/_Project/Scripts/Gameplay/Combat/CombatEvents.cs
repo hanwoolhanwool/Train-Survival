@@ -26,9 +26,22 @@ namespace Game.Gameplay.Combat
         /// <summary>인벤토리의 예비 탄약 수 (탄약 스택).</summary>
         public readonly int ReserveRounds;
 
+        /// <summary>
+        /// 거치 무기의 탄창인가 (M7 4차 §2.5). 거치 무기는 핫바 슬롯을 차지하지 않으므로
+        /// <see cref="Weapon"/>이 None이다 — HUD가 "든 무기와 일치" 조건 대신 이 축으로 그린다.
+        /// </summary>
+        public readonly bool IsMounted;
+
         public WeaponAmmoChangedLocalEvent(
             HotbarItemType weapon, string weaponName,
             int roundsLoaded, int capacity, bool isReloading, int reserveRounds)
+            : this(weapon, weaponName, roundsLoaded, capacity, isReloading, reserveRounds, false)
+        {
+        }
+
+        public WeaponAmmoChangedLocalEvent(
+            HotbarItemType weapon, string weaponName,
+            int roundsLoaded, int capacity, bool isReloading, int reserveRounds, bool isMounted)
         {
             Weapon = weapon;
             WeaponName = weaponName;
@@ -36,6 +49,7 @@ namespace Game.Gameplay.Combat
             Capacity = capacity;
             IsReloading = isReloading;
             ReserveRounds = reserveRounds;
+            IsMounted = isMounted;
         }
     }
 }

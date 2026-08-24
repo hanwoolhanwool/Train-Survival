@@ -621,4 +621,40 @@ namespace Game.Gameplay.Train
             StructureId = structureId;
         }
     }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 거치 무기 장탄의 <b>서버 확정값</b> (M7 4차 결정 ⑦).
+    /// 장탄 권위가 서버에 있으므로 붙는 순간과 서버가 발사를 기각했을 때 이 값으로 되돌린다.
+    /// 발사마다 보내지 않는다 — 로컬 선반영이 같은 수만큼 깎기 때문이다.
+    /// </summary>
+    public readonly struct MountedAmmoSyncedLocalEvent
+    {
+        public readonly int StructureId;
+
+        public readonly int RoundsLoaded;
+
+        public MountedAmmoSyncedLocalEvent(int structureId, int roundsLoaded)
+        {
+            StructureId = structureId;
+            RoundsLoaded = roundsLoaded;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 거치 무기 재장전의 차감 확정 (M7 4차 §2.5).
+    /// 개인 인벤에서 실제로 빠진 발수다 — 요청보다 작으면 그만큼만 장전되고, 0이면 취소된다
+    /// (개인 화기의 재장전 확정과 같은 선반영 규약).
+    /// </summary>
+    public readonly struct MountedReloadConfirmedLocalEvent
+    {
+        public readonly int StructureId;
+
+        public readonly int GrantedRounds;
+
+        public MountedReloadConfirmedLocalEvent(int structureId, int grantedRounds)
+        {
+            StructureId = structureId;
+            GrantedRounds = grantedRounds;
+        }
+    }
 }

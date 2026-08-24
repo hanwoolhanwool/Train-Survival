@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Logging;
 using Game.Core.Services;
+using Game.Gameplay.Combat;
+using Game.Gameplay.Inventory;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -35,6 +37,9 @@ namespace Game.Gameplay.Train
 
         // 순수 함수용 스냅샷 버퍼 — 조회마다 새로 할당하지 않는다 (TrainState.QueryStructures와 같은 규약).
         private MountOccupancy[] _query;
+
+        // 서버 전용 — 무기별 "승인된 최근 발사"의 시드. 명중 보고는 이 시드와 맞아야 피해가 된다.
+        private readonly Dictionary<int, uint> _approvedShot = new Dictionary<int, uint>();
 
         /// <summary>조준각 중계 주기 — 10 Hz (결정 ⑥). 표현 전용이라 유실돼도 판정이 흔들리지 않는다.</summary>
         private const float AimRelayInterval = 0.1f;
@@ -191,6 +196,10 @@ namespace Game.Gameplay.Train
                 StructureId = (ushort)structureId,
                 OccupantClientId = clientId,
             });
+
+            // 장탄 권위는 서버다 — 붙는 순간 현재 장탄을 알려 줘야 HUD가 남의 잔탄에서 시작한다.
+            SyncAmmoRpc(structureId, _magazines.GetRounds(structureId),
+                RpcTarget.Single(clientId, RpcTargetUse.Temp));
         }
 
         [Rpc(SendTo.Server, RequireOwnership = false)]
@@ -302,6 +311,224 @@ namespace Game.Gameplay.Train
             }
 
             _aim[structureId] = new Vector2(yawDeg, pitchDeg);
+        }
+
+        // ── 사격·장전 (§2.4 · §2.5) ────────────────────────────────────────
+
+        public void ReportFire(int structureId, uint seed, Vector3 aimOrigin, Vector3 aimForward)
+        {
+            if (IsSpawned && structureId > 0)
+            {
+                ReportMountedFireServerRpc(structureId, seed, aimOrigin, aimForward);
+            }
+        }
+
+        public void ReportHit(
+            int structureId, uint seed, NetworkObjectReference target, Vector3 hitPoint, int pelletHits)
+        {
+            if (IsSpawned && structureId > 0 && pelletHits > 0)
+            {
+                ReportMountedHitServerRpc(structureId, seed, target, hitPoint, pelletHits);
+            }
+        }
+
+        public void RequestReload(int structureId, int requestedRounds)
+        {
+            if (IsSpawned && structureId > 0 && requestedRounds > 0)
+            {
+                RequestMountedReloadServerRpc(structureId, requestedRounds);
+            }
+        }
+
+        /// <summary>
+        /// 발사 확정 — 점유 · 생존 · <b>사각</b> · 장탄 순으로 본다. 사각은 보고된 월드 방향을
+        /// 거치대 기준으로 되돌려 검증한다: 조작 계층이 클램프를 지키면 항상 통과하므로,
+        /// 실패는 곧 조작된 보고다 (아군 오사와 포신이 칸을 뚫는 그림을 데이터로 막는 축).
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void ReportMountedFireServerRpc(
+            int structureId, uint seed, Vector3 aimOrigin, Vector3 aimForward, RpcParams rpcParams = default)
+        {
+            ulong clientId = rpcParams.Receive.SenderClientId;
+            if (!MountOccupancyLogic.IsOccupiedBy(QueryOccupancies(), structureId, clientId)
+                || !TryGetUsableWeapon(structureId, out StructureEntry entry, out MountedWeaponSettings settings))
+            {
+                return;
+            }
+
+            Quaternion mount = MountedAimMath.ResolveMountRotation(entry.Rotation);
+            if (!MountedAimMath.TryResolveAim(mount, aimForward, out float yaw, out float pitch)
+                || !MountedAimMath.IsWithinArc(
+                    yaw, pitch, settings.YawLimit, settings.PitchMin, settings.PitchMax))
+            {
+                GameLog.Info(LogCategory.Combat,
+                    $"거치 무기 발사 기각(사각 밖): client={clientId} structure=#{structureId}");
+                return;
+            }
+
+            if (!_magazines.TryConsume(structureId))
+            {
+                // 빈 탄창 — 로컬 선반영이 앞서 나갔다는 뜻이므로 확정 장탄으로 되돌린다.
+                SyncAmmoRpc(structureId, _magazines.GetRounds(structureId),
+                    RpcTarget.Single(clientId, RpcTargetUse.Temp));
+                return;
+            }
+
+            _approvedShot[structureId] = seed;
+            BroadcastMountedFireRpc(structureId, seed, aimOrigin, aimForward);
+        }
+
+        /// <summary>
+        /// 명중 확정 — 거리 검증의 기준점이 <b>플레이어가 아니라 좌석</b>이라는 것만 개인 화기와 다르다.
+        /// 서버는 점유자가 그 자리에 있음을 이미 알고 있으므로(점유 리스트) 사거리 검증이 더 강하다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void ReportMountedHitServerRpc(
+            int structureId, uint seed, NetworkObjectReference targetRef, Vector3 hitPoint, int pelletHits,
+            RpcParams rpcParams = default)
+        {
+            ulong clientId = rpcParams.Receive.SenderClientId;
+            if (!MountOccupancyLogic.IsOccupiedBy(QueryOccupancies(), structureId, clientId)
+                || !TryGetUsableWeapon(structureId, out _, out MountedWeaponSettings settings))
+            {
+                return;
+            }
+
+            // 승인된 발사의 명중만 피해가 된다 — 기각된 발사(빈 탄창·사각 밖)의 보고는 여기서 끊긴다.
+            if (!_approvedShot.TryGetValue(structureId, out uint approved) || approved != seed)
+            {
+                return;
+            }
+
+            if (!targetRef.TryGet(out NetworkObject targetObject))
+            {
+                return;
+            }
+
+            IDamageable damageable = targetObject.GetComponent<IDamageable>();
+            if (damageable == null || !damageable.IsAlive
+                || !ServiceLocator.TryGet(out ITrainState train)
+                || !train.TryGetStructureCenter(structureId, out Vector3 seat))
+            {
+                return;
+            }
+
+            GunSettings gun = settings.Gun;
+            float maxDistance = gun.MaxRange + gun.RangeTolerance;
+            if ((hitPoint - seat).sqrMagnitude > maxDistance * maxDistance)
+            {
+                GameLog.Info(LogCategory.Combat,
+                    $"거치 무기 명중 보고 기각(사거리 초과): client={clientId} structure=#{structureId}");
+                return;
+            }
+
+            int pellets = Mathf.Clamp(pelletHits, 1, Mathf.Max(1, gun.PelletCount));
+            damageable.ApplyDamage(gun.Damage * pellets, clientId);
+        }
+
+        /// <summary>
+        /// 재장전 확정 — 개인 인벤에서 <b>먼저</b> 빼고 그만큼만 탄창에 넣는다. 순서를 뒤집으면
+        /// 차감이 실패했을 때 공짜 탄이 남는다 (개인 화기 재장전과 같은 규약, 채우는 곳만 무기 탄창이다).
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestMountedReloadServerRpc(
+            int structureId, int requestedRounds, RpcParams rpcParams = default)
+        {
+            ulong clientId = rpcParams.Receive.SenderClientId;
+            if (requestedRounds <= 0
+                || !MountOccupancyLogic.IsOccupiedBy(QueryOccupancies(), structureId, clientId)
+                || !TryGetUsableWeapon(structureId, out _, out MountedWeaponSettings settings)
+                || !TryGetPlayerObject(clientId, out NetworkObject player)
+                || !player.TryGetComponent(out IResourceInventory inventory))
+            {
+                ConfirmReloadRpc(structureId, 0, RpcTarget.Single(clientId, RpcTargetUse.Temp));
+                return;
+            }
+
+            GunSettings gun = settings.Gun;
+            int capacity = gun.MagazineCapacity;
+            int empty = Mathf.Max(0, capacity - _magazines.GetRounds(structureId));
+            int want = Mathf.Min(Mathf.Min(requestedRounds, inventory.CountOf(gun.AmmoType)), empty);
+
+            if (want <= 0 || !inventory.ServerTryRemove(gun.AmmoType, want))
+            {
+                ConfirmReloadRpc(structureId, 0, RpcTarget.Single(clientId, RpcTargetUse.Temp));
+                return;
+            }
+
+            int granted = _magazines.Reload(structureId, capacity, want);
+            ConfirmReloadRpc(structureId, granted, RpcTarget.Single(clientId, RpcTargetUse.Temp));
+            SyncAmmoRpc(structureId, _magazines.GetRounds(structureId),
+                RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        /// <summary>발사 연출 중계 — 판정에 영향이 없다. 쏜 사람은 이미 로컬 재생했으므로 건너뛴다.</summary>
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastMountedFireRpc(int structureId, uint seed, Vector3 aimOrigin, Vector3 aimForward)
+        {
+            if (NetworkManager != null && TryGetOccupant(structureId, out ulong occupant)
+                && occupant == NetworkManager.LocalClientId)
+            {
+                return;
+            }
+
+            PlayFireCosmetics(structureId, seed, aimOrigin, aimForward);
+        }
+
+        /// <summary>
+        /// 거치 무기의 발사 연출을 로컬 재생한다 — 총구는 실물이, 궤적은 시드가 정한다.
+        /// 무시할 root는 <b>열차 전체</b>다: 자기 열차를 쏘는 트레이서·탄착이 보이지 않는다.
+        /// </summary>
+        private void PlayFireCosmetics(int structureId, uint seed, Vector3 aimOrigin, Vector3 aimForward)
+        {
+            if (!TryGetStructure(structureId, out StructureEntry entry))
+            {
+                return;
+            }
+
+            MountedWeaponSettings settings = GetSettings(entry.Kind);
+            if (settings == null || settings.Gun == null)
+            {
+                return;
+            }
+
+            Vector3 muzzle = aimOrigin;
+            Transform ignoreRoot = null;
+            if (MountedWeaponView.TryGet(structureId, out MountedWeaponView view))
+            {
+                muzzle = view.MuzzlePosition;
+                ignoreRoot = view.transform.root;
+            }
+
+            WeaponFireCosmetics.Play(settings.Gun, muzzle, aimOrigin, aimForward, seed, ignoreRoot);
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void SyncAmmoRpc(int structureId, int roundsLoaded, RpcParams rpcParams)
+        {
+            EventBus<MountedAmmoSyncedLocalEvent>.Publish(
+                new MountedAmmoSyncedLocalEvent(structureId, roundsLoaded));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void ConfirmReloadRpc(int structureId, int grantedRounds, RpcParams rpcParams)
+        {
+            EventBus<MountedReloadConfirmedLocalEvent>.Publish(
+                new MountedReloadConfirmedLocalEvent(structureId, grantedRounds));
+        }
+
+        /// <summary>쓸 수 있는 거치 무기인가 — 항목·설정·사격 데이터가 모두 갖춰져야 한다.</summary>
+        private bool TryGetUsableWeapon(
+            int structureId, out StructureEntry entry, out MountedWeaponSettings settings)
+        {
+            settings = null;
+            if (!TryGetStructure(structureId, out entry) || !IsStructureUsable(entry))
+            {
+                return false;
+            }
+
+            settings = GetSettings(entry.Kind);
+            return settings != null && settings.Gun != null;
         }
 
         // ── 조회 보조 ─────────────────────────────────────────────────────
