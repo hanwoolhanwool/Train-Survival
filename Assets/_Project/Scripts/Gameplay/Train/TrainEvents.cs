@@ -580,4 +580,45 @@ namespace Game.Gameplay.Train
             GhostSize = ghostSize;
         }
     }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 거치 무기에 근접해 붙을 수 있는 상태 (M7 4차 §2.3).
+    /// HUD의 "E — 거치 기관총" 안내용. 창고·보따리 프롬프트와 같은 규약이다.
+    /// </summary>
+    public readonly struct MountPromptLocalEvent
+    {
+        public readonly bool IsInRange;
+
+        /// <summary>대상 거치 무기의 건축물 Id — 범위 밖이면 -1.</summary>
+        public readonly int StructureId;
+
+        /// <summary>표시명 — 범위 밖이면 빈 문자열.</summary>
+        public readonly string DisplayName;
+
+        public MountPromptLocalEvent(bool isInRange, int structureId, string displayName)
+        {
+            IsInRange = isInRange;
+            StructureId = structureId;
+            DisplayName = displayName;
+        }
+    }
+
+    /// <summary>
+    /// 로컬 표현 이벤트 — 거치 무기 점유 토글 (M7 4차 §2.3). 점유 중에는 <b>이동과 핫바 무기 입력이</b>
+    /// 잠긴다 — 창 열림 게이트와 같은 자리에서 갈리므로 소비자는 한 축만 더 보면 된다.
+    /// 강제 하차(파괴·사망·끊김)도 이 이벤트로 내려온다.
+    /// </summary>
+    public readonly struct MountStateChangedLocalEvent
+    {
+        public readonly bool IsMounted;
+
+        /// <summary>붙은 거치 무기의 건축물 Id — 내렸으면 -1.</summary>
+        public readonly int StructureId;
+
+        public MountStateChangedLocalEvent(bool isMounted, int structureId)
+        {
+            IsMounted = isMounted;
+            StructureId = structureId;
+        }
+    }
 }

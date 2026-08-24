@@ -23,6 +23,11 @@ namespace Game.UI
         private bool _craftingOpen;
         private bool _storageOpen;
         private bool _bundleOpen;
+
+        // 거치 무기 점유 (M7 4차 §2.3) — Esc는 세션 메뉴보다 점유 해제를 먼저 소비한다.
+        // 열린 창을 닫는 것과 같은 자리이므로 닫기 요청 채널을 그대로 쓴다.
+        private bool _mounted;
+
         private bool _gameOver;
 
         private void OnEnable()
@@ -31,6 +36,7 @@ namespace Game.UI
             EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingToggled);
             EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Subscribe(OnStorageToggled);
             EventBus<Gameplay.Train.BundlePanelToggledLocalEvent>.Subscribe(OnBundleToggled);
+            EventBus<Gameplay.Train.MountStateChangedLocalEvent>.Subscribe(OnMountStateChanged);
             EventBus<Gameplay.Session.GameOverEvent>.Subscribe(OnGameOver);
         }
 
@@ -40,6 +46,7 @@ namespace Game.UI
             EventBus<Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingToggled);
             EventBus<Gameplay.Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStorageToggled);
             EventBus<Gameplay.Train.BundlePanelToggledLocalEvent>.Unsubscribe(OnBundleToggled);
+            EventBus<Gameplay.Train.MountStateChangedLocalEvent>.Unsubscribe(OnMountStateChanged);
             EventBus<Gameplay.Session.GameOverEvent>.Unsubscribe(OnGameOver);
         }
 
@@ -62,7 +69,7 @@ namespace Game.UI
             {
                 SetMenuOpen(false);
             }
-            else if (_inventoryOpen || _craftingOpen || _storageOpen || _bundleOpen)
+            else if (_inventoryOpen || _craftingOpen || _storageOpen || _bundleOpen || _mounted)
             {
                 EventBus<UiCloseRequestedLocalEvent>.Publish(default);
             }
@@ -90,6 +97,11 @@ namespace Game.UI
         private void OnBundleToggled(Gameplay.Train.BundlePanelToggledLocalEvent evt)
         {
             _bundleOpen = evt.IsOpen;
+        }
+
+        private void OnMountStateChanged(Gameplay.Train.MountStateChangedLocalEvent evt)
+        {
+            _mounted = evt.IsMounted;
         }
 
         private void OnGameOver(Gameplay.Session.GameOverEvent evt)

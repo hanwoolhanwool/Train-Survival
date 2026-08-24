@@ -2,6 +2,7 @@ using Game.Core.Logging;
 using System.Collections;
 using Game.Core.Events;
 using Game.Core.Services;
+using Game.Gameplay.Combat;
 using Game.Gameplay.Inventory;
 using Game.Gameplay.Train;
 using Game.Gameplay.World;
@@ -106,6 +107,18 @@ namespace Game.Gameplay.Player
         private float _mantleTimer;
         private Vector3 _mantleVelocity;
 
+        // ── 거치 무기 점유 (M7 4차 §2.3) ─────────────────────────────────
+        // 사다리 구속(_climbing)이 만든 선례를 그대로 따른다: 로컬 구동, 위치는 OwnerNetworkTransform이
+        // 복제, 판정만 서버. 다른 점은 <b>좌석이 움직인다</b>는 것뿐이다 — 이탈 칸 위 좌석은 칸을 따라간다.
+        private Transform _mountSeat;
+        private Quaternion _mountRotation = Quaternion.identity;
+        private float _mountYawLimit = 180f;
+        private float _mountPitchMin = -89f;
+        private float _mountPitchMax = 89f;
+        private float _mountYaw;
+        private float _mountPitch;
+        private bool _mounted;
+
         private CarView _ridingCar;
         private Vector3 _ridingCarLastPos;
         private bool _ridingCarTracked;
@@ -121,6 +134,15 @@ namespace Game.Gameplay.Player
         /// 발사체가 발사 시점의 기준 프레임(정지=열차 위 / 스크롤=지상)을 이어받는 데 쓴다.
         /// </summary>
         public bool StandingOnWorldFrame => _standingOnWorldFrame;
+
+        /// <summary>거치 무기에 붙어 있는가 — 이동·핫바 입력이 잠긴 상태 (M7 4차 §2.3).</summary>
+        public bool IsMounted => _mounted;
+
+        /// <summary>거치대 기준 조준각(도) — yaw는 좌우, pitch는 앙각(위 +). 포신 중계·사격이 읽는다.</summary>
+        public float MountedYaw => _mountYaw;
+
+        /// <summary>거치대 기준 앙각(도, 위 +).</summary>
+        public float MountedPitch => _mountPitch;
 
         private void Awake()
         {
@@ -306,7 +328,8 @@ namespace Game.Gameplay.Player
             // 시선은 남긴다: 끌려가는 동안 주변을 볼 수 없으면 구조가 사고처럼 보인다.
             if (_movementState.Value != PlayerMovementState.Normal)
             {
-                // 견인과 오르기가 같은 프레임에 트랜스폼을 다투면 안 된다 (계획 §3.7).
+                // 견인과 오르기·좌석이 같은 프레임에 트랜스폼을 다투면 안 된다 (계획 §3.7).
+                EndMount();
                 DetachLadder();
                 CancelMantle();
 
@@ -316,6 +339,23 @@ namespace Game.Gameplay.Player
                 }
 
                 UpdateExternalTow();
+                return;
+            }
+
+            // 좌석 구속 (M7 4차 §2.3) — 사다리·견인과 같은 자리에서 갈린다. 이동·점프·중력·
+            // 컨베이어가 전부 물러나고, 남는 것은 사각 안의 시선과 좌석 추종뿐이다.
+            if (_mounted)
+            {
+                DetachLadder();
+                CancelMantle();
+
+                if (lookAllowed)
+                {
+                    UpdateMountedLook();
+                }
+
+                UpdateSeatPin();
+                UpdateDebugInput();
                 return;
             }
 
@@ -920,10 +960,123 @@ namespace Game.Gameplay.Player
             return ids.Count;
         }
 
+        // ── 거치 무기 좌석 구속 (M7 4차 §2.3) ─────────────────────────────
+
+        /// <summary>
+        /// 좌석에 앉힌다 — 점유 승인이 복제돼 내려온 뒤 조작 계층이 호출한다.
+        /// 첫 배치만 충돌을 무시하고 통째로 옮기고(구조물 콜라이더에 걸려 좌석 밖에 서는 것을 막는다),
+        /// 이후 좌석 추종은 프레임당 미세 이동이라 일반 이동 경로를 그대로 쓴다.
+        /// </summary>
+        public void BeginMount(
+            Transform seat, Quaternion mountRotation, float yawLimit, float pitchMin, float pitchMax)
+        {
+            if (!IsOwner || seat == null)
+            {
+                return;
+            }
+
+            _mountSeat = seat;
+            _mountRotation = mountRotation;
+            _mountYawLimit = yawLimit;
+            _mountPitchMin = pitchMin;
+            _mountPitchMax = pitchMax;
+            _mountYaw = 0f;
+            _mountPitch = 0f;
+            _mounted = true;
+
+            DetachLadder();
+            CancelMantle();
+            _ladder = null;
+            _horizontalVelocity = Vector3.zero;
+            _verticalSpeed = 0f;
+
+            _characterController.enabled = false;
+            transform.position = seat.position;
+            transform.rotation = _mountRotation;
+            _characterController.enabled = true;
+
+            _pitch = 0f;
+            if (_cameraPivot != null)
+            {
+                _cameraPivot.localRotation = Quaternion.identity;
+            }
+        }
+
+        /// <summary>
+        /// 좌석에서 내린다 — 자발적 하차와 강제 하차(파괴·사망·끊김)가 같은 경로다.
+        /// 몸은 좌석 옆 갑판으로 반 걸음 물러난다: 그대로 두면 다음 프레임 중력이 포신 안에서 시작한다.
+        /// </summary>
+        public void EndMount()
+        {
+            if (!_mounted)
+            {
+                return;
+            }
+
+            Vector3 exit = transform.position - transform.forward * 0.8f;
+            _mounted = false;
+            _mountSeat = null;
+            _horizontalVelocity = Vector3.zero;
+            _verticalSpeed = 0f;
+
+            _characterController.enabled = false;
+            transform.position = exit;
+            _characterController.enabled = true;
+        }
+
+        /// <summary>
+        /// 사각 안에서만 도는 시선 — 클램프는 <see cref="MountedAimMath"/>가 소유한다.
+        /// 몸(yaw)이 거치대 기준으로 돌고 카메라 피벗이 앙각을 받는다: 화면 좌표계는 아래가 +라
+        /// 앙각을 얹을 때만 부호를 뒤집는다.
+        /// </summary>
+        private void UpdateMountedLook()
+        {
+            Mouse mouse = Mouse.current;
+            if (mouse == null)
+            {
+                return;
+            }
+
+            Vector2 delta = mouse.delta.ReadValue() * _settings.LookSensitivity;
+            MountedAimMath.Clamp(
+                _mountYaw + delta.x, _mountPitch + delta.y,
+                _mountYawLimit, _mountPitchMin, _mountPitchMax,
+                out _mountYaw, out _mountPitch);
+
+            transform.rotation = _mountRotation * Quaternion.Euler(0f, _mountYaw, 0f);
+            _pitch = -_mountPitch;
+            if (_cameraPivot != null)
+            {
+                _cameraPivot.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+            }
+        }
+
+        /// <summary>
+        /// 좌석 추종 — 이탈 칸 위 좌석은 칸을 따라 뒤로 흐르므로, 점유자도 함께 끌려가야
+        /// 이탈 칸 위 전투가 성립한다 (§2.7). 좌석 실물이 사라지면(파괴·회수) 서버 통지를
+        /// 기다리지 않고 즉시 푼다 — 유령 점유의 이중 방어다 (리스크 1).
+        /// </summary>
+        private void UpdateSeatPin()
+        {
+            if (_mountSeat == null || !_mountSeat.gameObject.activeInHierarchy)
+            {
+                EndMount();
+                return;
+            }
+
+            Vector3 delta = _mountSeat.position - transform.position;
+            if (delta.sqrMagnitude > 0.000001f)
+            {
+                _characterController.Move(delta);
+            }
+        }
+
         private void TeleportTo(Vector3 position)
         {
             // 사망·부활·재접속 복원으로 몸이 통째로 옮겨간다 — 사다리에 매달린 상태를 끌고 가면
             // 다음 프레임 평면 보정이 옛 사다리로 되당긴다.
+            // 몸이 통째로 옮겨간다 — 좌석 구속을 끌고 가면 다음 프레임 추종이 옛 좌석으로 되당긴다.
+            EndMount();
             DetachLadder();
             CancelMantle();
             _ladder = null;

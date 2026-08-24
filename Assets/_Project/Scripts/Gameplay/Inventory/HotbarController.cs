@@ -39,6 +39,10 @@ namespace Game.Gameplay.Inventory
         private bool _storageOpen;
         private bool _bundleOpen;
 
+        // 거치 무기 점유 (M7 4차 §2.3) — 붙어 있는 동안 핫바 선택·무기 입력이 전부 닫힌다.
+        // 창 열림과 같은 축에 얹는 이유: 소비자가 "입력이 잠겼는가"를 한 곳에서만 읽게 된다.
+        private bool _mounted;
+
         // 거부 문구 반복 억제 (§3.6) — 한 번의 그랩 동안 문구는 첫 회만. 그랩이 풀리면 다시 알린다.
         private bool _switchRejectAnnounced;
 
@@ -61,14 +65,15 @@ namespace Game.Gameplay.Inventory
             : ResourceType.None;
 
         /// <summary>UI(I 창·세션 메뉴·제작 창·창고 창·보따리 창)가 열려 있는가 — 열려 있는 동안 무기·상호작용 입력이 정지된다.</summary>
-        public bool IsPanelOpen => _panelOpen || _sessionMenuOpen || _craftingOpen || _storageOpen || _bundleOpen;
+        public bool IsPanelOpen => _panelOpen || _sessionMenuOpen || _craftingOpen || _storageOpen
+            || _bundleOpen || _mounted;
 
         /// <summary>
         /// 제작 창 열기(E)를 막아야 할 다른 UI가 열려 있는가 (M7 3차 검증 개선).
         /// <b>인벤토리 창은 제외한다</b> — 제작 창과 인벤토리는 함께 열리는 짝이라 서로를 막지 않는다.
         /// 제작 창 자신도 제외한다 (E는 토글이다).
         /// </summary>
-        public bool IsCraftBlockingPanelOpen => _sessionMenuOpen || _storageOpen || _bundleOpen;
+        public bool IsCraftBlockingPanelOpen => _sessionMenuOpen || _storageOpen || _bundleOpen || _mounted;
 
         private void Awake()
         {
@@ -87,6 +92,7 @@ namespace Game.Gameplay.Inventory
             EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
             EventBus<Train.StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
             EventBus<Train.BundlePanelToggledLocalEvent>.Subscribe(OnBundlePanelToggled);
+            EventBus<Train.MountStateChangedLocalEvent>.Subscribe(OnMountStateChanged);
 
             if (!ServiceLocator.IsRegistered<ILocalHotbar>())
             {
@@ -108,6 +114,7 @@ namespace Game.Gameplay.Inventory
             EventBus<Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
             EventBus<Train.StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
             EventBus<Train.BundlePanelToggledLocalEvent>.Unsubscribe(OnBundlePanelToggled);
+            EventBus<Train.MountStateChangedLocalEvent>.Unsubscribe(OnMountStateChanged);
 
             if (ServiceLocator.TryGet(out ILocalHotbar hotbar) && ReferenceEquals(hotbar, this))
             {
@@ -310,6 +317,11 @@ namespace Game.Gameplay.Inventory
         private void OnBundlePanelToggled(Train.BundlePanelToggledLocalEvent evt)
         {
             _bundleOpen = evt.IsOpen;
+        }
+
+        private void OnMountStateChanged(Train.MountStateChangedLocalEvent evt)
+        {
+            _mounted = evt.IsMounted;
         }
     }
 }
