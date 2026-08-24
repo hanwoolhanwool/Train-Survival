@@ -161,10 +161,23 @@ namespace Game.UI.MainMenu
         }
 
         private bool _applying;
+        private CanvasRectWatch _watch;
 
         private void OnRectTransformDimensionsChange()
         {
             if (!_applying)
+            {
+                ApplyRect();
+            }
+        }
+
+        /// <summary>
+        /// 캔버스가 달라졌으면 다시 잰다 — 공고대도 배너와 같은 점 앵커라
+        /// 부모가 커져도 통지가 오지 않는다(<see cref="CanvasRectWatch"/>).
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (transform.parent is RectTransform parent && _watch.NeedsApply(parent.rect.size))
             {
                 ApplyRect();
             }
@@ -193,6 +206,7 @@ namespace Game.UI.MainMenu
                 rect.sizeDelta = size;
                 rect.anchoredPosition = BoardPosition(parent.rect.size);
                 rect.localScale = Vector3.one;
+                _watch.MarkApplied(parent.rect.size);
 
                 ApplySummaryRect(size);
             }

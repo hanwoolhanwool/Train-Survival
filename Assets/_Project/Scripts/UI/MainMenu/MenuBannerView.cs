@@ -37,6 +37,7 @@ namespace Game.UI.MainMenu
         private int _current = -1;
         private bool _applying;
         private bool[] _states;
+        private CanvasRectWatch _watch;
 
         /// <summary>지금 화살표가 붙어 있는 줄.</summary>
         public int CurrentSlot => _current;
@@ -49,6 +50,22 @@ namespace Game.UI.MainMenu
             }
 
             ApplyBannerRect();
+        }
+
+        /// <summary>
+        /// 캔버스가 달라졌으면 다시 잰다.
+        ///
+        /// <para><b>이 폴링이 없으면 빌드 첫 실행에서 표지판 비율이 어긋난 채 굳는다.</b>
+        /// 배너는 점 앵커라 부모(캔버스)가 커져도 <see cref="OnRectTransformDimensionsChange"/>가
+        /// 오지 않고, <see cref="OnEnable"/>은 캔버스가 확정되기 전에 한 번 도는 수가 있다.
+        /// 이유는 <see cref="CanvasRectWatch"/>에 적었다.</para>
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (transform.parent is RectTransform parent && _watch.NeedsApply(parent.rect.size))
+            {
+                ApplyBannerRect();
+            }
         }
 
         /// <summary>
@@ -79,6 +96,7 @@ namespace Game.UI.MainMenu
                 rect.sizeDelta = size;
                 rect.anchoredPosition = MenuPlateLayout.BannerPosition(canvas);
                 rect.localScale = Vector3.one;
+                _watch.MarkApplied(canvas);
             }
             finally
             {

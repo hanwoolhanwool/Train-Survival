@@ -46,6 +46,7 @@ namespace Game.UI.Ready
 
         private bool _applying;
         private Vector2 _introOffset;
+        private CanvasRectWatch _watch;
 
         /// <summary>등장 연출용 오프셋 — 실측 자리에 마지막으로 더한다.</summary>
         public Vector2 IntroOffset
@@ -72,6 +73,18 @@ namespace Game.UI.Ready
             }
 
             ApplyPanelRect();
+        }
+
+        /// <summary>
+        /// 캔버스가 달라졌으면 다시 잰다 — 이 패널도 점 앵커라 부모가 커져도
+        /// 통지가 오지 않는다(<see cref="CanvasRectWatch"/>).
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (transform.parent is RectTransform parent && _watch.NeedsApply(parent.rect.size))
+            {
+                ApplyPanelRect();
+            }
         }
 
 #if UNITY_EDITOR
@@ -121,6 +134,7 @@ namespace Game.UI.Ready
                 rect.sizeDelta = size;
                 rect.anchoredPosition = ReadyPanelLayout.ControlsPosition(parent.rect.size) + _introOffset;
                 rect.localScale = Vector3.one;
+                _watch.MarkApplied(parent.rect.size);
             }
             finally
             {
