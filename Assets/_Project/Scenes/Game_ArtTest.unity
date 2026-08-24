@@ -7833,6 +7833,7 @@ GameObject:
   - component: {fileID: 1904839127}
   - component: {fileID: 710000001}
   - component: {fileID: 710000002}
+  - component: {fileID: 710000010}
   m_Layer: 0
   m_Name: Train
   m_TagString: Untagged
@@ -7908,6 +7909,19 @@ MonoBehaviour:
   _expansionSettings: {fileID: 11400000, guid: f67ca358a1afd2e499d082c012a23939, type: 2}
   _structureCatalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
   _qaLogEjectDisplayDrift: 0
+--- !u!114 &710000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95b5e8617a2695240ac6d0e26f8c98cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.MountedWeaponHost
+  _catalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
 --- !u!114 &1904839122
 MonoBehaviour:
   m_ObjectHideFlags: 0

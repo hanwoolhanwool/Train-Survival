@@ -36,6 +36,7 @@ GameObject:
   - component: {fileID: 8811223344556677010}
   - component: {fileID: 8811223344556677020}
   - component: {fileID: 2841540566822582564}
+  - component: {fileID: 8811223344556677030}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -177,6 +178,20 @@ MonoBehaviour:
   _trainLayout: {fileID: 11400000, guid: 8ffe88eab3f557840baa597a5d4e7404, type: 2}
   _cameraPivot: {fileID: 1609037139869776444}
   _cameraRig: {fileID: 2635673702125266619}
+--- !u!114 &8811223344556677030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 927b6339a6f24ec45b51fec7f59eae9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Combat.MountedWeaponOperator
+  _controller: {fileID: 8568574822869191764}
+  _aimSource: {fileID: 1609037139869776444}
 --- !u!114 &7642862762512348835
 MonoBehaviour:
   m_ObjectHideFlags: 0
