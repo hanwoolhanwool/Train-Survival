@@ -653,7 +653,7 @@
 
       <section id="features">
         <h2>구현 내용</h2>
-        <p class="lede">게임을 이루는 다섯 축입니다. 각 항목은 <b>무엇이 되는가(기능)</b>와 <b>어떻게 성립시켰는가(기술)</b>를 함께 적었습니다. 수치는 전부 <b>데이터 에셋의 현재 값</b>이라 코드 수정 없이 바뀝니다.</p>
+        <p class="lede">게임 플레이를 구성하는 <b>5가지 핵심 시스템</b>입니다. 각 시스템의 기능과 구현 구조, 데이터 관리 방식을 함께 소개합니다.</p>
 
         <div class="work">
 
@@ -715,6 +715,13 @@
               </div>
             </div>
 
+            <figure class="shot">
+              <div class="video-embed">
+                <iframe src="https://www.youtube-nocookie.com/embed/rpqVBn4J-AM" title="열차 분리 — 칸 파괴와 연쇄 이탈" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+              </div>
+              <figcaption>열차 분리 — 연결부 분리시 협동하여 열차칸을 연결한다 · <a href="https://youtu.be/rpqVBn4J-AM">YouTube에서 보기</a></figcaption>
+            </figure>
+
             <div class="files">
               <div class="file-row">
                 <span class="path"><b>as-built 명세</b> — <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/train/train-state-model.md">열차 상태 모델 — 편성·파괴·연쇄 이탈·수리</a></span>
@@ -754,6 +761,11 @@
                 <span class="size">GitHub</span>
               </div>
             </div>
+
+            <figure class="shot">
+              <img src="assets/ts-train.png" alt="열차 갑판 위에 녹색 건축 프리뷰를 띄워 설치 위치를 확인하는 장면">
+              <figcaption>갑판 위 건축 — 건축물 종류에 따라 요구되는 그리드가 다릅니다.</figcaption>
+            </figure>
           </article>
 
           <article class="card">
@@ -1084,11 +1096,6 @@
                 </tbody>
               </table>
             </div>
-
-            <figure class="shot">
-              <img src="assets/ts-train.png" alt="열차 갑판 위에 녹색 건축 프리뷰를 띄워 설치 위치를 확인하는 장면">
-              <figcaption>열차 증설과 갑판 위 건축 — 모든 게임플레이는 열차 기준 프레임에서 시뮬레이션됩니다</figcaption>
-            </figure>
           </article>
 
           <!-- 06 -->
