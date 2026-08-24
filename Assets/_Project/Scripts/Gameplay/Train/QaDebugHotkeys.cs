@@ -32,7 +32,10 @@ namespace Game.Gameplay.Train
     /// - <b>F2</b> : 열차·궤도 높이 단계 순환 — 현재 → 아래 → 더 아래 → 현재
     ///   (열차 높이 스펙 <c>docs/specs/world/train-elevation.md</c>). 편성·손잡이·설비·궤도 타일과
     ///   갑판 기준선이 <b>같은 오프셋</b>으로 함께 움직이므로 건설·콜라이더 판정이 어긋나지 않는다.
-    ///   숫자패드는 이미 다 찼으므로 새 키는 F 계열(F4~F7이 비어 있다)에 붙인다.
+    ///   숫자패드는 이미 다 찼으므로 새 키는 F 계열(F5~F7이 비어 있다)에 붙인다.
+    /// - <b>F4</b> : 망치로 <b>겨눈 자리</b>에 거치 무기 즉시 설치(무료) + 소총탄 60 지급 (M7 4차).
+    ///   Shift와 함께 누르면 자동 터렛, 그냥 누르면 거치 기관총이다. 겨눈 자리가 없으면(망치를 들지
+    ///   않았거나 갑판을 겨누지 않았으면) 아무 일도 하지 않는다.
     /// <b>자원·피해 (4·5·6 행 + 0)</b>
     /// - 숫자패드 4 : 요청자에게 자원 지급(건자재·제작 재료·식재료 — 증설 비용·연료 투입·요리 테스트).
     /// - 숫자패드 5 : 피해 실측(M5 6차 — 검증 H7). 요청자에게 고정 피해 20을 물리 경로로 넣는다 —
@@ -65,14 +68,24 @@ namespace Game.Gameplay.Train
         private TrainPartKind _hammerTargetKind;
         private int _hammerTargetIndex;
 
+        // 로컬 설치 프리뷰가 마지막으로 알린 자리 — F4의 거치 무기 설치 지점 (M7 4차).
+        // 설치 판정(그리드 내부·비점유)은 서버가 다시 보므로 여기서는 좌표만 기억한다.
+        private bool _hasPlaceAim;
+        private int _placeCarIndex;
+        private int _placeCellX;
+        private int _placeCellZ;
+        private int _placeRotation;
+
         private void OnEnable()
         {
             Core.Events.EventBus<HammerTargetLocalEvent>.Subscribe(OnHammerTarget);
+            Core.Events.EventBus<StructurePlaceAimLocalEvent>.Subscribe(OnStructurePlaceAim);
         }
 
         private void OnDisable()
         {
             Core.Events.EventBus<HammerTargetLocalEvent>.Unsubscribe(OnHammerTarget);
+            Core.Events.EventBus<StructurePlaceAimLocalEvent>.Unsubscribe(OnStructurePlaceAim);
         }
 
         private void OnHammerTarget(HammerTargetLocalEvent evt)
@@ -80,6 +93,15 @@ namespace Game.Gameplay.Train
             _hasHammerTarget = evt.HasTarget;
             _hammerTargetKind = evt.Kind;
             _hammerTargetIndex = evt.Index;
+        }
+
+        private void OnStructurePlaceAim(StructurePlaceAimLocalEvent evt)
+        {
+            _hasPlaceAim = evt.Aiming;
+            _placeCarIndex = evt.CarIndex;
+            _placeCellX = evt.CellX;
+            _placeCellZ = evt.CellZ;
+            _placeRotation = evt.Rotation;
         }
 
         private void Update()
@@ -132,6 +154,17 @@ namespace Game.Gameplay.Train
             if (keyboard.f2Key.wasPressedThisFrame)
             {
                 RequestCycleTrainElevationServerRpc();
+            }
+
+            // F4 — 겨눈 자리에 거치 무기 즉시 설치 + 소총탄 지급 (M7 4차).
+            // 설치 비용·자원 채집을 건너뛰고 점유·사격·재장전만 반복 검증하기 위한 키다.
+            if (keyboard.f4Key.wasPressedThisFrame && _hasPlaceAim)
+            {
+                StructureKind kind = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed
+                    ? StructureKind.Turret
+                    : StructureKind.MountedGun;
+                RequestBuildMountedWeaponServerRpc(
+                    _placeCarIndex, _placeCellX, _placeCellZ, _placeRotation, kind);
             }
 
             // ── 자원·피해 : 4·5·6 행 + 동시 그랩(0) ──────────────────────────
@@ -426,6 +459,31 @@ namespace Game.Gameplay.Train
             if (ServiceLocator.TryGet(out ITrainExpansion expansion))
             {
                 expansion.ServerTryBuildCar();
+            }
+        }
+
+        /// <summary>
+        /// 겨눈 자리에 거치 무기 1개를 무료 설치하고 요청자에게 소총탄 60을 지급한다 (M7 4차).
+        /// 설치 판정은 일반 경로와 같은 함수가 다시 본다 — 자리 규칙까지 건너뛰면 QA가 성립하지 않는다.
+        /// 탄은 설치 성공 여부와 무관하게 준다: 이미 세워 둔 무기를 채우는 데도 같은 키를 쓴다.
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestBuildMountedWeaponServerRpc(
+            int carIndex, int cellX, int cellZ, int rotation, StructureKind kind,
+            RpcParams rpcParams = default)
+        {
+            if (ServiceLocator.TryGet(out ITrainExpansion expansion))
+            {
+                expansion.ServerTryBuildStructure(carIndex, cellX, cellZ, rotation, kind);
+            }
+
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager != null
+                && manager.ConnectedClients.TryGetValue(rpcParams.Receive.SenderClientId, out NetworkClient client)
+                && client.PlayerObject != null)
+            {
+                IResourceInventory inventory = client.PlayerObject.GetComponent<IResourceInventory>();
+                inventory?.ServerTryAdd(ResourceType.RifleAmmo, 60);
             }
         }
 
