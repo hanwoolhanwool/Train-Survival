@@ -155,6 +155,9 @@
   .video-embed { position: relative; aspect-ratio: 16 / 9; border: 1px solid var(--line); background: #111; }
   .video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
+  /* 어절·구가 중간에서 끊기지 않아야 하는 구간 */
+  .nb { white-space: nowrap; }
+
   figure.shot figcaption {
     font-family: var(--f-mono); font-size: 0.72rem; color: var(--ink-3);
     margin-top: 0.55rem; line-height: 1.6;
@@ -559,7 +562,7 @@
 
   <div class="loop">
     <h2>코어 루프</h2>
-    <p>낮에 모은 것으로 밤을 버티고, 버틴 만큼 열차가 더 멀리 간다. 하루가 끝날 때마다 난이도가 오르고, 3~5일마다 지역(계절)이 바뀝니다.</p>
+    <p>낮에 모은 것으로 밤을 버티고, 버틴 만큼 열차가 더 멀리 간다. 하루가 끝날 때마다 <span class="nb">난이도가</span> 오르고, 3~5일마다 지역(계절)이 바뀝니다.</p>
 
     <div class="steps">
       <div class="step">
@@ -580,14 +583,14 @@
       <div class="step">
         <span class="k">Final</span>
         <span class="t">우주 진입</span>
-        <span class="d">궤도 도약 기관을 완성해 대기권을 벗어나면 클리어. 중간 저장은 없고, 런은 단일 세션으로 완주합니다.</span>
+        <span class="d">궤도 도약 기관을 완성해 대기권을 벗어나면 클리어. 중간 저장은 없고, <span class="nb">런은 단일 세션으로</span> 완주합니다.</span>
       </div>
     </div>
 
     <p class="loop-note">
       <b>연료가 이 게임의 시계입니다.</b> 자동 충전이 아니라 기관차 엔진에 직접 넣어야 해서
-      <b>채집 → 운반 → 투입</b>이라는 협동 동선이 생깁니다. 연료가 마르면 열차가 느려지고, 느려지면 추격이 시작됩니다.
-      역할을 나누지 않으면 낮에 모으기만 하다 밤을 맞습니다.
+      <b class="nb">채집 → 운반 → 투입</b>이라는 협동 동선이 생깁니다. 연료가 마르면 열차가 느려지고, <span class="nb">느려지면 추격이 시작됩니다.</span>
+      역할을 나누지 않으면 낮에 모으기만 하다 밤을 <span class="nb">맞습니다.</span>
     </p>
   </div>
 
