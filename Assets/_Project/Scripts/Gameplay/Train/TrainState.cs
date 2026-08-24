@@ -303,6 +303,18 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
+        /// 점유 중인 거치 무기인가 (M7 4차 §2.7) — 종류 판정은 카탈로그가, 점유 판정은
+        /// <see cref="IMountedWeapons"/>가 소유한다. 거치 무기 축이 없는 세션(서비스 미등록)에서는
+        /// 항상 거짓이라 기존 철거 경로가 무수정으로 통과한다.
+        /// </summary>
+        private bool IsOccupiedMountedWeapon(StructureEntry entry)
+        {
+            return _structureCatalog != null && _structureCatalog.IsMountedWeapon(entry.Kind)
+                && ServiceLocator.TryGet(out IMountedWeapons mounted)
+                && mounted.TryGetOccupant(entry.Id, out _);
+        }
+
+        /// <summary>
         /// 이 종류가 공유 저장 블록을 갖는지 — 카탈로그 플래그가 진실이다 (2차 §2.8).
         /// 창고 계열 종류를 추가해도 블록 할당·배출·재건 정리 경로에 코드 수정이 필요 없다(OCP).
         /// </summary>
@@ -955,6 +967,14 @@ namespace Game.Gameplay.Train
             }
 
             removed = structures[entryIndex];
+
+            // 점유 중인 거치 무기는 철거되지 않는다 (M7 4차 §2.7) — 붙어 있는 사람의 발밑이
+            // 사라지는 것을 남이 결정하게 두지 않는다. 내리면 곧바로 철거할 수 있다.
+            if (IsOccupiedMountedWeapon(removed))
+            {
+                removed = default;
+                return false;
+            }
 
             // 창고 철거 — 내용물 보따리와 반환 자원 보따리는 별개로 스폰된다 (§2.5 — 묶으면
             // 해체 UI가 혼합 목록이 되어 혼란). 블록 해제는 항목 제거 전에.
