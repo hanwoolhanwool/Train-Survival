@@ -100,5 +100,24 @@ namespace Game.Gameplay.World
 
             return blocked ? WeightedPick(weights, Hash01(tileIndex, 2), picked) : picked;
         }
+
+        /// <summary>
+        /// 타일 인덱스 하나가 실제로 받게 될 세그먼트 — <b>직전 인덱스의 선택까지 포함한 전체 규칙</b>이다.
+        ///
+        /// <para><b>이 함수가 단일 출처여야 한다.</b> 런타임 스트리밍
+        /// (<see cref="Game.Gameplay.World.TerrainTileStreamer"/>)과 로딩 프리웜 계획
+        /// (<see cref="GameplayPreloadPlan"/>)이 이걸 함께 부른다 — 두 곳이 각자 계산하면
+        /// <b>프리웜은 전부 헛일이 되고 아무도 눈치채지 못한다</b>
+        /// ([인게임 진입 로딩 구현 계획](docs/plans/features/인게임-진입-로딩-구현-계획.md) §10).</para>
+        ///
+        /// <para>직전 선택을 <see cref="WeightedPick"/>로 다시 구하는 것은 <b>의도한 근사</b>다 —
+        /// 인접 금지의 재추첨까지 거슬러 올라가지 않는다. 그래야 어느 인덱스든 <b>혼자서</b>
+        /// 답이 나오고, 후발 접속자가 과거 구간을 그릴 때도 같은 결과에 도달한다.</para>
+        /// </summary>
+        public static int PickForTile(int tileIndex, float[] weights, bool[] noRepeatAdjacent)
+        {
+            int previous = WeightedPick(weights, Hash01(tileIndex - 1, 1), -1);
+            return Pick(tileIndex, weights, previous, noRepeatAdjacent);
+        }
     }
 }

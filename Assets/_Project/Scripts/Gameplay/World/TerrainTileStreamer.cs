@@ -119,6 +119,10 @@ namespace Game.Gameplay.World
         /// 지역 팔레트에서 이 타일 인덱스의 세그먼트를 고른다 (없으면 null).
         /// 직전 인덱스의 선택을 함께 계산해 "같은 세그먼트가 연달아" 나오는 것을 막는다 —
         /// 순수 함수라 전 피어가 같은 결과에 도달한다.
+        ///
+        /// <para>선택 규칙 자체는 <see cref="SegmentPickLogic.PickForTile"/>이 소유한다 —
+        /// 로딩 프리웜 계획(<see cref="GameplayPreloadPlan"/>)이 <b>같은 함수</b>를 부르기 때문에
+        /// 여기서 규칙을 다시 쓰면 두 벌이 조용히 어긋난다.</para>
         /// </summary>
         private GameObject TryPickFromPalette(RegionDefinition definition, int index)
         {
@@ -134,8 +138,7 @@ namespace Game.Gameplay.World
                 return null;
             }
 
-            int previous = SegmentPickLogic.WeightedPick(weights, SegmentPickLogic.Hash01(index - 1, 1), -1);
-            int picked = SegmentPickLogic.Pick(index, weights, previous, palette.GetNoRepeatFlags());
+            int picked = SegmentPickLogic.PickForTile(index, weights, palette.GetNoRepeatFlags());
             return picked < 0 ? null : palette.GetPrefab(picked);
         }
 
