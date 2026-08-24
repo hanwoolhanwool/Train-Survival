@@ -58,6 +58,11 @@ namespace Game.Gameplay.Train
                 "각 피어가 리스트 동기화로 PoolManager 로컬 스폰한다.")]
             [SerializeField] private GameObject _viewPrefab;
 
+            [Tooltip("거치 무기 설정 (M7 4차) — 비어 있으면 거치 무기가 아니다. " +
+                "이 참조 하나가 '무기 건축물' 판정의 데이터 축이다: 종류 이름을 코드가 알지 않으므로 " +
+                "세 번째 거치 무기는 에셋 추가만으로 성립한다(OCP).")]
+            [SerializeField] private MountedWeaponSettings _mountedWeapon;
+
             public StructureKind Kind => _kind;
 
             public string DisplayName => _displayName;
@@ -90,6 +95,9 @@ namespace Game.Gameplay.Train
 
             /// <summary>건축물 실물 프리팹 (계획서 §2.6) — 없으면 뷰 스폰을 건너뛴다.</summary>
             public GameObject ViewPrefab => _viewPrefab;
+
+            /// <summary>거치 무기 설정 (M7 4차 §2.1) — null이면 이 종류는 거치 무기가 아니다.</summary>
+            public MountedWeaponSettings MountedWeapon => _mountedWeapon;
         }
 
         [Tooltip("종류별 정의 — Kind 값으로 식별하므로 배열 순서는 자유다(설치 UI의 순환 순서로만 쓰인다).")]
@@ -193,6 +201,23 @@ namespace Game.Gameplay.Train
         {
             Entry entry = Find(kind);
             return entry != null ? entry.ViewPrefab : null;
+        }
+
+        /// <summary>
+        /// 거치 무기 설정 (M7 4차 §2.1) — 미등재·미지정이면 null. 점유·조준·사격·장전 경로가
+        /// 전부 "이 값이 있는가"로 갈린다: 기존 건축물 6종은 null이라 무수정으로 통과한다
+        /// (난방 연료·저장 블록과 같은 소급 규약).
+        /// </summary>
+        public MountedWeaponSettings GetMountedWeapon(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null ? entry.MountedWeapon : null;
+        }
+
+        /// <summary>거치 무기 종류인가 — 설정 유무가 곧 판정이다 (§2.1).</summary>
+        public bool IsMountedWeapon(StructureKind kind)
+        {
+            return GetMountedWeapon(kind) != null;
         }
 
         /// <summary>
