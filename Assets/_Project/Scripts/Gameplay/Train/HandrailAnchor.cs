@@ -1,3 +1,4 @@
+using Game.Core.Logging;
 using Game.Core.Services;
 using Game.Gameplay.Harpoon;
 using Unity.Netcode;
@@ -28,6 +29,12 @@ namespace Game.Gameplay.Train
         private Collider[] _colliders;
         private bool _presentationVisible = true;
 
+        // 편성이 선 뒤에도 스폰이 안 되는 앵커를 잡아내는 일회성 진단 (좌/우 한쪽만 잡히던 증상의 확인용).
+        // 표현은 스폰과 무관하게 돌지만 잡기는 신원이 필요하므로, 이 상태는 그 피어에서 "못 잡는 손잡이"가 된다.
+        private const float NotSpawnedGraceSeconds = 5f;
+        private float _notSpawnedSeconds;
+        private bool _reportedNotSpawned;
+
         public GrabKind Kind => GrabKind.Anchor;
 
         /// <summary>
@@ -56,6 +63,7 @@ namespace Game.Gameplay.Train
         public override void OnNetworkSpawn()
         {
             _claimed = false;
+            _notSpawnedSeconds = 0f;
         }
 
         public bool TryClaimGrab(ulong grabberClientId)
@@ -112,13 +120,14 @@ namespace Game.Gameplay.Train
 
         private void Update()
         {
-            if (!IsSpawned)
-            {
-                return;
-            }
-
             // 칸의 이탈 오프셋만큼 기준 슬롯 위치에서 뒤(-Z)로 민다. 열차 원점 고정(미회전)이라 로컬=월드.
             // CarView가 읽는 것과 동일한 복제 오프셋이므로 호스트·클라 모두에서 위치가 일치한다.
+            //
+            // 표현(위치·가시성)은 <b>스폰 여부를 게이트로 두지 않는다</b> — 같은 오프셋을 소비하는
+            // <see cref="CarView"/>가 순수 MonoBehaviour로 게이트 없이 도는 것과 짝을 맞춘 것이다.
+            // 게이트를 두면 어느 한 앵커의 스폰이 늦거나 실패한 피어에서 <b>그 앵커만</b> 슬롯에 얼어붙어,
+            // 좌/우 쌍 중 한쪽만 이탈 칸을 따라가는 상태가 된다 — 스펙 §5의 "전 피어 위치가 일치"가 깨진다.
+            // 네트워크 신원이 필요한 것은 잡기 쪽(IsAvailableForGrab·TryClaimGrab)뿐이므로 거기서만 본다.
             float offset = 0f;
             CarState car = default;
             bool hasCar = false;
@@ -133,9 +142,16 @@ namespace Game.Gameplay.Train
 
             // 잡을 수 없는 상태가 되면(재결합으로 편성 복귀·소실) 호스트가 잡기를 끊는다 —
             // 앵커는 despawn하지 않으므로 집게 쪽 스폰 검사로는 잡히지 않는다. 로프는 집게가 점유 해제를 보고 함께 끊는다.
-            if (IsServer && _claimed && hasTrain && !train.IsCarGrabbable(_carIndex))
+            if (IsSpawned)
             {
-                ReleaseGrab();
+                if (IsServer && _claimed && hasTrain && !train.IsCarGrabbable(_carIndex))
+                {
+                    ReleaseGrab();
+                }
+            }
+            else
+            {
+                ReportIfNeverSpawned(hasTrain);
             }
 
             // 표현은 칸과 운명을 같이한다 — 파괴된 칸은 즉시, 이탈 칸은 소실 표현 거리에서 함께 사라지고,
@@ -145,6 +161,32 @@ namespace Game.Gameplay.Train
                 || (hasCar && (TrainStateLogic.IsCarPresent(car)
                     || (car.Health > 0f && offset < _ejectHideMeters)));
             SetPresentationVisible(visible);
+        }
+
+        /// <summary>
+        /// 편성이 이미 선 피어에서 앵커가 <see cref="NetworkObject"/>로 스폰되지 않은 채 남아 있으면
+        /// 한 번만 보고한다 — 그 피어에서는 <b>보이는데 잡히지 않는</b> 손잡이가 되기 때문이다
+        /// (씬 인스턴스의 GlobalObjectIdHash 불일치 등 소프트 싱크 실패의 증상).
+        /// <see cref="GameLog.Error"/>인 이유: 릴리스 빌드에서도 남아야 원인을 확정할 수 있다.
+        /// </summary>
+        private void ReportIfNeverSpawned(bool hasTrain)
+        {
+            if (!hasTrain || _reportedNotSpawned)
+            {
+                return;
+            }
+
+            // 편성 등록과 NGO 스폰 사이의 몇 프레임을 오탐하지 않도록 유예를 둔다.
+            _notSpawnedSeconds += Time.deltaTime;
+            if (_notSpawnedSeconds < NotSpawnedGraceSeconds)
+            {
+                return;
+            }
+
+            _reportedNotSpawned = true;
+            GameLog.Error(LogCategory.Train,
+                $"손잡이 앵커 '{name}'(칸 {_carIndex})가 편성이 선 뒤에도 스폰되지 않았다 — " +
+                "이 피어에서는 표현만 따라가고 집게로 잡을 수 없다.", this);
         }
 
         private void SetPresentationVisible(bool visible)
