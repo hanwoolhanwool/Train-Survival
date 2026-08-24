@@ -359,6 +359,7 @@ GameObject:
   - component: {fileID: 1700000002}
   - component: {fileID: 1700000003}
   - component: {fileID: 1700000004}
+  - component: {fileID: 1700000005}
   m_Layer: 5
   m_Name: SessionLoading
   m_TagString: Untagged
@@ -406,6 +407,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Game.UI.Loading.LoadingScreenView
   _font: {fileID: 11400000, guid: 0fef3e01fb08cf9459791c38db5f6501, type: 2}
+--- !u!114 &1700000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 180d345c84bcab24780708b36ba011fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.TerrainPreloadStep
+  _timeline: {fileID: 11400000, guid: 4decfedc1b6f9c4478d7fbceb7c5a012, type: 2}
+  _scroll: {fileID: 11400000, guid: 72244273e97469146b04a9d73faca50f, type: 2}
+  _fallbackTilePrefab: {fileID: 6175232296279316983, guid: 78eccb4724fad8545a5820c7d5fc245c, type: 3}
+  _extra:
+  - _prefab: {fileID: 2192740802151529732, guid: 50a48634f597e5c469361b75fbe9cd9d, type: 3}
+    _count: 4
+  - _prefab: {fileID: 5057033189078180689, guid: 2f43daeda01a6fa48a8d1267b7af4982, type: 3}
+    _count: 4
+  _perFrame: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
