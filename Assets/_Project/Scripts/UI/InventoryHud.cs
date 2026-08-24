@@ -70,6 +70,11 @@ namespace Game.UI
         // 창고 보따리 (M5 8차) — 창고 창과 같은 규약. 열린 보따리는 NetworkObjectId로 식별한다.
         private bool _dragFromBundle;
         private bool _bundlePromptInRange;
+
+        // 거치 무기 근접·점유 (M7 4차 §2.3) — 창고·보따리와 같은 "E 안내" 규약이다.
+        private bool _mountPromptInRange;
+        private string _mountPromptName = string.Empty;
+        private bool _mounted;
         private bool _bundleOpen;
         private ulong _bundleOpenId;
 
@@ -95,6 +100,8 @@ namespace Game.UI
             EventBus<StoragePromptLocalEvent>.Subscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Subscribe(OnBundlePrompt);
+            EventBus<MountPromptLocalEvent>.Subscribe(OnMountPrompt);
+            EventBus<MountStateChangedLocalEvent>.Subscribe(OnMountStateChanged);
             EventBus<BundlePanelToggledLocalEvent>.Subscribe(OnBundlePanelToggled);
             EventBus<Game.Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
@@ -116,6 +123,8 @@ namespace Game.UI
             EventBus<StoragePromptLocalEvent>.Unsubscribe(OnStoragePrompt);
             EventBus<StoragePanelToggledLocalEvent>.Unsubscribe(OnStoragePanelToggled);
             EventBus<BundlePromptLocalEvent>.Unsubscribe(OnBundlePrompt);
+            EventBus<MountPromptLocalEvent>.Unsubscribe(OnMountPrompt);
+            EventBus<MountStateChangedLocalEvent>.Unsubscribe(OnMountStateChanged);
             EventBus<BundlePanelToggledLocalEvent>.Unsubscribe(OnBundlePanelToggled);
             EventBus<Game.Gameplay.Crafting.CraftingPanelToggledLocalEvent>.Unsubscribe(OnCraftingPanelToggled);
             EventBus<UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
@@ -242,6 +251,17 @@ namespace Game.UI
             _dragFromStorage = false;
         }
 
+        private void OnMountPrompt(MountPromptLocalEvent evt)
+        {
+            _mountPromptInRange = evt.IsInRange;
+            _mountPromptName = evt.DisplayName;
+        }
+
+        private void OnMountStateChanged(MountStateChangedLocalEvent evt)
+        {
+            _mounted = evt.IsMounted;
+        }
+
         private void OnBundlePrompt(BundlePromptLocalEvent evt)
         {
             _bundlePromptInRange = evt.IsInRange;
@@ -328,6 +348,7 @@ namespace Game.UI
             DrawPlankAim(hotbar);
             DrawStoragePrompt();
             DrawBundlePrompt();
+            DrawMountPrompt();
 
             if (_bundleOpen)
             {
@@ -366,6 +387,31 @@ namespace Game.UI
 
             GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f),
                 $"<color={UiPalette.HexFocusBrass}>E — 보따리 (파괴된 창고의 내용물)</color>");
+        }
+
+        /// <summary>
+        /// 거치 무기 안내 (M7 4차 §2.3) — 붙기 전에는 근접 안내를, 붙은 뒤에는 조작 안내를 띄운다.
+        /// 점유 중에는 이동·핫바가 잠겨 있으므로 <b>내리는 법</b>이 화면에 남아 있어야 한다.
+        /// </summary>
+        private void DrawMountPrompt()
+        {
+            if (_panelOpen)
+            {
+                return;
+            }
+
+            if (_mounted)
+            {
+                GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.7f, 400f, 24f),
+                    $"<color={UiPalette.HexFocusBrass}>좌클릭 — 사격  ·  R — 재장전  ·  E/Esc — 내리기</color>");
+                return;
+            }
+
+            if (_mountPromptInRange)
+            {
+                GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.7f, 300f, 24f),
+                    $"<color={UiPalette.HexFocusBrass}>E — {_mountPromptName}</color>");
+            }
         }
 
         /// <summary>
