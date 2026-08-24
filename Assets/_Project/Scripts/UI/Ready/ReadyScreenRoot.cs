@@ -1,5 +1,6 @@
 using System;
 using Game.Core.Services;
+using Game.Systems.Loading;
 using Game.Systems.Networking.Lobby;
 using Game.UI.MainMenu;
 using TMPro;
@@ -339,10 +340,35 @@ namespace Game.UI.Ready
             RefreshFocusFrame();
         }
 
+        /// <summary>
+        /// 출발 — <b>대기실과 로딩의 접점은 이 한 줄이다</b>
+        /// ([인게임 진입 로딩 구현 계획](docs/plans/features/인게임-진입-로딩-구현-계획.md) §6.4).
+        ///
+        /// <para>세션을 여기서 직접 부르지 않고 로딩 흐름에 넘긴다. <c>BeginJourney</c> 자체는
+        /// 그대로 남아 <b>코디네이터가 씬을 여는 단계에서</b> 부른다 — "게임 시작 = 세션 서비스를
+        /// 거친다"는 원칙(개발 원칙 2)에 예외가 생기지 않는다.</para>
+        ///
+        /// <para><b>로딩 없이도 굴러가야 한다</b>(§6.5). Boot을 거치지 않고 Main만 열어 본 경우
+        /// 코디네이터가 없다 — 그때는 지금까지처럼 곧바로 넘어간다. 로딩 화면만 없고 게임은 된다.</para>
+        /// </summary>
         private void OnStart()
         {
             if (_actions == null || _leaving)
             {
+                return;
+            }
+
+            // 흐름이 있으면 무조건 그쪽이 주인이다. 거절당했다면 이미 로딩 중이라는 뜻이므로
+            // 아래 우회로로 새지 않게 여기서 끝낸다 — 새면 씬 전환을 두 번 요청하게 된다.
+            if (ServiceLocator.TryGet(out ISessionLoadFlow flow))
+            {
+                if (flow.Begin(_actions.BeginJourney, OnJourneyAborted))
+                {
+                    // 흐름이 시작됐다 — 씬 로드는 코디네이터가 자기 단계에서 연다.
+                    SetInteractable(false);
+                    SetStatus("여정을 준비하는 중...");
+                }
+
                 return;
             }
 
@@ -355,6 +381,23 @@ namespace Game.UI.Ready
             // 씬 로드가 시작됐다 — 이 화면은 곧 사라지므로 더 누르지 못하게 잠근다.
             SetInteractable(false);
             SetStatus("여정을 준비하는 중...");
+        }
+
+        /// <summary>
+        /// 로딩이 되돌아왔다(계획 §3.5) — 아직 이 화면이 살아 있는 시점이므로 되살린다.
+        /// 씬 로드가 시작되기 전에만 불리므로 화면이 사라진 뒤에 도착할 일은 없다.
+        /// </summary>
+        private void OnJourneyAborted(string reason)
+        {
+            if (this == null || _leaving || !IsOpen)
+            {
+                return;
+            }
+
+            SetInteractable(true);
+            SetStatus(string.IsNullOrEmpty(reason)
+                ? "출발하지 못했습니다. 잠시 뒤 다시 시도해 주세요."
+                : reason);
         }
 
         /// <summary>
