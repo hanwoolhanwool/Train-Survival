@@ -26,6 +26,7 @@ MonoBehaviour:
     _providesStorageBlock: 0
     _refundResource: 1
     _viewPrefab: {fileID: 0}
+    _mountedWeapon: {fileID: 0}
   - _kind: 1
     _displayName: "\uB09C\uBC29\uAE30"
     _maxHealth: 40
@@ -39,6 +40,7 @@ MonoBehaviour:
     _providesStorageBlock: 0
     _refundResource: 1
     _viewPrefab: {fileID: 1242920546296898697, guid: 370e2164b0f07704887749aa3ba874d7, type: 3}
+    _mountedWeapon: {fileID: 0}
   - _kind: 2
     _displayName: "\uACF5\uC720 \uCC3D\uACE0"
     _maxHealth: 60
@@ -52,6 +54,7 @@ MonoBehaviour:
     _providesStorageBlock: 1
     _refundResource: 1
     _viewPrefab: {fileID: 5098827563156906200, guid: ea90fea0f1f22af4bbba57006b9de285, type: 3}
+    _mountedWeapon: {fileID: 0}
   - _kind: 3
     _displayName: "\uC81C\uC791\uB300"
     _maxHealth: 40
@@ -65,6 +68,7 @@ MonoBehaviour:
     _providesStorageBlock: 0
     _refundResource: 1
     _viewPrefab: {fileID: 7631233023117615767, guid: 02016dce9fcd9bd4c9762482434c08c7, type: 3}
+    _mountedWeapon: {fileID: 0}
   - _kind: 4
     _displayName: "\uD654\uB355"
     _maxHealth: 40
@@ -78,6 +82,7 @@ MonoBehaviour:
     _providesStorageBlock: 0
     _refundResource: 1
     _viewPrefab: {fileID: 462340171193788602, guid: 8e46e593216afb94e9f4bea9773d8a3d, type: 3}
+    _mountedWeapon: {fileID: 0}
   - _kind: 5
     _displayName: "\uC815\uC218\uAE30"
     _maxHealth: 40
@@ -91,6 +96,7 @@ MonoBehaviour:
     _providesStorageBlock: 0
     _refundResource: 1
     _viewPrefab: {fileID: 2698299051955689650, guid: 4a823b82038367d489b381c49242331f, type: 3}
+    _mountedWeapon: {fileID: 0}
   - _kind: 6
     _displayName: "\uAC15\uD654 \uB09C\uBC29\uB85C"
     _maxHealth: 45
@@ -104,3 +110,32 @@ MonoBehaviour:
     _providesStorageBlock: 0
     _refundResource: 1
     _viewPrefab: {fileID: 3064241547189615784, guid: cb4f30de327cbcc42a7ea8f2f858784a, type: 3}
+    _mountedWeapon: {fileID: 0}
+  - _kind: 7
+    _displayName: "거치 기관총"
+    _maxHealth: 60
+    _buildCost: 6
+    _providesShade: 0
+    _providesHeat: 0
+    _heaterFuelPerSecond: 0
+    _footprintWidth: 2
+    _footprintLength: 2
+    _placeable: 1
+    _providesStorageBlock: 0
+    _refundResource: 3
+    _viewPrefab: {fileID: 0}
+    _mountedWeapon: {fileID: 11400000, guid: 3c9e6a7db2f5601a0e4c8d9f102b5c34, type: 2}
+  - _kind: 8
+    _displayName: "자동 터렛"
+    _maxHealth: 45
+    _buildCost: 8
+    _providesShade: 0
+    _providesHeat: 0
+    _heaterFuelPerSecond: 0
+    _footprintWidth: 2
+    _footprintLength: 2
+    _placeable: 1
+    _providesStorageBlock: 0
+    _refundResource: 3
+    _viewPrefab: {fileID: 0}
+    _mountedWeapon: {fileID: 11400000, guid: 4da7b8ec3061712b1f5d9ea0213c6d45, type: 2}
