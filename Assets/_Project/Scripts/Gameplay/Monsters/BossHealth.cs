@@ -14,7 +14,7 @@ namespace Game.Gameplay.Monsters
     /// (<see cref="BossPhaseMath"/>, 지역이 Day의 함수인 것과 같은 규약).
     /// 처치 시 드랍은 1차 지상 스폰 경로(<see cref="World.IResourceDropper"/>)를 그대로 탄다.
     /// </summary>
-    public sealed class BossHealth : NetworkBehaviour, IDamageable
+    public sealed class BossHealth : NetworkBehaviour, IDamageable, IHostileTarget
     {
         [Tooltip("이 보스의 정의 — 프리팹과 1:1이다 (결정 ①). 각 피어가 이름·페이즈 임계를 로컬 조회한다.")]
         [SerializeField] private BossDefinition _definition;

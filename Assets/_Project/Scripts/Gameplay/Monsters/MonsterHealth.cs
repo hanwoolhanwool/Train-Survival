@@ -15,7 +15,7 @@ namespace Game.Gameplay.Monsters
     /// 사망 연출(M5 8차)은 즉시 디스폰 앞의 짧은 파티클 버스트 — 사망 위치·분쇄 여부를
     /// RPC에 실어 각 피어가 로컬 재생한다 (판정·킬 카운트 경로 무변).
     /// </summary>
-    public sealed class MonsterHealth : NetworkBehaviour, IDamageable
+    public sealed class MonsterHealth : NetworkBehaviour, IDamageable, IHostileTarget
     {
         [SerializeField] private MonsterSettings _settings;
 
