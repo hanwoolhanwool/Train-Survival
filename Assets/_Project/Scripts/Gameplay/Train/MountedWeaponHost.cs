@@ -44,6 +44,26 @@ namespace Game.Gameplay.Train
         /// <summary>조준각 중계 주기 — 10 Hz (결정 ⑥). 표현 전용이라 유실돼도 판정이 흔들리지 않는다.</summary>
         private const float AimRelayInterval = 0.1f;
 
+        // ── 자동 터렛 (B단계) — 서버 전용 상태 ────────────────────────────
+
+        /// <summary>대상 주사 주기(초) — 발사 주기와 별개다. 포신은 이 주기로 대상을 따라 돈다.</summary>
+        private const float TurretScanInterval = 0.2f;
+
+        /// <summary>조준 원점의 갑판 기준 높이(m) — 뷰 없이도 성립해야 하므로 상수다.</summary>
+        private const float TurretAimHeight = 0.75f;
+
+        /// <summary>시야 검사 사거리 여유(m) — 대상 표면과 중심의 차이를 흡수한다.</summary>
+        private const float TurretLineOfSightSlack = 1.5f;
+
+        private const int TurretMaxCandidates = 24;
+
+        private readonly Collider[] TurretOverlapBuffer = new Collider[64];
+        private readonly TurretCandidate[] _turretCandidates = new TurretCandidate[TurretMaxCandidates];
+        private readonly NetworkObject[] _turretTargets = new NetworkObject[TurretMaxCandidates];
+        private readonly Dictionary<int, float> _turretNextFire = new Dictionary<int, float>();
+
+        private float _nextTurretScan;
+
         private float _nextAimRelayTime;
         private int _localAimStructureId = -1;
         private float _localAimYaw;
@@ -92,6 +112,7 @@ namespace Game.Gameplay.Train
             if (IsServer)
             {
                 ServerScanForcedDismount();
+                ServerTickTurrets();
             }
 
             RelayLocalAim();
@@ -436,10 +457,10 @@ namespace Game.Gameplay.Train
         {
             ulong clientId = rpcParams.Receive.SenderClientId;
             if (requestedRounds <= 0
-                || !MountOccupancyLogic.IsOccupiedBy(QueryOccupancies(), structureId, clientId)
                 || !TryGetUsableWeapon(structureId, out _, out MountedWeaponSettings settings)
                 || !TryGetPlayerObject(clientId, out NetworkObject player)
-                || !player.TryGetComponent(out IResourceInventory inventory))
+                || !player.TryGetComponent(out IResourceInventory inventory)
+                || !ServerCanReload(structureId, clientId, settings, player))
             {
                 ConfirmReloadRpc(structureId, 0, RpcTarget.Single(clientId, RpcTargetUse.Temp));
                 return;
@@ -517,6 +538,24 @@ namespace Game.Gameplay.Train
                 new MountedReloadConfirmedLocalEvent(structureId, grantedRounds));
         }
 
+        /// <summary>
+        /// 장전 자격 — 사람이 붙는 무기는 <b>점유자만</b>, 자동 터렛은 <b>다가온 사람이면</b> 된다
+        /// (§2.6 수동 장전: 점유가 아니라 1회 상호작용이다). 터렛의 거리 기준은 좌석 반경을 그대로 쓴다 —
+        /// 붙을 수 있는 거리와 채울 수 있는 거리를 따로 둘 이유가 없다.
+        /// </summary>
+        private bool ServerCanReload(
+            int structureId, ulong clientId, MountedWeaponSettings settings, NetworkObject player)
+        {
+            if (settings.Manned)
+            {
+                return MountOccupancyLogic.IsOccupiedBy(QueryOccupancies(), structureId, clientId);
+            }
+
+            return ServiceLocator.TryGet(out ITrainState train)
+                && train.TryGetStructureCenter(structureId, out Vector3 center)
+                && (player.transform.position - center).sqrMagnitude <= settings.SeatRadiusSqr;
+        }
+
         /// <summary>쓸 수 있는 거치 무기인가 — 항목·설정·사격 데이터가 모두 갖춰져야 한다.</summary>
         private bool TryGetUsableWeapon(
             int structureId, out StructureEntry entry, out MountedWeaponSettings settings)
@@ -529,6 +568,238 @@ namespace Game.Gameplay.Train
 
             settings = GetSettings(entry.Kind);
             return settings != null && settings.Gun != null;
+        }
+
+        // ── 자동 터렛 — 조작자만 AI로 바뀐다 (§2.6 · B단계) ────────────────
+
+        /// <summary>
+        /// 자동 터렛 주사·사격 (서버 전용). <b>로컬 선반영이 없다</b> — 예측할 입력이 없기 때문이다.
+        /// 사격 파이프라인은 A단계 그대로이고, 바뀌는 것은 조작자뿐이다: 사람 대신
+        /// <see cref="TurretTargetingMath"/>가 대상을 고른다.
+        /// <para>
+        /// 상한(<see cref="MountedWeaponSettings.MaxActiveTurrets"/>)은 밤 웨이브와 겹칠 때의
+        /// RPC·프레임 방어선이다. <b>탄이 없는 터렛은 물리 조회도 하지 않고 상한도 먹지 않는다</b> —
+        /// 빈 터렛이 살아 있는 터렛의 자리를 뺏으면 상한이 방어선이 아니라 고장이 된다.
+        /// </para>
+        /// </summary>
+        private void ServerTickTurrets()
+        {
+            if (Time.time < _nextTurretScan)
+            {
+                return;
+            }
+
+            _nextTurretScan = Time.time + TurretScanInterval;
+
+            if (!ServiceLocator.TryGet(out ITrainState train))
+            {
+                return;
+            }
+
+            int active = 0;
+            int cap = int.MaxValue;
+
+            for (int i = 0; i < train.StructureCount; i++)
+            {
+                if (!train.TryGetStructureAt(i, out StructureEntry entry))
+                {
+                    continue;
+                }
+
+                MountedWeaponSettings settings = GetSettings(entry.Kind);
+                if (settings == null || settings.Manned || settings.Gun == null || !IsStructureUsable(entry))
+                {
+                    continue;
+                }
+
+                // 상한은 터렛 자신의 에셋이 든다 — 처음 만난 터렛의 값이 그 세션의 방어선이다.
+                if (cap == int.MaxValue)
+                {
+                    cap = Mathf.Max(1, settings.MaxActiveTurrets);
+                }
+
+                if (_magazines.GetRounds(entry.Id) <= 0)
+                {
+                    continue;
+                }
+
+                if (active >= cap)
+                {
+                    break;
+                }
+
+                active++;
+                ServerTickTurret(train, entry, settings);
+            }
+        }
+
+        private void ServerTickTurret(ITrainState train, StructureEntry entry, MountedWeaponSettings settings)
+        {
+            if (!train.TryGetStructureCenter(entry.Id, out Vector3 center))
+            {
+                return;
+            }
+
+            // 조준 원점은 뷰가 아니라 상태에서 나온다 — 뷰가 없는 피어·서버가 같은 값을 얻어야 한다.
+            Vector3 aimOrigin = center + Vector3.up * TurretAimHeight;
+            Quaternion mount = MountedAimMath.ResolveMountRotation(entry.Rotation);
+
+            int candidates = ServerCollectHostiles(center, settings.SearchRadius);
+            int best = TurretTargetingMath.SelectTarget(
+                _turretCandidates, candidates, aimOrigin, mount,
+                settings.SearchRadius, settings.YawLimit, settings.PitchMin, settings.PitchMax);
+            if (best < 0)
+            {
+                return;
+            }
+
+            NetworkObject target = _turretTargets[best];
+            Vector3 toTarget = _turretCandidates[best].Position - aimOrigin;
+            if (!MountedAimMath.TryResolveAim(mount, toTarget, out float yaw, out float pitch))
+            {
+                return;
+            }
+
+            // 포신은 대상을 따라 돈다 — 표현 전용이라 발사 주기와 무관하게 주사마다 갱신한다.
+            BroadcastAimRpc(entry.Id, yaw, pitch);
+
+            if (Time.time < ServerGetTurretNextFire(entry.Id))
+            {
+                return;
+            }
+
+            GunSettings gun = settings.Gun;
+            Vector3 forward = toTarget.normalized;
+            float distance = toTarget.magnitude;
+
+            // 시야가 막히면 쏘지 않는다 (§2.6) — 벽에 탄을 버리지 않는다.
+            if (!ServerHasLineOfSight(aimOrigin, forward, distance, gun, target))
+            {
+                return;
+            }
+
+            _turretNextFire[entry.Id] = Time.time + gun.FireInterval;
+            if (!_magazines.TryConsume(entry.Id))
+            {
+                return;
+            }
+
+            uint seed = (uint)UnityEngine.Random.Range(1, int.MaxValue);
+            ServerApplyTurretDamage(gun, aimOrigin, forward, seed);
+            BroadcastMountedFireRpc(entry.Id, seed, aimOrigin, forward);
+        }
+
+        /// <summary>
+        /// 반경 안의 <b>적대 대상만</b> 후보로 모은다 (결정 ⑧) — 플레이어·열차·건축물·자원은 후보가 아니다.
+        /// <see cref="IDamageable"/>만으로 거르면 아군이 대상이 된다: 자격은 <see cref="IHostileTarget"/>이 쥔다.
+        /// 한 대상의 콜라이더가 여럿일 수 있으므로 <see cref="NetworkObject"/> 기준으로 한 번만 담는다.
+        /// </summary>
+        private int ServerCollectHostiles(Vector3 center, float radius)
+        {
+            int count = Physics.OverlapSphereNonAlloc(
+                center, radius, TurretOverlapBuffer, ~0, QueryTriggerInteraction.Ignore);
+
+            int filled = 0;
+            for (int i = 0; i < count && filled < _turretCandidates.Length; i++)
+            {
+                Collider collider = TurretOverlapBuffer[i];
+                if (collider == null)
+                {
+                    continue;
+                }
+
+                NetworkObject candidate = collider.GetComponentInParent<NetworkObject>();
+                if (candidate == null || candidate.GetComponent<IHostileTarget>() == null)
+                {
+                    continue;
+                }
+
+                IDamageable damageable = candidate.GetComponent<IDamageable>();
+                if (damageable == null)
+                {
+                    continue;
+                }
+
+                bool duplicate = false;
+                for (int j = 0; j < filled; j++)
+                {
+                    if (ReferenceEquals(_turretTargets[j], candidate))
+                    {
+                        duplicate = true;
+                        break;
+                    }
+                }
+
+                if (duplicate)
+                {
+                    continue;
+                }
+
+                _turretTargets[filled] = candidate;
+                _turretCandidates[filled] = new TurretCandidate
+                {
+                    // 발밑이 아니라 몸통을 겨눈다 — 콜라이더 중심이 사각·시야 판정 모두의 기준이다.
+                    Position = collider.bounds.center,
+                    IsAlive = damageable.IsAlive,
+                };
+                filled++;
+            }
+
+            return filled;
+        }
+
+        private bool ServerHasLineOfSight(
+            Vector3 aimOrigin, Vector3 forward, float distance, GunSettings gun, NetworkObject target)
+        {
+            float range = Mathf.Min(gun.MaxRange, distance + TurretLineOfSightSlack);
+            if (!WeaponRaycast.TryGetClosestHit(aimOrigin, forward, range, transform.root, out RaycastHit hit))
+            {
+                return false;
+            }
+
+            NetworkObject blocking = hit.collider.GetComponentInParent<NetworkObject>();
+            return blocking != null && ReferenceEquals(blocking, target);
+        }
+
+        /// <summary>
+        /// 서버 권위 판정 — 사람이 쏠 때와 <b>같은 시드·같은 산탄 수학</b>을 쓰므로 전 피어가 재계산한
+        /// 궤적과 어긋나지 않는다. 맞은 것이 적대 대상이 아니면 피해를 주지 않는다: 사각으로 막고
+        /// 대상 필터로 한 번 더 막는다 (자동 무기의 아군 오사는 한 겹으로 막지 않는다).
+        /// </summary>
+        private void ServerApplyTurretDamage(
+            GunSettings gun, Vector3 aimOrigin, Vector3 aimForward, uint seed)
+        {
+            int pellets = Mathf.Max(1, gun.PelletCount);
+            uint state = seed;
+
+            for (int p = 0; p < pellets; p++)
+            {
+                Vector3 direction = WeaponSpreadMath.ApplySpreadSeeded(aimForward, gun.SpreadAngle, ref state);
+                if (!WeaponRaycast.TryGetClosestHit(
+                        aimOrigin, direction, gun.MaxRange, transform.root, out RaycastHit hit))
+                {
+                    continue;
+                }
+
+                NetworkObject hitObject = hit.collider.GetComponentInParent<NetworkObject>();
+                if (hitObject == null || hitObject.GetComponent<IHostileTarget>() == null)
+                {
+                    continue;
+                }
+
+                IDamageable damageable = hitObject.GetComponent<IDamageable>();
+                if (damageable == null || !damageable.IsAlive)
+                {
+                    continue;
+                }
+
+                damageable.ApplyDamage(gun.Damage, NetworkManager.ServerClientId);
+            }
+        }
+
+        private float ServerGetTurretNextFire(int structureId)
+        {
+            return _turretNextFire.TryGetValue(structureId, out float next) ? next : 0f;
         }
 
         // ── 조회 보조 ─────────────────────────────────────────────────────
@@ -617,12 +888,19 @@ namespace Game.Gameplay.Train
         private void OnStructureDestroyed(StructureDestroyedEvent evt)
         {
             // 남은 탄은 소실한다 — 보따리 배출 대상이 아니다 (§2.5).
-            _magazines.Clear(evt.StructureId);
+            ServerForgetWeapon(evt.StructureId);
         }
 
         private void OnStructureDemolished(StructureDemolishedEvent evt)
         {
-            _magazines.Clear(evt.StructureId);
+            ServerForgetWeapon(evt.StructureId);
+        }
+
+        /// <summary>사라진 무기의 서버 상태를 지운다 — 장탄과 터렛 발사 주기.</summary>
+        private void ServerForgetWeapon(int structureId)
+        {
+            _magazines.Clear(structureId);
+            _turretNextFire.Remove(structureId);
         }
     }
 }

@@ -62,6 +62,10 @@ namespace Game.Gameplay.Combat
         private bool _promptVisible;
         private int _promptStructureId = -1;
 
+        // 자동 터렛의 확정 장탄 — 서버가 장전 확정마다 알려 준 값이다 (결정 ⑦: 복제하지 않는다).
+        // 한 번도 채우지 않은 터렛은 값이 없어 안내에 수량이 빠진다 — 모르는 것을 아는 척하지 않는다.
+        private readonly Dictionary<int, int> _knownTurretRounds = new Dictionary<int, int>();
+
         private int _lastPublishedRounds = -1;
         private bool _lastPublishedReloading;
         private int _lastPublishedReserve = -1;
@@ -404,7 +408,11 @@ namespace Game.Gameplay.Combat
             if (_magazine != null && evt.StructureId == _mountedStructureId)
             {
                 _magazine.SetRounds(evt.RoundsLoaded);
+                return;
             }
+
+            // 내가 붙어 있지 않은 무기의 확정 장탄 = 방금 채운 자동 터렛이다 (§2.6).
+            _knownTurretRounds[evt.StructureId] = evt.RoundsLoaded;
         }
 
         private void OnReloadConfirmed(MountedReloadConfirmedLocalEvent evt)
@@ -478,12 +486,14 @@ namespace Game.Gameplay.Combat
                 }
 
                 MountedWeaponSettings settings = mounted.GetSettings(entry.Kind);
-                if (settings == null || !settings.Manned || !StructureGridLogic.IsAlive(entry))
+                if (settings == null || !StructureGridLogic.IsAlive(entry))
                 {
                     continue;
                 }
 
-                if (mounted.TryGetOccupant(entry.Id, out _)
+                // 사람이 붙는 무기는 비어 있어야 후보다. 자동 터렛은 점유가 없으므로 늘 후보다 —
+                // 다가간 사람이 하는 일이 다를 뿐이다(붙기 vs 채우기).
+                if ((settings.Manned && mounted.TryGetOccupant(entry.Id, out _))
                     || !train.TryGetStructureCenter(entry.Id, out Vector3 center))
                 {
                     continue;
@@ -501,7 +511,7 @@ namespace Game.Gameplay.Combat
                 bestSettings = settings;
             }
 
-            SetPrompt(bestId > 0, bestId, bestSettings != null ? bestSettings.DisplayName : null);
+            SetPrompt(bestId > 0, bestId, ResolvePromptLabel(bestId, bestSettings));
 
             if (bestId <= 0)
             {
@@ -509,10 +519,42 @@ namespace Game.Gameplay.Combat
             }
 
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.eKey.wasPressedThisFrame)
+            if (keyboard == null || !keyboard.eKey.wasPressedThisFrame)
+            {
+                return;
+            }
+
+            if (bestSettings.Manned)
             {
                 mounted.RequestMount(bestId);
             }
+            else
+            {
+                // 수동 장전 (§2.6) — 점유가 아니라 1회 상호작용이다. 채울 양은 서버가
+                // 빈 약실과 예비량으로 다시 깎으므로 여기서는 탄창 용량을 그대로 요청한다.
+                mounted.RequestReload(bestId, bestSettings.MagazineCapacity);
+            }
+        }
+
+        /// <summary>
+        /// 안내 문구 — 붙는 무기는 이름만, 자동 터렛은 <b>할 일과 아는 만큼의 장탄</b>을 함께 보인다.
+        /// 한 번도 채우지 않은 터렛은 수량이 빠진다: 장탄은 복제되지 않으므로 모르는 것을 아는 척하지 않는다.
+        /// </summary>
+        private string ResolvePromptLabel(int structureId, MountedWeaponSettings settings)
+        {
+            if (structureId <= 0 || settings == null)
+            {
+                return null;
+            }
+
+            if (settings.Manned)
+            {
+                return settings.DisplayName;
+            }
+
+            return _knownTurretRounds.TryGetValue(structureId, out int rounds)
+                ? settings.DisplayName + " 장전 (" + rounds + "/" + settings.MagazineCapacity + ")"
+                : settings.DisplayName + " 장전";
         }
 
         private void SetPrompt(bool visible, int structureId, string displayName)
