@@ -102,6 +102,31 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
+        /// 한 종류의 프리뷰 사본을 <b>미리</b> 만들어 둔다 —
+        /// [인게임 진입 로딩 구현 계획](docs/plans/features/인게임-진입-로딩-구현-계획.md) §5.3.
+        ///
+        /// <para>이 사본은 원래도 <b>세션 내내 상주</b>하도록 설계됐다(아래 <c>_previews</c> 주석).
+        /// 즉 메모리 총량은 그대로이고 <b>만드는 시점만 앞당겨진다</b> — 공짜에 가까운 이동이다.
+        /// 그리고 이 <c>Instantiate</c> 하나가 그 종류의 메시와 텍스처를 전부 끌어오므로,
+        /// 조준 첫 프레임과 설치 첫 프레임의 렉이 함께 사라진다.</para>
+        ///
+        /// <para><b>한 종류씩만 받는다.</b> 6종을 한 번에 만드는 <c>PrewarmAll</c>이 아니라 —
+        /// 장당 텍스처가 무거워서(§0.3-A) 한 프레임에 몰면 로딩 진행바가 그 프레임에 멈춘다(§5.5).
+        /// 몇 종씩 나눠 부를지는 부르는 쪽이 정한다.</para>
+        ///
+        /// <para>이미 있으면 아무것도 하지 않는다. 만들 수 없으면(프리팹·재질 미배치) <c>false</c>.</para>
+        /// </summary>
+        public bool Prewarm(StructureKind kind)
+        {
+            if (_catalog == null || _ghostMaterial == null)
+            {
+                return false;
+            }
+
+            return GetOrCreatePreview(kind) != null;
+        }
+
+        /// <summary>
         /// 종류별 프리뷰 사본을 만든다 — 실물 프리팹에서 충돌·상태 바인딩을 떼고
         /// 모든 렌더러를 고스트 재질 하나로 교체한 순수 표현 사본이다.
         /// </summary>

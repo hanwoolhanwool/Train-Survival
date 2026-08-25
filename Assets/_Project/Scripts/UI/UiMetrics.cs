@@ -61,6 +61,19 @@ namespace Game.UI
         /// <summary>플레이어 이름표 (18–24) — 대표값 중 가장 작아 하한 판정의 기준이 된다.</summary>
         public const int Nameplate = 20;
 
+        /// <summary>
+        /// <b>IMGUI HUD가 실제로 요구하는</b> 1440p 기준 크기 목록 — 글리프 워밍업의 대상이다
+        /// ([인게임 진입 로딩 구현 계획](docs/plans/features/인게임-진입-로딩-구현-계획.md) §5.4).
+        ///
+        /// <para><b>크기마다 아틀라스가 따로다.</b> 하나를 빠뜨리면 그 크기에서만 첫 그리기가
+        /// 여전히 튄다 — 조용한 실패라 화면을 보고는 못 찾는다. 그래서 목록을 상수로 두고
+        /// <c>UiWarmupTextTests</c>가 이 배열을 덮는지 검사한다.</para>
+        ///
+        /// <para><b>메뉴 크기는 여기 없다.</b> 로고·명판·설정은 TMP(uGUI)라 IMGUI 아틀라스를
+        /// 건드리지 않는다. 200 px 글리프를 300자 굽는 것은 순수한 낭비다.</para>
+        /// </summary>
+        public static readonly int[] HudSizes1440 = { HudNumber, ContextPrompt, Nameplate };
+
         // ── 조회 ─────────────────────────────────────────────────────────
 
         /// <summary>현재 화면 기준 배율.</summary>
