@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8348446735290384524}
   - component: {fileID: 3649828203287174211}
   - component: {fileID: 7095292439196754563}
+  - component: {fileID: 1700002001}
   m_Layer: 0
   m_Name: LobbyRoomState
   m_TagString: Untagged
@@ -71,4 +72,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54dbb4f5f9821654b9db46ac6b4d7221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Systems::Game.Systems.Networking.Lobby.LobbyRoomState
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &1700002001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7491395127594865413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c40e31c03f7bb9048872cf92e86e1f73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Systems::Game.Systems.Networking.Lobby.SessionLoadState
   ShowTopMostFoldoutHeaderGroup: 1
