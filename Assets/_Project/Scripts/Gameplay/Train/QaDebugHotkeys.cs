@@ -57,6 +57,12 @@ namespace Game.Gameplay.Train
     public sealed class QaDebugHotkeys : NetworkBehaviour
     {
         private const float SampleDamage = 30f;
+
+        /// <summary>F4가 지급하려는 소총탄 수 — 가방 여유가 모자라면 들어가는 만큼만 들어간다.</summary>
+        private const int RifleAmmoGrant = 60;
+
+        /// <summary>한 번에 밀어 넣는 단위 — 소총탄 한 스택(10)에 맞췄다.</summary>
+        private const int RifleAmmoGrantChunk = 10;
         private const float SelfDamage = 20f;
         private const float SingleMonsterSpawnDistance = 10f;
 
@@ -483,8 +489,38 @@ namespace Game.Gameplay.Train
                 && client.PlayerObject != null)
             {
                 IResourceInventory inventory = client.PlayerObject.GetComponent<IResourceInventory>();
-                inventory?.ServerTryAdd(ResourceType.RifleAmmo, 60);
+                if (inventory != null)
+                {
+                    GrantAsMuchAsFits(inventory, ResourceType.RifleAmmo, RifleAmmoGrant);
+                }
             }
+        }
+
+        /// <summary>
+        /// 들어가는 만큼만 지급한다.
+        /// <para>
+        /// <see cref="IResourceInventory.ServerTryAdd"/>는 <b>한 발이라도 안 들어가면 전량 실패</b>다.
+        /// 소총탄 한 스택은 10이므로 60을 한 번에 밀면 빈 슬롯 6칸을 요구하고, 가방이 조금만 차 있으면
+        /// <b>아무것도 들어오지 않는다</b> — 화면에는 예비 탄약이 0에서 멈춘 것으로만 보인다.
+        /// 그래서 스택 단위로 나눠 넣고, 실제로 들어간 양을 로그로 남긴다.
+        /// </para>
+        /// </summary>
+        private static void GrantAsMuchAsFits(IResourceInventory inventory, ResourceType type, int amount)
+        {
+            int granted = 0;
+            while (granted < amount && inventory.ServerTryAdd(type, RifleAmmoGrantChunk))
+            {
+                granted += RifleAmmoGrantChunk;
+            }
+
+            if (granted < amount)
+            {
+                GameLog.Warn(LogCategory.Train,
+                    $"QA 탄약 지급: {type} {granted}/{amount} — 가방 여유가 모자라 나머지는 넣지 못했다");
+                return;
+            }
+
+            GameLog.Info(LogCategory.Train, $"QA 탄약 지급: {type} {granted}");
         }
 
         /// <summary>요청한 플레이어에게 자원 10개를 지급한다.</summary>
