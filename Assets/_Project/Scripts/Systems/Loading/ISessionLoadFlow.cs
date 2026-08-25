@@ -26,6 +26,23 @@ namespace Game.Systems.Loading
         /// <summary>로딩 화면이 떠 있어야 하는가. <see cref="LoadingStage.Idle"/>이면 거짓이다.</summary>
         bool IsActive { get; }
 
+        /// <summary>참가자 칸 수 — 화면의 점 개수다(§8.2).</summary>
+        int PeerCapacity { get; }
+
+        /// <summary>
+        /// 이 칸에 사람이 있는가. 순서는 로스터와 같다 — <b>호스트가 언제나 첫 칸</b>이라
+        /// 대기실에서 보던 자리가 로딩 화면에서도 그대로다.
+        /// </summary>
+        bool IsPeerPresent(int slot);
+
+        /// <summary>
+        /// 이 칸의 사람이 <b>지금 단계</b>를 마쳤는가.
+        ///
+        /// <para>이게 전원 대기를 견딜 만한 것으로 만든다(§8.2) — 그냥 멈춰 있으면 고장으로
+        /// 보이지만, "셋 중 둘 준비됨"이 보이면 기다리는 이유가 화면에 있다.</para>
+        /// </summary>
+        bool IsPeerReady(int slot);
+
         /// <summary>
         /// 출발한다 — 호스트만 부른다. 이미 로딩 중이면 <c>false</c>를 돌려주고 아무것도 하지 않는다.
         /// </summary>

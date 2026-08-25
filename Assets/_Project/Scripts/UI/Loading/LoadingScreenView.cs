@@ -1,3 +1,4 @@
+using System.Text;
 using Game.Core.Services;
 using Game.Systems.Loading;
 using TMPro;
@@ -53,9 +54,19 @@ namespace Game.UI.Loading
         private RectTransform _fill;
         private TMP_Text _status;
         private TMP_Text _percent;
+        private TMP_Text _peers;
 
         private string _shownStatus;
         private int _shownPercent = -1;
+        private string _shownPeers;
+
+        /// <summary>참가자 점의 색 — <see cref="UiPalette"/> 토큰을 리치텍스트 표기로 한 번만 옮겨 둔다.</summary>
+        private string _hexReady;
+        private string _hexWaiting;
+        private string _hexEmpty;
+
+        /// <summary>점 문자열 조립용 — 매 프레임 문자열을 새로 만들면 로딩 중에 GC가 돈다.</summary>
+        private readonly StringBuilder _peerBuilder = new StringBuilder(64);
 
         private void Awake()
         {
@@ -80,6 +91,50 @@ namespace Game.UI.Loading
 
             Show(true);
             Draw(_flow.Progress, _flow.Status);
+            DrawPeers(_flow);
+        }
+
+        /// <summary>
+        /// 참가자 준비 현황(§8.2) — <b>이게 전원 대기를 견딜 만한 것으로 만든다.</b>
+        /// 그냥 멈춰 있으면 고장으로 보이지만, "셋 중 둘 준비됨"이 보이면 기다리는 이유가 화면에 있다.
+        ///
+        /// <para>방이 없으면(Boot만 열어 본 경우) 아무것도 그리지 않는다 — 빈 점 넷은 정보가 아니다.</para>
+        /// </summary>
+        private void DrawPeers(ISessionLoadFlow flow)
+        {
+            if (_peers == null)
+            {
+                return;
+            }
+
+            _peerBuilder.Length = 0;
+            bool anyone = false;
+
+            for (int slot = 0; slot < flow.PeerCapacity; slot++)
+            {
+                if (slot > 0)
+                {
+                    _peerBuilder.Append("   ");
+                }
+
+                if (!flow.IsPeerPresent(slot))
+                {
+                    _peerBuilder.Append("<color=").Append(_hexEmpty).Append(">·</color>");
+                    continue;
+                }
+
+                anyone = true;
+                bool ready = flow.IsPeerReady(slot);
+                _peerBuilder.Append("<color=").Append(ready ? _hexReady : _hexWaiting).Append('>')
+                    .Append(ready ? '●' : '○').Append("</color>");
+            }
+
+            string text = anyone ? _peerBuilder.ToString() : string.Empty;
+            if (_shownPeers != text)
+            {
+                _shownPeers = text;
+                _peers.text = text;
+            }
         }
 
         private void Show(bool on)
@@ -150,6 +205,14 @@ namespace Game.UI.Loading
 
             _percent = AddText(_root.transform, "Percent", 32, UiPalette.TextMuted);
             Center(_percent.rectTransform, new Vector2(400f, 44f), -50f);
+
+            _peers = AddText(_root.transform, "Peers", 40, UiPalette.TextSteam);
+            _peers.richText = true;
+            Center(_peers.rectTransform, new Vector2(600f, 56f), -120f);
+
+            _hexReady = "#" + ColorUtility.ToHtmlStringRGB(UiPalette.FocusBrass);
+            _hexWaiting = "#" + ColorUtility.ToHtmlStringRGB(UiPalette.TextMuted);
+            _hexEmpty = "#" + ColorUtility.ToHtmlStringRGB(UiPalette.PanelLine);
         }
 
         private static Image AddImage(Transform parent, string name, Color color)
