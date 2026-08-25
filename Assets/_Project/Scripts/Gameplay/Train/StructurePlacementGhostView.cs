@@ -152,11 +152,7 @@ namespace Game.Gameplay.Train
                 Destroy(collider);
             }
 
-            StructureView view = preview.GetComponent<StructureView>();
-            if (view != null)
-            {
-                Destroy(view);
-            }
+            StripStateBinding(preview);
 
             Renderer[] renderers = preview.GetComponentsInChildren<Renderer>(includeInactive: true);
             foreach (Renderer renderer in renderers)
@@ -175,6 +171,63 @@ namespace Game.Gameplay.Train
             _previews[kind] = preview;
             _previewRenderers[kind] = renderers;
             return preview;
+        }
+
+        /// <summary>
+        /// 사본에서 <b>상태를 물고 있는 컴포넌트</b>를 뗀다 — 고스트는 순수한 그림이어야 한다.
+        ///
+        /// <para><b>순서가 전부다.</b> <see cref="StructureView"/>를 먼저 지우려 하면
+        /// <c>[RequireComponent(typeof(StructureView))]</c>를 단 이웃 때문에 유니티가 거절하고
+        /// <b>"Can't remove … because … depends on it"만 남긴 채 둘 다 살아남는다.</b>
+        /// 의존하는 쪽을 먼저 지우면 같은 프레임에 둘 다 깨끗이 빠진다.</para>
+        ///
+        /// <para><b>이웃을 이름으로 나열하지 않는다.</b> 목록은 조용히 뒤처진다 —
+        /// 거치 무기(<c>MountedWeaponView</c>)가 실제로 그렇게 늦게 합류했고, 그때 이 자리는
+        /// 로딩마다 오류 한 줄을 찍기 시작했다. 대신 <c>RequireComponent</c> 선언을 읽어
+        /// <b>의존한다고 스스로 밝힌 것</b>을 찾는다.</para>
+        /// </summary>
+        private static void StripStateBinding(GameObject preview)
+        {
+            Component[] components = preview.GetComponents<Component>();
+
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null || component is StructureView)
+                {
+                    continue;
+                }
+
+                if (DependsOnStructureView(component.GetType()))
+                {
+                    Destroy(component);
+                }
+            }
+
+            StructureView view = preview.GetComponent<StructureView>();
+            if (view != null)
+            {
+                Destroy(view);
+            }
+        }
+
+        /// <summary><see cref="StructureView"/> 없이는 못 산다고 선언한 타입인가.</summary>
+        private static bool DependsOnStructureView(System.Type type)
+        {
+            object[] attributes = type.GetCustomAttributes(typeof(RequireComponent), inherit: true);
+
+            for (int i = 0; i < attributes.Length; i++)
+            {
+                var require = (RequireComponent)attributes[i];
+                if (require.m_Type0 == typeof(StructureView)
+                    || require.m_Type1 == typeof(StructureView)
+                    || require.m_Type2 == typeof(StructureView))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
