@@ -1,5 +1,6 @@
 # Train Survival
 
+[![CI](https://github.com/hanwoolhanwool/Train-Survival/actions/workflows/ci.yml/badge.svg)](https://github.com/hanwoolhanwool/Train-Survival/actions/workflows/ci.yml)
 
 > **멈추면 죽는다.** 끊임없이 달리는 열차 위에서 자원을 낚아채고, 밤마다 몰려드는 몬스터로부터 집을 지키며, 마침내 우주로 탈출한다.
 
