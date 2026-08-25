@@ -360,6 +360,7 @@ GameObject:
   - component: {fileID: 1700000003}
   - component: {fileID: 1700000004}
   - component: {fileID: 1700000005}
+  - component: {fileID: 1700000006}
   m_Layer: 5
   m_Name: SessionLoading
   m_TagString: Untagged
@@ -428,6 +429,22 @@ MonoBehaviour:
   - _prefab: {fileID: 5057033189078180689, guid: 2f43daeda01a6fa48a8d1267b7af4982, type: 3}
     _count: 4
   _perFrame: 2
+--- !u!114 &1700000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fb592b47ec317e41a6e9737176f95b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Game.UI.Loading.UiWarmupStep
+  _resources: {fileID: 11400000, guid: 9747de51e37a616479a984ac3e8d4116, type: 2}
+  _structures: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
+  _recipes: {fileID: 11400000, guid: aaafc8870bb84984f976f7033386f475, type: 2}
+  _phrases: 인벤토리 / 캐릭터 상태 [I·Tab 닫기] — 드래그로 재배치 · 패널 밖 드롭 = 버리기\n핫바 [숫자 키 1~5] 창고 가방 제작 장비 연료 체력 허기 갈증 체온\n건설 철거 수리 설치 회전 [R] 취소 [Esc] 확인 [E] 상호작용\n남은 자원 부족 완료 진행 중 대기 준비 파괴됨 수리 필요 가득 참
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
