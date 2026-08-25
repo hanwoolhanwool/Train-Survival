@@ -56,5 +56,12 @@ namespace Game.Gameplay.Train
         /// 확정 발수는 <see cref="MountedReloadConfirmedLocalEvent"/>로 돌아온다.
         /// </summary>
         void RequestReload(int structureId, int requestedRounds);
+
+        /// <summary>
+        /// 그 무기의 현재 장탄을 알려 달라고 서버에 청한다 (M7 4차 검증 후속) — 자동 터렛의 잔탄은
+        /// 복제되지 않으므로(결정 ⑦), 다가간 사람이 <b>모르는 터렛에 한해 한 번</b> 물어본다.
+        /// 답은 <see cref="MountedAmmoSyncedLocalEvent"/>로 돌아온다.
+        /// </summary>
+        void RequestAmmoSync(int structureId);
     }
 }

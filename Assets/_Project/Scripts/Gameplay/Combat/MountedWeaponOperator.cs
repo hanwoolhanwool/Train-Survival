@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game.Core.Events;
+using Game.Core.Logging;
 using Game.Core.Services;
 using Game.Gameplay.Inventory;
 using Game.Gameplay.Player;
@@ -61,10 +62,14 @@ namespace Game.Gameplay.Combat
         private float _seatWaitDeadline;
         private bool _promptVisible;
         private int _promptStructureId = -1;
+        private string _promptLabel = string.Empty;
 
         // 자동 터렛의 확정 장탄 — 서버가 장전 확정마다 알려 준 값이다 (결정 ⑦: 복제하지 않는다).
         // 한 번도 채우지 않은 터렛은 값이 없어 안내에 수량이 빠진다 — 모르는 것을 아는 척하지 않는다.
         private readonly Dictionary<int, int> _knownTurretRounds = new Dictionary<int, int>();
+
+        // 이미 서버에 물어본 터렛 — 모르는 무기당 조회는 한 번뿐이다(답이 없어도 두 번 묻지 않는다).
+        private readonly HashSet<int> _ammoAsked = new HashSet<int>();
 
         private int _lastPublishedRounds = -1;
         private bool _lastPublishedReloading;
@@ -96,6 +101,9 @@ namespace Game.Gameplay.Combat
             EventBus<UiCloseRequestedLocalEvent>.Subscribe(OnUiCloseRequested);
             EventBus<MountedAmmoSyncedLocalEvent>.Subscribe(OnAmmoSynced);
             EventBus<MountedReloadConfirmedLocalEvent>.Subscribe(OnReloadConfirmed);
+            EventBus<StructureBuiltEvent>.Subscribe(OnStructureBuilt);
+            EventBus<StructureDestroyedEvent>.Subscribe(OnStructureGone);
+            EventBus<StructureDemolishedEvent>.Subscribe(OnStructureDemolished);
         }
 
         public override void OnNetworkDespawn()
@@ -108,6 +116,9 @@ namespace Game.Gameplay.Combat
             EventBus<UiCloseRequestedLocalEvent>.Unsubscribe(OnUiCloseRequested);
             EventBus<MountedAmmoSyncedLocalEvent>.Unsubscribe(OnAmmoSynced);
             EventBus<MountedReloadConfirmedLocalEvent>.Unsubscribe(OnReloadConfirmed);
+            EventBus<StructureBuiltEvent>.Unsubscribe(OnStructureBuilt);
+            EventBus<StructureDestroyedEvent>.Unsubscribe(OnStructureGone);
+            EventBus<StructureDemolishedEvent>.Unsubscribe(OnStructureDemolished);
             EndLocalMount();
         }
 
@@ -214,7 +225,15 @@ namespace Game.Gameplay.Combat
             // 장탄 권위는 서버다 — 붙는 순간 0에서 시작하고, 곧 도착할 확정값으로 맞춘다.
             _magazine.SetRounds(0);
             _lastPublishedRounds = -1;
+            _lastPublishedReloading = false;
             _lastPublishedReserve = -1;
+
+            if (_inventory == null)
+            {
+                // 예비 탄약이 0으로만 보이는 증상의 유일한 코드 원인이다 — 조용히 두지 않는다.
+                GameLog.Warn(LogCategory.Combat,
+                    "거치 무기: 개인 인벤토리를 찾지 못했다 — 예비 탄약이 0으로 표시된다");
+            }
 
             _controller.BeginMount(
                 view.Seat, MountedAimMath.ResolveMountRotation(entry.Rotation),
@@ -407,11 +426,18 @@ namespace Game.Gameplay.Combat
         {
             if (_magazine != null && evt.StructureId == _mountedStructureId)
             {
-                _magazine.SetRounds(evt.RoundsLoaded);
+                // 재장전이 진행 중이면 서버 값으로 덮지 않는다 — 확정(ConfirmPendingLoad)이
+                // 시간과 함께 끝낸다. 덮으면 장전 시간이 통째로 건너뛰어진다.
+                if (!_magazine.IsReloading)
+                {
+                    _magazine.SetRounds(evt.RoundsLoaded);
+                }
+
                 return;
             }
 
-            // 내가 붙어 있지 않은 무기의 확정 장탄 = 방금 채운 자동 터렛이다 (§2.6).
+            // 내가 붙어 있지 않은 무기의 장탄 = 자동 터렛이다 (§2.6). 발사 중계·장전 확정·조회 응답이
+            // 모두 이 한 경로로 들어온다.
             _knownTurretRounds[evt.StructureId] = evt.RoundsLoaded;
         }
 
@@ -421,6 +447,39 @@ namespace Game.Gameplay.Combat
             {
                 _magazine.ConfirmPendingLoad(evt.GrantedRounds);
             }
+        }
+
+        /// <summary>
+        /// 갓 지은 자동 터렛은 <b>빈 탄창</b>이다 — 그 사실을 아는 것도 정보이므로 캐시에 0을 넣는다.
+        /// 이것이 없으면 한 번도 쏘지 않은 새 터렛의 안내에 수량이 빠져, 비었다는 것을 알 수 없다.
+        /// </summary>
+        private void OnStructureBuilt(StructureBuiltEvent evt)
+        {
+            if (ServiceLocator.TryGet(out IMountedWeapons mounted))
+            {
+                MountedWeaponSettings settings = mounted.GetSettings(evt.Entry.Kind);
+                if (settings != null && !settings.Manned)
+                {
+                    _knownTurretRounds[evt.Entry.Id] = 0;
+                    _ammoAsked.Add(evt.Entry.Id);
+                }
+            }
+        }
+
+        private void OnStructureGone(StructureDestroyedEvent evt)
+        {
+            ForgetAmmo(evt.StructureId);
+        }
+
+        private void OnStructureDemolished(StructureDemolishedEvent evt)
+        {
+            ForgetAmmo(evt.StructureId);
+        }
+
+        private void ForgetAmmo(int structureId)
+        {
+            _knownTurretRounds.Remove(structureId);
+            _ammoAsked.Remove(structureId);
         }
 
         /// <summary>
@@ -552,22 +611,45 @@ namespace Game.Gameplay.Combat
                 return settings.DisplayName;
             }
 
-            return _knownTurretRounds.TryGetValue(structureId, out int rounds)
-                ? settings.DisplayName + " 장전 (" + rounds + "/" + settings.MagazineCapacity + ")"
-                : settings.DisplayName + " 장전";
+            // 예비는 내 인벤의 탄이다 — 채울 수 있는지를 무기 앞에서 바로 읽을 수 있어야 한다.
+            int reserve = _inventory != null && settings.Gun != null
+                ? _inventory.CountOf(settings.Gun.AmmoType)
+                : 0;
+
+            if (!_knownTurretRounds.TryGetValue(structureId, out int rounds))
+            {
+                // 아직 한 번도 관측하지 못한 터렛 — 후발 접속이거나 남이 채운 것이다. 한 번만 물어본다.
+                if (_ammoAsked.Add(structureId) && ServiceLocator.TryGet(out IMountedWeapons mounted))
+                {
+                    mounted.RequestAmmoSync(structureId);
+                }
+
+                return settings.DisplayName + " 장전  ·  예비 " + reserve;
+            }
+
+            string state = rounds <= 0
+                ? "비었음"
+                : rounds + "/" + settings.MagazineCapacity;
+            return settings.DisplayName + " 장전 (" + state + ")  ·  예비 " + reserve;
         }
 
+        /// <summary>
+        /// 근접 안내 발행 — <b>문구까지 비교한다</b>. 터렛 안내에는 잔탄·예비가 실려 있어
+        /// 같은 무기를 같은 자리에서 보고 있어도 값이 바뀐다: 대상만 비교하면 숫자가 얼어붙는다.
+        /// </summary>
         private void SetPrompt(bool visible, int structureId, string displayName)
         {
-            if (_promptVisible == visible && _promptStructureId == structureId)
+            string label = displayName ?? string.Empty;
+            if (_promptVisible == visible && _promptStructureId == structureId && _promptLabel == label)
             {
                 return;
             }
 
             _promptVisible = visible;
             _promptStructureId = structureId;
+            _promptLabel = label;
             EventBus<MountPromptLocalEvent>.Publish(
-                new MountPromptLocalEvent(visible, structureId, displayName ?? string.Empty));
+                new MountPromptLocalEvent(visible, structureId, label));
         }
     }
 }

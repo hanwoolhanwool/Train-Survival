@@ -361,6 +361,31 @@ namespace Game.Gameplay.Train
             }
         }
 
+        public void RequestAmmoSync(int structureId)
+        {
+            if (IsSpawned && structureId > 0)
+            {
+                RequestAmmoSyncServerRpc(structureId);
+            }
+        }
+
+        /// <summary>
+        /// 장탄 조회 — 자동 터렛의 잔탄은 복제되지 않으므로(결정 ⑦) 필요한 사람이 물어본다.
+        /// 발사·장전이 있을 때마다 잔탄이 브로드캐스트되므로 이 경로는 <b>후발 접속·남이 채운 터렛</b>처럼
+        /// 아직 한 번도 관측하지 못한 경우에만 쓰인다 (조작 계층이 무기당 한 번으로 묶는다).
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestAmmoSyncServerRpc(int structureId, RpcParams rpcParams = default)
+        {
+            if (!TryGetUsableWeapon(structureId, out _, out _))
+            {
+                return;
+            }
+
+            SyncAmmoRpc(structureId, _magazines.GetRounds(structureId),
+                RpcTarget.Single(rpcParams.Receive.SenderClientId, RpcTargetUse.Temp));
+        }
+
         /// <summary>
         /// 발사 확정 — 점유 · 생존 · <b>사각</b> · 장탄 순으로 본다. 사각은 보고된 월드 방향을
         /// 거치대 기준으로 되돌려 검증한다: 조작 계층이 클램프를 지키면 항상 통과하므로,
@@ -396,7 +421,10 @@ namespace Game.Gameplay.Train
             }
 
             _approvedShot[structureId] = seed;
-            BroadcastMountedFireRpc(structureId, seed, aimOrigin, aimForward);
+
+            // 사람이 쏘는 무기의 잔탄은 싣지 않는다(-1) — 점유자는 로컬 선반영으로 이미 알고,
+            // 원격 피어는 남의 장탄을 알 필요가 없다 (결정 ⑦).
+            BroadcastMountedFireRpc(structureId, seed, aimOrigin, aimForward, -1);
         }
 
         /// <summary>
@@ -479,14 +507,33 @@ namespace Game.Gameplay.Train
 
             int granted = _magazines.Reload(structureId, capacity, want);
             ConfirmReloadRpc(structureId, granted, RpcTarget.Single(clientId, RpcTargetUse.Temp));
-            SyncAmmoRpc(structureId, _magazines.GetRounds(structureId),
-                RpcTarget.Single(clientId, RpcTargetUse.Temp));
+
+            if (settings.Manned)
+            {
+                // 사람 무기는 확정 발수만 보낸다 — 장탄까지 함께 밀면 로컬 장전 시간이 통째로
+                // 건너뛰어져, 화면은 "재장전 중"인데 탄은 이미 가득 찬 상태가 된다.
+                return;
+            }
+
+            // 자동 터렛은 로컬 탄창이 없다 — 채운 결과를 전 피어가 알아야 안내 수량이 맞는다.
+            BroadcastAmmoRpc(structureId, _magazines.GetRounds(structureId));
         }
 
-        /// <summary>발사 연출 중계 — 판정에 영향이 없다. 쏜 사람은 이미 로컬 재생했으므로 건너뛴다.</summary>
+        /// <summary>
+        /// 발사 연출 중계 — 판정에 영향이 없다. 쏜 사람은 이미 로컬 재생했으므로 건너뛴다.
+        /// <paramref name="roundsLeft"/>가 0 이상이면 자동 무기의 잔탄이다(사람 무기는 -1).
+        /// </summary>
         [Rpc(SendTo.Everyone)]
-        private void BroadcastMountedFireRpc(int structureId, uint seed, Vector3 aimOrigin, Vector3 aimForward)
+        private void BroadcastMountedFireRpc(
+            int structureId, uint seed, Vector3 aimOrigin, Vector3 aimForward, int roundsLeft)
         {
+            // 잔탄은 연출보다 먼저 푼다 — 쏜 사람이 건너뛰는 갈림길 앞이어야 모두가 같은 값을 받는다.
+            if (roundsLeft >= 0)
+            {
+                EventBus<MountedAmmoSyncedLocalEvent>.Publish(
+                    new MountedAmmoSyncedLocalEvent(structureId, roundsLeft));
+            }
+
             if (NetworkManager != null && TryGetOccupant(structureId, out ulong occupant)
                 && occupant == NetworkManager.LocalClientId)
             {
@@ -522,6 +569,14 @@ namespace Game.Gameplay.Train
             }
 
             WeaponFireCosmetics.Play(settings.Gun, muzzle, aimOrigin, aimForward, seed, ignoreRoot);
+        }
+
+        /// <summary>자동 무기의 잔탄을 전 피어에 알린다 — 누가 채웠든 화면의 수량이 같아진다.</summary>
+        [Rpc(SendTo.Everyone)]
+        private void BroadcastAmmoRpc(int structureId, int roundsLoaded)
+        {
+            EventBus<MountedAmmoSyncedLocalEvent>.Publish(
+                new MountedAmmoSyncedLocalEvent(structureId, roundsLoaded));
         }
 
         [Rpc(SendTo.SpecifiedInParams)]
@@ -686,7 +741,10 @@ namespace Game.Gameplay.Train
 
             uint seed = (uint)UnityEngine.Random.Range(1, int.MaxValue);
             ServerApplyTurretDamage(gun, aimOrigin, forward, seed);
-            BroadcastMountedFireRpc(entry.Id, seed, aimOrigin, forward);
+
+            // 자동 무기의 잔탄은 실어 보낸다 — 사람이 붙어 있지 않으니 아무도 로컬로 알 수 없고,
+            // 언제 채워야 하는지를 화면에서 읽을 수 있어야 한다. 발사 중계에 얹으므로 추가 통신이 없다.
+            BroadcastMountedFireRpc(entry.Id, seed, aimOrigin, forward, _magazines.GetRounds(entry.Id));
         }
 
         /// <summary>
