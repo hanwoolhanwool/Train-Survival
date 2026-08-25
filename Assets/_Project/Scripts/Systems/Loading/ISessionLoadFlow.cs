@@ -26,6 +26,15 @@ namespace Game.Systems.Loading
         /// <summary>로딩 화면이 떠 있어야 하는가. <see cref="LoadingStage.Idle"/>이면 거짓이다.</summary>
         bool IsActive { get; }
 
+        /// <summary>
+        /// 지금 화면의 불투명도 (0~1) — 페이드 인·아웃과 최소 표시 시간(§8.3)의 결과다.
+        ///
+        /// <para><b>화면이 아니라 흐름이 시간을 소유한다</b>(§6.3). 화면이 스스로 페이드하면
+        /// 흐름이 끝났는데 그림이 아직 남아 있는 순간이 생기고, 그 사이에 다음 로딩이 시작되면
+        /// 두 연출이 겹친다.</para>
+        /// </summary>
+        float Alpha { get; }
+
         /// <summary>참가자 칸 수 — 화면의 점 개수다(§8.2).</summary>
         int PeerCapacity { get; }
 

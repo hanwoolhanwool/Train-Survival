@@ -79,6 +79,12 @@ namespace Game.Systems.Loading
         /// <summary>지금 구독 중인 씬 매니저. 세션이 서고 죽을 때마다 바뀌므로 매 프레임 맞춘다.</summary>
         private NetworkSceneManager _subscribed;
 
+        /// <summary>화면이 올라온 시각 — 최소 표시 시간과 페이드 인의 기준이다(§8.3).</summary>
+        private float _visibleSince;
+
+        /// <summary>출발 단계가 머물러야 하는 시간. 단계에 들어설 때 한 번 정한다.</summary>
+        private float _departTotal;
+
         public LoadingStage Stage => _stage;
 
         public float Progress => _progress;
@@ -86,6 +92,24 @@ namespace Game.Systems.Loading
         public string Status => LoadingStageText.For(_stage);
 
         public bool IsActive => _stage != LoadingStage.Idle;
+
+        public float Alpha
+        {
+            get
+            {
+                if (_stage == LoadingStage.Idle || _stage == LoadingStage.Done)
+                {
+                    return 0f;
+                }
+
+                float now = Time.unscaledTime;
+                return LoadingFadeMath.Alpha(
+                    now - _visibleSince,
+                    now - _stageEnteredAt,
+                    _departTotal,
+                    _stage == LoadingStage.Depart);
+            }
+        }
 
         public int PeerCapacity => RosterOrdering.Capacity;
 
@@ -244,10 +268,8 @@ namespace Game.Systems.Loading
                     TickWaitSettle();
                     break;
 
-                // 최소 표시 시간과 페이드 아웃은 5차 몫이다.
                 case LoadingStage.Depart:
-                    SetStageProgress(1f);
-                    Enter(LoadingStage.Done);
+                    TickDepart();
                     break;
 
                 case LoadingStage.Done:
@@ -298,6 +320,12 @@ namespace Game.Systems.Loading
         /// <summary>단계를 넘긴다. 프리로드 묶음이 걸린 단계면 여기서 돌 목록을 붙잡는다.</summary>
         private void Enter(LoadingStage stage)
         {
+            // 화면이 처음 올라오는 순간 — 최소 표시 시간의 기준점이다(§8.3).
+            if (_stage == LoadingStage.Idle && stage != LoadingStage.Idle)
+            {
+                _visibleSince = Time.unscaledTime;
+            }
+
             _stage = stage;
             _stageEnteredAt = Time.unscaledTime;
 
@@ -308,6 +336,10 @@ namespace Game.Systems.Loading
             else if (stage == LoadingStage.Settle)
             {
                 BeginPhase(PreloadPhase.AfterSceneLoad);
+            }
+            else if (stage == LoadingStage.Depart)
+            {
+                _departTotal = LoadingFadeMath.DepartSeconds(_stageEnteredAt - _visibleSince);
             }
 
             SetStageProgress(0f);
@@ -487,6 +519,22 @@ namespace Game.Systems.Loading
                 GameLog.Warn(LogCategory.Session, "출발 지시가 오지 않아 로딩 화면을 걷습니다.");
                 SetStageProgress(1f);
                 Enter(LoadingStage.Depart);
+            }
+        }
+
+        /// <summary>
+        /// ④ 출발 — 최소 표시 시간을 채우고 페이드 아웃이 끝날 때까지 머문다(§8.3).
+        /// <b>여기서 서두르면 화면이 깜빡이기만 한다</b> — 빨라 보이는 게 아니라 고장으로 읽힌다.
+        /// </summary>
+        private void TickDepart()
+        {
+            float elapsed = Time.unscaledTime - _stageEnteredAt;
+
+            SetStageProgress(_departTotal <= 0f ? 1f : Mathf.Clamp01(elapsed / _departTotal));
+
+            if (elapsed >= _departTotal)
+            {
+                Enter(LoadingStage.Done);
             }
         }
 
