@@ -82,7 +82,7 @@ namespace Game.Gameplay.Monsters
                 return;
             }
 
-            position.y = 0f;
+            position.y = CurrentSurfaceY();
             GameObject instance = PoolManager.Spawn(_monsterPrefab, position, Quaternion.identity);
             var health = instance.GetComponent<MonsterHealth>();
             if (health == null)
@@ -205,12 +205,24 @@ namespace Game.Gameplay.Monsters
             SpawnOne();
         }
 
+        /// <summary>
+        /// 몬스터가 서는 높이 — 지역이 물이면 물면, 아니면 지면(0).
+        /// 바다는 궤도 밖이 전부 물이라 이걸 안 쓰면 몬스터가 <b>수면 위에 떠서 달린다</b>
+        /// (바다 지역 구현 계획 §8.1). 지역을 못 얻으면 종전대로 0.
+        /// </summary>
+        private static float CurrentSurfaceY()
+        {
+            return ServiceLocator.TryGet(out IRegionService region) && region.CurrentRegion != null
+                ? region.CurrentRegion.SurfaceY
+                : 0f;
+        }
+
         private void SpawnOne()
         {
             float side = Random.value < 0.5f ? -1f : 1f;
             var position = new Vector3(
                 side * Random.Range(_settings.MinLateralOffset, _settings.MaxLateralOffset),
-                0f,
+                CurrentSurfaceY(),
                 Random.Range(_settings.SpawnZMin, _settings.SpawnZMax));
 
             GameObject instance = PoolManager.Spawn(_monsterPrefab, position, Quaternion.identity);

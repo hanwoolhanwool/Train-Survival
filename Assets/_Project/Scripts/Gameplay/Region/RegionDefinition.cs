@@ -77,6 +77,14 @@ namespace Game.Gameplay.Region
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
 
+        [Header("물 (바다)")]
+        [Tooltip("이 지역의 지면이 물인가. 켜면 지상 개체가 지면(y 0)이 아니라 물면에서 선다. " +
+            "바다처럼 궤도 밖이 전부 물인 지역만 켠다.")]
+        [SerializeField] private bool _hasWater;
+
+        [Tooltip("물 표면 높이 (m). HasWater 가 켜졌을 때만 쓴다. 바다 = -4 (레일 바닥에서 4 m 아래).")]
+        [SerializeField] private float _waterSurfaceY = -4f;
+
         [Tooltip("이 지역의 자원 스폰 후보(종류 + 가중치). 비우면 스포너가 기본 종류로 심는다.")]
         [SerializeField] private ResourceSpawnEntry[] _resourceSpawns;
 
@@ -126,6 +134,18 @@ namespace Game.Gameplay.Region
 
         /// <summary>이 지역의 하늘. null 이면 하늘 슬롯을 건드리지 않는다.</summary>
         public Material SkyboxMaterial => _skyboxMaterial;
+
+        /// <summary>이 지역의 지면이 물인가 (바다).</summary>
+        public bool HasWater => _hasWater;
+
+        /// <summary>물 표면 높이 (m). <see cref="HasWater"/>가 꺼져 있으면 의미 없다.</summary>
+        public float WaterSurfaceY => _waterSurfaceY;
+
+        /// <summary>
+        /// 지상 개체가 서는 높이 — 물이 있으면 물면, 없으면 지면(0).
+        /// 물 지역에서 이걸 안 쓰면 몬스터가 <b>물 위에 뜬다.</b>
+        /// </summary>
+        public float SurfaceY => _hasWater ? _waterSurfaceY : 0f;
 
         public GameObject ResourcePrefab => _resourcePrefab;
 
