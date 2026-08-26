@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 542ec26194bf50944ac794f305837426, type: 3}
+  m_Name: BossDefinition_Sea
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.BossDefinition
+  _displayName: "\uD070\uBB3C\uBC94"
+  _prefab: {fileID: 7301000000000000001, guid: 7a2c9e1b3d4f5061829304a5b6c7d801, type: 3}
+  _maxHealth: 1050
+  _contactDamage: 20
+  _attackRange: 4
+  _attackInterval: 1.6
+  _moveSpeed: 5.6
+  _chaseSpeedMargin: 0.6
+  _avoidProbeDistance: 4
+  _chargeCooldownSeconds: 9
+  _chargeTelegraphSeconds: 1.3
+  _chargeDurationSeconds: 1.6
+  _chargeRecoverSeconds: 2
+  _chargeSpeed: 19
+  _chargeDamage: 30
+  _chargeHitRadius: 3
+  _phaseHealthThresholds:
+  - 0.5
+  _phaseSpeedBonusPerPhase: 0.12
+  _phaseCooldownScalePerPhase: 0.85
+  _signaturePattern: 1
+  _signatureUnlockPhaseIndex: 1
+  _signatureIntervalSeconds: 8
+  _signatureCount: 2
+  _signatureVariantIndex: -1
+  _signatureMaxAlive: 6
+  _projectileFlightSeconds: 1.8
+  _projectileImpactRadius: 3.5
+  _projectileDamage: 20
+  _projectileViewPrefab: {fileID: 0}
+  _drops:
+  - _type: 10
+    _count: 1
+  _syncHz: 15
+  _interpolationDelaySeconds: 0.15

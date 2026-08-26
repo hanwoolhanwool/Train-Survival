@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84fb8a448d024464e880623d9d66669b, type: 3}
+  m_Name: Region_Sea
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionDefinition
+  _displayName: "\uBC14\uB2E4"
+  _dayCount: 3
+  _waveCountMultiplier: 1.45
+  _monsterHealthMultiplier: 1.25
+  _dayAmbientTemperature: 24
+  _nightAmbientTemperature: 12
+  _weathers: []
+  _weatherChancePerDay: 0
+  _stampedeChancePerDay: 0
+  _bossDefinition: {fileID: 11400000, guid: c3bf7fb7c9eff4345bddaace12124b1e, type: 2}
+  _segmentPalette: {fileID: 11400000, guid: 9f3c06093c9e62644acf6762e8a1918e, type: 2}
+  _skyboxMaterial: {fileID: 2100000, guid: 891884a6cbcdd5e469ae1fcf5e4a18dd, type: 2}
+  _terrainTilePrefab: {fileID: 0}
+  _hasWater: 1
+  _waterSurfaceY: -4
+  _resourceSpawns:
+  - _type: 1
+    _weight: 0.35
+  - _type: 3
+    _weight: 0.3
+  - _type: 5
+    _weight: 0.2
+  - _type: 9
+    _weight: 0.15
+  _resourcePrefab: {fileID: 0}
+  _resourceSpawnIntervalMultiplier: 1.6
