@@ -139,6 +139,12 @@ namespace Game.Gameplay.World
         public const float WalkableMinTopY = -0.5f;
         public const float WalkableMaxTopY = 3f;
 
+        /// <summary>
+        /// <b>타고 넘을 수 있는 단</b>으로 보는 상면 높이 상한 (기차역 0차, 2026-08-26).
+        /// 이보다 낮고 발판이 넓으면 몬스터가 올라서서 지나가므로 길이가 길어도 장벽이 아니다.
+        /// </summary>
+        public const float MountableMaxTopY = 1.2f;
+
         /// <summary>타일당 자원 앵커 개수 기준 (가이드 §4.4).</summary>
         public const int MinAnchorsPerTile = 5;
         public const int MaxAnchorsPerTile = 7;
@@ -188,8 +194,37 @@ namespace Game.Gameplay.World
         }
 
         /// <summary>
+        /// 몬스터가 <b>타고 넘을 수 있는 낮은 단</b>인가 — 기차역 승강장처럼 길어도 길을 막지 않는 것.
+        ///
+        /// <para><b>이 예외가 생긴 경위 (2026-08-26).</b> 기차역 0차 블록아웃에서 높이 1 m 승강장을
+        /// 세워 보니, 갑판 상면이 3.566 m라 <b>한참 내려다보여 벽으로 읽히지 않았고</b> 지상에서도
+        /// 허리 높이였다. 즉 이 규칙이 막으려던 것은 시야가 아니라 <b>몬스터가 갇히는 것</b> 하나였고,
+        /// 올라설 수 있는 단은 애초에 갇힐 일이 없다. 그래서 승강장을 낮추거나 8 m로 쪼개는 대신
+        /// 규칙에 예외를 냈다.</para>
+        ///
+        /// <para><b>지면에 붙어 있어야 한다.</b> 공중에 뜬 차양·다리 상판은 올라설 수 없으므로
+        /// 이 예외를 받지 못한다 — 그것들은 "아래로 지나갈 수 있다"는 다른 이유로 판정돼야 한다.</para>
+        /// </summary>
+        public static bool IsMountableStep(Bounds bounds)
+        {
+            if (bounds.max.y > MountableMaxTopY)
+            {
+                return false;
+            }
+
+            // 밑동이 지면에 닿아 있어야 올라설 수 있다.
+            if (bounds.min.y > GroundHeightTolerance)
+            {
+                return false;
+            }
+
+            return bounds.size.x >= WalkableMinFootprint && bounds.size.z >= WalkableMinFootprint;
+        }
+
+        /// <summary>
         /// 몬스터 주행 대역을 막는 연속 장벽인가. 길이(Z)와 높이를 함께 본다 —
         /// 낮은 지면 판때기는 40 m여도 장벽이 아니고, 짧은 바위는 높아도 돌아갈 수 있다.
+        /// <see cref="IsMountableStep"/>인 것도 길이와 무관하게 장벽이 아니다.
         /// </summary>
         public static bool IsLongWall(Bounds bounds)
         {
@@ -203,7 +238,13 @@ namespace Game.Gameplay.World
                 return false;
             }
 
-            return bounds.size.y >= WallMinHeightY && RisesAboveGround(bounds);
+            if (bounds.size.y < WallMinHeightY || !RisesAboveGround(bounds))
+            {
+                return false;
+            }
+
+            // 타고 넘을 수 있으면 길어도 갇히지 않는다 (승강장 예외).
+            return !IsMountableStep(bounds);
         }
 
         /// <summary>타일 규격(120 × 40 m)을 벗어나는가 — 이음매 규칙 §4.3.</summary>

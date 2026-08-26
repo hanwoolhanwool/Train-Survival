@@ -133,6 +133,53 @@ namespace Game.Tests.EditMode
             Assert.IsFalse(ClearZoneRules.IsLongWall(Box(27f, 5f, 0f, 4f, 10f, 40f)));
         }
 
+        // ── 타고 넘는 단 예외 (기차역 승강장, 2026-08-26) ─────────────
+
+        [Test]
+        public void 승강장처럼_낮고_넓은_단은_길어도_벽이_아니다()
+        {
+            // 높이 1 m · 폭 6 m 승강장이 타일 전체를 관통한다 — 몬스터가 올라서서 지나가므로 갇히지 않는다.
+            Assert.IsFalse(ClearZoneRules.IsLongWall(Box(8f, 0.5f, 0f, 6f, 1f, 40f)));
+        }
+
+        [Test]
+        public void 타고_넘기_어려운_높이면_예외가_적용되지_않는다()
+        {
+            // 상면 1.5 m는 상한(1.2)을 넘는다 — 이건 여전히 벽이다.
+            Assert.IsTrue(ClearZoneRules.IsLongWall(Box(8f, 0.75f, 0f, 6f, 1.5f, 40f)));
+        }
+
+        [Test]
+        public void 좁은_턱은_낮아도_예외를_받지_못한다()
+        {
+            // 폭 1 m면 올라서도 지나갈 자리가 없다 — 발판이 있어야 통로다.
+            Assert.IsTrue(ClearZoneRules.IsLongWall(Box(8f, 0.5f, 0f, 1f, 1f, 40f)));
+        }
+
+        [Test]
+        public void 공중에_뜬_차양은_예외를_받지_못한다()
+        {
+            // 밑동이 지면에 없으면 올라설 수 없다 — "아래로 지나간다"는 별개 판정이라 여기서는 벽이다.
+            Assert.IsTrue(ClearZoneRules.IsLongWall(Box(8f, 3.3f, 0f, 6f, 0.6f, 40f)));
+        }
+
+        [Test]
+        public void 타고_넘는_단_판정은_높이와_발판과_접지를_함께_본다()
+        {
+            Assert.IsTrue(ClearZoneRules.IsMountableStep(Box(8f, 0.5f, 0f, 6f, 1f, 40f)), "승강장");
+            Assert.IsFalse(ClearZoneRules.IsMountableStep(Box(8f, 0.75f, 0f, 6f, 1.5f, 40f)), "상면 1.5 m");
+            Assert.IsFalse(ClearZoneRules.IsMountableStep(Box(8f, 0.5f, 0f, 1f, 1f, 40f)), "폭 1 m");
+            Assert.IsFalse(ClearZoneRules.IsMountableStep(Box(8f, 3.3f, 0f, 6f, 0.6f, 40f)), "공중");
+        }
+
+        [Test]
+        public void 승강장은_전체_판정에서도_결함이_없다()
+        {
+            // WorldFrameSurface가 붙어 있고 자원 대역 안이면 침범이 하나도 없어야 한다.
+            ClearZoneIssue issues = ClearZoneRules.Evaluate(Probe(Box(8f, 0.5f, 0f, 6f, 1f, 40f)));
+            Assert.AreEqual(ClearZoneIssue.None, issues);
+        }
+
         // ── 콜라이더 종류·표면 마커 ──────────────────────────────────
 
         [Test]
