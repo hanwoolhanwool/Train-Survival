@@ -18,7 +18,7 @@ namespace Game.Gameplay.World
     /// 관리 목록을 <see cref="SettleableGrabbable"/>로 함께 쓴다.
     /// </summary>
     public sealed class GroundResourceSpawner : NetworkBehaviour, IResourceDropper, IStorageBundleSpawner,
-        IBundleItemStore
+        IBundleItemStore, IStationPropSpawner
     {
         [SerializeField] private ResourceSpawnSettings _settings;
 
@@ -86,6 +86,11 @@ namespace Game.Gameplay.World
                     ServiceLocator.Register<IBundleItemStore>(this);
                 }
 
+                if (!ServiceLocator.IsRegistered<IStationPropSpawner>())
+                {
+                    ServiceLocator.Register<IStationPropSpawner>(this);
+                }
+
                 // 새 세션 — 이전 세션의 보관물이 새지 않게 비운다 (보관은 세션 한정).
                 _bundleItemContents.Clear();
             }
@@ -108,6 +113,11 @@ namespace Game.Gameplay.World
             if (ServiceLocator.TryGet(out IBundleItemStore store) && ReferenceEquals(store, this))
             {
                 ServiceLocator.Unregister<IBundleItemStore>();
+            }
+
+            if (ServiceLocator.TryGet(out IStationPropSpawner props) && ReferenceEquals(props, this))
+            {
+                ServiceLocator.Unregister<IStationPropSpawner>();
             }
         }
 
@@ -373,6 +383,43 @@ namespace Game.Gameplay.World
             }
 
             bundle.NetworkObject.Spawn();
+            _activeNodes.Add(bundle);
+            return true;
+        }
+
+        /// <summary>
+        /// 역 소품 스폰 (기차역 2차 — <see cref="IStationPropSpawner"/>).
+        ///
+        /// <para><see cref="ServerSpawnResting"/>과 갈라 두는 이유는 <b>y</b>다. 그쪽은 갑판이
+        /// 아니면 지면(y = 0)에 붙이는데, 역 소품은 <b>승강장 위(y ≈ 1)</b>에도 놓인다 —
+        /// 앵커가 이미 지형 높이를 반영한 자리라 좌표를 그대로 존중해야 한다.
+        /// 갑판 판정을 하지 않는 것도 같은 이유다: 역 소품은 언제나 월드 프레임 소속이다.</para>
+        /// </summary>
+        public bool ServerSpawnProp(Inventory.HotbarSlotView[] contents, Vector3 position, int requiredTier)
+        {
+            if (!IsSpawned || !IsServer)
+            {
+                return false;
+            }
+
+            if (!ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                return false;
+            }
+
+            var rest = new Vector3(position.x, position.y + _bundleRestOffsetY, position.z);
+
+            StorageBundle bundle = InstantiateBundle(contents, rest);
+            if (bundle == null)
+            {
+                return false;
+            }
+
+            bundle.ServerSetRequiredTier(requiredTier);
+            bundle.ServerSetSpawnBinding(rest, scroll.TraveledDistance);
+            bundle.NetworkObject.Spawn();
+
+            // 자원 노드와 같은 목록 — 이걸 빠뜨리면 지나간 역의 소품이 영원히 남는다.
             _activeNodes.Add(bundle);
             return true;
         }

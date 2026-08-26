@@ -39,6 +39,12 @@ namespace Game.Gameplay.World
 
         private readonly NetworkList<NetworkSlot> _slots = new NetworkList<NetworkSlot>();
 
+        // 요구 집게 등급의 서버 주입 (기차역 2차) — 상자·금고·자판기가 프리팹 하나를 공유하기 위한 축이다.
+        // ResourceNode가 자원 종류를 인덱스로 복제하는 것과 같은 규약: 프리팹 목록을 늘리지 않는다.
+        private readonly NetworkVariable<byte> _syncedRequiredTier = new NetworkVariable<byte>();
+
+        private byte _pendingRequiredTier;
+
         // 칸 파괴 투척 (M5 8차 §2) — (시작 위치, 착지 위치)만 복제하고 각 피어가 같은 포물선을
         // 로컬 재생한다 (7차 하강 로컬 재생과 같은 규약 — 프레임 동기화 없음 = 떨림 없음).
         // 시작 위치는 착지와 같은 월드 바인딩 좌표계라 비행 중에도 세계와 함께 흐른다.
@@ -65,7 +71,15 @@ namespace Game.Gameplay.World
         /// 비행 중에는 3단계 집게만 낚아챌 수 있다 (1차 검증 개선 1 — "불허"의 등급 예외화).
         /// 그랩 검증이 이미 집게 등급 ≥ 요구 등급을 강제하므로 같은 축으로 표현한다 — 착지하면 원래 등급.
         /// </summary>
-        public override int RequiredHarpoonTier => IsInFlight ? FlightRequiredTier : _requiredHarpoonTier;
+        public override int RequiredHarpoonTier => IsInFlight ? FlightRequiredTier : EffectiveRequiredTier;
+
+        /// <summary>
+        /// 실제 요구 등급 — 서버가 주입한 값이 있으면 그것, 없으면 프리팹 값.
+        /// <b>0이 "주입 없음"</b>이라 창고 보따리(M5 8차)는 손대지 않아도 프리팹 값 그대로다.
+        /// </summary>
+        private int EffectiveRequiredTier => IsSpawned && _syncedRequiredTier.Value > 0
+            ? _syncedRequiredTier.Value
+            : _requiredHarpoonTier;
 
         private const int FlightRequiredTier = 3;
 
@@ -103,6 +117,15 @@ namespace Game.Gameplay.World
         public void ServerSetContents(HotbarSlotView[] contents)
         {
             _pendingContents = contents;
+        }
+
+        /// <summary>
+        /// 서버 전용 — 스폰 직전에 요구 집게 등급을 예약한다 (역 소품: 금고 3 · 자판기 2 · 상자 1).
+        /// 0이면 프리팹 값을 그대로 쓴다. 스폰 때 소비되므로 <b>풀에서 재사용돼도 이전 등급이 새지 않는다</b>.
+        /// </summary>
+        public void ServerSetRequiredTier(int tier)
+        {
+            _pendingRequiredTier = (byte)Mathf.Clamp(tier, 0, FlightRequiredTier);
         }
 
         /// <summary>서버 전용 — 전송 판정용 슬롯 스냅샷 (창고 CopyStorageSlots와 같은 규약).</summary>
@@ -158,6 +181,10 @@ namespace Game.Gameplay.World
 
                     _pendingContents = null;
                 }
+
+                // 예약이 없으면 0 — 프리팹 값을 쓴다는 뜻이라 창고 보따리는 현행 그대로다.
+                _syncedRequiredTier.Value = _pendingRequiredTier;
+                _pendingRequiredTier = 0;
             }
 
             if (IsServer)

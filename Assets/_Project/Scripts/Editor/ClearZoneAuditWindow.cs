@@ -401,6 +401,38 @@ namespace Game.Editor
                     target: null);
             }
 
+            // 역 소품 앵커 (기차역 2차) — 배치 규격은 자원 앵커와 같다(|x| 4~16 · |z| ≤ 20).
+            // 개수 기준은 없다(역 타일마다 다르다). 16 m를 넘으면 1단계 집게로 영영 닿지 않아
+            // "보이는데 못 가져가는 물건"이 되므로 그것만 오류로 잡는다.
+            StationPropAnchor[] props = root.GetComponentsInChildren<StationPropAnchor>(true);
+            for (int i = 0; i < props.Length; i++)
+            {
+                StationPropAnchor prop = props[i];
+                Vector3 local = rootTransform.InverseTransformPoint(prop.transform.position);
+                AnchorIssue issues = ClearZoneRules.EvaluateAnchor(local);
+                if (issues == AnchorIssue.None)
+                {
+                    continue;
+                }
+
+                string propPath = HierarchyPath(prop.transform, rootTransform);
+                UnityEngine.Object propTarget = pingable ? prop.gameObject : null;
+
+                foreach (AnchorIssue flag in AllAnchorIssues)
+                {
+                    if ((issues & flag) == 0)
+                    {
+                        continue;
+                    }
+
+                    report.Add(
+                        propPath,
+                        $"역 소품({prop.Kind}) — {ClearZoneRules.Describe(flag)}",
+                        isError: true,
+                        target: propTarget);
+                }
+            }
+
             // 랜드마크·스캐터 슬롯 (가이드 §4.4) — 개수만 본다. 자리의 적절함은 사람이 정한다.
             int landmarks = root.GetComponentsInChildren<LandmarkSlot>(true).Length;
             if (!ClearZoneRules.IsLandmarkSlotCountValid(landmarks))
