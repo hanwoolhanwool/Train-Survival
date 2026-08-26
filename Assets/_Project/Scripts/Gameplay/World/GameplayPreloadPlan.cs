@@ -37,6 +37,18 @@ namespace Game.Gameplay.World
         public static int[] SegmentCounts(
             int firstIndex, int lastIndex, float[] weights, bool[] noRepeatAdjacent)
         {
+            return SegmentCounts(firstIndex, lastIndex, weights, noRepeatAdjacent, 0, 0);
+        }
+
+        /// <summary>
+        /// 기차역이 깔리는 인덱스를 빼고 세는 판 — 역 타일 자리에는 팔레트 세그먼트가 오지 않는다.
+        /// <paramref name="stationBlockSize"/>·<paramref name="stationStageCount"/>가 성립하지 않으면
+        /// (0이거나 너무 좁으면) 아무것도 빠지지 않아 <b>위 오버로드와 같은 답</b>이 된다.
+        /// </summary>
+        public static int[] SegmentCounts(
+            int firstIndex, int lastIndex, float[] weights, bool[] noRepeatAdjacent,
+            int stationBlockSize, int stationStageCount)
+        {
             if (weights == null || weights.Length == 0)
             {
                 return System.Array.Empty<int>();
@@ -45,10 +57,44 @@ namespace Game.Gameplay.World
             var counts = new int[weights.Length];
             for (int index = firstIndex; index <= lastIndex; index++)
             {
+                if (StationSequenceLogic.IsStationTile(index, stationBlockSize, stationStageCount))
+                {
+                    continue;
+                }
+
                 int picked = SegmentPickLogic.PickForTile(index, weights, noRepeatAdjacent);
                 if (picked >= 0 && picked < counts.Length)
                 {
                     counts[picked]++;
+                }
+            }
+
+            return counts;
+        }
+
+        /// <summary>
+        /// 인덱스 구간이 역의 각 단계를 몇 번 쓰는지 (길이 = <paramref name="stageCount"/>).
+        /// 설정이 성립하지 않으면 빈 배열이다.
+        ///
+        /// <para>출발 구간에 역이 걸리는 일은 드물지만(블록 260장에 역은 5장), 걸렸을 때
+        /// 프리웜에서 빠지면 <b>첫 프레임에 역 타일을 새로 인스턴스화</b>하게 된다 —
+        /// 이 계획이 없애려던 바로 그 스파이크다.</para>
+        /// </summary>
+        public static int[] StationStageCounts(
+            int firstIndex, int lastIndex, int blockSize, int stageCount)
+        {
+            if (!StationSequenceLogic.IsValidConfig(blockSize, stageCount))
+            {
+                return System.Array.Empty<int>();
+            }
+
+            var counts = new int[stageCount];
+            for (int index = firstIndex; index <= lastIndex; index++)
+            {
+                int stage = StationSequenceLogic.StageOf(index, blockSize, stageCount);
+                if (stage != StationSequenceLogic.NoStage)
+                {
+                    counts[stage]++;
                 }
             }
 

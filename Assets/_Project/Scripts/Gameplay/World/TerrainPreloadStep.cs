@@ -51,6 +51,11 @@ namespace Game.Gameplay.World
         [Tooltip("출발 지역에 팔레트가 없을 때 쓰는 타일. 스트리머의 기본 타일과 같은 것을 꽂는다.")]
         private GameObject _fallbackTilePrefab;
 
+        [SerializeField]
+        [Tooltip("기차역 시퀀스 — 스트리머에 꽂은 것과 같은 SO를 꽂는다.\n" +
+                 "다르면 계획과 실제가 어긋나 프리웜이 헛일이 된다.")]
+        private StationSequenceSettings _stationSettings;
+
         [Header("함께 채우는 것")]
         [SerializeField]
         [Tooltip("지형 말고도 첫 프레임에 필요한 것들 (탄착 효과·예광탄 등).")]
@@ -171,6 +176,19 @@ namespace Game.Gameplay.World
             GameplayPreloadPlan.StartRange(
                 _scroll.TileLength, _scroll.TilesAhead, _scroll.TilesBehind, out int first, out int last);
 
+            // 기차역이 출발 구간에 걸리면 그 장수만큼 팔레트·폴백에서 빠진다 — 스트리머와 같은 순서다.
+            bool stationOn = _stationSettings != null && _stationSettings.IsEnabled;
+            int blockSize = stationOn ? _stationSettings.BlockSize : 0;
+            int stageCount = stationOn ? _stationSettings.StageCount : 0;
+
+            int stationTiles = 0;
+            int[] stationCounts = GameplayPreloadPlan.StationStageCounts(first, last, blockSize, stageCount);
+            for (int i = 0; i < stationCounts.Length; i++)
+            {
+                AddWant(wants, _stationSettings.GetStagePrefab(i), stationCounts[i]);
+                stationTiles += stationCounts[i];
+            }
+
             RegionDefinition region = _timeline == null ? null : _timeline.GetRegion(0);
             TerrainSegmentPalette palette = region == null ? null : region.SegmentPalette;
 
@@ -178,7 +196,9 @@ namespace Game.Gameplay.World
                 first,
                 last,
                 palette == null ? null : palette.GetWeights(),
-                palette == null ? null : palette.GetNoRepeatFlags());
+                palette == null ? null : palette.GetNoRepeatFlags(),
+                blockSize,
+                stageCount);
 
             if (counts.Length > 0)
             {
@@ -195,7 +215,7 @@ namespace Game.Gameplay.World
                 ? region.TerrainTilePrefab
                 : _fallbackTilePrefab;
 
-            AddWant(wants, fallback, last - first + 1);
+            AddWant(wants, fallback, last - first + 1 - stationTiles);
         }
 
         /// <summary>같은 프리팹이 여러 번 나오면 합친다(§5.2 — 합산하지 않으면 풀을 여러 번 만든다).</summary>

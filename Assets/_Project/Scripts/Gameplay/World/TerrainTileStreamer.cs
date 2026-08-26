@@ -23,7 +23,13 @@ namespace Game.Gameplay.World
         [Tooltip("지역 데이터에 지형 프리팹이 없을 때 쓰는 기본 타일.")]
         [SerializeField] private GameObject _tilePrefab;
 
+        [Tooltip("기차역 시퀀스 (선택) — 비우면 지형이 현행(팔레트 단독) 그대로 굴러간다.")]
+        [SerializeField] private StationSequenceSettings _stationSettings;
+
         private static readonly List<int> RemovalBuffer = new List<int>(8);
+
+        /// <summary>편측 승강장을 반대쪽에 세울 때의 회전 — 궤도가 좌우 대칭이라 이음매는 그대로다.</summary>
+        private static readonly Quaternion MirrorRotation = Quaternion.Euler(0f, 180f, 0f);
 
         private readonly Dictionary<int, GameObject> _activeTiles = new Dictionary<int, GameObject>();
 
@@ -73,12 +79,29 @@ namespace Game.Gameplay.World
                                       "— 이후 생성되는 전방 타일부터 반영됩니다.");
         }
 
+        /// <summary>회전이 필요 없는 호출부(재판정)를 위한 편의 오버로드.</summary>
+        private GameObject ResolveTilePrefab(int index)
+        {
+            return ResolveTilePrefab(index, out _);
+        }
+
         /// <summary>
         /// 타일 인덱스의 지형 프리팹 — 복제된 경계 기록이 결정하고, 기록이 없는 구간은
         /// 현재 지역 프리팹(현행 동작)이다.
+        ///
+        /// <para><b>기차역이 팔레트보다 먼저다.</b> 역은 연속 5장이라 한 장씩 뽑는 팔레트로는
+        /// 표현할 수 없어 별도 경로를 탄다. 역이 아닌 인덱스는 아래 기존 경로가 그대로 처리한다.</para>
         /// </summary>
-        private GameObject ResolveTilePrefab(int index)
+        private GameObject ResolveTilePrefab(int index, out Quaternion rotation)
         {
+            rotation = Quaternion.identity;
+
+            GameObject station = TryPickStation(index, ref rotation);
+            if (station != null)
+            {
+                return station;
+            }
+
             if (ServiceLocator.TryGet(out ITerrainBoundaryService boundaries))
             {
                 int regionIndex = boundaries.ResolveRegionIndex(index);
@@ -113,6 +136,70 @@ namespace Game.Gameplay.World
             }
 
             return _activeTilePrefab;
+        }
+
+        /// <summary>
+        /// 이 인덱스가 기차역에 속하면 그 단계의 프리팹을 낸다 (아니면 null).
+        /// 규칙은 <see cref="StationSequenceLogic"/>이 소유한다 — 프리웜 계획이 같은 함수를 부른다.
+        /// </summary>
+        private GameObject TryPickStation(int index, ref Quaternion rotation)
+        {
+            if (_stationSettings == null || !_stationSettings.IsEnabled)
+            {
+                return null;
+            }
+
+            int stage = StationSequenceLogic.StageOf(
+                index, _stationSettings.BlockSize, _stationSettings.StageCount);
+            if (stage == StationSequenceLogic.NoStage)
+            {
+                return null;
+            }
+
+            int start = index - stage;
+            if (!IsStationRegionUniform(start))
+            {
+                return null;
+            }
+
+            GameObject prefab = _stationSettings.GetStagePrefab(stage);
+            if (prefab == null)
+            {
+                return null;
+            }
+
+            if (StationSequenceLogic.IsMirrored(start))
+            {
+                rotation = MirrorRotation;
+            }
+
+            return prefab;
+        }
+
+        /// <summary>
+        /// 역 5장이 <b>전부 같은 지역</b>인가 — 아니면 그 역은 통째로 생략한다.
+        /// 경계를 가로지르게 두면 앞 절반은 숲 역, 뒤 절반은 사막 역이 되어 이음매가 깨진다.
+        /// 지역 전환은 지역당 1회뿐이라 잃는 것은 많아야 역 하나이고, 경계 자체가 볼거리다.
+        /// </summary>
+        private bool IsStationRegionUniform(int startIndex)
+        {
+            if (!ServiceLocator.TryGet(out ITerrainBoundaryService boundaries))
+            {
+                // 경계 기록이 없으면 전 구간이 한 지역이다 (M4 동작).
+                return true;
+            }
+
+            int expected = boundaries.ResolveRegionIndex(startIndex);
+            int count = _stationSettings.StageCount;
+            for (int i = 1; i < count; i++)
+            {
+                if (boundaries.ResolveRegionIndex(startIndex + i) != expected)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -190,8 +277,8 @@ namespace Game.Gameplay.World
                 }
                 else
                 {
-                    GameObject prefab = ResolveTilePrefab(index);
-                    _activeTiles.Add(index, PoolManager.Spawn(prefab, new Vector3(0f, 0f, z), Quaternion.identity));
+                    GameObject prefab = ResolveTilePrefab(index, out Quaternion rotation);
+                    _activeTiles.Add(index, PoolManager.Spawn(prefab, new Vector3(0f, 0f, z), rotation));
                     _tilePrefabsByIndex[index] = prefab;
                 }
             }
