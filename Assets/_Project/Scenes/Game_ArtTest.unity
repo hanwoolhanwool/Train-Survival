@@ -3007,6 +3007,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f23b24dc31fe25448dec14854bca5d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.TrainElevationFollower
+--- !u!114 &710000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95b5e8617a2695240ac6d0e26f8c98cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.MountedWeaponHost
+  ShowTopMostFoldoutHeaderGroup: 1
+  _catalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
 --- !u!1 &726462036
 GameObject:
   m_ObjectHideFlags: 0
@@ -7045,6 +7059,33 @@ Transform:
   - {fileID: 443427747}
   m_Father: {fileID: 1615465350}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1700001001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017756347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1dd40eeb24b22b94d919e4603fa7ee8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.StructurePreloadStep
+  _catalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
+  _ghost: {fileID: 2017756351}
+  _perFrame: 1
+--- !u!114 &1700001002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1367659750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc682f81b55552242856563dd3aae8e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Game.UI.Loading.HudLoadingCover
 --- !u!1 &1704432510
 GameObject:
   m_ObjectHideFlags: 0
@@ -7070,6 +7111,7 @@ GameObject:
   - component: {fileID: 1704432525}
   - component: {fileID: 1704432526}
   - component: {fileID: 1704432527}
+  - component: {fileID: 1704432528}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -7344,6 +7386,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionSkyController
   _fallbackSkybox: {fileID: 0}
+--- !u!114 &1704432528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb1d70f79fc8f364aa41de26c9f54530, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.WaterScrollShaderBinder
 --- !u!1 &1707067726
 GameObject:
   m_ObjectHideFlags: 0
@@ -7510,6 +7564,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.TerrainTileStreamer
   _settings: {fileID: 11400000, guid: 72244273e97469146b04a9d73faca50f, type: 2}
   _tilePrefab: {fileID: 6175232296279316983, guid: 78eccb4724fad8545a5820c7d5fc245c, type: 3}
+  _stationSettings: {fileID: 0}
 --- !u!4 &1830727643
 Transform:
   m_ObjectHideFlags: 0
@@ -7910,19 +7965,6 @@ MonoBehaviour:
   _expansionSettings: {fileID: 11400000, guid: f67ca358a1afd2e499d082c012a23939, type: 2}
   _structureCatalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
   _qaLogEjectDisplayDrift: 0
---- !u!114 &710000010
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1904839117}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95b5e8617a2695240ac6d0e26f8c98cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.MountedWeaponHost
-  _catalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
 --- !u!114 &1904839122
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8755,33 +8797,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f2999edef6182e9498b1aa2fafc5e357, type: 3}
   m_PrefabInstance: {fileID: 2146552787}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1700001001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2017756347}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1dd40eeb24b22b94d919e4603fa7ee8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.StructurePreloadStep
-  _catalog: {fileID: 11400000, guid: 2e3116ca1165d68429264586305420dd, type: 2}
-  _ghost: {fileID: 2017756351}
-  _perFrame: 1
---- !u!114 &1700001002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1367659750}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc682f81b55552242856563dd3aae8e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.UI::Game.UI.Loading.HudLoadingCover
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
