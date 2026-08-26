@@ -16,6 +16,33 @@ namespace Game.Gameplay.Player
         [SerializeField, Min(0.01f)] private float _lookSensitivity = 0.12f;
         [SerializeField, Range(10f, 89f)] private float _maxPitch = 85f;
 
+        [Header("수영·잠수 (바다 지역)")]
+        [Tooltip("물속 수평 속도 (m/s). 달리기보다 느려야 하므로 스크롤 6 m/s를 이기지 못한다 — " +
+            "그래서 수면에서는 뒤로 밀리고, 잠수해야 앞으로 간다.")]
+        [SerializeField, Min(0.1f)] private float _swimSpeed = 3.5f;
+
+        [Tooltip("물속 상승·하강 속도 (m/s).")]
+        [SerializeField, Min(0.1f)] private float _swimVerticalSpeed = 2f;
+
+        [Tooltip("수직 입력이 없을 때 수면으로 떠오르는 속도 (m/s).")]
+        [SerializeField, Min(0f)] private float _swimBuoyancySpeed = 0.6f;
+
+        [Tooltip("발이 이만큼 잠기면 수영이 시작된다 (m). 대략 가슴 높이.")]
+        [SerializeField, Min(0.1f)] private float _swimEnterDepth = 1f;
+
+        [Tooltip("이보다 얕아지면 수영이 끝난다 (m). 진입값보다 작아야 경계에서 깜빡이지 않는다.")]
+        [SerializeField, Min(0f)] private float _swimExitDepth = 0.2f;
+
+        [Tooltip("이 깊이부터 물살이 약해지기 시작한다 (m). 대략 머리가 잠기는 지점.")]
+        [SerializeField, Min(0f)] private float _swimDragStartDepth = 1.8f;
+
+        [Tooltip("이 깊이에서 물살 감쇠가 최대가 된다 (m).")]
+        [SerializeField, Min(0.1f)] private float _swimDragFullDepth = 3.5f;
+
+        [Tooltip("완전히 잠겼을 때의 물살 배율. 0.4면 6 m/s 스크롤이 2.4 m/s가 되어 " +
+            "수영 3.5 m/s가 순 +1.1 m/s로 앞선다 — 잠수가 성립하는 조건이다.")]
+        [SerializeField, Range(0.05f, 1f)] private float _submergedScrollFactor = 0.4f;
+
         public float WalkSpeed => _walkSpeed;
 
         public float RunSpeed => _runSpeed;
@@ -38,5 +65,21 @@ namespace Game.Gameplay.Player
         public float LookSensitivity => _lookSensitivity;
 
         public float MaxPitch => _maxPitch;
+
+        public float SwimSpeed => _swimSpeed;
+
+        public float SwimVerticalSpeed => _swimVerticalSpeed;
+
+        public float SwimBuoyancySpeed => _swimBuoyancySpeed;
+
+        public float SwimEnterDepth => _swimEnterDepth;
+
+        public float SwimExitDepth => _swimExitDepth;
+
+        public float SwimDragStartDepth => _swimDragStartDepth;
+
+        public float SwimDragFullDepth => _swimDragFullDepth;
+
+        public float SubmergedScrollFactor => _submergedScrollFactor;
     }
 }

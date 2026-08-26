@@ -4,6 +4,7 @@ using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Combat;
 using Game.Gameplay.Inventory;
+using Game.Gameplay.Region;
 using Game.Gameplay.Train;
 using Game.Gameplay.World;
 using Game.Systems.Networking;
@@ -61,6 +62,12 @@ namespace Game.Gameplay.Player
         private PlayerHealth _health;
         private IExternalTow _externalTow;
         private IMoveSpeedModifier[] _speedModifiers;
+
+        // 수영·잠수 (바다 지역 구현 계획 §6) — 네트워크 상태가 아니다.
+        // 발 높이와 지역 물면은 이미 모든 피어가 알므로 각자 유도한다 (SwimMotion 주석 참조).
+        private bool _isSwimming;
+        private float _submergeDepth;
+
         private Vector3 _horizontalVelocity;
         private float _verticalSpeed;
         private float _pitch;
@@ -207,6 +214,13 @@ namespace Game.Gameplay.Player
                 EventBus<Crafting.CraftingPanelToggledLocalEvent>.Subscribe(OnCraftingPanelToggled);
                 EventBus<Train.StoragePanelToggledLocalEvent>.Subscribe(OnStoragePanelToggled);
                 EventBus<Train.BundlePanelToggledLocalEvent>.Subscribe(OnBundlePanelToggled);
+
+                // 수중 화면 표시 (바다 §6.2 2-5). 소유자 표현 전용이라 런타임에 붙인다 —
+                // 프리팹을 건드리면 NetworkObject 해시가 흔들린다.
+                if (GetComponent<UnderwaterView>() == null)
+                {
+                    gameObject.AddComponent<UnderwaterView>();
+                }
             }
         }
 
@@ -451,6 +465,15 @@ namespace Game.Gameplay.Player
                 return;
             }
 
+            // ── 수영·잠수 (바다 지역 §6) ──
+            // 사다리·오르기보다 뒤에 둔다: 물에서 사다리를 잡으면 그쪽이 이긴다(= 다리로 복귀).
+            UpdateSwimState();
+            if (_isSwimming)
+            {
+                UpdateSwim(wishDirection, keyboard);
+                return;
+            }
+
             float targetSpeed = (run ? _settings.RunSpeed : _settings.WalkSpeed) * ResolveSpeedMultiplier();
 
             // 스트리밍 타일 지면은 이음새·회수 순간 isGrounded가 깜빡인다 — 코요테 유예로 접지 상태를 유지해
@@ -516,6 +539,88 @@ namespace Game.Gameplay.Player
             {
                 _ridingCarTracked = false;
             }
+
+            _characterController.Move(motion);
+        }
+
+        // ── 수영·잠수 (바다 지역 구현 계획 §6) ─────────────────────────
+
+        /// <summary>
+        /// 지역의 물면 높이. 물이 없는 지역(숲·사막·대초원·북극)에서는 false —
+        /// 그 지역들은 <c>HasWater</c>가 꺼져 있어 이 경로가 통째로 비활성이다.
+        /// </summary>
+        private static bool TryGetWaterSurfaceY(out float waterSurfaceY)
+        {
+            waterSurfaceY = 0f;
+
+            if (!ServiceLocator.TryGet(out IRegionService region))
+            {
+                return false;
+            }
+
+            RegionDefinition definition = region.CurrentRegion;
+            if (definition == null || !definition.HasWater)
+            {
+                return false;
+            }
+
+            waterSurfaceY = definition.WaterSurfaceY;
+            return true;
+        }
+
+        /// <summary>발 높이와 물면에서 수영 여부·잠김 깊이를 유도한다. 복제 없음.</summary>
+        private void UpdateSwimState()
+        {
+            if (!TryGetWaterSurfaceY(out float waterSurfaceY))
+            {
+                _isSwimming = false;
+                _submergeDepth = 0f;
+                return;
+            }
+
+            float footY = transform.position.y;
+            _submergeDepth = SwimMotion.SubmergeDepth(footY, waterSurfaceY);
+            _isSwimming = SwimMotion.IsSwimming(
+                footY, waterSurfaceY, _isSwimming, _settings.SwimEnterDepth, _settings.SwimExitDepth);
+        }
+
+        /// <summary>
+        /// 물속 이동. 중력 대신 부력이 작동하고, 컨베이어는 <b>깊이에 따라 약해진다</b> —
+        /// 이 감쇠가 없으면 수영 속도가 스크롤을 못 이겨 뛰어드는 순간 복귀가 불가능해진다 (§6.1).
+        /// </summary>
+        private void UpdateSwim(Vector3 wishDirection, Keyboard keyboard)
+        {
+            int verticalInput = 0;
+            if (keyboard.spaceKey.isPressed)
+            {
+                verticalInput = 1;
+            }
+            else if (keyboard.leftCtrlKey.isPressed)
+            {
+                verticalInput = -1;
+            }
+
+            _horizontalVelocity = wishDirection * _settings.SwimSpeed;
+            _verticalSpeed = SwimMotion.ComputeVerticalSpeed(
+                _submergeDepth, verticalInput,
+                _settings.SwimVerticalSpeed, _settings.SwimBuoyancySpeed, _settings.SwimEnterDepth);
+
+            Vector3 motion = (_horizontalVelocity + Vector3.up * _verticalSpeed) * Time.deltaTime;
+
+            // 물은 월드 소속이라 접지와 무관하게 항상 밀린다 — 지상 컨베이어와 같은 상시 외력형(§4.2).
+            if (ServiceLocator.TryGet(out IWorldScrollService scroll))
+            {
+                float dragFactor = SwimMotion.ScrollFactor(
+                    _submergeDepth, _settings.SwimDragStartDepth,
+                    _settings.SwimDragFullDepth, _settings.SubmergedScrollFactor);
+
+                motion += Vector3.back * (scroll.ScrollSpeed * dragFactor * Time.deltaTime);
+            }
+
+            // 물에 있는 동안은 갑판·이탈 칸 추종을 놓는다 — 같은 프레임에 트랜스폼을 다투면 안 된다.
+            _ridingCar = null;
+            _ridingCarTracked = false;
+            _groundGraceTimer = 0f;
 
             _characterController.Move(motion);
         }
