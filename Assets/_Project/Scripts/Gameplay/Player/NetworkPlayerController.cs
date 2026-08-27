@@ -68,6 +68,13 @@ namespace Game.Gameplay.Player
         private bool _isSwimming;
         private float _submergeDepth;
 
+        // 바다 교각 사다리 — 열차 사다리와 별개 경로다 (SeaLadder 주석 참조).
+        private World.SeaLadder _seaLadder;
+        private bool _onSeaLadder;
+        private Vector3 _seaLadderLastPos;
+        private bool _seaLadderTracked;
+        private float _seaLadderBlockedUntil;
+
         private Vector3 _horizontalVelocity;
         private float _verticalSpeed;
         private float _pitch;
@@ -468,8 +475,14 @@ namespace Game.Gameplay.Player
                 return;
             }
 
+            // ── 바다 교각 사다리 (§6.3 ③) ──
+            // 수영보다 먼저다 — 물에서 사다리를 잡으면 그쪽이 이긴다(= 상판으로 복귀).
+            if (UpdateSeaLadder(z, keyboard))
+            {
+                return;
+            }
+
             // ── 수영·잠수 (바다 지역 §6) ──
-            // 사다리·오르기보다 뒤에 둔다: 물에서 사다리를 잡으면 그쪽이 이긴다(= 다리로 복귀).
             UpdateSwimState();
             if (_isSwimming)
             {
@@ -544,6 +557,113 @@ namespace Game.Gameplay.Player
             }
 
             _characterController.Move(motion);
+        }
+
+        // ── 바다 교각 사다리 (바다 지역 구현 계획 §6.3 ③) ─────────────────────────
+
+        private const float SeaLadderBlockSeconds = 0.6f;
+
+        /// <summary>
+        /// 바다 사다리 처리. 붙어 있으면 true 를 돌려 <b>이 프레임의 이동을 여기서 끝낸다</b>.
+        ///
+        /// <para><b>열차 사다리와 결정적으로 다른 점</b>: 스크롤 속도를 읽어 컨베이어를 계산하지 않고
+        /// <b>사다리가 실제로 움직인 양</b>을 따라간다. 속도를 몰라도 정확히 붙어 있고,
+        /// 경로가 몇 개든 <b>한 군데서 끝난다</b> — 열차 사다리를 재사용하며 붙기·오르기·올라서기
+        /// 세 곳에 각각 컨베이어를 실어야 했던 것이 일곱 번의 실패를 낳았다.</para>
+        /// </summary>
+        private bool UpdateSeaLadder(float verticalInput, Keyboard keyboard)
+        {
+            if (_seaLadder == null)
+            {
+                _onSeaLadder = false;
+                _seaLadderTracked = false;
+                return false;
+            }
+
+            // 붙기 — 볼륨 안이어도 오르려는 입력이 있어야 잡는다.
+            // 그냥 지나가려던 사람이 붙잡히면 통로가 좁아 더 답답하다.
+            if (!_onSeaLadder)
+            {
+                if (Time.time < _seaLadderBlockedUntil || Mathf.Abs(verticalInput) < 0.1f)
+                {
+                    return false;
+                }
+
+                _onSeaLadder = true;
+                _seaLadderTracked = false;
+                _verticalSpeed = 0f;
+                _horizontalVelocity = Vector3.zero;
+                _isSwimming = false;
+                _ridingCar = null;
+                _ridingCarTracked = false;
+                _standingOnWorldFrame = false;   // 이동은 아래 follow 가 전담한다
+                EndMount();
+                DetachLadder();
+                CancelMantle();
+            }
+
+            // 떼기 — 점프로 놓는다. 물에서 잡았으니 놓으면 다시 물이다.
+            if (keyboard.spaceKey.wasPressedThisFrame)
+            {
+                ExitSeaLadder(false);
+                return false;
+            }
+
+            Vector3 ladderPosition = _seaLadder.transform.position;
+
+            // ① 사다리가 이번 프레임 움직인 만큼 그대로 따라간다.
+            //    속도가 아니라 **실제 이동량**이라 dt 스파이크·네트워크 틱에도 어긋나지 않는다.
+            Vector3 follow = _seaLadderTracked ? ladderPosition - _seaLadderLastPos : Vector3.zero;
+            _seaLadderLastPos = ladderPosition;
+            _seaLadderTracked = true;
+
+            // ② 사다리 앞면에 붙는 수평 보정.
+            Vector3 hold = World.SeaLadderMotion.HoldCorrection(
+                transform.position, _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
+
+            // ③ 오르내리기.
+            float climb = World.SeaLadderMotion.ClimbVelocity(verticalInput, _seaLadder.ClimbSpeed)
+                * Time.deltaTime;
+
+            _characterController.Move(follow + hold + Vector3.up * climb);
+
+            // ④ 꼭대기 — 안쪽으로 밀어 넣고 놓는다. 밀어 넣지 않으면 캡슐 절반이 허공이라 미끄러진다.
+            if (World.SeaLadderMotion.HasReachedTop(transform.position.y, _seaLadder.TopY))
+            {
+                Vector3 exit = World.SeaLadderMotion.ExitPosition(
+                    _seaLadder.Origin, _seaLadder.Outward,
+                    _seaLadder.HoldDistance, _seaLadder.ExitInward, _seaLadder.TopY);
+
+                _characterController.Move(exit - transform.position);
+                ExitSeaLadder(true);
+                return true;
+            }
+
+            // ⑤ 밑으로 빠졌다 — 계속 붙잡으면 잠수가 막힌다.
+            if (World.SeaLadderMotion.HasFallenBelow(transform.position.y, _seaLadder.BottomY))
+            {
+                ExitSeaLadder(false);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 사다리를 놓는다. <paramref name="blockReattach"/>면 잠깐 다시 잡히지 않게 한다 —
+        /// 올라선 자리가 볼륨과 겹쳐 있어도 곧바로 재부착되지 않도록.
+        /// </summary>
+        private void ExitSeaLadder(bool blockReattach)
+        {
+            _onSeaLadder = false;
+            _seaLadderTracked = false;
+            _verticalSpeed = 0f;
+            _groundGraceTimer = 0f;
+
+            if (blockReattach)
+            {
+                _seaLadderBlockedUntil = Time.time + SeaLadderBlockSeconds;
+                _seaLadder = null;
+            }
         }
 
         // ── 수영·잠수 (바다 지역 구현 계획 §6) ─────────────────────────
@@ -642,6 +762,12 @@ namespace Game.Gameplay.Player
             {
                 _ladder = ladder;
             }
+
+            var seaLadder = other.GetComponent<World.SeaLadder>();
+            if (seaLadder != null && Time.time >= _seaLadderBlockedUntil)
+            {
+                _seaLadder = seaLadder;
+            }
         }
 
         private void OnTriggerExit(Collider other)
@@ -655,6 +781,14 @@ namespace Game.Gameplay.Player
             if (ladder != null && ladder == _ladder)
             {
                 _ladder = null;
+            }
+
+            var seaLadder = other.GetComponent<World.SeaLadder>();
+            if (seaLadder != null && seaLadder == _seaLadder)
+            {
+                _seaLadder = null;
+                _onSeaLadder = false;
+                _seaLadderTracked = false;
             }
         }
 
