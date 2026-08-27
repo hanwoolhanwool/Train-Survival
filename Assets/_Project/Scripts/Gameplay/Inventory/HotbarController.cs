@@ -31,6 +31,9 @@ namespace Game.Gameplay.Inventory
 
         [SerializeField] private MeleeWeaponController _melee;
 
+        [Tooltip("낚싯대 (바다 3차) — 비면 낚시가 없다.")]
+        [SerializeField] private World.FishingRodController _fishingRod;
+
         private PlayerInventory _inventory;
         private int _selectedIndex;
         private bool _panelOpen;
@@ -280,6 +283,11 @@ namespace Game.Gameplay.Inventory
             if (_melee != null)
             {
                 _melee.InputEnabled = selected == HotbarItemType.Melee;
+            }
+
+            if (_fishingRod != null)
+            {
+                _fishingRod.InputEnabled = selected == HotbarItemType.FishingRod;
             }
 
             if (_guns != null)

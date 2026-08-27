@@ -58,6 +58,12 @@ namespace Game.Gameplay.Inventory
 
         /// <summary>방한 부츠 (신발) — 단열 소.</summary>
         WinterBoots = 17,
+
+        /// <summary>
+        /// 낚싯대 — 바다 지역의 채집 도구 (바다 3차). 달리는 열차에서 하는 낚시라
+        /// <b>끌낚시</b>다: 찌가 열차를 따라오고 <b>속도가 빠를수록 잘 물린다</b>.
+        /// </summary>
+        FishingRod = 18,
     }
 
     /// <summary>
