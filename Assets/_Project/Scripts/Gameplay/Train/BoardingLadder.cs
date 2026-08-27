@@ -28,6 +28,11 @@ namespace Game.Gameplay.Train
         [Tooltip("꼭대기에서 갑판 안쪽으로 밀어 넣을 거리(m) — 캡슐 반경의 2배가 기준이다.")]
         [SerializeField, Min(0.1f)] private float _mantleInwardDistance = 0.7f;
 
+        [Tooltip("이 사다리가 <b>월드 소속</b>인가 (지형 타일에 붙어 뒤로 흐른다). " +
+            "열차 사다리는 정지 프레임이라 꺼 두고, 바다 교각 사다리처럼 흐르는 것에만 켠다. " +
+            "켜면 매달린 사람이 사다리와 <b>같은 속도로 밀려</b> 상대 위치를 유지한다.")]
+        [SerializeField] private bool _worldFrame;
+
         private BoxCollider _volume;
 
         private BoxCollider Volume
@@ -74,6 +79,12 @@ namespace Game.Gameplay.Train
         public float ClimbSpeed => _climbSpeed;
 
         public float MantleInwardDistance => _mantleInwardDistance;
+
+        /// <summary>
+        /// 월드 소속 사다리인가 — 지형에 붙어 뒤로 흐르는가.
+        /// 이걸 안 보면 <b>매달린 사람만 제자리에 남아 사다리가 빠져나간다.</b>
+        /// </summary>
+        public bool IsWorldFrame => _worldFrame;
 
         private void Reset()
         {

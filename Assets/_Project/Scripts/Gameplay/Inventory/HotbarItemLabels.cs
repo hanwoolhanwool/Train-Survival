@@ -29,6 +29,9 @@ namespace Game.Gameplay.Inventory
                     return "샷건";
                 case HotbarItemType.Rifle:
                     return "볼트액션";
+                case HotbarItemType.FishingRod:
+                    return "낚싯대";
+
                 case HotbarItemType.Melee:
                     return "마체테";
                 case HotbarItemType.LeatherCoat:

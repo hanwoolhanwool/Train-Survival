@@ -666,7 +666,10 @@ namespace Game.Gameplay.Player
             // 낙하 속도를 끌고 들어가면 붙자마자 미끄러진다.
             _verticalSpeed = 0f;
             _horizontalVelocity = Vector3.zero;
-            _standingOnWorldFrame = false;
+
+            // 지형에 붙은 사다리(바다 교각)는 뒤로 흐른다 — 매달린 사람도 같이 밀려야
+            // 상대 위치가 유지된다. 열차 사다리는 정지 프레임이라 종전대로 false.
+            _standingOnWorldFrame = _ladder != null && _ladder.IsWorldFrame;
             _groundGraceTimer = 0f;
             _ridingCar = null;
             _ridingCarTracked = false;
