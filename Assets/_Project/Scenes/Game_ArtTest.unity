@@ -6285,6 +6285,7 @@ MonoBehaviour:
   _holdDistance: 0.45
   _climbSpeed: 2.4
   _mantleInwardDistance: 1
+  _worldFrame: 0
 --- !u!65 &1427360617
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7125,6 +7126,7 @@ GameObject:
   - component: {fileID: 1704432526}
   - component: {fileID: 1704432527}
   - component: {fileID: 1704432528}
+  - component: {fileID: 1704432529}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -7411,6 +7413,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb1d70f79fc8f364aa41de26c9f54530, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.WaterScrollShaderBinder
+--- !u!114 &1704432529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2746a4432f31504418ff83122ff6efb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.SeaSurfaceView
+  _waterMaterial: {fileID: 2100000, guid: eeed95b0aae76f645bd35aedd22e4dd6, type: 2}
+  _size: 600
 --- !u!1 &1707067726
 GameObject:
   m_ObjectHideFlags: 0
