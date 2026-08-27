@@ -63,6 +63,46 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(LadderX, hold.x, 1e-4f);
         }
 
+        // ── 흐르는 사다리 따라가기 (8회차 떨림의 계약) ──
+
+        [Test]
+        public void 이동량을_반영한_뒤_보정해야_정확히_따라간다()
+        {
+            // 사다리가 이번 프레임 −Z 로 0.1 흘렀다. 플레이어는 직전 프레임에 정확히 붙어 있었다.
+            var delta = new Vector3(0f, 0f, -0.1f);
+            Vector3 ladderNow = RightLadder + delta;
+            Vector3 playerBefore = SeaLadderMotion.HoldTarget(RightLadder, Outward, Hold);
+
+            Vector3 correct = delta + SeaLadderMotion.HoldCorrection(
+                playerBefore + delta, ladderNow, Outward, Hold);
+
+            Assert.AreEqual(delta.z, correct.z, 1e-4f, "사다리가 움직인 만큼만 따라가야 한다");
+            Assert.AreEqual(0f, correct.x, 1e-4f);
+        }
+
+        [Test]
+        public void 이동_전_위치로_보정하면_두_배로_움직인다()
+        {
+            // 8회차 떨림의 원인 — Origin 은 이미 새 위치인데 이전 위치로 보정을 재면
+            // 델타가 두 번 들어가고, 다음 프레임에 되돌아오며 진동한다.
+            var delta = new Vector3(0f, 0f, -0.1f);
+            Vector3 ladderNow = RightLadder + delta;
+            Vector3 playerBefore = SeaLadderMotion.HoldTarget(RightLadder, Outward, Hold);
+
+            Vector3 wrong = delta + SeaLadderMotion.HoldCorrection(
+                playerBefore, ladderNow, Outward, Hold);
+
+            Assert.AreEqual(delta.z * 2f, wrong.z, 1e-4f, "이것이 떨림의 정체다");
+        }
+
+        [Test]
+        public void 이미_붙어_있으면_보정이_없다()
+        {
+            Vector3 onSpot = SeaLadderMotion.HoldTarget(RightLadder, Outward, Hold);
+            Vector3 c = SeaLadderMotion.HoldCorrection(onSpot, RightLadder, Outward, Hold);
+            Assert.AreEqual(0f, c.magnitude, 1e-4f);
+        }
+
         // ── 오르내리기 ──
 
         [Test]

@@ -618,8 +618,11 @@ namespace Game.Gameplay.Player
             _seaLadderTracked = true;
 
             // ② 사다리 앞면에 붙는 수평 보정.
+            //    **이동량을 반영한 뒤** 재야 한다 — Origin 은 이미 이번 프레임 위치라
+            //    이전 위치로 재면 델타가 두 번 들어가 과보정되고, 다음 프레임에 되돌아오며 **떨린다**.
+            Vector3 predicted = transform.position + follow;
             Vector3 hold = World.SeaLadderMotion.HoldCorrection(
-                transform.position, _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
+                predicted, _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
 
             // ③ 오르내리기.
             float climb = World.SeaLadderMotion.ClimbVelocity(verticalInput, _seaLadder.ClimbSpeed)
