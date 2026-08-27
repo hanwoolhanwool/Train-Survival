@@ -114,6 +114,9 @@ namespace Game.Gameplay.Player
         private float _mantleTimer;
         private Vector3 _mantleVelocity;
 
+        // 올라설 발판이 월드 소속인가 (바다 교각 사다리) — 오르는 사이에도 흐른다.
+        private bool _mantleWorldFrame;
+
         // ── 거치 무기 점유 (M7 4차 §2.3) ─────────────────────────────────
         // 사다리 구속(_climbing)이 만든 선례를 그대로 따른다: 로컬 구동, 위치는 OwnerNetworkTransform이
         // 복제, 판정만 서버. 다른 점은 <b>좌석이 움직인다</b>는 것뿐이다 — 이탈 칸 위 좌석은 칸을 따라간다.
@@ -769,6 +772,10 @@ namespace Game.Gameplay.Player
             _mantleTimer = LadderMantleDuration;
             _mantleVelocity = horizontal / LadderMantleDuration;
 
+            // 월드 소속 사다리(바다 교각)에서는 올라설 상판도 함께 흐른다.
+            // 이걸 안 실으면 오르는 동안 발판이 뒤로 빠져나가 **허공에 내려선다.**
+            _mantleWorldFrame = _ladder != null && _ladder.IsWorldFrame;
+
             _verticalSpeed = 0f;
             _horizontalVelocity = Vector3.zero;
         }
@@ -778,6 +785,7 @@ namespace Game.Gameplay.Player
         {
             _mantleTimer = 0f;
             _mantleVelocity = Vector3.zero;
+            _mantleWorldFrame = false;
         }
 
         /// <summary>올려놓기 진행 — 끝날 때까지 일반 이동·중력을 멈춘다. 중력이 끼면 모서리에서 미끄러진다.</summary>
@@ -786,12 +794,21 @@ namespace Game.Gameplay.Player
             float step = Mathf.Min(Time.deltaTime, _mantleTimer);
             _mantleTimer -= step;
 
-            _characterController.Move(_mantleVelocity * step);
+            Vector3 motion = _mantleVelocity * step;
+
+            // 월드 소속 발판은 오르는 사이에도 흐른다 — 같이 밀려야 상판 위에 내려선다.
+            if (_mantleWorldFrame && ServiceLocator.TryGet(out IWorldScrollService mantleScroll))
+            {
+                motion += Vector3.back * (mantleScroll.ScrollSpeed * step);
+            }
+
+            _characterController.Move(motion);
 
             if (_mantleTimer <= 0f)
             {
                 _mantleTimer = 0f;
                 _mantleVelocity = Vector3.zero;
+                _mantleWorldFrame = false;
                 _verticalSpeed = -2f;
             }
         }
