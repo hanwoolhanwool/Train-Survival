@@ -1722,7 +1722,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8207013611119975376}
   - component: {fileID: 1413599644001815475}
-  - component: {fileID: 2539583506764771986}
+  - component: {fileID: 4338552124852508210}
   m_Layer: 0
   m_Name: Ladder_L_z10
   m_TagString: Untagged
@@ -1767,7 +1767,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.4, y: 7.75, z: 1}
   m_Center: {x: 0, y: -3.625, z: 0.2}
---- !u!114 &2539583506764771986
+--- !u!114 &4338552124852508210
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1776,14 +1776,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 3023865385544596056}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d504c23685d5c4479362c0191683f50, type: 3}
+  m_Script: {fileID: 11500000, guid: 9ff8ab1b89385a64f871b686f060bd27, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.BoardingLadder
-  _layoutSettings: {fileID: 0}
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.SeaLadder
+  _climbSpeed: 2.6
   _holdDistance: 0.45
-  _climbSpeed: 2.4
-  _mantleInwardDistance: 1.25
-  _worldFrame: 1
+  _topY: 0.1
+  _bottomY: -7.2
+  _exitInward: 1.25
 --- !u!1 &3048261321544877545
 GameObject:
   m_ObjectHideFlags: 0
@@ -1884,7 +1884,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6852119384677286009}
   - component: {fileID: 1647424222101111930}
-  - component: {fileID: 7183328835240974915}
+  - component: {fileID: 8244992984887253486}
   m_Layer: 0
   m_Name: Ladder_R_z-10
   m_TagString: Untagged
@@ -1929,7 +1929,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.4, y: 7.75, z: 1}
   m_Center: {x: 0, y: -3.625, z: 0.2}
---- !u!114 &7183328835240974915
+--- !u!114 &8244992984887253486
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1938,14 +1938,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 3224610720522975634}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d504c23685d5c4479362c0191683f50, type: 3}
+  m_Script: {fileID: 11500000, guid: 9ff8ab1b89385a64f871b686f060bd27, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.BoardingLadder
-  _layoutSettings: {fileID: 0}
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.SeaLadder
+  _climbSpeed: 2.6
   _holdDistance: 0.45
-  _climbSpeed: 2.4
-  _mantleInwardDistance: 1.25
-  _worldFrame: 1
+  _topY: 0.1
+  _bottomY: -7.2
+  _exitInward: 1.25
 --- !u!1 &3321681095635693902
 GameObject:
   m_ObjectHideFlags: 0
@@ -2046,7 +2046,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8696053650672575412}
   - component: {fileID: 5438156480430510125}
-  - component: {fileID: 3250413530963677622}
+  - component: {fileID: 504145625770289965}
   m_Layer: 0
   m_Name: Ladder_R_z10
   m_TagString: Untagged
@@ -2091,7 +2091,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.4, y: 7.75, z: 1}
   m_Center: {x: 0, y: -3.625, z: 0.2}
---- !u!114 &3250413530963677622
+--- !u!114 &504145625770289965
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2100,14 +2100,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 3398835535501959666}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d504c23685d5c4479362c0191683f50, type: 3}
+  m_Script: {fileID: 11500000, guid: 9ff8ab1b89385a64f871b686f060bd27, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.BoardingLadder
-  _layoutSettings: {fileID: 0}
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.SeaLadder
+  _climbSpeed: 2.6
   _holdDistance: 0.45
-  _climbSpeed: 2.4
-  _mantleInwardDistance: 1.25
-  _worldFrame: 1
+  _topY: 0.1
+  _bottomY: -7.2
+  _exitInward: 1.25
 --- !u!1 &3413609467625825928
 GameObject:
   m_ObjectHideFlags: 0
@@ -2118,7 +2118,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2684219902495723405}
   - component: {fileID: 5213766517823152547}
-  - component: {fileID: 1429191989670990234}
+  - component: {fileID: 6542931358839833921}
   m_Layer: 0
   m_Name: Ladder_L_z-10
   m_TagString: Untagged
@@ -2163,7 +2163,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.4, y: 7.75, z: 1}
   m_Center: {x: 0, y: -3.625, z: 0.2}
---- !u!114 &1429191989670990234
+--- !u!114 &6542931358839833921
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2172,14 +2172,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 3413609467625825928}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d504c23685d5c4479362c0191683f50, type: 3}
+  m_Script: {fileID: 11500000, guid: 9ff8ab1b89385a64f871b686f060bd27, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Train.BoardingLadder
-  _layoutSettings: {fileID: 0}
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.SeaLadder
+  _climbSpeed: 2.6
   _holdDistance: 0.45
-  _climbSpeed: 2.4
-  _mantleInwardDistance: 1.25
-  _worldFrame: 1
+  _topY: 0.1
+  _bottomY: -7.2
+  _exitInward: 1.25
 --- !u!1 &3439802633748582543
 GameObject:
   m_ObjectHideFlags: 0
