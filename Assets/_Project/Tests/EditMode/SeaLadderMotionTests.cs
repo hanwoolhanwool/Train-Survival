@@ -103,6 +103,58 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(0f, c.magnitude, 1e-4f);
         }
 
+        // ── 떨림 흡수 (9회차 좌우 떨림의 계약) ──
+
+        private const float DeadZone = 0.04f;
+        private const float Damping = 0.35f;
+
+        [Test]
+        public void 아주_작은_오차는_보정하지_않는다()
+        {
+            var tiny = new Vector3(0.02f, 0f, 0f);
+            Assert.AreEqual(Vector3.zero, SeaLadderMotion.SmoothCorrection(tiny, DeadZone, Damping));
+        }
+
+        [Test]
+        public void 데드존_경계는_보정하지_않는다()
+        {
+            var edge = new Vector3(DeadZone, 0f, 0f);
+            Assert.AreEqual(Vector3.zero, SeaLadderMotion.SmoothCorrection(edge, DeadZone, Damping));
+        }
+
+        [Test]
+        public void 큰_오차는_일부만_좁힌다()
+        {
+            var big = new Vector3(1f, 0f, 0f);
+            Vector3 s = SeaLadderMotion.SmoothCorrection(big, DeadZone, Damping);
+            Assert.AreEqual(Damping, s.x, 1e-4f);
+            Assert.Less(s.magnitude, big.magnitude, "한 번에 다 좁히면 넘겨서 진동한다");
+        }
+
+        [Test]
+        public void 부분_수렴은_넘기지_않고_붙는다()
+        {
+            // 1 m 떨어진 상태에서 반복 적용 — 오버슈트 없이 데드존 안으로 들어와야 한다.
+            float remaining = 1f;
+            for (int i = 0; i < 30; i++)
+            {
+                Vector3 step = SeaLadderMotion.SmoothCorrection(
+                    new Vector3(remaining, 0f, 0f), DeadZone, Damping);
+                remaining -= step.x;
+                Assert.GreaterOrEqual(remaining, -1e-4f, "반대편으로 넘어가면 그것이 떨림이다");
+            }
+
+            Assert.LessOrEqual(remaining, DeadZone + 1e-4f, "몇 프레임이면 붙어야 한다");
+        }
+
+        [Test]
+        public void 사다리가_바뀐_프레임의_큰_점프는_걸러진다()
+        {
+            // 스크롤 6 m/s × dt 는 0.1 m 남짓 — 20 m 점프는 참조가 옮겨간 것이다.
+            Assert.IsTrue(SeaLadderMotion.IsFollowJump(new Vector3(0f, 0f, -20f), 2f));
+            Assert.IsFalse(SeaLadderMotion.IsFollowJump(new Vector3(0f, 0f, -0.1f), 2f));
+        }
+
         // ── 오르내리기 ──
 
         [Test]

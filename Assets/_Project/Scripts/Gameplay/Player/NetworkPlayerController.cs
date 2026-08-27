@@ -563,6 +563,15 @@ namespace Game.Gameplay.Player
 
         private const float SeaLadderBlockSeconds = 0.6f;
 
+        // 이 거리 안이면 붙는 보정을 하지 않는다 — 매 프레임 미세 보정이 곧 떨림이다.
+        private const float SeaLadderHoldDeadZone = 0.04f;
+
+        // 남은 오차를 한 프레임에 좁히는 비율. 1이면 즉시 붙지만 넘기면 진동한다.
+        private const float SeaLadderHoldDamping = 0.35f;
+
+        // 이보다 큰 이동량은 사다리가 바뀐 것으로 본다 (스크롤 6 m/s × dt 는 0.1 m 남짓).
+        private const float SeaLadderMaxFollowStep = 2f;
+
         /// <summary>
         /// 바다 사다리 처리. 붙어 있으면 true 를 돌려 <b>이 프레임의 이동을 여기서 끝낸다</b>.
         ///
@@ -614,15 +623,27 @@ namespace Game.Gameplay.Player
             // ① 사다리가 이번 프레임 움직인 만큼 그대로 따라간다.
             //    속도가 아니라 **실제 이동량**이라 dt 스파이크·네트워크 틱에도 어긋나지 않는다.
             Vector3 follow = _seaLadderTracked ? ladderPosition - _seaLadderLastPos : Vector3.zero;
+
+            // 참조가 **다른 사다리로 옮겨간** 프레임에는 이전 위치와 비교하면 큰 점프가 나온다.
+            // 그 프레임만 따라가지 않고 넘긴다 — 다음 프레임부터 정상 추종한다.
+            if (World.SeaLadderMotion.IsFollowJump(follow, SeaLadderMaxFollowStep))
+            {
+                follow = Vector3.zero;
+            }
+
             _seaLadderLastPos = ladderPosition;
             _seaLadderTracked = true;
 
             // ② 사다리 앞면에 붙는 수평 보정.
             //    **이동량을 반영한 뒤** 재야 한다 — Origin 은 이미 이번 프레임 위치라
-            //    이전 위치로 재면 델타가 두 번 들어가 과보정되고, 다음 프레임에 되돌아오며 **떨린다**.
+            //    이전 위치로 재면 델타가 두 번 들어가 과보정된다.
+            //    그리고 오차 전부를 한 번에 없애지 않는다 — 조금만 넘겨도 반대편으로 넘어가
+            //    다음 프레임에 되돌아오며 **좌우로 떨린다**. 데드존 + 부분 수렴으로 흡수한다.
             Vector3 predicted = transform.position + follow;
-            Vector3 hold = World.SeaLadderMotion.HoldCorrection(
+            Vector3 rawHold = World.SeaLadderMotion.HoldCorrection(
                 predicted, _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
+            Vector3 hold = World.SeaLadderMotion.SmoothCorrection(
+                rawHold, SeaLadderHoldDeadZone, SeaLadderHoldDamping);
 
             // ③ 오르내리기.
             float climb = World.SeaLadderMotion.ClimbVelocity(verticalInput, _seaLadder.ClimbSpeed)

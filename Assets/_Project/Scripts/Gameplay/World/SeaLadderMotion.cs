@@ -41,6 +41,37 @@ namespace Game.Gameplay.World
             return new Vector3(target.x - currentPosition.x, 0f, target.z - currentPosition.z);
         }
 
+        /// <summary>
+        /// 보정을 <b>진동하지 않게</b> 다듬는다.
+        ///
+        /// <para><b>왜 필요한가.</b> 매 프레임 오차 전부를 한 번에 없애면 조금만 넘겨도(충돌 해결·
+        /// skin width·부동소수 오차) 반대편으로 넘어가고, 다음 프레임에 되돌아오며 <b>떨린다</b>.
+        /// 그래서 ① 아주 작은 오차는 <b>그냥 둔다</b>(데드존) ② 나머지는 <b>일부만</b> 좁힌다.</para>
+        ///
+        /// <para>일부만 좁혀도 매 프레임 반복되므로 몇 프레임이면 붙는다 — 오버슈트 없이.</para>
+        /// </summary>
+        /// <param name="deadZone">이 거리 안이면 보정하지 않는다 (m).</param>
+        /// <param name="damping">남은 오차를 한 프레임에 좁히는 비율 (0~1).</param>
+        public static Vector3 SmoothCorrection(Vector3 rawCorrection, float deadZone, float damping)
+        {
+            float distance = rawCorrection.magnitude;
+            if (distance <= Mathf.Max(0f, deadZone))
+            {
+                return Vector3.zero;
+            }
+
+            return rawCorrection * Mathf.Clamp01(damping);
+        }
+
+        /// <summary>
+        /// 사다리가 <b>다른 것으로 바뀌었는가</b> — 이동량 추종을 초기화해야 하는 순간이다.
+        /// 흘러오는 다음 사다리로 참조가 옮겨간 프레임에 이전 위치와 비교하면 <b>큰 점프</b>가 나온다.
+        /// </summary>
+        public static bool IsFollowJump(Vector3 delta, float maxStep)
+        {
+            return delta.sqrMagnitude > maxStep * maxStep;
+        }
+
         /// <summary>오르내리는 수직 속도 (m/s). 입력이 없으면 <b>그 자리에 매달려 있는다</b>.</summary>
         public static float ClimbVelocity(float verticalInput, float climbSpeed)
         {
