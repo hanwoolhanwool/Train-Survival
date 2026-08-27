@@ -563,14 +563,6 @@ namespace Game.Gameplay.Player
 
         private const float SeaLadderBlockSeconds = 0.6f;
 
-        // 이 거리 안이면 붙는 보정을 하지 않는다 — 매 프레임 미세 보정이 곧 떨림이다.
-        private const float SeaLadderHoldDeadZone = 0.04f;
-
-        // 남은 오차를 한 프레임에 좁히는 비율. 1이면 즉시 붙지만 넘기면 진동한다.
-        private const float SeaLadderHoldDamping = 0.35f;
-
-        // 이보다 큰 이동량은 사다리가 바뀐 것으로 본다 (스크롤 6 m/s × dt 는 0.1 m 남짓).
-        private const float SeaLadderMaxFollowStep = 2f;
 
         /// <summary>
         /// 바다 사다리 처리. 붙어 있으면 true 를 돌려 <b>이 프레임의 이동을 여기서 끝낸다</b>.
@@ -618,38 +610,34 @@ namespace Game.Gameplay.Player
                 return false;
             }
 
-            Vector3 ladderPosition = _seaLadder.transform.position;
-
-            // ① 사다리가 이번 프레임 움직인 만큼 그대로 따라간다.
-            //    속도가 아니라 **실제 이동량**이라 dt 스파이크·네트워크 틱에도 어긋나지 않는다.
-            Vector3 follow = _seaLadderTracked ? ladderPosition - _seaLadderLastPos : Vector3.zero;
-
-            // 참조가 **다른 사다리로 옮겨간** 프레임에는 이전 위치와 비교하면 큰 점프가 나온다.
-            // 그 프레임만 따라가지 않고 넘긴다 — 다음 프레임부터 정상 추종한다.
-            if (World.SeaLadderMotion.IsFollowJump(follow, SeaLadderMaxFollowStep))
-            {
-                follow = Vector3.zero;
-            }
-
-            _seaLadderLastPos = ladderPosition;
-            _seaLadderTracked = true;
-
-            // ② 사다리 앞면에 붙는 수평 보정.
-            //    **이동량을 반영한 뒤** 재야 한다 — Origin 은 이미 이번 프레임 위치라
-            //    이전 위치로 재면 델타가 두 번 들어가 과보정된다.
-            //    그리고 오차 전부를 한 번에 없애지 않는다 — 조금만 넘겨도 반대편으로 넘어가
-            //    다음 프레임에 되돌아오며 **좌우로 떨린다**. 데드존 + 부분 수렴으로 흡수한다.
-            Vector3 predicted = transform.position + follow;
-            Vector3 rawHold = World.SeaLadderMotion.HoldCorrection(
-                predicted, _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
-            Vector3 hold = World.SeaLadderMotion.SmoothCorrection(
-                rawHold, SeaLadderHoldDeadZone, SeaLadderHoldDamping);
-
-            // ③ 오르내리기.
+            // 오르내리기 — 수직만 입력이 정한다.
             float climb = World.SeaLadderMotion.ClimbVelocity(verticalInput, _seaLadder.ClimbSpeed)
                 * Time.deltaTime;
 
-            _characterController.Move(follow + hold + Vector3.up * climb);
+            // ── 수평은 **계산하지 않고 고정한다** ──
+            //
+            // 앞서 이동량 추종 + 보정으로 붙이려 했으나 좌우로 떨렸고, 보정을 약하게 하자
+            // **더 심해졌다.** 그것이 답이었다 — 보정은 진동의 원인이 아니라 **억제제**였고,
+            // 무언가가 x 를 밀 때마다 매 프레임 되돌리고 있었던 것이다.
+            //
+            // x 를 움직이는 항은 보정 하나뿐이고 목표 x 는 고정이므로, 남는 설명은
+            // **Move 의 결과가 요청과 다르다**는 것이다 — skinWidth(0.08)·stepOffset(0.4)의
+            // 충돌 해결이 개입한다. 그래서 Move 를 쓰지 않고 위치를 직접 놓는다.
+            //
+            // 사다리의 **현재** 위치로 목표를 잡으므로 흐름 추종도 여기서 함께 끝난다 —
+            // 이동량을 따로 재고 더할 필요가 없다.
+            Vector3 hold = World.SeaLadderMotion.HoldTarget(
+                _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
+
+            _seaLadderLastPos = _seaLadder.transform.position;
+            _seaLadderTracked = true;
+
+            float nextY = transform.position.y + climb;
+
+            // 컨트롤러를 잠깐 끄고 놓는다 — 켜 둔 채로는 충돌 해결이 다시 끼어든다.
+            _characterController.enabled = false;
+            transform.position = new Vector3(hold.x, nextY, hold.z);
+            _characterController.enabled = true;
 
             // ④ 꼭대기 — 안쪽으로 밀어 넣고 놓는다. 밀어 넣지 않으면 캡슐 절반이 허공이라 미끄러진다.
             if (World.SeaLadderMotion.HasReachedTop(transform.position.y, _seaLadder.TopY))
@@ -658,7 +646,12 @@ namespace Game.Gameplay.Player
                     _seaLadder.Origin, _seaLadder.Outward,
                     _seaLadder.HoldDistance, _seaLadder.ExitInward, _seaLadder.TopY);
 
-                _characterController.Move(exit - transform.position);
+                // 여기도 Move 가 아니라 직접 놓는다 — 상판 모서리에서 충돌 해결이 끼어들면
+                // 올라서다 말고 밀려난다.
+                _characterController.enabled = false;
+                transform.position = exit;
+                _characterController.enabled = true;
+
                 ExitSeaLadder(true);
                 return true;
             }
