@@ -750,6 +750,15 @@ namespace Game.Gameplay.Player
             Vector3 motion = LadderClimbLogic.ComputeClimbMotion(
                 verticalInput, _ladder.ClimbSpeed, Time.deltaTime) + correction;
 
+            // 월드 소속 사다리(바다 교각)는 오르는 동안에도 뒤로 흐른다.
+            // 이 경로는 아래 일반 이동으로 내려가지 않고 여기서 끝나므로(_climbing 분기가 return한다)
+            // **컨베이어를 여기서 직접 실어야 한다** — 안 실으면 매달린 사람만 제자리에 남아
+            // 사다리가 빠져나가고, 볼륨을 벗어나 떨어졌다가 다시 붙는 것이 반복된다.
+            if (_ladder.IsWorldFrame && ServiceLocator.TryGet(out IWorldScrollService climbScroll))
+            {
+                motion += Vector3.back * (climbScroll.ScrollSpeed * Time.deltaTime);
+            }
+
             _characterController.Move(motion);
         }
 
