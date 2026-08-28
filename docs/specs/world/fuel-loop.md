@@ -1,7 +1,9 @@
 # 연료 루프 (엔진 투입 → 충전 → 소모 → 감속)
 
 > **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M2 골격 → M3 칸 비례 → M5 발열량 → M7 건축물 소모)
-> **최종 갱신**: 2026-08-20 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md) · [world/scroll-and-streaming](scroll-and-streaming.md)
+> **최종 갱신**: 2026-08-28 · **관련 기획서**: [Train-Survival-기획서 §3.4](../../design/Train-Survival-기획서.md) · [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) · [개발 가이드 §5 M2](../../guide/Train-Survival-개발-가이드.md) · [world/scroll-and-streaming](scroll-and-streaming.md)
+> **짝 문서**: [상호작용 중재](../player/interaction-arbitration.md) — 화구는 기관차 고정 제작 지점과
+> **거의 같은 자리**라 늘 함께 성립한다. 둘 중 어느 것이 E키를 받는가는 그쪽이 정한다
 
 ## 1. 개요·목적
 

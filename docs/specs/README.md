@@ -22,6 +22,7 @@
 | `train/` | [construction.md](train/construction.md) | 갑판 셀 그리드·건축물·판자 증축. 갑판 폭이 데이터에서 파생된다 |
 | `harpoon/` | [grapple-pipeline.md](harpoon/grapple-pipeline.md) | 집게 발사→판정→견인. 로컬 선반영 + 호스트 권위 분리, 등급·몬스터 그랩 |
 | `player/` | [network-movement.md](player/network-movement.md) | 소유자 권위 이동, 호스트 개입 상태 머신, 1인칭 통합 시점·파지·애니메이션 |
+| `player/` | [interaction-arbitration.md](player/interaction-arbitration.md) | E키 상호작용 중재 — 겹쳐 뜨던 안내를 겨눈 것 하나로 좁힌다. 로컬 표시·입력 전용 |
 | `cycle/` | [day-night-cycle.md](cycle/day-night-cycle.md) | 낮→밤→Day+1. 호스트 누적 시간 하나에서 전 피어가 순수 파생 + 시각 연출 |
 | `monsters/` | [wave-and-steering.md](monsters/wave-and-steering.md) | 밤 웨이브, NavMesh 불사용 호스트 조향, 변종·보스·스탬피드·그랩 |
 | `combat/` | [weapon-combat.md](combat/weapon-combat.md) | 총기 공통 사격·근접·탄약. **새 무기 = 에셋 1개**, 산탄은 시드만 중계 |
