@@ -14,6 +14,9 @@ namespace Game.Gameplay.World
     /// 지역 전환 경계 복제(M6 1차 §2.4)도 이 컴포넌트가 소유한다 — 전환을 판정하는
     /// RegionController는 MonoBehaviour라 NetworkList를 가질 수 없다.
     /// </summary>
+    // 주행 거리는 지형·자원·플레이어가 모두 읽는 <b>기준값</b>이라 소비자보다 먼저 갱신돼야 한다.
+    // 뒤에서 갱신되면 소비자마다 한 프레임 전 값과 이번 프레임 값이 섞여 서로 어긋난다.
+    [DefaultExecutionOrder(-190)]
     public sealed class WorldScrollController : NetworkBehaviour, IWorldScrollService, IWorldScrollSpeedControl,
         ITerrainBoundaryService
     {

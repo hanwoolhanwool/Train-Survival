@@ -16,6 +16,10 @@ namespace Game.Gameplay.World
     /// 시점에는 이미 깔린 타일을 재판정해 어긋난 것을 교체한다. 경계 기록이 없으면 현행대로
     /// "현재 지역 프리팹"이다 (M4 동작 유지).
     /// </summary>
+    // 타일에 붙어 있는 것(바다 사다리 등)을 따라가는 플레이어가 이번 프레임 위치를 읽도록,
+    // 타일 배치를 플레이어 이동보다 먼저 실행한다 — 이탈 칸이 CarView(-100)로 푼 것과 같은 문제다.
+    // 순서가 뒤집히면 플레이어는 한 프레임 전 타일 위치를 읽고, 그 격차가 dt 변동만큼 흔들려 떨린다.
+    [DefaultExecutionOrder(-120)]
     public sealed class TerrainTileStreamer : MonoBehaviour
     {
         [SerializeField] private WorldScrollSettings _settings;
