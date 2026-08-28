@@ -1,7 +1,8 @@
 # 무기 전투 — 총기 공통 사격·근접·탄약
 
-> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M2 리볼버 → M5 2차 공통화 → M5 8차 연출)
-> **최종 갱신**: 2026-08-20 · **관련 문서**: [기획서 §6.2](../../design/Train-Survival-기획서.md) ·
+> **종류**: 아키텍처 명세 · **상태**: 구현 완료 (M2 리볼버 → M5 2차 공통화 → M5 8차 연출 →
+> **M7 4차 거치 무기**)
+> **최종 갱신**: 2026-08-27 · **관련 문서**: [기획서 §6.2](../../design/Train-Survival-기획서.md) ·
 > [네트워크 아키텍처 §4](../../design/Train-Survival-네트워크-아키텍처.md) ·
 > [개발 가이드 §5 M2·M5](../../guide/Train-Survival-개발-가이드.md)
 >
@@ -156,6 +157,28 @@ sequenceDiagram
 `PublishAmmoIfChanged`가 장탄·재장전 상태 **변화 시에만** `WeaponAmmoChangedLocalEvent`를 발행한다 —
 매 프레임이 아니다. HUD가 구독한다.
 
+### 6.7 거치 무기 — 소유가 아니라 점유 (M7 4차)
+
+열차에 설치되는 첫 무기다. **판정 파이프라인은 그대로 재사용했다** — `GunSettings` ·
+`WeaponSpreadMath` · `WeaponRaycast` · `GunMagazine` · `TracerView`/`ImpactEffectView` ·
+`IDamageable`이 한 줄도 안 바뀌었다. 새로 선 축은 셋뿐이다.
+
+| 축 | 신설 | 왜 |
+|---|---|---|
+| **점유** | `MountedWeaponHost`의 전용 `NetworkList<MountOccupancy>` + 순수 `MountOccupancyLogic` | 점유는 드물게 바뀌고 조준각은 매 프레임 바뀐다. **주기가 다른 두 값을 `StructureEntry` 리스트에 함께 싣지 않는다** — 실으면 포신을 돌릴 때마다 건축물 20개가 함께 흐른다 |
+| **기준점** | 좌석 앵커 (`MountedAimMath`) | `GunController`와 다른 점은 이것 하나다 — 기준이 플레이어가 아니라 **좌석**이다. 서버는 점유 리스트로 그 사람이 그 자리에 있음을 이미 알므로 **사거리 재검증이 더 강하다** |
+| **급탄** | 서버 내부 `MountedMagazineStore` (`Dictionary<ushort,int>`) | 남은 탄은 **무기에 남고** 교대해도 이어진다. 복제 리스트에 싣지 않는다. 파괴 시 소실 |
+
+조준각은 점유자 → 서버 → `NotOwner` **10 Hz Unreliable**로 중계하고 **판정에 쓰지 않는다** —
+유실돼도 그림만 잠깐 늦는다. 요크가 열차 프레임에 고정이라 관찰자 이동과 위상차가 안 생긴다.
+
+**자동 터렛은 조작자만 AI로 바꾼 것**이다. 서버 전용 구동(예측할 입력이 없다)이고, 선정 규칙은
+순수 함수 `TurretTargetingMath`가 소유하며 물리 조회(`OverlapSphere` 35 m)는 호출부가 한다.
+사각(yaw ±110°)은 **사람과 같은 제한**을 받는다 — 뒤로는 못 쏜다.
+
+> 탄종은 둘 다 **소총탄**(`RifleAmmo`)으로 볼트액션과 공유한다. 밤에 거치 무기를 돌리면 저격 탄이
+> 준다는 **경쟁 관계**가 그대로 압박이 되게 한 선택이다.
+
 ## 7. 인터페이스·의존성 (경계)
 
 - **`IDamageable`** — 사격은 대상의 구체 타입을 모른다. 몬스터·보스·(향후) 열차 부위가 구현.
@@ -183,19 +206,26 @@ sequenceDiagram
 `WeaponSpreadMath` — 시드 결정성(같은 시드 → 같은 방향열) · 산탄 각 0일 때 정방향 · 분포 경계.
 `WeaponRaycast` — 최근접 선택 · 자기 제외 · 무효 대상 배제.
 
+거치 무기(M7 4차) — `MountOccupancyLogic`(승인·거부 사유 · 강제 하차) ·
+`MountedAimMath`(좌석 기준 각 제한·설치 회전) · `MountedMagazineStore`(교대 시 잔탄 유지) ·
+`TurretTargetingMath`(사각·거리·생존 필터 → 선정).
+
 ## 11. 리스크·미결정 (TBD)
 
 | # | 항목 | 상태 |
 |---|---|---|
-| 1 | **터렛·거치 기관총 미구현** | M5 범위의 유일한 미구현 — 열차 소유 + 조작권 점유 모델이 달라 보류 |
+| 1 | ~~터렛·거치 기관총 미구현~~ | **해소 (2026-08-25, M7 4차)** — 건축물로 편입하고 점유 축을 따로 세웠다 (§6.7) |
 | 2 | 변종 시각 구분 검증(E 구역 6건) | M5 8차 이월 |
 | 3 | 무기별 반동·조준 확산 | 없음 — 도입 시 `GunSettings` 필드 추가로 가능 |
+| 4 | **거치 무기 2종 모델 미반입** | 형상이 프리미티브이고 **둘이 완전히 같다** — `Base`·`Body`·`Barrel`의 치수가 한 값도 다르지 않다(2026-08-27 실측). 디자인 미정, 생성 지시 시트도 아직 없다. 판정에는 영향 없음 |
 
 ## 12. 확장 여지
 
 - **새 총기**는 에셋 추가만으로 성립한다(실증됨).
-- 연사(자동 사격)는 `FireInterval` + 입력 홀드로 데이터 범위 안.
-- 거치 무기는 조작권 점유 축만 새로 필요하고, 판정 파이프라인은 재사용된다.
+- 연사(자동 사격)는 `FireInterval` + 입력 홀드로 데이터 범위 안 — **거치 기관총이 실증했다**
+  (`_fireInterval: 0.11` ≈ 545 RPM, 컴포넌트 코드 0줄).
+- ~~거치 무기는 조작권 점유 축만 새로 필요하고, 판정 파이프라인은 재사용된다.~~
+  **실증됨 (M7 4차)** — 판정 파이프라인은 그대로 재사용됐고, 새로 선 것은 점유·조준·급탄 셋뿐이다.
 
 ## 13. 파일 위치
 
@@ -208,7 +238,16 @@ Assets/_Project/Scripts/Gameplay/Combat/
 ├─ WeaponRaycast.cs        순수 — 공통 조준 (3벌 복붙 통합)
 ├─ WeaponSpreadMath.cs     순수 — 산탄·시드 결정 난수
 ├─ IDamageable.cs          피격 계약
+├─ MountedWeaponOperator.cs  거치 무기 — 붙기·조준·발사·재장전 (M7 4차)
+├─ MountedAimMath.cs         순수 — 좌석 기준 각 제한·설치 회전
+├─ TurretTargetingMath.cs    순수 — 자동 터렛 대상 선정
 ├─ GunView.cs / MeleeSwingView.cs
 ├─ TracerView.cs / ImpactEffectView.cs   풀링 연출
 └─ CombatEvents.cs
 ```
+
+거치 무기의 **열차 쪽 절반**은 `Gameplay/Train/`에 있다 — `MountedWeaponHost.cs`(점유 권위) ·
+`MountOccupancy.cs` · `MountOccupancyLogic.cs`(순수) · `MountedMagazineStore.cs` ·
+`MountedWeaponSettings.cs`(SO) · `MountedWeaponView.cs` · `IMountedWeapons.cs`.
+설치·철거·피해·파괴·이탈 추종은 건축물 경로가 그대로 가진다
+(→ [train/construction.md](../train/construction.md)).
