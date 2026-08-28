@@ -35,6 +35,10 @@ namespace Game.Gameplay.World
         private const string MissingTableKey = "world.station-loot-table-missing";
         private const int MissingTableLimit = 4;
 
+        // 스폰 확인용 — 소품이 실제로 심겼는지는 외형만으로 알기 어렵다(보따리끼리 닮았다).
+        private const string SpawnedKey = "world.station-prop-spawned";
+        private const int SpawnedLimit = 24;
+
         private void Update()
         {
             if (_tables == null || _tables.Length == 0)
@@ -66,6 +70,9 @@ namespace Game.Gameplay.World
                 if (TrySpawnAt(spawner, anchor))
                 {
                     budget--;
+                    GameLog.InfoLimited(LogCategory.World, SpawnedKey, SpawnedLimit,
+                        $"역 소품 스폰: {anchor.Kind} 등급{StationLootLogic.RequiredTierFor(anchor.Kind)} " +
+                        $"@ {anchor.transform.position.ToString("0.0")}");
                 }
             }
         }
