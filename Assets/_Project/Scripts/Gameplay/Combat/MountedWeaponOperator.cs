@@ -240,6 +240,10 @@ namespace Game.Gameplay.Combat
                 settings.YawLimit, settings.PitchMin, settings.PitchMax);
 
             SetPrompt(false, -1, null);
+
+            // 붙어 있는 동안 초점을 붙잡는다 — 좌석 옆 상자·작업대 안내가 조작 안내 위로 겹치지 않게 한다.
+            InteractionArbiter.Capture(InteractionSource.MountedWeapon);
+
             EventBus<MountStateChangedLocalEvent>.Publish(
                 new MountStateChangedLocalEvent(true, structureId));
         }
@@ -257,6 +261,7 @@ namespace Game.Gameplay.Combat
             _magazine = null;
             _seatWaitDeadline = 0f;
             _controller.EndMount();
+            InteractionArbiter.Release(InteractionSource.MountedWeapon);
 
             // HUD 탄약 줄을 거둔다 — 내린 뒤에도 남아 있으면 남의 무기 잔탄처럼 보인다.
             EventBus<WeaponAmmoChangedLocalEvent>.Publish(new WeaponAmmoChangedLocalEvent(
@@ -534,6 +539,7 @@ namespace Game.Gameplay.Combat
 
             int bestId = -1;
             float bestSqr = float.PositiveInfinity;
+            float bestDot = -1f;
             MountedWeaponSettings bestSettings = null;
             Vector3 position = player.transform.position;
 
@@ -559,20 +565,36 @@ namespace Game.Gameplay.Combat
                 }
 
                 float sqr = (position - center).sqrMagnitude;
-                if (sqr > settings.SeatRadiusSqr || sqr >= bestSqr
-                    || !LocalInteraction.IsLookingAt(player, center, settings.LookDotThreshold))
+                if (sqr > settings.SeatRadiusSqr || sqr >= bestSqr)
+                {
+                    continue;
+                }
+
+                float dot = LocalInteraction.GetLookDot(player, center);
+                if (dot < settings.LookDotThreshold)
                 {
                     continue;
                 }
 
                 bestSqr = sqr;
+                bestDot = dot;
                 bestId = entry.Id;
                 bestSettings = settings;
             }
 
-            SetPrompt(bestId > 0, bestId, ResolvePromptLabel(bestId, bestSettings));
+            // 상호작용 대상 중재 — 무기 옆에 상자·작업대가 붙어 있어도 겨눈 쪽 하나만 안내·E키를 받는다.
+            if (bestId > 0)
+            {
+                InteractionArbiter.Submit(InteractionSource.MountedWeapon, bestDot, bestSqr);
+            }
 
-            if (bestId <= 0)
+            // IsFocused를 먼저 물어 프레임을 넘긴다 — 단락되면 중재가 갱신되지 않는다.
+            bool focused = InteractionArbiter.IsFocused(InteractionSource.MountedWeapon) && bestId > 0;
+
+            SetPrompt(focused, focused ? bestId : -1,
+                focused ? ResolvePromptLabel(bestId, bestSettings) : null);
+
+            if (!focused)
             {
                 return;
             }

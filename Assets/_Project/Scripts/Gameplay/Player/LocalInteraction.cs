@@ -34,24 +34,38 @@ namespace Game.Gameplay.Player
         /// </summary>
         public static bool IsLookingAt(NetworkObject player, Vector3 point, float dotThreshold)
         {
+            return GetLookDot(player, point) >= dotThreshold;
+        }
+
+        /// <summary>
+        /// 카메라 전방과 지점 방향의 정렬도 (1 = 정면) — 플레이어가 없으면 -1, 카메라를 못 찾거나
+        /// 지점이 카메라와 겹치면 1(정면)로 본다(<see cref="IsLookingAt"/>의 폴백과 같은 규약).
+        /// <para>
+        /// 여러 상호작용 후보 중 <b>겨눈 것 하나</b>를 고르는 중재
+        /// (<see cref="InteractionArbitrationLogic"/>)가 비교 기준으로 쓰는 값이다 —
+        /// 통과/탈락만으로는 동시에 성립한 후보를 가릴 수 없다.
+        /// </para>
+        /// </summary>
+        public static float GetLookDot(NetworkObject player, Vector3 point)
+        {
             if (player == null)
             {
-                return false;
+                return -1f;
             }
 
             Camera camera = player.GetComponentInChildren<Camera>();
             if (camera == null)
             {
-                return true;
+                return 1f;
             }
 
             Vector3 toPoint = point - camera.transform.position;
             if (toPoint.sqrMagnitude < 0.0001f)
             {
-                return true;
+                return 1f;
             }
 
-            return Vector3.Dot(camera.transform.forward, toPoint.normalized) >= dotThreshold;
+            return Vector3.Dot(camera.transform.forward, toPoint.normalized);
         }
     }
 }

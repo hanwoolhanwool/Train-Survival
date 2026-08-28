@@ -324,8 +324,20 @@ namespace Game.Gameplay.World
             Vector3 point = transform.position;
             bool inRange = !IsClaimed
                 && Player.LocalInteraction.IsWithinRange(localPlayer, point, _interactRadius);
-            bool ready = inRange
-                && Player.LocalInteraction.IsLookingAt(localPlayer, point, _lookDotThreshold);
+            float lookDot = Player.LocalInteraction.GetLookDot(localPlayer, point);
+            bool ready = inRange && lookDot >= _lookDotThreshold;
+
+            // 상호작용 대상 중재 — 보따리는 실물마다 이 컴포넌트가 붙으므로 인스턴스 구분자를 함께 낸다.
+            int instanceKey = InteractionKey;
+            if (ready)
+            {
+                Player.InteractionArbiter.Submit(Player.InteractionSource.Bundle, instanceKey,
+                    lookDot, (localPlayer.transform.position - point).sqrMagnitude);
+            }
+
+            // IsFocused를 먼저 물어 프레임을 넘긴다 — 단락되면 중재가 갱신되지 않는다.
+            bool focused =
+                Player.InteractionArbiter.IsFocused(Player.InteractionSource.Bundle, instanceKey) && ready;
 
             // 범위를 벗어나거나 운반(견인)이 시작되면 창을 닫는다.
             if (_localPanelOpen && !inRange)
@@ -333,7 +345,7 @@ namespace Game.Gameplay.World
                 SetPanelOpen(false);
             }
 
-            SetLocalInRange(ready && !_localPanelOpen && !_storagePanelOpen);
+            SetLocalInRange(focused && !_localPanelOpen && !_storagePanelOpen);
 
             var hotbar = localPlayer.GetComponent<Inventory.HotbarController>();
             bool otherUiOpen = (_storagePanelOpen || (hotbar != null && hotbar.IsPanelOpen)) && !_localPanelOpen;
@@ -348,11 +360,17 @@ namespace Game.Gameplay.World
             {
                 SetPanelOpen(false);
             }
-            else if (ready)
+            else if (focused)
             {
                 SetPanelOpen(true);
             }
         }
+
+        /// <summary>
+        /// 중재의 인스턴스 구분자 — 보따리는 실물마다 컴포넌트가 붙으므로 "누가 초점인지"를 가릴 키가 필요하다.
+        /// NetworkObjectId는 판 안에서 고유하고 모든 접속자가 같은 값을 본다.
+        /// </summary>
+        private int InteractionKey => unchecked((int)NetworkObjectId);
 
         private void SetLocalInRange(bool inRange)
         {
@@ -368,6 +386,17 @@ namespace Game.Gameplay.World
             if (_localPanelOpen != open)
             {
                 _localPanelOpen = open;
+
+                // 창이 열린 동안 초점을 붙잡는다 — 열린 창 위로 창고·제작 안내가 겹치지 않게 하는 장치다.
+                if (open)
+                {
+                    Player.InteractionArbiter.Capture(Player.InteractionSource.Bundle, InteractionKey);
+                }
+                else
+                {
+                    Player.InteractionArbiter.Release(Player.InteractionSource.Bundle, InteractionKey);
+                }
+
                 EventBus<Train.BundlePanelToggledLocalEvent>.Publish(
                     new Train.BundlePanelToggledLocalEvent(open, open ? NetworkObjectId : 0UL));
             }

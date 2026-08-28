@@ -153,13 +153,32 @@ namespace Game.Gameplay.Crafting
             Vector3 playerPosition = localPlayer.transform.position;
             bool inRange = false;
             bool ready = false;
+            float bestDot = -1f;
+            float bestSqr = float.PositiveInfinity;
             for (int i = 0; i < StationKinds.Length; i++)
             {
                 // |= 는 단락하지 않는다 — 앞 종류가 참이어도 모든 종류의 근접 플래그가 갱신된다.
-                ready |= ResolveStation(localPlayer, playerPosition, StationKinds[i], out bool near);
+                ready |= ResolveStation(localPlayer, playerPosition, StationKinds[i],
+                    out bool near, out float dot, out float sqr);
                 _stationInRange[i] = near;
                 inRange |= near;
+
+                // 중재에 낼 대표값은 가장 잘 겨눈 지점 하나다 — 여러 종류가 동시에 성립해도 후보는 "제작" 하나.
+                if (near && dot > bestDot)
+                {
+                    bestDot = dot;
+                    bestSqr = sqr;
+                }
             }
+
+            // 상호작용 대상 중재 — 작업대와 상자가 나란히 있어도 겨눈 쪽 하나만 안내·E키를 받는다.
+            if (ready)
+            {
+                Player.InteractionArbiter.Submit(Player.InteractionSource.Crafting, bestDot, bestSqr);
+            }
+
+            // IsFocused를 먼저 물어 프레임을 넘긴다 — 단락되면 중재가 갱신되지 않는다.
+            bool focused = Player.InteractionArbiter.IsFocused(Player.InteractionSource.Crafting) && ready;
 
             // 범위를 벗어나면 창을 닫는다 — 열림 상태 안내는 창이 대신하므로 프롬프트는 끈다.
             if (!inRange)
@@ -167,7 +186,7 @@ namespace Game.Gameplay.Crafting
                 SetPanelOpen(false);
             }
 
-            SetLocalInRange(ready && !_panelOpen);
+            SetLocalInRange(focused && !_panelOpen);
 
             // 인벤토리 창은 제작을 막지 않는다 (M7 3차 검증 개선) — 제작 창과 함께 열리는 짝이다.
             // 막는 것은 개인 인벤토리를 이미 품은 창(창고·보따리)과 세션 메뉴뿐이다.
@@ -184,7 +203,7 @@ namespace Game.Gameplay.Crafting
             {
                 SetPanelOpen(false);
             }
-            else if (ready)
+            else if (focused)
             {
                 SetPanelOpen(true);
             }
@@ -215,14 +234,29 @@ namespace Game.Gameplay.Crafting
             }
         }
 
-        /// <summary>지점 종류 하나의 로컬 판정 — 근접 플래그를 내고, 근접 + 시선이면 true(창 열기 가능).</summary>
+        /// <summary>
+        /// 지점 종류 하나의 로컬 판정 — 근접 플래그를 내고, 근접 + 시선이면 true(창 열기 가능).
+        /// 조준 정렬도와 제곱 거리도 함께 낸다: 다른 건축물과 겨루는 중재
+        /// (<see cref="Player.InteractionArbiter"/>)의 비교값이다.
+        /// </summary>
         private bool ResolveStation(
-            NetworkObject localPlayer, Vector3 position, CraftStationKind kind, out bool inRange)
+            NetworkObject localPlayer, Vector3 position, CraftStationKind kind,
+            out bool inRange, out float lookDot, out float sqrDistance)
         {
+            lookDot = -1f;
+            sqrDistance = float.PositiveInfinity;
+
             inRange = TryGetNearestCraftPoint(position, kind, out Vector3 point)
                 && Player.LocalInteraction.IsWithinRange(localPlayer, point, _interactRadius);
 
-            return inRange && Player.LocalInteraction.IsLookingAt(localPlayer, point, _lookDotThreshold);
+            if (!inRange)
+            {
+                return false;
+            }
+
+            lookDot = Player.LocalInteraction.GetLookDot(localPlayer, point);
+            sqrDistance = (position - point).sqrMagnitude;
+            return lookDot >= _lookDotThreshold;
         }
 
         /// <summary>
@@ -278,6 +312,17 @@ namespace Game.Gameplay.Crafting
             if (_panelOpen != open)
             {
                 _panelOpen = open;
+
+                // 창이 열린 동안 초점을 붙잡는다 — 열린 창 위로 창고·연료 안내가 겹치지 않게 하는 장치다.
+                if (open)
+                {
+                    Player.InteractionArbiter.Capture(Player.InteractionSource.Crafting);
+                }
+                else
+                {
+                    Player.InteractionArbiter.Release(Player.InteractionSource.Crafting);
+                }
+
                 EventBus<CraftingPanelToggledLocalEvent>.Publish(new CraftingPanelToggledLocalEvent(open));
             }
         }

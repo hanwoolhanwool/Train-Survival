@@ -40,13 +40,24 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            bool inRange = (localPlayer.transform.position - transform.position).sqrMagnitude
-                <= _interactRadius * _interactRadius;
+            Vector3 port = transform.position;
+            float sqrDistance = (localPlayer.transform.position - port).sqrMagnitude;
+            bool inRange = sqrDistance <= _interactRadius * _interactRadius;
             // 근처 + 투입구를 쳐다봤을 때만 안내·투입한다 (지나가기만 해도 뜨던 안내 제거).
-            bool ready = inRange && IsLookingAtPort(localPlayer);
-            SetLocalInRange(ready);
+            float lookDot = Player.LocalInteraction.GetLookDot(localPlayer, port);
+            bool ready = inRange && lookDot >= _lookDotThreshold;
 
-            if (!ready)
+            // 상호작용 대상 중재 — 기관차 고정 제작 지점과 투입구는 거의 같은 자리라 늘 함께 성립한다.
+            if (ready)
+            {
+                Player.InteractionArbiter.Submit(Player.InteractionSource.EngineFuel, lookDot, sqrDistance);
+            }
+
+            // IsFocused를 먼저 물어 프레임을 넘긴다 — 단락되면 중재가 갱신되지 않는다.
+            bool focused = Player.InteractionArbiter.IsFocused(Player.InteractionSource.EngineFuel) && ready;
+            SetLocalInRange(focused);
+
+            if (!focused)
             {
                 return;
             }
@@ -86,24 +97,6 @@ namespace Game.Gameplay.Train
             }
 
             return manager.LocalClient.PlayerObject;
-        }
-
-        /// <summary>로컬 플레이어 카메라가 투입구를 향하고 있는지 — 카메라를 못 찾으면 거리만으로 폴백한다.</summary>
-        private bool IsLookingAtPort(NetworkObject localPlayer)
-        {
-            Camera camera = localPlayer.GetComponentInChildren<Camera>();
-            if (camera == null)
-            {
-                return true;
-            }
-
-            Vector3 toPort = transform.position - camera.transform.position;
-            if (toPort.sqrMagnitude < 0.0001f)
-            {
-                return true;
-            }
-
-            return Vector3.Dot(camera.transform.forward, toPort.normalized) >= _lookDotThreshold;
         }
 
         private void SetLocalInRange(bool inRange)

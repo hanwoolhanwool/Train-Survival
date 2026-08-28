@@ -127,7 +127,18 @@ namespace Game.Gameplay.Train
             int nearStorage = FindNearestAliveStorage(localPlayer.transform.position, out Vector3 nearPoint);
             bool inRange = nearStorage > 0
                 && LocalInteraction.IsWithinRange(localPlayer, nearPoint, _interactRadius);
-            bool ready = inRange && LocalInteraction.IsLookingAt(localPlayer, nearPoint, _lookDotThreshold);
+            float lookDot = LocalInteraction.GetLookDot(localPlayer, nearPoint);
+            bool ready = inRange && lookDot >= _lookDotThreshold;
+
+            // 상호작용 대상 중재 — 상자와 작업대가 나란히 있어도 겨눈 쪽 하나만 안내·E키를 받는다.
+            if (ready)
+            {
+                InteractionArbiter.Submit(InteractionSource.Storage, lookDot,
+                    (localPlayer.transform.position - nearPoint).sqrMagnitude);
+            }
+
+            // IsFocused를 먼저 물어 프레임을 넘긴다 — 단락되면 중재가 갱신되지 않는다.
+            bool focused = InteractionArbiter.IsFocused(InteractionSource.Storage) && ready;
 
             // 범위를 벗어나거나 창고가 파괴·철거되면 창을 닫는다. 한 칸에 창고가 여럿일 때도
             // 조준(최근접 + 시선) 대상이 바뀌면 그 창고 기준으로 다시 연다.
@@ -136,7 +147,7 @@ namespace Game.Gameplay.Train
                 SetPanelOpen(-1);
             }
 
-            SetLocalInRange(ready && _openStorageId < 0, nearStorage);
+            SetLocalInRange(focused && _openStorageId < 0, nearStorage);
 
             HotbarController hotbar = localPlayer.GetComponent<HotbarController>();
             bool otherUiOpen = hotbar != null && hotbar.IsPanelOpen && _openStorageId < 0;
@@ -151,7 +162,7 @@ namespace Game.Gameplay.Train
             {
                 SetPanelOpen(-1);
             }
-            else if (ready)
+            else if (focused)
             {
                 SetPanelOpen(nearStorage);
             }
@@ -238,6 +249,17 @@ namespace Game.Gameplay.Train
             if (_openStorageId != storageId)
             {
                 _openStorageId = storageId;
+
+                // 창이 열린 동안 초점을 붙잡는다 — 열린 창 위로 제작·연료 안내가 겹치지 않게 하는 장치다.
+                if (storageId > 0)
+                {
+                    InteractionArbiter.Capture(InteractionSource.Storage);
+                }
+                else
+                {
+                    InteractionArbiter.Release(InteractionSource.Storage);
+                }
+
                 EventBus<StoragePanelToggledLocalEvent>.Publish(
                     new StoragePanelToggledLocalEvent(storageId > 0, storageId));
             }
