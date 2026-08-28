@@ -193,6 +193,89 @@ namespace Game.Tests.EditMode
             Assert.IsFalse(SeaLadderMotion.HasFallenBelow(BottomY, BottomY));
         }
 
+        // ── 붙기 높이 (11회차 "사다리가 끝나도 계속 내려간다"의 계약) ──
+
+        [Test]
+        public void 사다리_구간_안에서는_붙는다()
+        {
+            Assert.IsTrue(SeaLadderMotion.CanAttach(BottomY, BottomY), "밑동은 붙는다");
+            Assert.IsTrue(SeaLadderMotion.CanAttach(-3f, BottomY), "중간은 붙는다");
+        }
+
+        [Test]
+        public void 밑으로_빠진_높이에서는_다시_붙지_않는다()
+        {
+            // 놓아 주는 조건과 붙는 조건이 겹치면, 계속 눌린 S 하나로 놓기와 붙기가
+            // 매 프레임 번갈아 일어나 사다리가 끝난 뒤에도 물속으로 끌려 내려간다.
+            float below = BottomY - 0.01f;
+            Assert.IsTrue(SeaLadderMotion.HasFallenBelow(below, BottomY));
+            Assert.IsFalse(SeaLadderMotion.CanAttach(below, BottomY));
+        }
+
+        [Test]
+        public void 붙기는_꼭대기를_막지_않는다()
+        {
+            // 상한을 걸면 상판에서 사다리를 타고 내려가는 경로까지 막힌다 —
+            // 위쪽 재부착은 참조 끊기와 차단 시간이 맡는다.
+            Assert.IsTrue(SeaLadderMotion.CanAttach(TopY, BottomY));
+        }
+
+        // ── 뛰어내릴 방향 — 바라보는 쪽, 사다리 쪽이면 반사 ──
+
+        [Test]
+        public void 물_쪽을_보고_뛰면_그_방향_그대로다()
+        {
+            Vector3 d = SeaLadderMotion.ResolveJumpOffDirection(Outward, Outward);
+            Assert.AreEqual(Outward.x, d.x, 1e-4f);
+            Assert.AreEqual(Outward.z, d.z, 1e-4f);
+        }
+
+        [Test]
+        public void 사다리를_마주보고_뛰면_뒤로_간다()
+        {
+            // 오르는 자세 그대로 점프한 경우 — 시선의 정반대, 곧 물 쪽으로 나가야 한다.
+            Vector3 d = SeaLadderMotion.ResolveJumpOffDirection(-Outward, Outward);
+            Assert.AreEqual(Outward.x, d.x, 1e-4f);
+            Assert.AreEqual(Outward.z, d.z, 1e-4f);
+        }
+
+        [Test]
+        public void 비스듬히_마주보면_접선은_남고_법선만_뒤집힌다()
+        {
+            Vector3 look = new Vector3(-1f, 0f, 1f).normalized;   // 사다리 쪽 + 옆
+            Vector3 d = SeaLadderMotion.ResolveJumpOffDirection(look, Outward);
+
+            Assert.Greater(d.x, 0f, "법선 성분은 물 쪽으로 뒤집힌다");
+            Assert.AreEqual(look.z, d.z, 1e-4f, "접선 성분은 그대로다");
+        }
+
+        [Test]
+        public void 옆을_보고_뛰면_그대로_옆으로_간다()
+        {
+            // 반사 경계(법선 성분 0) — 여기서 방향이 튀면 조금만 돌려도 반대편으로 날아간다.
+            Vector3 side = Vector3.forward;
+            Vector3 d = SeaLadderMotion.ResolveJumpOffDirection(side, Outward);
+            Assert.AreEqual(side.z, d.z, 1e-4f);
+            Assert.AreEqual(0f, d.x, 1e-4f);
+        }
+
+        [Test]
+        public void 뛰어내릴_방향은_언제나_단위벡터다()
+        {
+            Vector3[] looks =
+            {
+                Outward, -Outward, Vector3.forward, Vector3.back,
+                new Vector3(-3f, 0f, 1f), new Vector3(-0.01f, 0f, 5f), new Vector3(0f, 1f, 0f),
+            };
+
+            foreach (Vector3 look in looks)
+            {
+                Vector3 d = SeaLadderMotion.ResolveJumpOffDirection(look, Outward);
+                Assert.AreEqual(1f, d.magnitude, 1e-4f, $"시선 {look}");
+                Assert.AreEqual(0f, d.y, 1e-4f, "수평만 남는다");
+            }
+        }
+
         // ── 올라선 자리 — 일곱 번 실패한 지점 ──
 
         [Test]

@@ -78,6 +78,42 @@ namespace Game.Gameplay.World
             return Mathf.Clamp(verticalInput, -1f, 1f) * Mathf.Max(0f, climbSpeed);
         }
 
+        /// <summary>
+        /// 점프로 놓을 때 <b>뛰어내릴 방향</b> — 기본은 <b>바라보는 쪽</b>이다.
+        ///
+        /// <para><b>단, 사다리 쪽은 갈 수 없다.</b> 오르는 사람은 대개 사다리를 마주보고 있고,
+        /// 그 방향으로 밀면 사다리·상판에 부딪혀 제자리에서 튀기만 한다. 그래서 시선이 사다리를
+        /// 향하면 앞면을 거울 삼아 <b>반사</b>한다 — 정면으로 보고 있었다면 정확히 <b>뒤로</b>,
+        /// 비스듬히 보고 있었다면 <b>비스듬히 뒤로</b> 나간다.</para>
+        ///
+        /// <para><b>왜 투영이 아니라 반사인가.</b> 앞면에 투영하면 정면을 보고 뛸 때 방향이
+        /// <b>0</b>이 되어 제자리 낙하가 된다. 반사는 접선 성분을 그대로 두고 법선 성분만
+        /// 뒤집으므로 어느 각도에서도 크기가 유지되고, 옆을 볼 때(법선 성분 0) 반사해도 같은
+        /// 방향이라 <b>경계에서 튀지 않는다</b>.</para>
+        /// </summary>
+        /// <param name="lookDirection">바라보는 방향. 수평 성분만 쓴다.</param>
+        /// <param name="outward">사다리 앞면 법선(물 쪽).</param>
+        public static Vector3 ResolveJumpOffDirection(Vector3 lookDirection, Vector3 outward)
+        {
+            Vector3 normal = new Vector3(outward.x, 0f, outward.z);
+            if (normal.sqrMagnitude < 0.0001f)
+            {
+                return Vector3.zero;
+            }
+
+            normal.Normalize();
+
+            Vector3 look = new Vector3(lookDirection.x, 0f, lookDirection.z);
+            if (look.sqrMagnitude < 0.0001f)
+            {
+                // 시선이 수직이라 수평 방향이 없다 — 앞면 밖으로 내보낸다.
+                return normal;
+            }
+
+            look.Normalize();
+            return Vector3.Dot(look, normal) >= 0f ? look : Vector3.Reflect(look, normal).normalized;
+        }
+
         /// <summary>발이 꼭대기에 닿았는가 — 여기 닿으면 올라선다.</summary>
         public static bool HasReachedTop(float footY, float topY)
         {
@@ -91,6 +127,24 @@ namespace Game.Gameplay.World
         public static bool HasFallenBelow(float footY, float bottomY)
         {
             return footY < bottomY;
+        }
+
+        /// <summary>
+        /// 지금 붙을 수 있는 높이인가 — <b>사다리 밑을 지나지 않았어야</b> 한다.
+        ///
+        /// <para><b>왜 붙기에도 높이를 보는가.</b> 이 검사가 없으면 밑으로 빠져 놓아 준
+        /// <b>바로 다음 프레임</b>에 <b>같은 입력</b>(계속 누르고 있는 S)으로 다시 붙는다.
+        /// 놓기와 붙기가 매 프레임 번갈아 일어나며 사다리가 끝난 뒤에도 물속으로 끝없이
+        /// 끌려 내려간다 — <see cref="HasFallenBelow"/>가 놓아 준 것을 붙기가 곧바로 취소하는
+        /// 구도다.</para>
+        ///
+        /// <para><b>꼭대기는 보지 않는다.</b> 위쪽 재부착은 참조를 끊고 잠깐 차단하는 쪽이
+        /// 이미 막고 있고, 여기서 상한을 걸면 <b>상판에서 사다리를 타고 내려가는</b> 경로까지
+        /// 함께 막힌다 — 상판 위에 선 발은 <see cref="HasReachedTop"/>의 경계에 걸쳐 있다.</para>
+        /// </summary>
+        public static bool CanAttach(float footY, float bottomY)
+        {
+            return !HasFallenBelow(footY, bottomY);
         }
 
         /// <summary>

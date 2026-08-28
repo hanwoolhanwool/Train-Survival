@@ -71,8 +71,6 @@ namespace Game.Gameplay.Player
         // 바다 교각 사다리 — 열차 사다리와 별개 경로다 (SeaLadder 주석 참조).
         private World.SeaLadder _seaLadder;
         private bool _onSeaLadder;
-        private Vector3 _seaLadderLastPos;
-        private bool _seaLadderTracked;
         private float _seaLadderBlockedUntil;
 
         private Vector3 _horizontalVelocity;
@@ -353,8 +351,11 @@ namespace Game.Gameplay.Player
             if (_movementState.Value != PlayerMovementState.Normal)
             {
                 // 견인과 오르기·좌석이 같은 프레임에 트랜스폼을 다투면 안 된다 (계획 §3.7).
+                // 바다 사다리는 LateUpdate 에서 매 프레임 몸을 고정하므로 여기서 반드시 놓는다 —
+                // 남겨 두면 견인이 끌어간 몸을 사다리가 도로 끌어당긴다.
                 EndMount();
                 DetachLadder();
+                ExitSeaLadder(false);
                 CancelMantle();
 
                 if (lookAllowed)
@@ -563,81 +564,101 @@ namespace Game.Gameplay.Player
 
         private const float SeaLadderBlockSeconds = 0.6f;
 
-
         /// <summary>
         /// 바다 사다리 처리. 붙어 있으면 true 를 돌려 <b>이 프레임의 이동을 여기서 끝낸다</b>.
         ///
         /// <para><b>열차 사다리와 결정적으로 다른 점</b>: 스크롤 속도를 읽어 컨베이어를 계산하지 않고
-        /// <b>사다리가 실제로 움직인 양</b>을 따라간다. 속도를 몰라도 정확히 붙어 있고,
-        /// 경로가 몇 개든 <b>한 군데서 끝난다</b> — 열차 사다리를 재사용하며 붙기·오르기·올라서기
-        /// 세 곳에 각각 컨베이어를 실어야 했던 것이 일곱 번의 실패를 낳았다.</para>
+        /// 매 프레임 <b>사다리 앞면 위치에 몸을 놓는다</b>. 속도를 몰라도 정확히 붙어 있고,
+        /// 흐름 추종·평면 보정이 <b>한 줄로 사라진다</b> — 열차 사다리를 재사용하며 붙기·오르기·
+        /// 올라서기 세 곳에 각각 컨베이어를 실어야 했던 것이 일곱 번의 실패를 낳았다.</para>
+        ///
+        /// <para>여기서 정하는 것은 <b>높이와 상태 전이</b>뿐이다. 화면에 그려지는 수평 위치는
+        /// <see cref="LateUpdate"/>가 마지막으로 확정한다 — 이유는 그쪽 주석에 있다.</para>
         /// </summary>
         private bool UpdateSeaLadder(float verticalInput, Keyboard keyboard)
         {
             if (_seaLadder == null)
             {
                 _onSeaLadder = false;
-                _seaLadderTracked = false;
                 return false;
             }
 
             // 붙기 — 볼륨 안이어도 오르려는 입력이 있어야 잡는다.
             // 그냥 지나가려던 사람이 붙잡히면 통로가 좁아 더 답답하다.
+            // 높이도 본다: 사다리 구간 밖에서 잡히면 놓기와 붙기가 매 프레임 번갈아 일어난다
+            // (SeaLadderMotion.CanAttach 주석).
             if (!_onSeaLadder)
             {
-                if (Time.time < _seaLadderBlockedUntil || Mathf.Abs(verticalInput) < 0.1f)
+                if (Time.time < _seaLadderBlockedUntil
+                    || Mathf.Abs(verticalInput) < 0.1f
+                    || !World.SeaLadderMotion.CanAttach(transform.position.y, _seaLadder.BottomY))
                 {
                     return false;
                 }
 
                 _onSeaLadder = true;
-                _seaLadderTracked = false;
                 _verticalSpeed = 0f;
                 _horizontalVelocity = Vector3.zero;
                 _isSwimming = false;
                 _ridingCar = null;
                 _ridingCarTracked = false;
-                _standingOnWorldFrame = false;   // 이동은 아래 follow 가 전담한다
+                _standingOnWorldFrame = false;   // 이동은 아래 사다리 고정이 전담한다
                 EndMount();
                 DetachLadder();
                 CancelMantle();
             }
 
-            // 떼기 — 점프로 놓는다. 물에서 잡았으니 놓으면 다시 물이다.
+            // 떼기 — 점프로 놓는다. **바라보는 쪽**으로 뛰어내리되 사다리 쪽이면 반사한다
+            // (ResolveJumpOffDirection): 마주보고 있었다면 몸은 **뒤로** 떨어진다.
+            // 그냥 놓으면 매달렸던 자리에서 수직 낙하라 뛰어내린 것으로 보이지 않고,
+            // 볼륨 안에 그대로 남아 다시 붙기도 쉽다.
             if (keyboard.spaceKey.wasPressedThisFrame)
             {
+                Vector3 jumpDirection = World.SeaLadderMotion.ResolveJumpOffDirection(
+                    transform.forward, _seaLadder.Outward);
+
+                Vector3 jumpOff = LadderClimbLogic.ComputeJumpOffVelocity(
+                    jumpDirection, LadderJumpPushSpeed,
+                    PlayerMotor.GetJumpSpeed(_settings.JumpHeight, _settings.Gravity) * LadderJumpUpRatio);
+
+                // 속도는 이탈 뒤에 싣는다 — ExitSeaLadder 가 수직 속도를 0으로 되돌린다.
                 ExitSeaLadder(false);
-                return false;
+                _horizontalVelocity = new Vector3(jumpOff.x, 0f, jumpOff.z);
+                _verticalSpeed = jumpOff.y;
+
+                // 이 프레임의 이동을 **여기서 직접 끝낸다**(true 반환).
+                //
+                // 뒤로 넘기면 방금 실은 속도가 **그 프레임에 덮어써진다** — 수영 경로는
+                // _horizontalVelocity 를 통째로 갈아치우고(UpdateSwim), 지상 경로는 접지로
+                // 판정되는 순간 desired 로 대체한다(PlayerMotor.ComputeHorizontalVelocity).
+                // 물면이 −4라 사다리 위 절반은 공중, 아래 절반은 물속이라 어느 쪽이든 걸린다.
+                //
+                // 매달린 동안에는 Move 를 부르지 않아 isGrounded 가 사다리를 잡기 **전** 값으로
+                // 남아 있다 — 상판에서 잡았다면 true 다. 그래서 여기서 Move 를 부른다:
+                // 밀어내는 속도가 실제로 적용되고, 같은 호출이 isGrounded 를 공중으로 갱신해
+                // **다음 프레임부터** 공중 제어가 정확히 걸린다. 열차 사다리 점프가 return 으로
+                // 프레임을 끝내는 것과 같은 이유다.
+                Vector3 jumpMotion = (_horizontalVelocity + Vector3.up * _verticalSpeed)
+                    * Time.deltaTime;
+
+                // 사다리는 월드 소속이라 놓는 순간에도 흐름을 탄다 (§4.2 상시 외력형).
+                if (ServiceLocator.TryGet(out IWorldScrollService jumpScroll))
+                {
+                    jumpMotion += Vector3.back * (jumpScroll.ScrollSpeed * Time.deltaTime);
+                }
+
+                _characterController.Move(jumpMotion);
+                return true;
             }
 
             // 오르내리기 — 수직만 입력이 정한다.
             float climb = World.SeaLadderMotion.ClimbVelocity(verticalInput, _seaLadder.ClimbSpeed)
                 * Time.deltaTime;
 
-            // ── 수평은 **계산하지 않고 고정한다** ──
-            //
-            // 앞서 이동량 추종 + 보정으로 붙이려 했으나 좌우로 떨렸고, 보정을 약하게 하자
-            // **더 심해졌다.** 그것이 답이었다 — 보정은 진동의 원인이 아니라 **억제제**였고,
-            // 무언가가 x 를 밀 때마다 매 프레임 되돌리고 있었던 것이다.
-            //
-            // x 를 움직이는 항은 보정 하나뿐이고 목표 x 는 고정이므로, 남는 설명은
-            // **Move 의 결과가 요청과 다르다**는 것이다 — skinWidth(0.08)·stepOffset(0.4)의
-            // 충돌 해결이 개입한다. 그래서 Move 를 쓰지 않고 위치를 직접 놓는다.
-            //
+            // 수평은 계산하지 않고 사다리 앞면에 고정한다 (SnapToSeaLadder 주석 참조).
             // 사다리의 **현재** 위치로 목표를 잡으므로 흐름 추종도 여기서 함께 끝난다 —
             // 이동량을 따로 재고 더할 필요가 없다.
-            Vector3 hold = World.SeaLadderMotion.HoldTarget(
-                _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
-
-            _seaLadderLastPos = _seaLadder.transform.position;
-            _seaLadderTracked = true;
-
-            float nextY = transform.position.y + climb;
-
-            // 컨트롤러를 잠깐 끄고 놓는다 — 켜 둔 채로는 충돌 해결이 다시 끼어든다.
-            _characterController.enabled = false;
-            transform.position = new Vector3(hold.x, nextY, hold.z);
-            _characterController.enabled = true;
+            SnapToSeaLadder(transform.position.y + climb);
 
             // ④ 꼭대기 — 안쪽으로 밀어 넣고 놓는다. 밀어 넣지 않으면 캡슐 절반이 허공이라 미끄러진다.
             if (World.SeaLadderMotion.HasReachedTop(transform.position.y, _seaLadder.TopY))
@@ -657,28 +678,94 @@ namespace Game.Gameplay.Player
             }
 
             // ⑤ 밑으로 빠졌다 — 계속 붙잡으면 잠수가 막힌다.
+            // 놓는 즉시 false 를 돌려 **이 프레임부터** 수영·낙하로 넘긴다. 다시 붙지 않는 것은
+            // 위 붙기 검사(CanAttach)가 맡는다 — 그 검사가 없으면 계속 눌린 S 하나로
+            // 놓기와 붙기가 매 프레임 번갈아 일어나 사다리가 끝난 뒤에도 끌려 내려간다.
             if (World.SeaLadderMotion.HasFallenBelow(transform.position.y, _seaLadder.BottomY))
             {
                 ExitSeaLadder(false);
+                return false;
             }
 
             return true;
         }
 
         /// <summary>
-        /// 사다리를 놓는다. <paramref name="blockReattach"/>면 잠깐 다시 잡히지 않게 한다 —
-        /// 올라선 자리가 볼륨과 겹쳐 있어도 곧바로 재부착되지 않도록.
+        /// 사다리 앞면에 수평을 <b>고정</b>한다 — <paramref name="y"/>는 오르내림이 정한 높이다.
+        ///
+        /// <para><b>Move 를 쓰지 않는다.</b> 앞서 이동량 추종 + 보정으로 붙이려 했으나 좌우로 떨렸고,
+        /// 보정을 약하게 하자 <b>더 심해졌다</b> — 보정은 진동의 원인이 아니라 <b>억제제</b>였다.
+        /// <c>skinWidth</c>(0.08)·<c>stepOffset</c>(0.4)의 충돌 해결이 요청과 다른 결과를 돌려주고,
+        /// 그 오차를 매 프레임 되돌리던 것이다. 그래서 컨트롤러를 잠깐 끄고 위치를 직접 놓는다.</para>
         /// </summary>
-        private void ExitSeaLadder(bool blockReattach)
+        private void SnapToSeaLadder(float y)
         {
+            Vector3 hold = World.SeaLadderMotion.HoldTarget(
+                _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
+
+            _characterController.enabled = false;
+            transform.position = new Vector3(hold.x, y, hold.z);
+            _characterController.enabled = true;
+        }
+
+        /// <summary>
+        /// 사다리에 매달린 위치를 <b>렌더 직전에 다시 확정한다</b> — 떨림의 마지막 자유도를 없앤다.
+        ///
+        /// <para><b>왜 필요한가.</b> 사다리는 지형 타일의 자식이고 타일은 <c>Update</c>에서 배치된다.
+        /// 플레이어가 타일보다 <b>먼저</b> 돌면 <b>한 프레임 전</b> 사다리 위치에 놓이고, 그 격차는
+        /// 스크롤 속도 × <c>deltaTime</c>이라 프레임 시간이 흔들릴 때마다 함께 흔들린다 —
+        /// 사다리를 마주보면 그 축이 화면 <b>좌우</b>다.</para>
+        ///
+        /// <para>실행 순서를 명시해 타일이 먼저 돌게 했지만(<c>TerrainTileStreamer</c> −120)
+        /// 그것은 <b>가정</b>이다. <c>LateUpdate</c>가 모든 <c>Update</c> 뒤라는 것은 <b>보장</b>이므로,
+        /// 여기서 한 번 더 놓으면 순서가 어떻게 바뀌어도 그려지는 위치가 사다리와 정확히 같다.</para>
+        ///
+        /// <para>높이는 건드리지 않는다 — 오르내림은 <c>Update</c>가 소유한다.</para>
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (!IsSpawned || !IsOwner || !_onSeaLadder || _seaLadder == null)
+            {
+                return;
+            }
+
+            SnapToSeaLadder(transform.position.y);
+        }
+
+        /// <summary>
+        /// 사다리를 놓는다. 놓은 직후 <b>잠깐은 다시 잡히지 않는다</b> — 놓게 만든 입력이 아직
+        /// 눌린 채라 곧바로 재부착되기 때문이다. 모든 이탈 사유에 공통이다.
+        ///
+        /// <para><paramref name="clearReference"/>면 사다리 <b>참조까지</b> 끊는다. 꼭대기·순간이동처럼
+        /// 몸이 볼륨 밖으로 옮겨 가는 경우 전용이다 — 물 쪽 이탈에서 끊으면 볼륨 <b>안에</b> 머문 채
+        /// 진입 콜백이 다시 오지 않아 영영 잡지 못한다.</para>
+        /// </summary>
+        private void ExitSeaLadder(bool clearReference)
+        {
+            if (!_onSeaLadder)
+            {
+                // 매달려 있지 않다 — 견인·좌석 분기가 매 프레임 부르므로 속도·접지 유예를
+                // 건드리면 다른 상태를 망친다. 참조 정리만 하고 물러난다.
+                if (clearReference)
+                {
+                    _seaLadder = null;
+                }
+
+                return;
+            }
+
             _onSeaLadder = false;
-            _seaLadderTracked = false;
             _verticalSpeed = 0f;
             _groundGraceTimer = 0f;
+            _seaLadderBlockedUntil = Time.time + SeaLadderBlockSeconds;
 
-            if (blockReattach)
+            // 사다리는 지형 타일 소속이다 — 놓으면 다시 월드 프레임으로 돌아가야 공중에서도
+            // 열차와 함께 뒤로 밀린다. 붙을 때 껐던 것(사다리 고정이 이동을 전담)을 되돌린다.
+            // 복원하지 않으면 뛰어내린 몸이 다음 접지까지 열차 기준으로 앞으로 흘러간다.
+            _standingOnWorldFrame = true;
+
+            if (clearReference)
             {
-                _seaLadderBlockedUntil = Time.time + SeaLadderBlockSeconds;
                 _seaLadder = null;
             }
         }
@@ -805,7 +892,6 @@ namespace Game.Gameplay.Player
             {
                 _seaLadder = null;
                 _onSeaLadder = false;
-                _seaLadderTracked = false;
             }
         }
 
@@ -1277,6 +1363,7 @@ namespace Game.Gameplay.Player
             _mounted = true;
 
             DetachLadder();
+            ExitSeaLadder(true);
             CancelMantle();
             _ladder = null;
             _horizontalVelocity = Vector3.zero;
@@ -1370,6 +1457,7 @@ namespace Game.Gameplay.Player
             // 몸이 통째로 옮겨간다 — 좌석 구속을 끌고 가면 다음 프레임 추종이 옛 좌석으로 되당긴다.
             EndMount();
             DetachLadder();
+            ExitSeaLadder(true);
             CancelMantle();
             _ladder = null;
 
