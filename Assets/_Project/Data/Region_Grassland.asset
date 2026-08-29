@@ -22,12 +22,20 @@ MonoBehaviour:
   _weatherChancePerDay: 0
   _stampedeChancePerDay: 0.5
   _bossDefinition: {fileID: 11400000, guid: 6b1f0a5c4d3e42f0a9c7b8d1e2f30403, type: 2}
+  _monsterVariantWeights: []
   _overridesFog: 1
-  _dayFogColor: {r: 0.784, g: 0.867, b: 0.91, a: 1}
-  _dayFogDensity: 0.0062
-  _nightFogColor: {r: 0.784, g: 0.867, b: 0.91, a: 1}
-  _nightFogDensity: 0.0062
+  _dayFogColor: {r: 0.922, g: 0.851, b: 0.651, a: 1}
+  _dayFogDensity: 0.0012
+  _nightFogColor: {r: 0.29, g: 0.231, b: 0.322, a: 1}
+  _nightFogDensity: 0.0012
+  _segmentPalette: {fileID: 0}
+  _skyboxMaterial: {fileID: 2100000, guid: 1365edb52fc32794fac54a4a52ce7745, type: 2}
   _terrainTilePrefab: {fileID: 4483235474033511132, guid: f3da3e4cb8ed4c5a9a14a759fdf1c387, type: 3}
+  _hasWater: 0
+  _waterSurfaceY: -4
+  _underwaterColor: {r: 0.09, g: 0.34, b: 0.42, a: 0.62}
+  _fishingBiteDelayMultiplier: 1
+  _fishingDoubleCatchMultiplier: 1
   _resourceSpawns:
   - _type: 8
     _weight: 0.4
