@@ -35,6 +35,10 @@ namespace Game.Gameplay.Monsters
         // 이동 AI 재설계(회피·경로)는 이월이라 상수로 둔다.
         private const float StructureBlockPadding = 0.3f;
 
+        // 표적이 물면에서 이만큼 위에 있어야 "물 밖"으로 본다 (TryBeginSurfaceLeap).
+        // 수영 중인 플레이어는 수면에 걸쳐 있으므로 여유를 둬야 물속 표적에 튀어오르지 않는다.
+        private const float SurfaceLeapEmergeMargin = 1f;
+
         private readonly NetworkVariable<Vector3> _syncedPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<float> _syncedYaw = new NetworkVariable<float>();
 
@@ -44,6 +48,9 @@ namespace Game.Gameplay.Monsters
         private readonly MotionSnapshotBuffer _snapshotBuffer = new MotionSnapshotBuffer();
 
         private float _verticalSpeed;
+
+        // 이 개체가 서는 바닥 — 물 지역이면 물면이다 (ResolveSurfaceY 주석). 스폰 시 확정.
+        private float _surfaceY;
         private float _syncTimer;
         private float _attackCooldown;
         private Vector3 _lastHorizontalVelocity;
@@ -157,6 +164,7 @@ namespace Game.Gameplay.Monsters
             _lastHorizontalVelocity = Vector3.zero;
             _towed = false;
             _stunned = false;
+            _surfaceY = ResolveSurfaceY();
 
             if (IsServer)
             {
@@ -230,7 +238,10 @@ namespace Game.Gameplay.Monsters
             Transform target = _stunned ? null : FindNearestAliveTarget();
 
             bool onDeck = IsOnDeck(transform.position);
-            bool grounded = onDeck || transform.position.y <= 0.01f;
+
+            // 지지면은 지역이 정한다 — 물 지역이면 수면이 바닥이다. 0으로 두면 도약 중
+            // 수면과 0 사이 구간이 통째로 "접지"로 잡혀 공중에서 추격 속도가 되살아난다.
+            bool grounded = onDeck || transform.position.y <= _surfaceY + 0.01f;
 
             // 기절 중 지상 컨베이어는 그랩 관심사(MonsterGrabTarget)가 재바인딩 앵커로 직접
             // 위치를 구동한다 (M5 6차) — 여기서 속도를 더하면 이중 이동이 된다.
@@ -252,7 +263,14 @@ namespace Game.Gameplay.Monsters
                     horizontalVelocity = MonsterSteering.ComputeGroundVelocity(
                         transform.position, target.position, blocked, obstacleNormal, chaseSpeed, scrollSpeed);
 
-                    TryBeginDeckLeap(target);
+                    if (Settings.AquaticLeaper)
+                    {
+                        TryBeginSurfaceLeap(target);
+                    }
+                    else
+                    {
+                        TryBeginDeckLeap(target);
+                    }
                 }
             }
 
@@ -406,13 +424,63 @@ namespace Game.Gameplay.Monsters
             if (targetOnDeck && alongTrain && sideDistance <= Settings.LeapHorizontalRange)
             {
                 // 갑판 높이 + 여유를 넘는 포물선 도약 초기 속도.
-                _verticalSpeed = Mathf.Sqrt(2f * Gravity * (_trainLayout.DeckHeight + 1f));
+                //
+                // **어디서 뛰는지를 넣는다.** 예전에는 지면 y 0을 전제로 갑판 높이만 봤는데,
+                // 바다는 물면이 −4라 그대로 두면 정점이 0.57에 그쳐 갑판에 4 m 모자란다 —
+                // 물에서 올라오는 몬스터가 열차에 영영 닿지 못한다 (바다 계획 §12.1).
+                _verticalSpeed = MonsterLeapMath.LeapSpeed(
+                    _surfaceY, _trainLayout.DeckHeight + 1f, Gravity);
             }
+        }
+
+        /// <summary>
+        /// 물에서 <b>튀어오른다</b> (ㄴ 물고기 점프 — 바다 계획 §8.2).
+        ///
+        /// <para>갑판 도약과 두 가지가 다르다. ① 목표가 <b>열차가 아니라 정점 높이</b>다 —
+        /// 결정 ⑨의 y +1.5라 상판 위 플레이어는 닿고 <b>갑판 위는 안전하다.</b>
+        /// ② 물 밖 표적에게만 뛴다 — 잠수 중인 표적에게는 도약 없이 그대로 추격한다.</para>
+        ///
+        /// <para>착지는 <see cref="ClampToSupport"/>가 막는다 — 이 변종은 어디에도 올라서지 않고
+        /// 물로 되떨어진다.</para>
+        /// </summary>
+        private void TryBeginSurfaceLeap(Transform target)
+        {
+            if (_verticalSpeed > 0f)
+            {
+                return;
+            }
+
+            if (!MonsterLeapMath.ShouldSurfaceLeap(
+                transform.position, target.position, _surfaceY,
+                Settings.LeapHorizontalRange, SurfaceLeapEmergeMargin))
+            {
+                return;
+            }
+
+            _verticalSpeed = MonsterLeapMath.LeapSpeed(_surfaceY, Settings.LeapApexY, Gravity);
+        }
+
+        /// <summary>
+        /// 이 개체가 서는 바닥 높이 — 물 지역이면 <b>물면</b>, 아니면 지면(0).
+        ///
+        /// <para><b>왜 필요한가.</b> 바다 1차는 <see cref="MonsterWaveSpawner"/>가 스폰 y만 물면으로
+        /// 내렸다. 그런데 여기 클램프가 0으로 남아 있어 <b>다음 프레임에 도로 끌어올려졌다</b> —
+        /// 몬스터가 수면 위를 걸어오는 것이 그것이다 (바다 계획 §12.1).</para>
+        ///
+        /// <para>스폰 시 한 번만 읽는다. 지역은 며칠에 한 번 바뀌고 웨이브는 새벽에 회수되므로
+        /// 개체 수명 안에서 값이 달라질 일이 없다 — 매 프레임 서비스를 조회할 이유가 없다.
+        /// 물이 없는 지역은 <c>SurfaceY</c>가 0이라 <b>동작이 그대로다.</b></para>
+        /// </summary>
+        private static float ResolveSurfaceY()
+        {
+            return ServiceLocator.TryGet(out Region.IRegionService region) && region.CurrentRegion != null
+                ? region.CurrentRegion.SurfaceY
+                : 0f;
         }
 
         private void ApplyVerticalMotion(bool onDeck)
         {
-            if (_verticalSpeed > 0f || (!onDeck && transform.position.y > 0.01f))
+            if (_verticalSpeed > 0f || (!onDeck && transform.position.y > _surfaceY + 0.01f))
             {
                 _verticalSpeed -= Gravity * Time.deltaTime;
             }
@@ -424,15 +492,19 @@ namespace Game.Gameplay.Monsters
 
             if (_verticalSpeed <= 0f)
             {
-                if (IsWithinTrainFootprint(position) && _trainLayout != null &&
+                // 물고기 점프는 갑판에 <b>내려서지 않는다</b> — 튀어올랐다 물로 되떨어진다.
+                // 올라서게 두면 물 위의 위협이 아니라 그냥 갑판에 오르는 몬스터가 된다.
+                bool canLand = !Settings.AquaticLeaper;
+
+                if (canLand && IsWithinTrainFootprint(position) && _trainLayout != null &&
                     position.y <= _trainLayout.DeckHeight && position.y > _trainLayout.DeckHeight - 1.5f)
                 {
                     position.y = _trainLayout.DeckHeight;
                     _verticalSpeed = 0f;
                 }
-                else if (position.y < 0f)
+                else if (position.y < _surfaceY)
                 {
-                    position.y = 0f;
+                    position.y = _surfaceY;
                     _verticalSpeed = 0f;
                 }
             }

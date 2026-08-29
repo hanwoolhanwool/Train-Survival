@@ -33,6 +33,15 @@ namespace Game.Gameplay.Monsters
         [SerializeField, Min(0.5f)] private float _avoidProbeDistance = 3f;
         [SerializeField, Min(0.1f)] private float _leapHorizontalRange = 3f;
 
+        [Header("물 위의 위협 (바다 계획 §8.2 — ㄴ 물고기 점프)")]
+        [Tooltip("물에서만 살며 도약으로만 공격하는가. 켜면 갑판·상판에 올라서지 않고 " +
+            "튀어올랐다 물로 되떨어진다. 물속 표적에게는 도약하지 않고 그대로 추격한다.")]
+        [SerializeField] private bool _aquaticLeaper;
+
+        [Tooltip("튀어오를 때 정점의 월드 높이(m). AquaticLeaper 일 때만 쓴다. " +
+            "바다 결정 ⑨ = 1.5 — 상판(0) 위 플레이어는 닿고 갑판(3.566)은 닿지 않는다.")]
+        [SerializeField] private float _leapApexY = 1.5f;
+
         [Header("전투")]
         [SerializeField, Min(1f)] private float _maxHealth = 100f;
         [SerializeField, Min(0f)] private float _attackDamage = 15f;
@@ -80,6 +89,12 @@ namespace Game.Gameplay.Monsters
 
         /// <summary>열차 측면에서 이 수평 거리 안이면 갑판 도약을 시작한다.</summary>
         public float LeapHorizontalRange => _leapHorizontalRange;
+
+        /// <summary>물에서만 살며 도약으로만 공격하는가 (ㄴ 물고기 점프).</summary>
+        public bool AquaticLeaper => _aquaticLeaper;
+
+        /// <summary>튀어오를 때 정점의 월드 높이 (m). <see cref="AquaticLeaper"/>일 때만 쓴다.</summary>
+        public float LeapApexY => _leapApexY;
 
         public float MaxHealth => _maxHealth;
 

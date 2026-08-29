@@ -69,6 +69,9 @@ namespace Game.Gameplay.Monsters
         private float _signatureTimer;
         private Vector3 _lastHorizontalVelocity;
 
+        // 보스가 서는 바닥 — 물 지역이면 물면이다 (웨이브 개체와 같은 규약). 스폰 시 확정.
+        private float _surfaceY;
+
         private BossChargeState _chargeState = BossChargeState.Ready;
         private float _chargeTimer;
         private Vector3 _chargeDirection;
@@ -87,6 +90,11 @@ namespace Game.Gameplay.Monsters
             _chargeTimer = 0f;
             _chargeHitCooldown = 0f;
             _pendingImpacts.Clear();
+
+            // 물 지역이면 보스도 물면에 선다 — 안 하면 수면 위에 뜬 채 싸운다 (바다 계획 §12.1).
+            _surfaceY = ServiceLocator.TryGet(out Region.IRegionService region) && region.CurrentRegion != null
+                ? region.CurrentRegion.SurfaceY
+                : 0f;
 
             if (IsServer)
             {
@@ -463,7 +471,7 @@ namespace Game.Gameplay.Monsters
         private void ClampToGround()
         {
             Vector3 position = transform.position;
-            position.y = 0f;
+            position.y = _surfaceY;
 
             if (_trainLayout != null)
             {
