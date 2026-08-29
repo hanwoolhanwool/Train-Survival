@@ -70,8 +70,19 @@ namespace Game.Gameplay.Region
             _hasBackup = true;
         }
 
+        /// <summary>
+        /// 날씨를 놓는다. <b>복원 대상은 "씬 값"이 아니라 "현재 지역 × 국면 값"이다</b>
+        /// (사막 계획 §4.2 3층). <see cref="OnEnable"/>에서 뜬 백업은 지역·국면이 바뀌면
+        /// 낡으므로, 소유자가 있으면 그쪽에 물어 되돌린다 — 폭풍이 밤에 걷히면 남색으로,
+        /// 낮에 걷히면 백열 하늘색으로 돌아간다(§4.8).
+        /// </summary>
         private void RestoreFogSettings()
         {
+            if (ServiceLocator.TryGet(out IRegionFogProvider fog) && fog.TryApplyCurrentFog())
+            {
+                return;
+            }
+
             if (!_hasBackup)
             {
                 return;

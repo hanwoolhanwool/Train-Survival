@@ -91,6 +91,25 @@ namespace Game.Gameplay.Region
             "적어 둔 변종만 가중치가 치환된다 — 0을 주면 이 지역에서는 등장하지 않는다.")]
         [SerializeField] private MonsterVariantWeightEntry[] _monsterVariantWeights;
 
+        [Header("안개 (사막 계획 §4.2 결정 ⑥·⑦ — fog 색은 지역 × 국면이 소유한다)")]
+        [Tooltip("이 지역이 fog를 소유하는가. 끄면 RegionFogController 가 씬 fog를 그대로 둔다 — " +
+            "배선하지 않은 지역은 1픽셀도 바뀌지 않는다(하늘 슬롯과 같은 회귀 방어선).")]
+        [SerializeField] private bool _overridesFog;
+
+        [Tooltip("낮 국면의 fog 색. 사막 = #E8DCC0 백열 하늘.")]
+        [SerializeField] private Color _dayFogColor = new Color(0.784f, 0.867f, 0.91f, 1f);
+
+        [Tooltip("낮 국면의 fog 밀도(ExponentialSquared). 씬 기본 0.0062는 300 m에서 3 %라 원경을 지운다 — " +
+            "사막은 0.0015로 500 m 유적이 57 %, 800 m 산이 24 %로 남는다.")]
+        [SerializeField, Min(0f)] private float _dayFogDensity = 0.0062f;
+
+        [Tooltip("밤 국면의 fog 색. 사막 = #2B3A63 밤 남색 — 하늘은 남색인데 안개만 크림색인 어긋남을 없앤다.")]
+        [SerializeField] private Color _nightFogColor = new Color(0.784f, 0.867f, 0.91f, 1f);
+
+        [Tooltip("밤 국면의 fog 밀도. 사막은 낮과 같은 0.0015다(밤에도 대자연을 유지한다). " +
+            "밤에 짙게 하는 지역(북극 블리자드 등)을 위해 필드만 2벌로 둔다.")]
+        [SerializeField, Min(0f)] private float _nightFogDensity = 0.0062f;
+
         [Header("지형·자원")]
         [Tooltip("이 지역의 지형 세그먼트 팔레트 (레벨 디자인 가이드 §4.6). 설정하면 타일마다 " +
             "인덱스에서 결정론적으로 추첨한다 — 아래 단일 프리팹보다 우선한다. 비우면 종전대로 단일 타일.")]
@@ -162,6 +181,21 @@ namespace Game.Gameplay.Region
 
         /// <summary>이 지역의 하늘. null 이면 하늘 슬롯을 건드리지 않는다.</summary>
         public Material SkyboxMaterial => _skyboxMaterial;
+
+        /// <summary>이 지역이 fog를 소유하는가. false면 씬 fog 그대로 — 배선 전 지역의 회귀 방어선.</summary>
+        public bool OverridesFog => _overridesFog;
+
+        /// <summary>낮 국면의 fog 색.</summary>
+        public Color DayFogColor => _dayFogColor;
+
+        /// <summary>낮 국면의 fog 밀도 (ExponentialSquared).</summary>
+        public float DayFogDensity => _dayFogDensity;
+
+        /// <summary>밤 국면의 fog 색.</summary>
+        public Color NightFogColor => _nightFogColor;
+
+        /// <summary>밤 국면의 fog 밀도 (ExponentialSquared).</summary>
+        public float NightFogDensity => _nightFogDensity;
 
         /// <summary>이 지역의 지면이 물인가 (바다).</summary>
         public bool HasWater => _hasWater;
