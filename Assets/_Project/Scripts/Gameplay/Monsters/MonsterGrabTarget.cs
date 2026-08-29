@@ -28,8 +28,36 @@ namespace Game.Gameplay.Monsters
     [RequireComponent(typeof(MonsterHealth))]
     public sealed class MonsterGrabTarget : NetworkBehaviour, IGrabbable, IHoldAttachable, IPoolable
     {
+        /// <summary>
+        /// 변종 1종의 전용 외형 (대초원 3차) — 변종별 메시를 <b>한 프리팹 안에</b> 담고 활성만 토글한다.
+        /// <see cref="World.ResourceNode.ResourceVisual"/>과 같은 규약이다: 네트워크 프리팹 목록을
+        /// 늘리지 않으므로 <c>GlobalObjectIdHash</c>도 복제 규약도 건드리지 않는다.
+        ///
+        /// <para>열쇠가 <see cref="MonsterSettings"/> 자체라 <b>데이터 스키마가 늘지 않는다</b> —
+        /// 변종에 "외형 이름" 같은 필드를 새로 붙이지 않고, 프리팹이 변종 → 메시를 짝지운다.</para>
+        /// </summary>
+        [System.Serializable]
+        public sealed class VariantVisual
+        {
+            [Tooltip("이 변종일 때만 켤 외형이다.")]
+            [SerializeField] private MonsterSettings _settings;
+
+            [Tooltip("켜고 끌 메시 루트 (Body 아래).")]
+            [SerializeField] private GameObject _root;
+
+            public MonsterSettings Settings => _settings;
+
+            public GameObject Root => _root;
+        }
+
         [Tooltip("그로기 표현을 칠할 렌더러 (Body).")]
         [SerializeField] private Renderer[] _tintRenderers;
+
+        [Tooltip("변종별 전용 외형. 등록된 변종은 이 메시를 쓰고 변종 색 틴트를 칠하지 않는다.")]
+        [SerializeField] private VariantVisual[] _variantVisuals;
+
+        [Tooltip("전용 외형이 없는 변종에 쓰는 기본 외형. 비우면 토글을 하지 않는다 — 배선 전 회귀 방지.")]
+        [SerializeField] private GameObject _fallbackVisual;
 
         [Tooltip("그로기 자세로 기울일 표현 트랜스폼 (Body). 판정에는 영향이 없다.")]
         [SerializeField] private Transform _visual;
@@ -87,6 +115,9 @@ namespace Game.Gameplay.Monsters
 
         private bool _presentationStunned;
         private Color[] _baseColors;
+
+        // 프리팹 머티리얼의 원래 색 — 전용 메시를 쓰는 변종은 변종 색이 아니라 이 값으로 되돌린다.
+        private Color[] _prefabColors;
         private Quaternion _visualBaseRotation;
 
         // 변종 시각 (M5 8차) — 스케일 배율의 기준이 되는 프리팹 원 스케일. 색은 _baseColors를
@@ -515,11 +546,16 @@ namespace Game.Gameplay.Monsters
                 _visual.localScale = _visualBaseScale * settings.VisualScale;
             }
 
+            bool dedicated = ApplyVariantMesh(settings);
+
             if (_baseColors != null)
             {
                 for (int i = 0; i < _baseColors.Length; i++)
                 {
-                    _baseColors[i] = settings.VariantColor;
+                    // 전용 메시는 텍스처·머티리얼이 색을 담는다 — 변종 색으로 덮으면 들소가 단색이 된다.
+                    _baseColors[i] = dedicated && _prefabColors != null
+                        ? _prefabColors[i]
+                        : settings.VariantColor;
                 }
             }
 
@@ -527,6 +563,43 @@ namespace Game.Gameplay.Monsters
             {
                 RepaintTint(stunned: false);
             }
+        }
+
+        /// <summary>
+        /// 변종 전용 메시를 고른다 (대초원 3차) — 등록된 변종은 그 메시만 켜고, 없으면 기본 외형 +
+        /// 변종 색 틴트(기존 동작)로 돌아간다. 풀에서 재사용되는 개체도 스폰마다 이 경로를 타므로
+        /// 이전 변종의 메시가 남지 않는다.
+        /// </summary>
+        /// <returns>전용 메시를 켰으면 <c>true</c>.</returns>
+        private bool ApplyVariantMesh(MonsterSettings settings)
+        {
+            GameObject chosen = null;
+            if (_variantVisuals != null)
+            {
+                for (int i = 0; i < _variantVisuals.Length; i++)
+                {
+                    VariantVisual entry = _variantVisuals[i];
+                    if (entry == null || entry.Root == null)
+                    {
+                        continue;
+                    }
+
+                    bool match = entry.Settings == settings;
+                    entry.Root.SetActive(match);
+                    if (match)
+                    {
+                        chosen = entry.Root;
+                    }
+                }
+            }
+
+            // 폴백이 배선되지 않았으면(기존 프리팹) 토글을 하지 않는다 — 회귀 없음.
+            if (_fallbackVisual != null)
+            {
+                _fallbackVisual.SetActive(chosen == null);
+            }
+
+            return chosen != null;
         }
 
         /// <summary>
@@ -541,12 +614,14 @@ namespace Game.Gameplay.Monsters
             }
 
             _baseColors = new Color[_tintRenderers.Length];
+            _prefabColors = new Color[_tintRenderers.Length];
             for (int i = 0; i < _tintRenderers.Length; i++)
             {
                 Material material = _tintRenderers[i] != null ? _tintRenderers[i].sharedMaterial : null;
                 _baseColors[i] = material != null && material.HasProperty("_BaseColor")
                     ? material.GetColor("_BaseColor")
                     : Color.white;
+                _prefabColors[i] = _baseColors[i];
             }
         }
 
