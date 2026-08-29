@@ -58,6 +58,12 @@ namespace Game.Gameplay.Player
 
         private static readonly RaycastHit[] GroundProbeHits = new RaycastHit[8];
 
+        // 중심 레이가 허공을 볼 때 다시 보는 방향들 — 캡슐이 모서리에 걸쳐 선 경우다 (ProbeGround 주석).
+        private static readonly Vector3[] GroundProbeFallbackDirections =
+        {
+            Vector3.forward, Vector3.back, Vector3.right, Vector3.left,
+        };
+
         private CharacterController _characterController;
         private PlayerHealth _health;
         private IExternalTow _externalTow;
@@ -1104,6 +1110,25 @@ namespace Game.Gameplay.Player
             float maxDistance = _characterController.height * 0.5f + 0.4f;
             int count = Physics.RaycastNonAlloc(
                 origin, Vector3.down, GroundProbeHits, maxDistance, ~0, QueryTriggerInteraction.Ignore);
+
+            // 중심이 허공이어도 캡슐은 <b>모서리에 걸쳐</b> 서 있을 수 있다 — 캡슐 하단 반구가
+            // 걸리면 CharacterController 는 그대로 지지한다. 바다 상판은 열차 옆이 1.15 m뿐이라
+            // 가장자리에 붙어 걷는 것이 상시 상태다.
+            //
+            // 여기서 포기하면 밟은 표면을 "없음"으로 판정해 <b>컨베이어가 꺼진다</b> —
+            // 지형은 뒤로 흐르는데 몸은 제자리라, 가만히 서 있어도 지형 기준으로 스크롤 속도만큼
+            // 앞으로 흘러가고 달리면 그만큼 얹혀 빨라진다 (11회차 결함 ③).
+            // 반경만큼 네 방향으로 한 번 더 본다 — 중심이 맞은 경우의 동작은 그대로다.
+            if (count == 0)
+            {
+                float reach = _characterController.radius * 0.9f;
+                for (int i = 0; i < GroundProbeFallbackDirections.Length && count == 0; i++)
+                {
+                    count = Physics.RaycastNonAlloc(
+                        origin + GroundProbeFallbackDirections[i] * reach, Vector3.down,
+                        GroundProbeHits, maxDistance, ~0, QueryTriggerInteraction.Ignore);
+                }
+            }
 
             float closest = float.PositiveInfinity;
             Collider closestCollider = null;
