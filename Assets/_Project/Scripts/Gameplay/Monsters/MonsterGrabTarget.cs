@@ -642,6 +642,33 @@ namespace Game.Gameplay.Monsters
             {
                 _visual.localScale = _visualBaseScale;
             }
+
+            // 같은 위생 — 변종 외형도 기본형으로 되돌린다. 다음 스폰의
+            // ApplyVariantPresentation 이 어차피 덮지만, 되돌리는 자리는 여기 한 곳으로 모은다.
+            RestoreFallbackVisual();
+        }
+
+        /// <summary>변종 전용 메시를 전부 끄고 기본 외형으로 되돌린다 (풀 반납 위생).</summary>
+        private void RestoreFallbackVisual()
+        {
+            if (_fallbackVisual == null)
+            {
+                return;
+            }
+
+            if (_variantVisuals != null)
+            {
+                for (int i = 0; i < _variantVisuals.Length; i++)
+                {
+                    VariantVisual entry = _variantVisuals[i];
+                    if (entry != null && entry.Root != null)
+                    {
+                        entry.Root.SetActive(false);
+                    }
+                }
+            }
+
+            _fallbackVisual.SetActive(true);
         }
     }
 }
