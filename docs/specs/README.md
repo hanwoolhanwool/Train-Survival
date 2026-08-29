@@ -18,6 +18,7 @@
 | `world/` | [scroll-and-streaming.md](world/scroll-and-streaming.md) | **열차 고정 + 월드 스크롤 좌표계**, 지형 타일 스트리밍, 지상 자원, 안착 축 공용화 |
 | `world/` | [fuel-loop.md](world/fuel-loop.md) | 엔진 투입→충전→소모→감속. 소모율 = 기본 + 칸 수 + 건축물, 자원별 발열량 차등 |
 | `world/` | [train-art-layout.md](world/train-art-layout.md) | 열차 아트 배치·궤도 타일·접지 높이 참조표 (QA용) |
+| `world/` | [distant-scenery.md](world/distant-scenery.md) | **원경 4층 시차 레이어 + 지역 × 국면 안개**. 대자연은 폴리곤이 아니라 각속도로 만든다 |
 | `train/` | [train-state-model.md](train/train-state-model.md) | **호스트 소유 단일 상태 모델** — 편성·파괴·연쇄 이탈·수리·재결합. 재접속 복원의 원천 |
 | `train/` | [construction.md](train/construction.md) | 갑판 셀 그리드·건축물·판자 증축. 갑판 폭이 데이터에서 파생된다 |
 | `harpoon/` | [grapple-pipeline.md](harpoon/grapple-pipeline.md) | 집게 발사→판정→견인. 로컬 선반영 + 호스트 권위 분리, 등급·몬스터 그랩 |
