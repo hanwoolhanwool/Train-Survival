@@ -624,10 +624,16 @@ sun direction, vignette, border, frame, trees, rocks, props, path, footprints,
 photorealism, photo scan, PBR, fine noise, text, watermark, logo
 ```
 
-### M.4 지역별 내용 — 4종
+### M.4 지역별 내용 — 4종 + 바다 **해저** 1종
 
 색은 **§D.2 지역 팔레트 안에서만** 고른다. 지면은 화면 아래 절반을 차지하므로
 여기서 팔레트를 벗어나면 지역 정체성이 통째로 흔들린다.
+
+> **바다는 밟는 지면이 없다** — 교량 위를 달리므로 §M.1의 `Ground` 판을 쓰지 않는다.
+> 대신 **해저**가 그 자리를 대신한다: `M_Env_Seabed_A`가 지금 **단색 `#1E272B` 한 장**이고
+> 텍스처가 없다. **2차 잠수와 3차 낚시가 화면의 절반을 물속으로 채우는데 바닥이 민무늬다** —
+> 아래 표에 함께 넣는 이유다. 규격은 다르다: 해저 판은 **200 × 40 m**(타일 전폭)이고
+> 물을 통해 보이므로 **대비를 낮게** 잡는다.
 
 | 지역 | 파일명 | 영문 지시 (§M.3 뒤에 이어 쓴다) |
 |---|---|---|
@@ -635,6 +641,10 @@ photorealism, photo scan, PBR, fine noise, text, watermark, logo
 | **사막 (여름)** | `T_Env_Ground_Desert_BaseColor` | dry desert hardpan, pale sand `#DCA85C` with rust-stained gravel `#A9613A`, wide cracked clay plates, wind ripples in the sand, bleached and dusty |
 | **대초원 (가을)** | `T_Env_Ground_Grassland_BaseColor` | dry autumn prairie, golden grain `#D9A441` laid flat in drifts, amber patches `#B87A2C`, straw-colored dead grass `#EBD9A6`, worn earth showing through |
 | **북극 (겨울)** | `T_Env_Ground_Arctic_BaseColor` | wind-packed snow field, glacier white `#E6EEF2` with blue shadow hollows `#9EC2D6`, deep frost crevices `#3E5A72`, hard crust and sastrugi ridges, no sparkle |
+| **바다 — 해저** ⚠ | `T_Env_Seabed_BaseColor` | dark sea floor seen through water, muddy sand in deep teal-gray `#1E272B` with slightly lighter silt drifts `#2D7387`, scattered small pebbles and a few shell fragments, **very low contrast and no bright highlights** (it is viewed through 8 m of water) |
+
+> **해저는 타일링이 다르다.** 판이 200 × 40 m라 §M.1의 `(6, 4)`를 쓰면 무늬가 늘어난다 —
+> **10 m 반복을 유지하려면 `(20, 4)`**다. 200과 40을 동시에 나누는 값에서 고르는 것은 같다.
 
 ### M.5 검수 — **이음매 검사가 먼저다**
 
