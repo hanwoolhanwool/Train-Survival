@@ -139,6 +139,21 @@ namespace Game.Gameplay.World
             return TileStreamingLogic.ResolveRegionIndex(tileIndex, _boundaryMirror);
         }
 
+        /// <summary>열차 발밑 지형의 지역 — 계약과 이유는 <see cref="ITerrainBoundaryService"/>에 있다.</summary>
+        public int RegionIndexAtTrain
+        {
+            get
+            {
+                if (_settings == null)
+                {
+                    return -1;
+                }
+
+                return ResolveRegionIndex(TileStreamingLogic.GetCenterTileIndex(
+                    _traveledDistance.Value, _settings.TileLength));
+            }
+        }
+
         private void Update()
         {
             if (!IsSpawned)

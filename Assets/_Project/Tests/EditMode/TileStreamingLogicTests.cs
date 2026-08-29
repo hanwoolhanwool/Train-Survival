@@ -97,5 +97,54 @@ namespace Game.Tests.EditMode
             // 마지막 경계는 항상 남는다 — 이후 전 구간의 결정 근거다.
             Assert.That(TileStreamingLogic.CountTrimmableBoundaries(boundaries, int.MaxValue), Is.EqualTo(2));
         }
+
+        // ── 발밑 지형의 지역 (검증 A3 — 물이 지형보다 먼저 사라지던 문제) ──
+
+        [Test]
+        public void 열차가_지나는_타일은_주행_거리가_정한다()
+        {
+            Assert.That(TileStreamingLogic.GetCenterTileIndex(0f, 40f), Is.EqualTo(0));
+            Assert.That(TileStreamingLogic.GetCenterTileIndex(39.9f, 40f), Is.EqualTo(0));
+            Assert.That(TileStreamingLogic.GetCenterTileIndex(40f, 40f), Is.EqualTo(1));
+            Assert.That(TileStreamingLogic.GetCenterTileIndex(-1f, 40f), Is.EqualTo(-1), "뒤로 밀린 구간");
+        }
+
+        [Test]
+        public void 발밑_지형은_선포된_지역보다_늦게_바뀐다()
+        {
+            // 이것이 A3의 정체다. 지역 전환은 전방 tilesAhead+1 장 **너머**에 경계를 찍으므로
+            // (이미 깔린 타일을 바꾸지 않으려고), 선포 직후 한동안 발밑은 이전 지역이다.
+            // 물을 "현재 지역"으로 켜고 끄면 그 사이 다리만 남고 물이 사라진다.
+            const float TileLength = 40f;
+            const int TilesAhead = 5;
+
+            float atSwitch = 400f;   // 전환 순간의 주행 거리 = 타일 10
+            int boundaryIndex = TileStreamingLogic.GetBoundaryTileIndex(atSwitch, TileLength, TilesAhead);
+            Assert.That(boundaryIndex, Is.EqualTo(16), "6타일 앞에 찍힌다");
+
+            var boundaries = new System.Collections.Generic.List<TerrainRegionBoundary>
+            {
+                new TerrainRegionBoundary(int.MinValue, 2),      // 바다
+                new TerrainRegionBoundary(boundaryIndex, 3),     // 대초원
+            };
+
+            // 전환 직후 — 발밑은 아직 바다다.
+            int here = TileStreamingLogic.GetCenterTileIndex(atSwitch, TileLength);
+            Assert.That(TileStreamingLogic.ResolveRegionIndex(here, boundaries), Is.EqualTo(2));
+
+            // 240 m(6타일)를 더 달려야 발밑이 대초원이 된다 — 전속 6 m/s 기준 40초.
+            float arrival = boundaryIndex * TileLength;
+            Assert.That(arrival - atSwitch, Is.EqualTo(240f));
+            Assert.That(
+                TileStreamingLogic.ResolveRegionIndex(
+                    TileStreamingLogic.GetCenterTileIndex(arrival, TileLength), boundaries),
+                Is.EqualTo(3));
+
+            // 경계 직전 1 m 지점까지는 여전히 바다다.
+            Assert.That(
+                TileStreamingLogic.ResolveRegionIndex(
+                    TileStreamingLogic.GetCenterTileIndex(arrival - 1f, TileLength), boundaries),
+                Is.EqualTo(2));
+        }
     }
 }

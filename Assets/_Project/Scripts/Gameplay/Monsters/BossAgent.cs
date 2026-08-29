@@ -92,9 +92,7 @@ namespace Game.Gameplay.Monsters
             _pendingImpacts.Clear();
 
             // 물 지역이면 보스도 물면에 선다 — 안 하면 수면 위에 뜬 채 싸운다 (바다 계획 §12.1).
-            _surfaceY = ServiceLocator.TryGet(out Region.IRegionService region) && region.CurrentRegion != null
-                ? region.CurrentRegion.SurfaceY
-                : 0f;
+            _surfaceY = World.WaterSurfaceQuery.SurfaceY();
 
             if (IsServer)
             {

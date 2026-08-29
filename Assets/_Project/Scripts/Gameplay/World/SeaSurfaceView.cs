@@ -76,23 +76,13 @@ namespace Game.Gameplay.World
             }
         }
 
+        /// <summary>
+        /// 발밑 지형 기준으로 판정한다 — "현재 지역"으로 켜고 끄면 Day가 넘어간 순간
+        /// <b>물만 먼저 사라지고 교량은 40초 더 남는다</b> (<see cref="WaterSurfaceQuery"/>).
+        /// </summary>
         private static bool TryGetWaterSurfaceY(out float waterSurfaceY)
         {
-            waterSurfaceY = 0f;
-
-            if (!ServiceLocator.TryGet(out IRegionService region))
-            {
-                return false;
-            }
-
-            RegionDefinition definition = region.CurrentRegion;
-            if (definition == null || !definition.HasWater)
-            {
-                return false;
-            }
-
-            waterSurfaceY = definition.WaterSurfaceY;
-            return true;
+            return WaterSurfaceQuery.TryGetWaterSurfaceY(out waterSurfaceY);
         }
     }
 }

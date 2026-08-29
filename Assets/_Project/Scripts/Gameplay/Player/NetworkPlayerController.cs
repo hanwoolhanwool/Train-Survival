@@ -809,21 +809,10 @@ namespace Game.Gameplay.Player
         /// </summary>
         private static bool TryGetWaterSurfaceY(out float waterSurfaceY)
         {
-            waterSurfaceY = 0f;
-
-            if (!ServiceLocator.TryGet(out IRegionService region))
-            {
-                return false;
-            }
-
-            RegionDefinition definition = region.CurrentRegion;
-            if (definition == null || !definition.HasWater)
-            {
-                return false;
-            }
-
-            waterSurfaceY = definition.WaterSurfaceY;
-            return true;
+            // 발밑 지형 기준이다 — "현재 지역"으로 보면 Day가 넘어간 순간 교량 위에 서 있는데도
+            // 물이 없다고 판정되고, 반대로 바다에 들어설 때는 평지에서 헤엄치게 된다
+            // (World.WaterSurfaceQuery 주석 · 검증 A3).
+            return World.WaterSurfaceQuery.TryGetWaterSurfaceY(out waterSurfaceY);
         }
 
         /// <summary>발 높이와 물면에서 수영 여부·잠김 깊이를 유도한다. 복제 없음.</summary>

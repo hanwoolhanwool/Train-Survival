@@ -473,9 +473,7 @@ namespace Game.Gameplay.Monsters
         /// </summary>
         private static float ResolveSurfaceY()
         {
-            return ServiceLocator.TryGet(out Region.IRegionService region) && region.CurrentRegion != null
-                ? region.CurrentRegion.SurfaceY
-                : 0f;
+            return WaterSurfaceQuery.SurfaceY();
         }
 
         private void ApplyVerticalMotion(bool onDeck)

@@ -218,9 +218,7 @@ namespace Game.Gameplay.Monsters
         /// </summary>
         private static float CurrentSurfaceY()
         {
-            return ServiceLocator.TryGet(out IRegionService region) && region.CurrentRegion != null
-                ? region.CurrentRegion.SurfaceY
-                : 0f;
+            return World.WaterSurfaceQuery.SurfaceY();
         }
 
         private void SpawnOne()

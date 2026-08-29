@@ -14,6 +14,23 @@ namespace Game.Gameplay.World
             return tileIndex * tileLength - traveledDistance;
         }
 
+        /// <summary>
+        /// 열차가 <b>지금 지나고 있는</b> 타일의 인덱스 (z = 0 자리).
+        ///
+        /// <para>지역 전환은 전방 <c>tilesAhead + 1</c>장 <b>너머</b>에 경계를 찍으므로
+        /// (<see cref="GetBoundaryTileIndex"/>), "지금 선포된 지역"과 "발밑 지형의 지역"은
+        /// 전환 직후 한동안 다르다. 지형에 맞춰 켜고 꺼야 하는 것들은 이 인덱스로 판정한다.</para>
+        /// </summary>
+        public static int GetCenterTileIndex(float traveledDistance, float tileLength)
+        {
+            if (tileLength <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tileLength));
+            }
+
+            return (int)Math.Floor(traveledDistance / tileLength);
+        }
+
         /// <summary>현재 누적 거리에서 유지해야 할 타일 인덱스 구간 [first, last]를 계산한다.</summary>
         public static void GetVisibleRange(
             float traveledDistance, float tileLength, int tilesAhead, int tilesBehind,
