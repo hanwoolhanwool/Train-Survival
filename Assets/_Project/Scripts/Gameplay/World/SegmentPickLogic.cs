@@ -119,5 +119,102 @@ namespace Game.Gameplay.World
             int previous = WeightedPick(weights, Hash01(tileIndex - 1, 1), -1);
             return Pick(tileIndex, weights, previous, noRepeatAdjacent);
         }
+
+        // ── 2단 추첨: 구간 군 → 세그먼트 (북극 계획 §5.3) ─────────────────────────
+
+        /// <summary>
+        /// 타일 인덱스가 속한 <b>구간 군</b>. <paramref name="groupSchedule"/>은 한 바퀴의 군 번호를
+        /// 타일 한 장에 하나씩 늘어놓은 배열이다 — 북극은
+        /// <c>[얼음×6, 전이, 바다×5, 전이]</c> 13장이 한 바퀴(520 m · 87초)다.
+        ///
+        /// <para>비어 있으면 <b>−1</b>을 돌려준다. 그 값이 곧 "구간 편성 없음"이고,
+        /// 다른 네 지역은 이 배열을 비워 둔 채 현행 독립 추첨 그대로 돈다(팔레트 폴백과 같은 규약).</para>
+        /// </summary>
+        public static int GroupAtTile(int tileIndex, int[] groupSchedule)
+        {
+            if (groupSchedule == null || groupSchedule.Length == 0)
+            {
+                return -1;
+            }
+
+            // 음수 인덱스도 같은 바퀴 위에 놓는다 — 프리웜이 0 앞을 들여다볼 수 있다.
+            int cycle = groupSchedule.Length;
+            int position = tileIndex % cycle;
+            if (position < 0)
+            {
+                position += cycle;
+            }
+
+            return groupSchedule[position];
+        }
+
+        /// <summary>
+        /// 군에 속하지 않는 후보의 가중치를 0으로 지운 배열을 <paramref name="destination"/>에 쓴다.
+        ///
+        /// <para><b>군이 비면 원래 가중치를 그대로 남긴다.</b> 편성에 적힌 군에 세그먼트가 하나도
+        /// 없으면 그 타일이 통째로 비는데, 그것은 <b>오류 로그 한 줄 없이 지형이 사라지는</b>
+        /// 실패 방식이다(사막 §6.8이 계기를 붙인 바로 그 종류). 어울리지 않는 세그먼트가 한 장
+        /// 끼는 편이 낫다.</para>
+        /// </summary>
+        public static void ApplyGroupMask(float[] weights, int[] entryGroups, int group, float[] destination)
+        {
+            if (weights == null || destination == null || destination.Length != weights.Length)
+            {
+                return;
+            }
+
+            bool any = false;
+            for (int i = 0; i < weights.Length; i++)
+            {
+                bool inGroup = entryGroups != null && i < entryGroups.Length && entryGroups[i] == group;
+                destination[i] = inGroup ? weights[i] : 0f;
+                any |= inGroup && weights[i] > 0f;
+            }
+
+            if (any)
+            {
+                return;
+            }
+
+            for (int i = 0; i < weights.Length; i++)
+            {
+                destination[i] = weights[i];
+            }
+        }
+
+        /// <summary>
+        /// 구간 편성이 있는 팔레트의 타일 추첨 — <b>군을 먼저 정하고 군 안에서 뽑는다</b>.
+        ///
+        /// <para><b>왜 2단인가.</b> 타일 한 장마다 독립 추첨하면 얼음 우세와 바다 우세가
+        /// <b>6.67초마다 뒤바뀐다</b> — 교차가 아니라 뒤죽박죽이다. 군을 바퀴로 묶으면
+        /// "얼음 → 전이 → 바다 → 전이"의 리듬이 읽힌다(북극 계획 §5.3).</para>
+        ///
+        /// <para><b>결정론은 그대로다.</b> 군도 시드도 전부 타일 인덱스의 함수라 전 피어가 같은
+        /// 답에 도달하고, 후발 접속자가 과거 구간을 그릴 때도 같다.</para>
+        ///
+        /// <para><paramref name="groupSchedule"/>이 비었거나 <paramref name="scratch"/>가 맞지 않으면
+        /// <see cref="PickForTile(int, float[], bool[])"/>과 <b>완전히 같은 답</b>을 낸다 —
+        /// 다른 네 지역이 이 경로를 그대로 지나가게 하는 폴백이다.</para>
+        /// </summary>
+        /// <param name="scratch">군 마스크를 쓸 버퍼. 길이가 <paramref name="weights"/>와 같아야 한다.</param>
+        public static int PickForTile(
+            int tileIndex, float[] weights, bool[] noRepeatAdjacent,
+            int[] entryGroups, int[] groupSchedule, float[] scratch)
+        {
+            if (weights == null || weights.Length == 0
+                || groupSchedule == null || groupSchedule.Length == 0
+                || entryGroups == null
+                || scratch == null || scratch.Length != weights.Length)
+            {
+                return PickForTile(tileIndex, weights, noRepeatAdjacent);
+            }
+
+            // 직전 타일은 그 타일의 군으로 다시 뽑는다 — 군이 다르면 인접 반복 자체가 성립하지 않는다.
+            ApplyGroupMask(weights, entryGroups, GroupAtTile(tileIndex - 1, groupSchedule), scratch);
+            int previous = WeightedPick(scratch, Hash01(tileIndex - 1, 1), -1);
+
+            ApplyGroupMask(weights, entryGroups, GroupAtTile(tileIndex, groupSchedule), scratch);
+            return Pick(tileIndex, scratch, previous, noRepeatAdjacent);
+        }
     }
 }

@@ -229,7 +229,9 @@ namespace Game.Gameplay.World
                 return null;
             }
 
-            int picked = SegmentPickLogic.PickForTile(index, weights, palette.GetNoRepeatFlags());
+            int picked = SegmentPickLogic.PickForTile(
+                index, weights, palette.GetNoRepeatFlags(),
+                palette.GetEntryGroups(), palette.GroupSchedule, palette.GetWeightScratch());
             return picked < 0 ? null : palette.GetPrefab(picked);
         }
 

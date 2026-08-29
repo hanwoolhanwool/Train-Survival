@@ -41,6 +41,44 @@ namespace Game.Gameplay.World
         }
 
         /// <summary>
+        /// 구간 편성이 있는 팔레트(북극)의 판 — 군까지 함께 넘겨 <b>스트리머와 같은 답</b>을 낸다.
+        ///
+        /// <para><b>여기를 빠뜨리면 프리웜이 통째로 헛일이 된다</b>: 2단 추첨이 고르는 세그먼트와
+        /// 독립 추첨이 고르는 세그먼트가 달라 첫 프레임에 다른 타일을 새로 인스턴스화하게 되고,
+        /// <b>아무 오류도 나지 않는다.</b> <see cref="SegmentPickLogic.PickForTile(int, float[], bool[], int[], int[], float[])"/>이
+        /// 단일 출처인 이유다.</para>
+        /// </summary>
+        public static int[] SegmentCounts(
+            int firstIndex, int lastIndex, float[] weights, bool[] noRepeatAdjacent,
+            int stationBlockSize, int stationStageCount, int[] entryGroups, int[] groupSchedule)
+        {
+            if (weights == null || weights.Length == 0)
+            {
+                return System.Array.Empty<int>();
+            }
+
+            // 로딩 1회 경로라 버퍼를 여기서 만든다 — 프레임마다 도는 스트리머와 다르다.
+            var scratch = new float[weights.Length];
+            var counts = new int[weights.Length];
+            for (int index = firstIndex; index <= lastIndex; index++)
+            {
+                if (StationSequenceLogic.IsStationTile(index, stationBlockSize, stationStageCount))
+                {
+                    continue;
+                }
+
+                int picked = SegmentPickLogic.PickForTile(
+                    index, weights, noRepeatAdjacent, entryGroups, groupSchedule, scratch);
+                if (picked >= 0 && picked < counts.Length)
+                {
+                    counts[picked]++;
+                }
+            }
+
+            return counts;
+        }
+
+        /// <summary>
         /// 기차역이 깔리는 인덱스를 빼고 세는 판 — 역 타일 자리에는 팔레트 세그먼트가 오지 않는다.
         /// <paramref name="stationBlockSize"/>·<paramref name="stationStageCount"/>가 성립하지 않으면
         /// (0이거나 너무 좁으면) 아무것도 빠지지 않아 <b>위 오버로드와 같은 답</b>이 된다.

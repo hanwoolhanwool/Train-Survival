@@ -198,7 +198,9 @@ namespace Game.Gameplay.World
                 palette == null ? null : palette.GetWeights(),
                 palette == null ? null : palette.GetNoRepeatFlags(),
                 blockSize,
-                stageCount);
+                stageCount,
+                palette == null ? null : palette.GetEntryGroups(),
+                palette == null ? null : palette.GroupSchedule);
 
             if (counts.Length > 0)
             {
