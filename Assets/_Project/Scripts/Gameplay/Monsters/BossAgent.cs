@@ -93,6 +93,10 @@ namespace Game.Gameplay.Monsters
 
             // 물 지역이면 보스도 물면에 선다 — 안 하면 수면 위에 뜬 채 싸운다 (바다 계획 §12.1).
             _surfaceY = World.WaterSurfaceQuery.SurfaceY();
+            _regionSurfaceY = _surfaceY;
+
+            // 풀 재사용이라 이전 개체의 잔여 타이머를 물려받는다 — 0으로 되돌려야 첫 프레임에 발밑을 본다.
+            _supportProbeTimer = 0f;
 
             if (IsServer)
             {
@@ -639,6 +643,7 @@ namespace Game.Gameplay.Monsters
             _chargeState = BossChargeState.Ready;
             _chargeTimer = 0f;
             _signatureTimer = 0f;
+            _supportProbeTimer = 0f;
             _lastAppliedChargeVisual = byte.MaxValue;
         }
     }

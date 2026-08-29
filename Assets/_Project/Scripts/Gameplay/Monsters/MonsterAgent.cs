@@ -762,6 +762,7 @@ namespace Game.Gameplay.Monsters
             _towed = false;
             _stunned = false;
             _passThrough = false;
+            _supportProbeTimer = 0f;
         }
     }
 }
