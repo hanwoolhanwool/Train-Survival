@@ -123,6 +123,44 @@ namespace Game.Gameplay.Region
         }
 
         /// <summary>
+        /// <paramref name="dayNumber"/> 다음에 오는 <b>지역 첫날</b>의 Day 번호 (북극 계획 결정 ⑨ — F5 QA 키).
+        ///
+        /// <para><b>왜 필요한가.</b> 지역을 넘기는 수단이 "다음 Day"(숫자패드 3)뿐이라
+        /// 북극(Day 17)까지 가려면 <b>16번</b>을 눌러야 한다. 지역이 늘수록 이 거리가 길어지고,
+        /// 검증 문서의 재현 수단이 그때마다 낡는다(북극 계획 §3.4).</para>
+        ///
+        /// <para>지역 경계는 Day 번호의 순수 함수이므로 <b>앞으로 훑기만 하면</b> 답이 나온다 —
+        /// 한 바퀴(전체 일수)를 넘겨 찾지 못하면 그대로 다음 날을 돌려준다(순환하지 않는 설정의 말단).</para>
+        /// </summary>
+        public static int NextRegionFirstDay(int dayNumber, int[] regionDayCounts, bool loopAfterLastRegion)
+        {
+            int day = Mathf.Max(1, dayNumber);
+            if (regionDayCounts == null || regionDayCounts.Length == 0)
+            {
+                return day + 1;
+            }
+
+            int totalDays = 0;
+            for (int i = 0; i < regionDayCounts.Length; i++)
+            {
+                totalDays += Mathf.Max(1, regionDayCounts[i]);
+            }
+
+            for (int step = 1; step <= totalDays; step++)
+            {
+                int candidate = day + step;
+                RegionTimelineState state = Evaluate(candidate, regionDayCounts, 0, loopAfterLastRegion);
+                if (state.IsValid && state.DayInRegion == 1)
+                {
+                    return candidate;
+                }
+            }
+
+            // 순환하지 않는 설정에서 마지막 지역에 무기한 머무는 구간 — 넘어갈 지역이 없다.
+            return day + 1;
+        }
+
+        /// <summary>
         /// 지역 중간 강화 밤 판정 (M7 2차 결정 ⑥ — 기획서 §5 잔여 이행).
         /// 지역 중앙일 <c>ceil(regionDayCount / 2)</c> 하루뿐이며, <b>첫날·마지막 날은 제외</b>한다
         /// (첫날은 지형 전환과 겹치고, 마지막 날은 이미 졸업 시험이다). 2일 이하 지역에는 없다.

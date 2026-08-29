@@ -275,5 +275,69 @@ namespace Game.Tests.EditMode
             Assert.That(Evaluate4(15).IsReinforcedNight, Is.True, "북극 2일차");
             Assert.That(Evaluate4(16).IsReinforcedNight, Is.False, "보스 밤과 겹치지 않는다");
         }
+
+        // ── 지역 점프 (북극 계획 결정 ⑨ — F5) ─────────────────────────
+
+        /// <summary>as-built 순환 — 숲 5 · 사막 4 · 바다 3 · 대초원 4 · 북극 3 (Day 17 진입).</summary>
+        private static readonly int[] FiveRegions = { 5, 4, 3, 4, 3 };
+
+        private static int NextRegionDay(int dayNumber)
+        {
+            return RegionTimelineMath.NextRegionFirstDay(dayNumber, FiveRegions, true);
+        }
+
+        [Test]
+        public void 지역_점프는_다음_지역_첫날을_가리킨다()
+        {
+            Assert.That(NextRegionDay(1), Is.EqualTo(6), "숲 1일차 → 사막 첫날");
+            Assert.That(NextRegionDay(5), Is.EqualTo(6), "숲 마지막 날에서도 사막 첫날");
+            Assert.That(NextRegionDay(6), Is.EqualTo(10), "사막 → 바다");
+            Assert.That(NextRegionDay(10), Is.EqualTo(13), "바다 → 대초원");
+            Assert.That(NextRegionDay(13), Is.EqualTo(17), "대초원 → 북극");
+        }
+
+        [Test]
+        public void F5_네_번이면_북극이다()
+        {
+            // 검증 문서의 재현 수단 — "넘패드 3 × 16회"를 대체한다 (북극 계획 §3.4).
+            int day = 1;
+            for (int i = 0; i < 4; i++)
+            {
+                day = NextRegionDay(day);
+            }
+
+            Assert.That(day, Is.EqualTo(17));
+
+            RegionTimelineState state = RegionTimelineMath.Evaluate(day, FiveRegions, ForecastLeadDays, true);
+            Assert.That(state.RegionIndex, Is.EqualTo(4), "북극");
+            Assert.That(state.DayInRegion, Is.EqualTo(1), "첫날");
+        }
+
+        [Test]
+        public void 마지막_지역에서_점프하면_다음_바퀴_첫_지역이다()
+        {
+            // 순환이 켜져 있으므로 북극(Day 17~19) 다음은 두 번째 바퀴의 숲이다.
+            Assert.That(NextRegionDay(17), Is.EqualTo(20));
+
+            RegionTimelineState state = RegionTimelineMath.Evaluate(20, FiveRegions, ForecastLeadDays, true);
+            Assert.That(state.RegionIndex, Is.EqualTo(0));
+            Assert.That(state.CycleNumber, Is.EqualTo(1), "재순환 난이도 가산이 붙는 바퀴");
+        }
+
+        [Test]
+        public void 순환이_꺼진_마지막_지역에서는_그냥_다음_날이다()
+        {
+            // 넘어갈 지역이 없다 — 하루만 민다(무한 탐색으로 빠지지 않는다).
+            Assert.That(RegionTimelineMath.NextRegionFirstDay(19, FiveRegions, false), Is.EqualTo(20));
+            Assert.That(RegionTimelineMath.NextRegionFirstDay(40, FiveRegions, false), Is.EqualTo(41));
+        }
+
+        [Test]
+        public void 지역_목록이_비면_하루만_민다()
+        {
+            Assert.That(RegionTimelineMath.NextRegionFirstDay(3, null, true), Is.EqualTo(4));
+            Assert.That(RegionTimelineMath.NextRegionFirstDay(3, System.Array.Empty<int>(), true), Is.EqualTo(4));
+            Assert.That(RegionTimelineMath.NextRegionFirstDay(0, FiveRegions, true), Is.EqualTo(6), "0 이하는 Day 1 취급");
+        }
     }
 }

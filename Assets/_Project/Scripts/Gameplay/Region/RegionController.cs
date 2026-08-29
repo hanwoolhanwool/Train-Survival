@@ -46,6 +46,17 @@ namespace Game.Gameplay.Region
             return _settings == null ? null : _settings.GetRegion(regionIndex);
         }
 
+        public int NextRegionFirstDay(int dayNumber)
+        {
+            if (_settings == null)
+            {
+                return Mathf.Max(1, dayNumber) + 1;
+            }
+
+            return RegionTimelineMath.NextRegionFirstDay(
+                dayNumber, _settings.GetDayCounts(), _settings.LoopAfterLastRegion);
+        }
+
         public RegionDifficulty GetDifficultyForDay(int dayNumber)
         {
             if (_settings == null)

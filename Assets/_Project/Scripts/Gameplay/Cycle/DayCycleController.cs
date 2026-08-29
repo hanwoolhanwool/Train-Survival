@@ -19,7 +19,7 @@ namespace Game.Gameplay.Cycle
 
         [Header("디버그 (테스트용)")]
         [Tooltip("켜면 숫자패드 1 = 아침(낮 시작), 2 = 저녁(밤 시작), 3 = 다음 Day 아침으로 즉시 전환, " +
-                 "F3 = 시간 배속 순환(×1 → ×4 → ×16). 릴리스에서는 끈다.")]
+                 "F3 = 시간 배속 순환(×1 → ×4 → ×16), F5 = 다음 지역 첫날 아침. 릴리스에서는 끈다.")]
         [SerializeField] private bool _enableDebugPhaseKeys = true;
 
         /// <summary>F3이 순환하는 시간 배속 단계 (M8 2차 — 연출이 국면 <b>내내</b> 흐르는지 보려면 기다림이 필요했다).</summary>
@@ -137,6 +137,50 @@ namespace Game.Gameplay.Cycle
             {
                 RequestCycleTimeScaleServerRpc();
             }
+            // F5 = 지역 점프. 사이클 그룹이므로 F3 옆에 둔다 (북극 계획 결정 ⑨).
+            else if (keyboard.f5Key.wasPressedThisFrame)
+            {
+                RequestAdvanceRegionServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// <b>다음 지역 첫날 아침</b>으로 누적 시간을 점프시킨다 (호스트 권위, 디버그 전용 —
+        /// 북극 계획 결정 ⑨).
+        ///
+        /// <para><b>왜 필요한가.</b> 지역을 넘기는 수단이 숫자패드 3(다음 Day) 하나뿐이라
+        /// 북극(Day 17)에 닿으려면 <b>16번</b>을 눌러야 한다 — 지역이 하나 늘 때마다 검증 문서의
+        /// 재현 수단이 낡는다(북극 계획 §3.4). 지역 경계는 Day 번호의 순수 함수이므로
+        /// <see cref="Region.IRegionService.NextRegionFirstDay"/> 조회 하나면 목적지가 나온다.</para>
+        ///
+        /// <para>점프 대상은 <b>Day 3의 반복</b>과 정확히 같은 값이다 — 새 경로가 아니라 같은
+        /// 누적 시간 축 위의 다른 지점이라, 지형 경계·웨이브·날씨가 종전과 같은 규약으로 따라온다.</para>
+        /// </summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        private void RequestAdvanceRegionServerRpc()
+        {
+            if (_settings == null)
+            {
+                return;
+            }
+
+            float cycleDuration = _settings.DayDurationSeconds + _settings.NightDurationSeconds;
+            if (cycleDuration <= 0f)
+            {
+                return;
+            }
+
+            int currentDay = DayTimelineMath
+                .Evaluate(_totalSeconds.Value, _settings.DayDurationSeconds, _settings.NightDurationSeconds)
+                .DayNumber;
+
+            int targetDay = ServiceLocator.TryGet(out Region.IRegionService region)
+                ? region.NextRegionFirstDay(currentDay)
+                : currentDay + 1;
+
+            _totalSeconds.Value = (Mathf.Max(1, targetDay) - 1) * cycleDuration;
+
+            GameLog.Info(LogCategory.Cycle, $"지역 점프 → Day {targetDay} 아침");
         }
 
         /// <summary>

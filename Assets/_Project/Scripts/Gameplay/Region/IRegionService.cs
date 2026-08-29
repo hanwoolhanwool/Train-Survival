@@ -77,6 +77,12 @@ namespace Game.Gameplay.Region
         /// </summary>
         RegionTimelineState EvaluateForDay(int dayNumber);
 
+        /// <summary>
+        /// 지정 Day <b>다음에 오는 지역 첫날</b>의 Day 번호 (북극 계획 결정 ⑨ — F5 QA 키).
+        /// 지역 경계는 Day 번호의 순수 함수이므로 이것도 조회일 뿐이며 상태를 만들지 않는다.
+        /// </summary>
+        int NextRegionFirstDay(int dayNumber);
+
         /// <summary>배열 인덱스의 지역 정의 — 복제된 지역 경계 기록(M6 1차)을 프리팹으로 해석할 때
         /// 쓴다 (전 피어가 같은 타임라인 에셋을 참조하므로 인덱스만으로 충분하다). 범위 밖이면 null.</summary>
         RegionDefinition GetRegion(int regionIndex);
