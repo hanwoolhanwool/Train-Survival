@@ -39,6 +39,8 @@ Shader "Train Survival/Desert Mirage"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            // 안개를 받지 않으면 모래폭풍(밀도 0.035) 중에 신기루만 흰 판때기로 남는다.
+            #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -52,6 +54,7 @@ Shader "Train Survival/Desert Mirage"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float fogFactor : TEXCOORD1;
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -67,6 +70,7 @@ Shader "Train Survival/Desert Mirage"
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
+                output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 return output;
             }
 
@@ -85,8 +89,12 @@ Shader "Train Survival/Desert Mirage"
                 float band = smoothstep(0.0, edge, input.uv.y + w * 0.12)
                            * (1.0 - smoothstep(1.0 - edge, 1.0, input.uv.y + w * 0.06));
 
-                float a = saturate(band * _Strength * _BaseColor.a);
-                return half4(_BaseColor.rgb, a);
+                // 신기루는 안개에 지워진다 — 폭풍이 세상을 지울 때 같이 지워져야 한다(§4.8).
+                // 알파 블렌딩이라 색만 섞으면 밝기가 남으므로, 알파도 함께 접는다.
+                float fogIntensity = ComputeFogIntensity(input.fogFactor);
+                float a = saturate(band * _Strength * _BaseColor.a) * fogIntensity;
+                float3 rgb = MixFog(_BaseColor.rgb, input.fogFactor);
+                return half4(rgb, a);
             }
             ENDHLSL
         }
