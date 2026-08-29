@@ -148,6 +148,37 @@ namespace Game.Gameplay.World
         }
 
         /// <summary>
+        /// 상판 위에서 사다리를 잡지 않게 하는 여유 (m). <see cref="HasReachedTop"/>의 기준선에서
+        /// 이만큼 <b>아래</b>부터 잡힌다.
+        ///
+        /// <para>기준선 자체는 상판 상면보다 살짝 위(<c>SeaLadder._topY</c> = 0.1)라, 상면에 선 발은
+        /// 그 아래에 놓여 <b>기준선만으로는 걸러지지 않는다</b>. <c>CharacterController</c>가
+        /// <c>skinWidth</c>(0.08)만큼 떠 있을 수 있는 것까지 감안해 상면보다 확실히 낮은 곳부터
+        /// 잡도록 여유를 둔다 — 물에서 올라오는 경로는 물면이 −4라 전혀 영향받지 않는다.</para>
+        /// </summary>
+        public const float AttachMarginBelowTop = 0.2f;
+
+        /// <summary>
+        /// 지금 붙을 수 있는가 — <b>사다리 구간 안</b>이어야 한다. 위아래 양쪽을 본다.
+        ///
+        /// <para><b>아래.</b> 밑으로 빠져 놓아 준 <b>바로 다음 프레임</b>에 <b>같은 입력</b>(계속
+        /// 누르고 있는 S)으로 다시 붙으면, 놓기와 붙기가 매 프레임 번갈아 일어나며 사다리가 끝난
+        /// 뒤에도 물속으로 끝없이 끌려 내려간다 (<see cref="CanAttach(float,float)"/>).</para>
+        ///
+        /// <para><b>위 — 상판에 선 사람은 사다리를 잡지 않는다.</b> 붙기 조건이 "볼륨 안 + 세로
+        /// 입력"뿐이면 <b>상판을 달리다</b> 볼륨을 스치는 순간 잡히고, 상판 위의 발은 이미
+        /// <see cref="HasReachedTop"/>의 경계 위라 <b>다음 프레임에 곧바로 꼭대기로 판정</b>되어
+        /// 올라서기 자리로 순간이동한다 — 달리기만 했는데 몸이 옆으로 튄다 (11회차 결함 ②).</para>
+        ///
+        /// <para>상판에서 물로 내려가는 길은 <b>가장자리로 걸어 나가는 것</b>이다. 낙하 피해가 없고
+        /// 물면이 −4라 그대로 수영으로 이어진다 — 사다리를 내려갈 이유가 애초에 없다.</para>
+        /// </summary>
+        public static bool CanAttach(float footY, float bottomY, float topY)
+        {
+            return CanAttach(footY, bottomY) && footY < topY - AttachMarginBelowTop;
+        }
+
+        /// <summary>
         /// 올라선 뒤 설 자리 — 사다리에서 <b>안쪽</b>(물 반대쪽)으로 밀어 넣는다.
         /// <para>이 거리가 부족하면 캡슐 절반이 상판 밖으로 나가 <b>미끄러져 떨어진다</b>.
         /// 바다 통로는 1.15 m뿐이라 열차 기본값(0.7)이 맞지 않는다.</para>

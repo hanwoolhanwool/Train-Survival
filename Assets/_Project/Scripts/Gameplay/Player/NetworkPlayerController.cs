@@ -585,13 +585,15 @@ namespace Game.Gameplay.Player
 
             // 붙기 — 볼륨 안이어도 오르려는 입력이 있어야 잡는다.
             // 그냥 지나가려던 사람이 붙잡히면 통로가 좁아 더 답답하다.
-            // 높이도 본다: 사다리 구간 밖에서 잡히면 놓기와 붙기가 매 프레임 번갈아 일어난다
-            // (SeaLadderMotion.CanAttach 주석).
+            // 높이는 위아래 양쪽을 본다: 아래로 벗어나면 놓기와 붙기가 매 프레임 번갈아 일어나고,
+            // **상판에 선 사람은 아예 잡지 않는다** — 달리다 스쳐 잡히면 그 다음 프레임에
+            // 꼭대기로 판정돼 올라서기 자리로 순간이동한다 (SeaLadderMotion.CanAttach 주석).
             if (!_onSeaLadder)
             {
                 if (Time.time < _seaLadderBlockedUntil
                     || Mathf.Abs(verticalInput) < 0.1f
-                    || !World.SeaLadderMotion.CanAttach(transform.position.y, _seaLadder.BottomY))
+                    || !World.SeaLadderMotion.CanAttach(
+                        transform.position.y, _seaLadder.BottomY, _seaLadder.TopY))
                 {
                     return false;
                 }
@@ -663,16 +665,7 @@ namespace Game.Gameplay.Player
             // ④ 꼭대기 — 안쪽으로 밀어 넣고 놓는다. 밀어 넣지 않으면 캡슐 절반이 허공이라 미끄러진다.
             if (World.SeaLadderMotion.HasReachedTop(transform.position.y, _seaLadder.TopY))
             {
-                Vector3 exit = World.SeaLadderMotion.ExitPosition(
-                    _seaLadder.Origin, _seaLadder.Outward,
-                    _seaLadder.HoldDistance, _seaLadder.ExitInward, _seaLadder.TopY);
-
-                // 여기도 Move 가 아니라 직접 놓는다 — 상판 모서리에서 충돌 해결이 끼어들면
-                // 올라서다 말고 밀려난다.
-                _characterController.enabled = false;
-                transform.position = exit;
-                _characterController.enabled = true;
-
+                BeginSeaMantle();
                 ExitSeaLadder(true);
                 return true;
             }
@@ -706,6 +699,38 @@ namespace Game.Gameplay.Player
             _characterController.enabled = false;
             transform.position = new Vector3(hold.x, y, hold.z);
             _characterController.enabled = true;
+        }
+
+        /// <summary>
+        /// 꼭대기에서 상판으로 <b>올려놓기</b>를 시작한다 — 열차 사다리의 <see cref="BeginMantle"/>와
+        /// 같은 수법이되 기준을 사다리에서 가져온다.
+        ///
+        /// <para><b>수직은 즉시, 수평은 나눠서.</b> 발을 상판면에 맞추는 것은 몇 cm라 한 프레임에 해도
+        /// 보이지 않지만, 통로 안쪽으로 <b>1 m 넘게</b> 한 프레임에 옮기면 1인칭 화면이 통째로 튄다 —
+        /// 11회차의 <i>"사다리 정상에 올랐을 때 너무 앞으로 순간이동한다"</i>가 정확히 이것이다.</para>
+        ///
+        /// <para>수직을 <see cref="CharacterController.Move"/>가 아니라 직접 놓는 이유는 그대로다 —
+        /// 상판 모서리에서 충돌 해결이 끼어들면 올라서다 말고 밀려난다.</para>
+        /// </summary>
+        private void BeginSeaMantle()
+        {
+            Vector3 hold = World.SeaLadderMotion.HoldTarget(
+                _seaLadder.Origin, _seaLadder.Outward, _seaLadder.HoldDistance);
+
+            _characterController.enabled = false;
+            transform.position = new Vector3(
+                hold.x, _seaLadder.TopY + LadderMantleClearance, hold.z);
+            _characterController.enabled = true;
+
+            Vector3 inward = -_seaLadder.Outward * _seaLadder.ExitInward;
+            _mantleTimer = LadderMantleDuration;
+            _mantleVelocity = inward / LadderMantleDuration;
+
+            // 상판은 지형 타일 소속이라 올라서는 사이에도 뒤로 흐른다 — 같이 밀려야 상판에 내려선다.
+            _mantleWorldFrame = true;
+
+            _verticalSpeed = 0f;
+            _horizontalVelocity = Vector3.zero;
         }
 
         /// <summary>

@@ -213,11 +213,50 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void 붙기는_꼭대기를_막지_않는다()
+        public void 하한_판정은_꼭대기를_막지_않는다()
         {
-            // 상한을 걸면 상판에서 사다리를 타고 내려가는 경로까지 막힌다 —
-            // 위쪽 재부착은 참조 끊기와 차단 시간이 맡는다.
+            // 2인자 판정은 **아래쪽 계약만** 소유한다 — 상판 쪽 차단은 3인자 쪽이 맡는다.
             Assert.IsTrue(SeaLadderMotion.CanAttach(TopY, BottomY));
+        }
+
+        // ── 붙기 상한 (11회차 "달리다 지나가면 순간이동한다"의 계약) ──
+
+        [Test]
+        public void 상판에_선_사람은_사다리를_잡지_않는다()
+        {
+            // 상판을 달리다 볼륨을 스치면 잡히고, 그 발은 이미 꼭대기 경계 위라
+            // 다음 프레임에 꼭대기로 판정돼 올라서기 자리로 순간이동한다.
+            // 상판 상면(사다리 오브젝트 높이 = TopY − 0.1)에 선 발도 걸러져야 한다.
+            Assert.IsFalse(SeaLadderMotion.CanAttach(TopY, BottomY, TopY), "꼭대기");
+            Assert.IsFalse(SeaLadderMotion.CanAttach(TopY - 0.1f, BottomY, TopY), "상판 상면");
+            Assert.IsFalse(SeaLadderMotion.CanAttach(TopY + 0.5f, BottomY, TopY), "상판보다 위");
+        }
+
+        [Test]
+        public void 상면에_뜬_캡슐도_걸러진다()
+        {
+            // CharacterController 는 skinWidth(0.08)만큼 떠 있을 수 있다 —
+            // 여유가 그보다 좁으면 상판 위에서 잡히는 경우가 남는다.
+            float floating = TopY - 0.1f + 0.08f;
+            Assert.IsFalse(SeaLadderMotion.CanAttach(floating, BottomY, TopY));
+        }
+
+        [Test]
+        public void 사다리_구간_안에서는_붙는다_상한_포함()
+        {
+            // 물에서 올라오는 본래 경로 — 여기서 막으면 복귀가 불가능해진다.
+            // 물면(−4)은 상한에서 한참 아래라 영향이 없다.
+            Assert.IsTrue(SeaLadderMotion.CanAttach(-4f, BottomY, TopY), "물면");
+            Assert.IsTrue(SeaLadderMotion.CanAttach(-0.5f, BottomY, TopY), "사다리 윗부분");
+            Assert.IsTrue(
+                SeaLadderMotion.CanAttach(TopY - SeaLadderMotion.AttachMarginBelowTop - 0.01f, BottomY, TopY),
+                "상한 바로 아래");
+        }
+
+        [Test]
+        public void 밑으로_빠진_높이는_상한과_무관하게_붙지_않는다()
+        {
+            Assert.IsFalse(SeaLadderMotion.CanAttach(BottomY - 0.01f, BottomY, TopY));
         }
 
         // ── 뛰어내릴 방향 — 바라보는 쪽, 사다리 쪽이면 반사 ──
