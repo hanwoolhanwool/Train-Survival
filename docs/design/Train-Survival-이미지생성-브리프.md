@@ -529,7 +529,7 @@ chromatic aberration, film grain, heavy motion blur, text, logo, watermark.
 |---|---|---:|
 | 벼밭 클럼프 2 | `Mesh_Env_RiceClump_A` · `_B` — 삼각 프리즘 줄기 14대 | **126** 각 |
 | 억새 1 | `Mesh_Env_PampasClump` — 줄기 12대 | **108** |
-| 홀로 선 나무 1 | `Mesh_Env_LoneTree_Trunk` + `_Canopy` — **둘로 갈렸다**(줄기와 수관의 색이 달라야 한다) | **96 + 96** |
+| 홀로 선 나무 1 | `Mesh_Env_LoneTree_Trunk` + `_Canopy` — **둘로 갈렸다**(줄기와 수관의 색이 달라야 한다) | **96 + 180** |
 | 수로 조각 1 | **만들지 않았다** — 1차의 `Mesh_Env_Embankment`(성토 제방)를 폭 1.6 m 로 눌러 둑으로 쓰고 물길은 큐브 한 장 | 12 (재사용) |
 | 곡물 저장고 폐허 1 | `Mesh_Env_Silo` — 윗변이 무너진 12각 원통 | **36** |
 | (계획에 없던 것) | `Mesh_Env_BrokenBlade` — 이벤트형 I 의 쓰러진 풍차 날개 | **12** |
@@ -551,7 +551,7 @@ chromatic aberration, film grain, heavy motion blur, text, logo, watermark.
 **근경 타일 지면과 원경 지면판이 이 한 장을 공유**해서 이음매에서 색이 튀지 않는다 —
 그것이 *"지평선까지 이어진 황금 물결"* 의 실체다.
 
-> **공용 9종 색 교체 as-built** — K.3 바위 5 + K.4 흔적 4를 원본 색과 마른 풀(`#DBC28F`)의
+> **공용 10종 색 교체 as-built** — K.3 바위 5 + K.4 흔적 4 + 숲 관목 1을 원본 색과 마른 풀(`#DBC28F`)의
 > **0.55 : 0.45** 로 섞어 `_Grassland` 변종을 만들었다. 사막·북극이 쓴 방식 그대로다.
 
 ### K.6 나머지 지역 전용분 *(숲 파일럿 이후)*
