@@ -38,6 +38,7 @@ GameObject:
   - component: {fileID: 2841540566822582564}
   - component: {fileID: 8811223344556677030}
   - component: {fileID: 5854306252977937986}
+  - component: {fileID: 8811223344556677040}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2175,3 +2176,19 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 140efaed5cc8d1f449a9ab7689b6df05, type: 3}
   m_PrefabInstance: {fileID: 5566001122334455816}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8811223344556677040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604351592624257845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cf70f6f3ba850b49aeed65322efc002, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Player.PlayerSubmersion
+  _enterDepth: 0.25
+  _exitDepth: 0.12
+  _moveSpeedMultiplier: 0.7
+  _waterTemperature: -2
