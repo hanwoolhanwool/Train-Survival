@@ -19,11 +19,16 @@ namespace Game.Gameplay.Player
         public const float DefaultMinRise = 0.3f;
 
         /// <summary>
-        /// 턱으로 인정하는 최대 상승(m). 얕은 물 바닥(−2.3)에서 얼음 상면(0)까지 2.3 m 를 덮되,
-        /// 열차 갑판(3.566 m)에는 닿지 않는 값이다 — 물에서 갑판으로 곧장 기어오르면
-        /// 사다리가 있을 이유가 없어진다.
+        /// 턱으로 인정하는 최대 상승(m). <b>두 가지를 동시에 덮어야 한다.</b>
+        ///
+        /// <para>① <b>얕은 물</b> — 바닥 −2.3 + <c>skinWidth</c> 0.08 → 발 −2.22 → 상승 <b>2.22 m</b>.
+        /// ② <b>깊은 물</b> — 부력이 잠김 1.0~1.2 m 에서 멈추므로 발이 −2.5 ~ −2.7 → 상승 <b>최대 2.7 m</b>.
+        /// 깊은 쪽이 더 멀다는 것이 처음엔 뜻밖인데, 헤엄치는 사람은 <b>수면에 떠 있지 서 있지 않기</b> 때문이다.</para>
+        ///
+        /// <para>그래서 2.9 다 — 2.7 에 여유 0.2 를 얹은 값이고, 열차 갑판(3.566 m)에는 여전히
+        /// 닿지 않는다. 물에서 갑판으로 곧장 기어오르면 승차 사다리가 있을 이유가 없어진다.</para>
         /// </summary>
-        public const float DefaultMaxRise = 2.6f;
+        public const float DefaultMaxRise = 2.9f;
 
         /// <summary>턱 위에 몸이 들어갈 여유 높이(m).</summary>
         public const float DefaultHeadroom = 1.9f;

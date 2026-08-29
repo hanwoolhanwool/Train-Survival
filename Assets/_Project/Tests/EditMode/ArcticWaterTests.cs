@@ -166,10 +166,29 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void 깊은_물에_떠_있어도_기어오를_수_있다()
+        {
+            // 헤엄치는 사람은 수면에 <b>떠 있지 서 있지 않다</b> — 부력이 잠김 1.0~1.2 m 에서
+            // 멈추므로 발이 −2.5 ~ −2.7 이고, 얕은 물(−2.22)보다 <b>더 멀다.</b>
+            var settings = AssetDatabase.LoadAssetAtPath<PlayerMovementSettings>(
+                "Assets/_Project/Data/PlayerMovementSettings.asset");
+
+            float floatingFeet = WaterY - settings.SwimEnterDepth;
+            Assert.AreEqual(-2.5f, floatingFeet, 1e-4f);
+            Assert.IsTrue(IceLedgeMantleLogic.CanMantle(floatingFeet, IceTopY), "부력 평형에서");
+
+            // 평형은 진입 깊이보다 살짝 아래에서 잡힐 수 있다 — 그 여유까지 덮어야 한다.
+            Assert.IsTrue(IceLedgeMantleLogic.CanMantle(WaterY - 1.2f, IceTopY), "잠김 1.2 m 에서");
+        }
+
+        [Test]
         public void 갑판_높이는_기어오르기_대상이_아니다()
         {
             // 물에서 갑판(3.566 m)으로 곧장 기어오르면 승차 사다리가 있을 이유가 없어진다.
             Assert.IsFalse(IceLedgeMantleLogic.CanMantle(WaterY, 3.566f));
+            Assert.IsFalse(IceLedgeMantleLogic.CanMantle(ShallowFloorY, 3.566f), "얕은 물에서도");
+            Assert.Less(IceLedgeMantleLogic.DefaultMaxRise, 3.566f - (WaterY - 1.2f) - 0.1f,
+                "부력 평형에서 갑판까지의 거리보다 짧아야 한다");
         }
 
         [Test]
