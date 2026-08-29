@@ -27,6 +27,30 @@ namespace Game.Gameplay.Region
             public float Weight => _weight;
         }
 
+        /// <summary>
+        /// 이 지역이 덮어쓰는 몬스터 변종 가중치 1건 (바다 계획 §12.3 안 ㉢).
+        ///
+        /// <para>변종을 <b>참조로</b> 가리킨다 — 카탈로그는 배열 순서가 곧 복제 식별자라
+        /// 인덱스를 지역 에셋에 적어 두면 순서를 바꾸는 순간 엉뚱한 변종을 가리킨다.</para>
+        ///
+        /// <para>가중치 <b>0 = 이 지역에는 나오지 않는다.</b> 반대로 카탈로그 기본이 0인 변종을
+        /// 특정 지역에서만 등장시킬 수도 있다 — 겹치기가 곱이 아니라 치환인 이유다
+        /// (<see cref="Monsters.RegionVariantWeights"/>).</para>
+        /// </summary>
+        [System.Serializable]
+        public sealed class MonsterVariantWeightEntry
+        {
+            [Tooltip("가중치를 덮어쓸 변종. 카탈로그에 없는 변종을 가리키면 무시된다.")]
+            [SerializeField] private Monsters.MonsterSettings _variant;
+
+            [Tooltip("이 지역에서 쓸 추첨 가중치. 0 = 등장하지 않는다.")]
+            [SerializeField, Min(0f)] private float _weight = 1f;
+
+            public Monsters.MonsterSettings Variant => _variant;
+
+            public float Weight => _weight;
+        }
+
         [Header("표시")]
         [Tooltip("HUD에 표시할 지역 이름 (예: 숲, 사막).")]
         [SerializeField] private string _displayName = "숲";
@@ -62,6 +86,10 @@ namespace Game.Gameplay.Region
         [Header("지역 보스 (M7 2차, 기획서 §5 — '지역 마지막 밤 = 대형 웨이브 + 보스')")]
         [Tooltip("이 지역의 마지막 밤에 등장할 보스 정의. 비우면 보스 없음 — 기존 대형 웨이브만으로 마지막 밤이 성립한다 (스탬피드 확률과 같은 소급 규약).")]
         [SerializeField] private Monsters.BossDefinition _bossDefinition;
+
+        [Tooltip("이 지역만의 몬스터 변종 구성 (바다 계획 §12.3). 비우면 카탈로그 기본 가중치 그대로. " +
+            "적어 둔 변종만 가중치가 치환된다 — 0을 주면 이 지역에서는 등장하지 않는다.")]
+        [SerializeField] private MonsterVariantWeightEntry[] _monsterVariantWeights;
 
         [Header("지형·자원")]
         [Tooltip("이 지역의 지형 세그먼트 팔레트 (레벨 디자인 가이드 §4.6). 설정하면 타일마다 " +
@@ -163,5 +191,20 @@ namespace Game.Gameplay.Region
         }
 
         public float ResourceSpawnIntervalMultiplier => _resourceSpawnIntervalMultiplier;
+
+        /// <summary>이 지역이 덮어쓰는 변종 수. 0이면 카탈로그 기본 구성 그대로다.</summary>
+        public int MonsterVariantWeightCount =>
+            _monsterVariantWeights == null ? 0 : _monsterVariantWeights.Length;
+
+        /// <summary>인덱스의 변종 가중치 오버라이드. 범위 밖이면 null.</summary>
+        public MonsterVariantWeightEntry GetMonsterVariantWeight(int index)
+        {
+            if (_monsterVariantWeights == null || index < 0 || index >= _monsterVariantWeights.Length)
+            {
+                return null;
+            }
+
+            return _monsterVariantWeights[index];
+        }
     }
 }

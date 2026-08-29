@@ -34,6 +34,12 @@ namespace Game.Gameplay.Monsters
         private int _waveDayNumber = 1;
         private bool _spawnEnabled = true;
 
+        // 지역이 덮어쓴 변종 가중치 — 지역이 바뀔 때만 다시 만든다 (ResolveWeights 주석).
+        private RegionDefinition _weightsRegion;
+        private float[] _regionWeights;
+        private int[] _overrideIndices;
+        private float[] _overrideWeights;
+
         /// <summary>스폰 허용 여부 — QA 토글 (기본 켜짐, 릴리스 동작 불변).</summary>
         public bool SpawnEnabled => _spawnEnabled;
 
@@ -250,7 +256,10 @@ namespace Game.Gameplay.Monsters
             _spawnedCount += 1;
         }
 
-        /// <summary>이 밤의 Day 기준으로 등장 가능한 변종을 가중치 추첨한다. 카탈로그가 없으면 −1(기본 설정).</summary>
+        /// <summary>
+        /// 이 밤의 Day 기준으로 등장 가능한 변종을 가중치 추첨한다. 카탈로그가 없으면 −1(기본 설정).
+        /// 가중치는 <b>지역 구성이 덮어쓴 것</b>을 쓴다 (바다 계획 §12.3).
+        /// </summary>
         private int PickVariantIndex()
         {
             if (_variantCatalog == null || _variantCatalog.Count == 0)
@@ -259,7 +268,59 @@ namespace Game.Gameplay.Monsters
             }
 
             return MonsterVariantPicker.Pick(
-                _waveDayNumber, _variantCatalog.GetMinDays(), _variantCatalog.GetWeights(), Random.value);
+                _waveDayNumber, _variantCatalog.GetMinDays(), ResolveWeights(), Random.value);
+        }
+
+        /// <summary>
+        /// 이 지역의 변종 가중치 — 지역 오버라이드가 없으면 카탈로그 기본을 <b>그대로</b> 돌려준다.
+        ///
+        /// <para>지역이 바뀔 때만 다시 계산한다. 웨이브 한 마리마다 배열을 만들면 밤마다 수십 번
+        /// 할당하는 셈인데, 지역은 며칠에 한 번 바뀔 뿐이다.</para>
+        /// </summary>
+        private float[] ResolveWeights()
+        {
+            RegionDefinition region =
+                ServiceLocator.TryGet(out IRegionService service) ? service.CurrentRegion : null;
+
+            float[] baseWeights = _variantCatalog.GetWeights();
+            if (region == null || region.MonsterVariantWeightCount == 0)
+            {
+                return baseWeights;
+            }
+
+            if (ReferenceEquals(region, _weightsRegion) && _regionWeights != null
+                && _regionWeights.Length == baseWeights.Length)
+            {
+                return _regionWeights;
+            }
+
+            int count = region.MonsterVariantWeightCount;
+            if (_overrideIndices == null || _overrideIndices.Length != count)
+            {
+                _overrideIndices = new int[count];
+                _overrideWeights = new float[count];
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                RegionDefinition.MonsterVariantWeightEntry entry = region.GetMonsterVariantWeight(i);
+                _overrideIndices[i] = entry == null ? -1 : _variantCatalog.IndexOf(entry.Variant);
+                _overrideWeights[i] = entry == null ? 0f : entry.Weight;
+            }
+
+            if (_regionWeights == null || _regionWeights.Length != baseWeights.Length)
+            {
+                _regionWeights = new float[baseWeights.Length];
+            }
+
+            int applied = RegionVariantWeights.Apply(
+                baseWeights, _overrideIndices, _overrideWeights, _regionWeights);
+            _weightsRegion = region;
+
+            GameLog.Info(LogCategory.Monsters,
+                $"변종 구성 적용: {region.DisplayName} — {applied}/{count}건 덮어씀");
+
+            return _regionWeights;
         }
 
         private void PruneInactive()

@@ -29,6 +29,32 @@ namespace Game.Gameplay.Monsters
             return _variants[index];
         }
 
+        /// <summary>
+        /// 이 변종의 카탈로그 인덱스 — 없으면 −1.
+        ///
+        /// <para>지역이 변종 구성을 덮어쓸 때(<see cref="RegionVariantWeights"/>) 지역 에셋은
+        /// <b>인덱스가 아니라 변종 참조</b>를 들고 있다. 인덱스를 직접 적어 두면 이 배열의 순서가
+        /// 바뀌는 순간 지역이 엉뚱한 변종을 가리키기 때문이다 — 순서가 곧 복제 식별자라는 제약이
+        /// 지역 에셋에까지 번지게 된다.</para>
+        /// </summary>
+        public int IndexOf(MonsterSettings variant)
+        {
+            if (_variants == null || variant == null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < _variants.Length; i++)
+            {
+                if (_variants[i] == variant)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         /// <summary>변종별 등장 시작 Day (<see cref="MonsterVariantPicker"/> 입력). 매 스폰 할당을 피해 캐시한다.</summary>
         public int[] GetMinDays()
         {
