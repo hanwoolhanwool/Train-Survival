@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c62cc1abd5df86449ab456a721bce61, type: 3}
+  m_Name: MonsterSettings_SeaFlyer
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Monsters.MonsterSettings
+  _displayName: "바닷새"
+  _minDayToAppear: 1
+  _spawnWeight: 0
+  _variantColor: {r: 0.76, g: 0.79, b: 0.95, a: 1}
+  _visualScale: 0.9
+  _moveSpeed: 9
+  _chaseSpeedMargin: 1
+  _avoidProbeDistance: 3
+  _leapHorizontalRange: 10
+  _aerialDiver: 1
+  _cruiseAltitudeY: 34
+  _diveSpeed: 18
+  _hoverSeconds: 1.2
+  _maxHealth: 90
+  _attackDamage: 16
+  _attackRange: 2.6
+  _attackInterval: 1.4
+  _requiredHarpoonTier: 1
+  _stunDurationSeconds: 2.5
+  _syncHz: 15
+  _towSyncHz: 30
+  _interpolationDelaySeconds: 0.18
+  _despawnBehindMeters: 60
