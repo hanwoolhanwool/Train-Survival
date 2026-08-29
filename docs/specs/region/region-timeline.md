@@ -142,6 +142,25 @@ classDiagram
 | `SegmentPalette` | **`TerrainSegmentPalette_Forest`** (10종) | 미설정 | **팔레트가 우선한다** — 있으면 `SegmentPickLogic`이 인덱스에서 가중 추첨하고, 없으면 위의 단일 프리팹으로 내려간다 (2026-08-23 신설) |
 | `ResourceSpawnIntervalMultiplier` | 1 | 2 | 클수록 희소 — 기획서 §4 자원 등급(숲 3/사막 1)의 구현 |
 
+### 5.1 `RegionDefinition` 확장 필드 — 북극이 켠 것 (2026-08-30)
+
+지역 순환은 **숲 5 → 사막 4 → 바다 3 → 대초원 4 → 북극 3** (총 19일 · 북극 = **Day 17~19**)이다.
+
+| 필드 | 값 (북극) | 비고 |
+|---|---|---|
+| `OverridesFog` / `Day·NightFogColor` / `Density` | ✅ / `#DCE8F0` · `#2A4257` / **0.0017** | 낮·밤 2벌 — [world/distant-scenery §5](../world/distant-scenery.md) |
+| `SkyboxMaterial` | `M_Sky_Arctic` | 오로라 대역이 들어 있는 유일한 하늘 |
+| `SegmentPalette` | `TerrainSegmentPalette_Arctic` (10종) | **구간 편성(2단 추첨)을 쓰는 유일한 팔레트** — 가이드 §7.5 |
+| **`HasWater` / `WaterSurfaceY`** | **✅ / −1.5** | **두 번째 사용처**(첫 번째는 바다 −4). 바다는 사방이 물이지만 **북극은 얼음과 물이 교차**해 이 값이 "물이 있는 자리의 높이"일 뿐이다 — 실제 잠김은 발 높이가 정한다 |
+| `UnderwaterColor` | `#0E2F3E` α 0.72 | 기본값이 바다 값이라 배선하지 않은 지역은 화면이 그대로다 |
+| `FishingBiteDelayMultiplier` | **4** | 북극에서 물고기가 쉽게 잡히면 대초원에서 비축할 이유가 사라진다(기획서 §4.3) |
+| `FishingDoubleCatchMultiplier` | **0** | 북극에서 두 마리는 없다 |
+
+> **`HasWater`가 켜지면 코드 0줄로 열리는 것** — 수영·잠수·물 항력(`NetworkPlayerController`) ·
+> 물면 주행(`MonsterAgent`·`BossAgent`) · 물속 화면(`UnderwaterView`) · 낚시(`FishingRodController`).
+> **북극이 그 위에 더 필요했던 것**은 "물면이 지역당 하나"라는 전제가 깨지는 자리 셋뿐이다 —
+> 몬스터 발밑 보정 · 낚시 지형 차폐 · 잠김(수영이 아닌) 판정.
+
 ## 6. 상세 로직·상태
 
 ### 6.1 Day 번호 → 지역 파생 (`RegionTimelineMath.Evaluate`)
