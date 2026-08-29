@@ -39,6 +39,10 @@ namespace Game.Gameplay.Monsters
         // 수영 중인 플레이어는 수면에 걸쳐 있으므로 여유를 둬야 물속 표적에 튀어오르지 않는다.
         private const float SurfaceLeapEmergeMargin = 1f;
 
+        // 급강하가 표적 위 이 높이까지 내려온다 (ServerSimulateAerial). 머리 위에 서야
+        // 공격 사거리 안에 들면서도 몸에 박히지 않는다.
+        private const float AerialStrikeClearance = 1.6f;
+
         private readonly NetworkVariable<Vector3> _syncedPosition = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<float> _syncedYaw = new NetworkVariable<float>();
 
@@ -51,6 +55,11 @@ namespace Game.Gameplay.Monsters
 
         // 이 개체가 서는 바닥 — 물 지역이면 물면이다 (ResolveSurfaceY 주석). 스폰 시 확정.
         private float _surfaceY;
+
+        // 하늘 위협의 왕복 국면과 남은 체공 시간 (ServerSimulateAerial). 서버 전용 —
+        // 클라는 위치 스냅샷만 받으므로 국면을 복제할 필요가 없다.
+        private AerialPhase _aerialPhase;
+        private float _hoverTimer;
         private float _syncTimer;
         private float _attackCooldown;
         private Vector3 _lastHorizontalVelocity;
@@ -173,6 +182,17 @@ namespace Game.Gameplay.Monsters
                 // 풀에서 재사용될 때 이전 변종이 새지 않도록 즉시 되돌린다.
                 _pendingVariantIndex = -1;
 
+                // 하늘 위협은 순항 고도에서 시작한다 — 변종이 확정된 **뒤에** 읽어야 한다.
+                // 스포너가 놓은 자리(물면·지면)에서 올라오게 두면 물에서 솟는 것처럼 보인다.
+                _aerialPhase = AerialPhase.Cruise;
+                _hoverTimer = 0f;
+                if (Settings.AerialDiver)
+                {
+                    Vector3 spawn = transform.position;
+                    spawn.y = Settings.CruiseAltitudeY;
+                    transform.position = spawn;
+                }
+
                 _syncedPosition.Value = transform.position;
             }
             else
@@ -229,6 +249,12 @@ namespace Game.Gameplay.Monsters
             if (_passThrough)
             {
                 ServerSimulatePassThrough();
+                return;
+            }
+
+            if (Settings.AerialDiver)
+            {
+                ServerSimulateAerial();
                 return;
             }
 
@@ -324,6 +350,72 @@ namespace Game.Gameplay.Monsters
 
             // 접촉 피해 — 기존 공격 판정(사거리 + 쿨다운)을 플레이어 한정으로 재사용한다.
             ServerTryAttack(_stunned ? null : FindNearestPlayer(out _));
+
+            ServerCheckFellBehind();
+            ServerSync(Settings.SyncHz);
+        }
+
+        /// <summary>
+        /// 하늘 위협 시뮬레이션 (바다 계획 §13 — ㄷ 급강하 왕복).
+        ///
+        /// <para><b>지상 경로와 겹치지 않는다.</b> 중력·지지면 클램프·장애물 회피를 쓰지 않고
+        /// 고도를 국면이 직접 몬다 — 하늘에는 밟을 것도 막을 것도 없다. 대신 <b>월드 스크롤</b>은
+        /// 그대로 받는다(안 받으면 열차만 앞서가고 새는 뒤로 흘러간다).</para>
+        ///
+        /// <para>왕복은 <b>순항 → 강하 → 체공 → 상승</b> 한 방향으로만 돈다. 표적을 잃으면
+        /// 상승으로 빠져나가므로, 표적이 잠깐 사라져도 공중에서 굳지 않는다.</para>
+        /// </summary>
+        private void ServerSimulateAerial()
+        {
+            float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
+            Transform target = _stunned ? null : FindNearestAliveTarget();
+
+            Vector3 position = transform.position;
+            float cruiseY = Settings.CruiseAltitudeY;
+
+            // 칠 수 있는 높이는 표적이 정한다 — 갑판이든 상판이든 그 바로 위로 내려온다.
+            float strikeY = (target != null ? target.position.y : 0f) + AerialStrikeClearance;
+
+            float horizontal = target == null
+                ? float.PositiveInfinity
+                : Vector2.Distance(
+                    new Vector2(position.x, position.z),
+                    new Vector2(target.position.x, target.position.z));
+
+            AerialPhase next = AerialDiveMath.ResolvePhase(
+                _aerialPhase, position.y, strikeY, cruiseY,
+                horizontal, Settings.LeapHorizontalRange, _hoverTimer, target != null);
+
+            if (next == AerialPhase.Hover && _aerialPhase != AerialPhase.Hover)
+            {
+                _hoverTimer = Settings.HoverSeconds;
+            }
+
+            _aerialPhase = next;
+            if (_aerialPhase == AerialPhase.Hover)
+            {
+                _hoverTimer -= Time.deltaTime;
+            }
+
+            float altitudeTarget = AerialDiveMath.TargetAltitude(_aerialPhase, cruiseY, strikeY);
+            float speed = _aerialPhase == AerialPhase.Climb ? Settings.ClimbSpeed : Settings.DiveSpeed;
+            position.y = AerialDiveMath.StepAltitude(position.y, altitudeTarget, speed, Time.deltaTime);
+
+            // 그로기 중에는 따라가지 않는다 — 지상 경로와 같은 이탈 틈이다. 고도는 계속 몬다
+            // (공중에서 멈춰 서면 떨어지지도 오르지도 않는 채 굳는다).
+            Vector3 horizontalVelocity = _stunned || target == null
+                ? new Vector3(0f, 0f, -scrollSpeed)
+                : AerialDiveMath.ComputeApproachVelocity(
+                    position, target.position, Settings.MoveSpeed, scrollSpeed);
+
+            position += new Vector3(horizontalVelocity.x, 0f, horizontalVelocity.z) * Time.deltaTime;
+            transform.position = position;
+
+            _lastHorizontalVelocity = horizontalVelocity;
+            FaceVelocity(horizontalVelocity, target);
+
+            // 공격은 기존 판정을 그대로 쓴다 — 사거리 안에 들어오는 것은 체공 국면뿐이다.
+            ServerTryAttack(target);
 
             ServerCheckFellBehind();
             ServerSync(Settings.SyncHz);

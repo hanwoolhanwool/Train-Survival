@@ -42,6 +42,22 @@ namespace Game.Gameplay.Monsters
             "바다 결정 ⑨ = 1.5 — 상판(0) 위 플레이어는 닿고 갑판(3.566)은 닿지 않는다.")]
         [SerializeField] private float _leapApexY = 1.5f;
 
+        [Header("하늘의 위협 (바다 계획 §13 — ㄷ 급강하 왕복)")]
+        [Tooltip("하늘에서 급강하로 공격하는가. 켜면 지상 이동·중력을 쓰지 않고 " +
+            "순항 고도와 표적 높이 사이를 왕복한다. 강하 개시 거리는 LeapHorizontalRange 를 쓴다.")]
+        [SerializeField] private bool _aerialDiver;
+
+        [Tooltip("순항 고도 (월드 y). 손 무기가 닿는 천장 위여야 순항 중에는 잡히지 않는다 — " +
+            "산탄총 20 m + 갑판 3.566 = y 23.5 가 그 천장이다.")]
+        [SerializeField] private float _cruiseAltitudeY = 34f;
+
+        [Tooltip("급강하 속도 (m/s). 상승은 이 값의 65 %다 — 내려올 때보다 천천히 빠져나가야 " +
+            "반격 창이 열린다.")]
+        [SerializeField, Min(1f)] private float _diveSpeed = 18f;
+
+        [Tooltip("표적 높이에서 머무르는 시간(초). 이 동안이 가장 확실한 반격 창이다.")]
+        [SerializeField, Min(0f)] private float _hoverSeconds = 1.2f;
+
         [Header("전투")]
         [SerializeField, Min(1f)] private float _maxHealth = 100f;
         [SerializeField, Min(0f)] private float _attackDamage = 15f;
@@ -95,6 +111,21 @@ namespace Game.Gameplay.Monsters
 
         /// <summary>튀어오를 때 정점의 월드 높이 (m). <see cref="AquaticLeaper"/>일 때만 쓴다.</summary>
         public float LeapApexY => _leapApexY;
+
+        /// <summary>하늘에서 급강하로 공격하는가 (ㄷ 별들린 바닷새).</summary>
+        public bool AerialDiver => _aerialDiver;
+
+        /// <summary>순항 고도 (월드 y). <see cref="AerialDiver"/>일 때만 쓴다.</summary>
+        public float CruiseAltitudeY => _cruiseAltitudeY;
+
+        /// <summary>급강하 속도 (m/s).</summary>
+        public float DiveSpeed => _diveSpeed;
+
+        /// <summary>상승 속도 (m/s) — 강하보다 느려야 반격 창이 열린다.</summary>
+        public float ClimbSpeed => _diveSpeed * 0.65f;
+
+        /// <summary>표적 높이에서 머무르는 시간(초).</summary>
+        public float HoverSeconds => _hoverSeconds;
 
         public float MaxHealth => _maxHealth;
 
