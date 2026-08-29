@@ -97,6 +97,7 @@
 |---|---|---|
 | **숲 (봄)** | `#5E8C46` 수관 · `#33523A` 그늘 · `#6E5136` 나무껍질 · `#F3E2C7` 꽃가루 · `#A9CFE0` 연한 하늘 | 연한 하늘, 꽃가루가 날린다 / **설렘** |
 | **사막 (여름)** | `#DCA85C` 모래 · `#A9613A` 녹슨 사구 · `#E8DCC0` 백열 하늘 · `#2B3A63` 밤 남색 · `#6FA69B` 유리 | 백열하는 낮, 별이 쏟아지는 밤 / **경외** |
+| **바다 (늦여름)** | `#2D7387` 바닷물 · `#C7E5EF` 잔물결 · `#3E7AB1` 하늘 상단 · `#BDDBE5` 수평선 · `#1E272B` 해저 어둠 | 사방이 물, 수평선만 남는다 / **갈증** |
 | **대초원 (가을)** | `#D9A441` 황금 곡물 · `#B87A2C` 호박 · `#EBD9A6` 마른 풀 · `#C9705B` 석양 · `#5A5F6B` 폭풍 슬레이트 | 길고 낮은 석양, 채도 최대 / **그리움** |
 | **북극 (겨울)** | `#E6EEF2` 빙하 · `#9EC2D6` 얼음 · `#3E5A72` 깊은 서리 · `#141C2B` 극야 · `#5FD6C0` 오로라 | 낮이 거의 없다 / **불안** |
 | **최종장 (우주)** | `#0B0D14` 공허 · `#F5F7FF` 별빛 · `#8E7BE8` 별씨 | 자연색 소거 / **이해** |
@@ -443,6 +444,7 @@ chromatic aberration, film grain, heavy motion blur, text, logo, watermark.
 | 지역 | 전용 에셋 | 랜드마크 (§G9 + 원경) |
 |---|---|---|
 | **사막** | 선인장 2 · 마른 관목 1 · 마른 나무 1 · 모래언덕 조각 2 · **난파 열차 잔해 1**(3,000 tris) · 메사 조각 1 | 모래에 반쯤 묻힌 거대 고대 구조물 + 신기루 |
+| **바다** | **§O 전용 시트** — 식생이 없고 지형이 교량이라 이 표의 구성과 어긋난다 (11종) | 수평선 · 등대 · 좌초 난파선 |
 | **대초원** | 벼밭 클럼프 2 · 억새 1 · 홀로 선 나무 1 · 수로 조각 1 · 곡물 저장고 폐허 1 | 지평선까지 이어진 황금 물결 + 거대 풍차 군락 |
 | **북극** | 눈 덮인 침엽수 2 · 얼어붙은 관목 1 · 빙벽 조각 2 · 얼어붙은 강 조각 1 · **유적 노두 1** · 얼어붙은 열차 잔해 1 | 빙벽 + 오로라 (`#5FD6C0` — 별씨의 궤적이라는 복선) |
 
@@ -900,3 +902,135 @@ background scenery, gore, wounds, horns or spikes added to animals
 | **보스 핵** (`BossCore`) | 아이콘·모델 없음 | 처치 보상이며 **채집으로 못 얻는 유일한 자연 대역 자원**이다. §J 12종에서 빠져 있다. 카탈로그 색은 `#9E298C`로 §D.1의 별씨 보라 `#8E7BE8`와 **다르다** — 어느 쪽에 맞출지 미결 |
 | `MonsterBody.mat` | 보스 4종 + 일반 몬스터 공유 | 모델을 넣으면 지역별 `M_Boss_*`로 갈라진다. 일반 몬스터 쪽은 그대로 둔다 |
 | **최종 보스 "근원"** | 미구현 | 최종장(우주)은 콘텐츠 자체가 없다. 세계관 §5.3·기획서 §8.3 기준으로 **해당 차수에 별도 시트**를 만든다 |
+
+---
+
+## O. 바다 전용 에셋 — 생성 지시 시트 *(§G9 + §K.0과 함께 쓴다)*
+
+> **왜 별도 시트인가.** 바다는 §K.6 표의 구성(식생 + 지형 조각)이 통째로 어긋난다 —
+> **식생이 0종**이고 지형이 땅이 아니라 **교량**이며, 화면의 절반이 **물속**이다.
+> 규격 근거는 [`바다 지역 구현 계획`](../plans/features/바다-지역-구현-계획.md) §3·§5.3이다.
+
+### O.0 현황 실측 (2026-08-29) — **바다에는 전용 모델이 하나도 없다**
+
+바다 타일 10종(`TerrainTile_Sea_A~J`)을 훑은 결과다.
+
+| 항목 | 수 |
+|---|---:|
+| 커스텀 메시 참조 | **0** |
+| 내장 프리미티브(큐브 등) 참조 | **468** |
+| 재사용 중인 모델 | 6종 — 전부 **숲·공용** (`Env_BridgePier_A`(숲) · `Env_Sleeper_Old` · `Env_Rock_L` · `Env_RockOutcrop` · `Env_LogFallen_A`(숲) · `Env_Fence_Broken`) |
+
+> 계획서 §5.3이 세운 팔레트 10종의 변주 축(**교각 · 원경 · 물속**)이 **전부 큐브로 서 있다.**
+> 검증에서 *"등대가 어디 있지?"*(G3)가 나온 것도 이것과 무관하지 않다 — 큐브는 등대로 읽히지 않는다.
+
+### O.1 규격 — 바다 실측값
+
+| 항목 | 값 | 쓰임 |
+|---|---|---|
+| 상판 폭 · 두께 | **8 m (±4)** · 0.8 m | 모듈 폭의 상한 |
+| 타일 길이 | 40 m | 상판 모듈 4장 = 1타일 |
+| 물면 · 해저 | **y −4** · y −12 (수심 **8 m**) | 교각 길이·물속 배치의 기준 |
+| 교각 | 1.6 × **11.2** × 1.6 m · \|x\| = 2.8 · 40 m마다 1쌍 | 상판 밑에 들어간다 |
+| 자원 대역 | \|x\| 4~16 m | 부표가 뜨는 자리 |
+| 원경 대역 | \|x\| 24~30 m | 난파선·등대 |
+| 복귀 사다리 | 상판 0 → 물속 **−7.2** (높이 8 m) · 타일당 4개 | 물에서 올라오는 유일한 경로 |
+
+### O.2 교량 — 모듈 3종
+
+`Env_` · 폴더 `Art/Models/Environment/Sea/` · **§K.0의 MODULAR 문구를 반드시 붙인다**
+
+| 에셋 | 실치수 | tris | 영문 지시 | 모듈 |
+|---|---|---:|---|:---:|
+| `Env_SeaDeck_A` | 8×0.8×10 m | 400 | a modular railway bridge deck section over open sea, thick riveted steel girders under a plain top surface, weathered gray steel #3A3A3C with rust #A9613A streaks, no railings | ● |
+| `Env_SeaDeck_Open_B` | 8×0.8×10 m | 600 | same bridge deck family but the deck is thinner and the sleepers are exposed with gaps between them, you can see through to the water below, same weathered steel and rusted bolts | ● |
+| `Env_SeaLadder_A` | 0.8×8×0.3 m | 300 | a vertical steel access ladder running down the side of a sea bridge pier, chunky volumetric rungs (not thin rods), two side rails, salt-corroded steel #3A3A3C with barnacle crust near the bottom | |
+
+> **`Env_SeaLadder_A`는 AI 취약 항목이다** (§K.2 `Env_GrassClump_A`와 같은 이유) — 가로대가 얇은
+> 봉이라 재구성이 뭉개진다. **먼저 생성해 보고 감축 판정에서 떨어지면 Blender로 직접** 만든다
+> (박스 9개, 5분). 지금도 큐브 조합이라 형태만 다듬으면 된다.
+
+### O.3 교각 3종 — **변주의 주력**
+
+상판이 ±4 m로 좁아 위에서는 볼 것이 적은 대신, **물속·물 위 시점에서 교각이 화면을 채운다**
+(계획 §5.3). 세 종이 세그먼트 C · D · I를 각각 맡는다.
+
+| 에셋 | 실치수 | tris | 영문 지시 |
+|---|---|---:|---|
+| `Env_SeaPier_Truss_A` | 1.6×11.2×1.6 m | 1,200 | a tall steel truss bridge pier standing in the sea, X-shaped cross braces stacked in three tiers, riveted joints, weathered gray steel #3A3A3C, dark algae #1E272B on the lower half where it meets the water |
+| `Env_SeaPier_Arch_A` | 1.6×11.2×1.6 m | 1,400 | a tall stone masonry bridge pier with a rounded arch opening at its base, large weathered blocks, pale gray stone, dark waterline stain and barnacles at the bottom |
+| `Env_SeaPier_Broken_A` | 1.6×8×1.6 m | 1,000 | the same stone bridge pier but snapped in half, jagged broken top, exposed rebar bent outward, rubble collar at the waterline |
+
+> **I(무너진 교각)는 상판이 기울어 있는 세그먼트다** — 교각만 부러뜨리면 되고 상판은
+> `Env_SeaDeck_A`를 회전시켜 쓴다. 모델을 따로 만들지 않는다.
+
+### O.4 랜드마크 4종 — 원경과 물속을 채운다
+
+**미결정 ⑪이 여기 걸려 있다**: *"화면의 대부분이 물과 하늘"*인데 원경을 지탱할 난파선·등대의
+가중 합이 **0.166**뿐이다. 모델이 서면 빈도를 다시 정한다(검증 G3와 함께).
+
+| 에셋 | 실치수 | tris | 영문 지시 |
+|---|---|---:|---|
+| `Env_Lighthouse_A` | 4×14×4 m | 2,000 | a lone stylized lighthouse on a small rock outcrop, tapered cylindrical tower with a horizontal band, glass lantern room at the top, chunky simple silhouette readable from far away, weathered white and rust red, no thin railings |
+| `Env_Shipwreck_A` | 12×6×5 m | 3,000 | a rusted cargo ship wrecked and half sunken, hull broken and tilted, exposed ribs, thick volumetric masses only, heavy rust #A9613A over dark steel, no thin masts or wires |
+| `Env_SunkenRuin_A` | 8×5×8 m | 2,000 | a submerged stone ruin resting on the seabed, a partly collapsed columned structure covered in algae and sediment, chunky worn blocks, muted teal-gray #2D7387 tint |
+| `Env_Reef_A` | 3×2×3 m | 400 | a chunky rock reef breaking the surface, rounded wave-worn stone, dark waterline band, a little algae on top, neutral gray |
+
+> **등대는 밤에 회전광이 돈다** (계획 §5.3 H) — 광원과 회전은 **머티리얼·컴포넌트**가 하고,
+> 모델은 **램프실을 별도 오브젝트로 분리할 수 있게** 만들어야 한다. 생성 지시에
+> `glass lantern room at the top`을 넣은 이유다.
+
+### O.5 소품 2종
+
+| 에셋 | 실치수 | tris | 영문 지시 |
+|---|---|---:|---|
+| `Env_Buoy_A` | 0.8×1.4×0.8 m | 200 | a floating channel buoy, chunky cylindrical float with a short mast and a small lamp cage on top, bright warning orange #F2762E with a dark band, weathered |
+| `Prop_FishingRod_A` | 0.1×1.8×0.1 m | 400 | a simple handmade fishing rod, a slightly curved tapered wooden pole with a cord-wrapped grip and a small metal reel, volumetric not thin, weathered wood #6E5136 with brass #C89B4A fittings |
+
+> **부표는 자원 표지이지 자원이 아니다** (2회차 C2 판정) — 자원을 뜯어 가도 **남는다**.
+> 다음 자원이 같은 자리에 뜨므로 플레이어가 어디를 볼지 학습한다. 그래서 **밤에도 식별돼야 한다**
+> (emissive 램프).
+>
+> **낚싯대는 손에 드는 물건이다** — 축 규약은 §L의 무기와 같다(**총구 방향 +Y · 위 +Z**).
+> 지금은 모델이 없어 *"뭘 들었는지 안 보인다"*(미결정 ⑰).
+
+### O.6 몬스터 — 별들린 물고기 *(4차 신규)*
+
+바다 4차가 세운 **도약 전용 변종**이다. 물에서만 살고, 물 밖 표적에게 **튀어올라** 상판 위를 친다.
+
+| 에셋 | 실치수 | tris | 영문 지시 |
+|---|---|---:|---|
+| `Monster_SeaLeaper` | 길이 2 m | 800 | a stylized corrupted leaping fish, thick torpedo body with a large crescent tail and stubby fins, jagged jaw, glowing crystal shards growing along its spine, deep teal #2D7387 body with pale #C7E5EF underside, emissive violet #8E7BE8 in the eyes and shards |
+
+> **왜 지금 필요한가.** 변종은 프리팹이 아니라 **`MonsterSettings`로만** 구분하는 규약이라
+> (`MonsterVariantCatalog` 주석), 모델이 없으면 **여우형 `Monster_Guardian`이 청록색으로 튀어오른다.**
+> 지역 고유 위협인데 지역 고유의 모습이 없다.
+>
+> 발광은 **텍스처가 아니라 `_EmissionColor`**로 넣는다 (§N.7과 같은 규약) — 밤 바다는 물이 하늘빛을
+> 반사해 밝게 남고 그 위 모든 것이 실루엣이 되므로(0차 실측), **발광만이 형태를 읽게 한다.**
+
+### O.7 타일당 예산 — 바다는 식생이 없다
+
+| 종류 | 타일당 개수 | 개당 tris | 소계 |
+|---|---:|---:|---:|
+| 상판 모듈 | 4 | 400~600 | 2,000 |
+| 교각 | 2 (1쌍) | 1,200~1,400 | 2,600 |
+| 복귀 사다리 | 4 | 300 | 1,200 |
+| 부표 | 3~15 | 200 | 600~3,000 |
+| 암초 | 0~4 | 400 | 1,600 |
+| 랜드마크 (특징·이벤트 세그먼트만) | 0~1 | 2,000~3,000 | 3,000 |
+| **합계** | | | **약 10,400~13,400** |
+
+> **목표 30,000의 절반 이하다** (§K.7). 식생 20,000이 통째로 빠진 자리다 —
+> **교각과 랜드마크에 더 써도 된다.** 물속 시점에서 교각이 화면을 채우는 지역이므로
+> 트러스를 1,200에서 2,000까지 올려도 예산이 남는다.
+
+### O.8 이 시트 밖 — 아직 없는 것
+
+| 대상 | 현재 | 비고 |
+|---|---|---|
+| **물보라 · 숨 기포** | 없음 (미결정 ⑬) | **VFX**다. 물에 들고 나는 **순간**의 피드백이 없어 경계가 밋밋하다 — 3D 생성 대상이 아니지만 물고기 모델보다 체감이 클 수 있다 |
+| **수영 애니메이션** | 없음 (미결정 ⑭) | 남이 헤엄치는 모습이 **걷는 자세**다. 애니메이션 축 |
+| **몬스터 수면 이동 표현** | 없음 (검증 H4) | 몬스터가 물면 높이에서 **걸어서** 온다. 애니메이션 + VFX |
+| **낚싯줄** | 없음 (검증 K11) | 던진 줄이 보이지 않는다. LineRenderer 축 |
+| **물 드로우콜** | 타일 9장 × 물 평면 (미결정 ④) | 알파 오버드로가 화면 전체를 덮는다 — 아트 예산 재확인 대상 |
