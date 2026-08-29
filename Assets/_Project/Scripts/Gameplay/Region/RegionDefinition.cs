@@ -129,8 +129,20 @@ namespace Game.Gameplay.Region
             "바다처럼 궤도 밖이 전부 물인 지역만 켠다.")]
         [SerializeField] private bool _hasWater;
 
-        [Tooltip("물 표면 높이 (m). HasWater 가 켜졌을 때만 쓴다. 바다 = -4 (레일 바닥에서 4 m 아래).")]
+        [Tooltip("물 표면 높이 (m). HasWater 가 켜졌을 때만 쓴다. 바다 = -4 (레일 바닥에서 4 m 아래). " +
+            "북극 = -1.5 (얼음 두께 — 점프 1.2 m 로 못 넘는 벽이 여기서 나온다).")]
         [SerializeField] private float _waterSurfaceY = -4f;
+
+        [Tooltip("물속 화면 색 (UnderwaterView). 바다 기본값이 들어 있어 배선하지 않은 지역은 종전 그대로다.")]
+        [SerializeField] private Color _underwaterColor = new Color(0.09f, 0.34f, 0.42f, 0.62f);
+
+        [Header("낚시 (북극 계획 §8.3 결정 ⑫ — 열되 어렵게)")]
+        [Tooltip("입질 대기 시간 배율. 북극 = 4 — 북극에서 물고기가 쉽게 잡히면 대초원에서 " +
+            "식량을 비축할 이유가 사라진다(기획서 §4.3). 1 = 종전 그대로.")]
+        [SerializeField, Min(0.1f)] private float _fishingBiteDelayMultiplier = 1f;
+
+        [Tooltip("이중 어획 확률 배율. 북극 = 0 (두 마리는 없다). 1 = 종전 그대로.")]
+        [SerializeField, Range(0f, 1f)] private float _fishingDoubleCatchMultiplier = 1f;
 
         [Tooltip("이 지역의 자원 스폰 후보(종류 + 가중치). 비우면 스포너가 기본 종류로 심는다.")]
         [SerializeField] private ResourceSpawnEntry[] _resourceSpawns;
@@ -202,6 +214,15 @@ namespace Game.Gameplay.Region
 
         /// <summary>물 표면 높이 (m). <see cref="HasWater"/>가 꺼져 있으면 의미 없다.</summary>
         public float WaterSurfaceY => _waterSurfaceY;
+
+        /// <summary>물속 화면 색 (표현 전용). 배선하지 않으면 바다 값 그대로다.</summary>
+        public Color UnderwaterColor => _underwaterColor;
+
+        /// <summary>입질 대기 배율 (북극 = 4). 1이면 종전 그대로.</summary>
+        public float FishingBiteDelayMultiplier => _fishingBiteDelayMultiplier;
+
+        /// <summary>이중 어획 확률 배율 (북극 = 0). 1이면 종전 그대로.</summary>
+        public float FishingDoubleCatchMultiplier => _fishingDoubleCatchMultiplier;
 
         /// <summary>
         /// 지상 개체가 서는 높이 — 물이 있으면 물면, 없으면 지면(0).

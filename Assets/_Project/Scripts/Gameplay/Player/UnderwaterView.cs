@@ -87,6 +87,27 @@ namespace Game.Gameplay.Player
             {
                 renderer.enabled = submerged;
             }
+
+            // 물빛은 지역이 소유한다 (북극 3차) — 북극 바다는 바다보다 어둡고 푸르다.
+            // 배선하지 않은 지역은 필드 기본값이 바다 값이라 화면이 1픽셀도 바뀌지 않는다.
+            if (submerged)
+            {
+                Color color = ResolveWaterColor();
+                if (renderer.sharedMaterial.color != color)
+                {
+                    renderer.sharedMaterial.color = color;
+                }
+            }
+        }
+
+        private static Color ResolveWaterColor()
+        {
+            if (!ServiceLocator.TryGet(out IRegionService region) || region.CurrentRegion == null)
+            {
+                return WaterColor;
+            }
+
+            return region.CurrentRegion.UnderwaterColor;
         }
 
         /// <summary>발이 아니라 <b>눈</b>이 기준이다 — 화면을 덮는 판정이므로.</summary>

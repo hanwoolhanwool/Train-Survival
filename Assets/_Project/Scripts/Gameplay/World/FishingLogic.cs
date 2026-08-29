@@ -60,6 +60,45 @@ namespace Game.Gameplay.World
             return d >= 0f && d <= maxDistance;
         }
 
+        /// <summary>
+        /// 지형이 조준선을 막는가 — <b>얼음낚시가 성립하는 지점</b> (북극 계획 §8.3 결정 ⑫).
+        ///
+        /// <para><b>왜 이것 하나로 두 문제가 풀리는가.</b> 지금까지는 조준선과 물면 평면의 교차만
+        /// 봤다. 바다는 사방이 물이라 그것으로 충분했지만, 북극은 <b>얼음이 물을 덮고 있다</b> —
+        /// 얼음 위를 겨눠도 그 아래 어딘가에서 평면과 만나므로 <b>찌가 얼음에 박힌 채</b> 던져진다.
+        /// 차폐를 보면 결함이 막히는 동시에 *"물길·조각 사이에서만 던질 수 있다"* 는 설계 의도가
+        /// <b>저절로</b> 성립한다 — 얼음낚시를 하려면 물가로 나가야 하고, 물가로 나가는 것은
+        /// §5.2의 물길을 넘는 일이다.</para>
+        ///
+        /// <para><paramref name="blockedDistance"/>는 조준선을 막은 것까지의 거리다 —
+        /// 물면까지의 거리보다 짧으면 막힌 것이다. 막은 것이 없으면 음수를 넘긴다.</para>
+        /// </summary>
+        public static bool IsBlockedBeforeWater(float distanceToWater, float blockedDistance)
+        {
+            if (distanceToWater < 0f)
+            {
+                return true;
+            }
+
+            // 물면 바로 앞의 접촉은 통과시킨다 — 물길 가장자리를 겨눴을 때 판정이 깜빡이지 않게 한다.
+            const float Margin = 0.2f;
+            return blockedDistance >= 0f && blockedDistance < distanceToWater - Margin;
+        }
+
+        /// <summary>
+        /// 지역 배율을 반영한 입질 대기 (북극 = ×4 → 2.5~12초가 10~48초가 된다).
+        /// 한 마리에 열차 반 칸을 지나갈 시간이 든다.
+        /// </summary>
+        public static float BiteDelaySeconds(
+            float roll01, float scrollSpeed, float referenceSpeed,
+            float minDelay, float maxDelay, float speedInfluence, float regionMultiplier)
+        {
+            float multiplier = Mathf.Max(0.01f, regionMultiplier);
+            return BiteDelaySeconds(
+                roll01, scrollSpeed, referenceSpeed,
+                minDelay * multiplier, maxDelay * multiplier, speedInfluence);
+        }
+
         /// <summary>챔질 창 안인가 — 입질 후 이 시간 안에 당겨야 걸린다.</summary>
         public static bool IsWithinHookWindow(float secondsSinceBite, float windowSeconds)
         {

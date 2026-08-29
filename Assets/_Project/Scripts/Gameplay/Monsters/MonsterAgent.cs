@@ -53,8 +53,15 @@ namespace Game.Gameplay.Monsters
 
         private float _verticalSpeed;
 
-        // 이 개체가 서는 바닥 — 물 지역이면 물면이다 (ResolveSurfaceY 주석). 스폰 시 확정.
+        // 이 개체가 서는 바닥 — 물 지역이면 물면이다 (ResolveSurfaceY 주석). 스폰 시 확정하고,
+        // 얼음과 물이 교차하는 지역(북극)에서는 발밑 조회로 갱신된다 (ServerUpdateSupportY).
         private float _surfaceY;
+
+        // 지역이 정한 바닥(물면 또는 0) — 발밑 보정의 하한이다. 이 아래로는 내려가지 않는다.
+        private float _regionSurfaceY;
+
+        // 발밑 보정 재조회까지 남은 시간(초). 서버 전용.
+        private float _supportProbeTimer;
 
         // 하늘 위협의 왕복 국면과 남은 체공 시간 (ServerSimulateAerial). 서버 전용 —
         // 클라는 위치 스냅샷만 받으므로 국면을 복제할 필요가 없다.
@@ -174,6 +181,8 @@ namespace Game.Gameplay.Monsters
             _towed = false;
             _stunned = false;
             _surfaceY = ResolveSurfaceY();
+            _regionSurfaceY = _surfaceY;
+            _supportProbeTimer = 0f;
 
             if (IsServer)
             {
@@ -312,6 +321,7 @@ namespace Game.Gameplay.Monsters
                 horizontalVelocity = Vector3.zero;
             }
 
+            ServerUpdateSupportY();
             ApplyVerticalMotion(onDeck);
 
             Vector3 motion = (horizontalVelocity + Vector3.up * _verticalSpeed) * Time.deltaTime;
@@ -339,6 +349,7 @@ namespace Game.Gameplay.Monsters
                 ? Vector3.zero
                 : StampedeMath.ComputePassVelocity(Settings.MoveSpeed, scrollSpeed);
 
+            ServerUpdateSupportY();
             ApplyVerticalMotion(false);
 
             Vector3 motion = (horizontalVelocity + Vector3.up * _verticalSpeed) * Time.deltaTime;
@@ -574,6 +585,35 @@ namespace Game.Gameplay.Monsters
             {
                 _verticalSpeed -= Gravity * Time.deltaTime;
             }
+        }
+
+        /// <summary>
+        /// 발밑 보정 간격(초). 지형은 6 m/s로 흐르므로 0.25초면 1.5 m — 얼음 판 한 칸보다 훨씬 짧다.
+        /// 매 프레임 쏘면 밤 웨이브 수십 기가 각자 레이캐스트를 낸다.
+        /// </summary>
+        private const float SupportProbeInterval = 0.25f;
+
+        /// <summary>
+        /// 발밑 지지면을 다시 잰다 (북극 3차 — §3.1). <b>물이 없는 지역에서는 아예 돌지 않는다</b>:
+        /// 그쪽은 지역 <c>SurfaceY</c>가 0이고 지형도 y 0 평면이라 보정할 것이 없다.
+        /// </summary>
+        private void ServerUpdateSupportY()
+        {
+            _regionSurfaceY = WaterSurfaceQuery.SurfaceY();
+            if (_regionSurfaceY >= 0f)
+            {
+                _surfaceY = _regionSurfaceY;
+                return;
+            }
+
+            _supportProbeTimer -= Time.deltaTime;
+            if (_supportProbeTimer > 0f)
+            {
+                return;
+            }
+
+            _supportProbeTimer = SupportProbeInterval;
+            _surfaceY = GroundSupportProbe.Sample(transform.position, _regionSurfaceY);
         }
 
         private void ClampToSupport()

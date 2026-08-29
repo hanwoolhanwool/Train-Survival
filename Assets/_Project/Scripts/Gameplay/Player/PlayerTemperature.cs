@@ -29,6 +29,13 @@ namespace Game.Gameplay.Player
         private PlayerHealth _health;
         private Inventory.PlayerInventory _inventory;
         private PlayerBuffs _buffs;
+
+        /// <summary>
+        /// 환경 온도를 덮어쓰는 축들 (북극 3차 — 침수가 첫 사용처). 여기서는 <b>값만</b> 본다:
+        /// 무엇이 왜 덮어쓰는지는 <see cref="IAmbientTemperatureOverride"/> 구현이 안다.
+        /// </summary>
+        private IAmbientTemperatureOverride[] _ambientOverrides;
+
         private float _serverTemperature;
         private float _pendingDamage;
 
@@ -50,6 +57,7 @@ namespace Game.Gameplay.Player
             _health = GetComponent<PlayerHealth>();
             _inventory = GetComponent<Inventory.PlayerInventory>();
             _buffs = GetComponent<PlayerBuffs>();
+            _ambientOverrides = GetComponents<IAmbientTemperatureOverride>();
         }
 
         public override void OnNetworkSpawn()
@@ -193,6 +201,13 @@ namespace Game.Gameplay.Player
         /// </summary>
         private float GetRegionAmbient(in TemperatureCurve curve)
         {
+            // 덮어쓰는 축이 있으면 지역·날씨보다 먼저다 — 물에 잠긴 사람에게 "북극 밤 −32 ℃"는
+            // 이미 그의 환경이 아니다 (북극 계획 §8.1 ②).
+            if (TryGetAmbientOverride(out float overridden, out _))
+            {
+                return overridden;
+            }
+
             if (!ServiceLocator.TryGet(out IRegionService region) || region.CurrentRegion == null)
             {
                 return curve.ComfortCenter;
@@ -203,6 +218,32 @@ namespace Game.Gameplay.Player
                 : region.CurrentRegion.DayAmbientTemperature;
 
             return ambient + GetWeatherTemperatureOffset();
+        }
+
+        /// <summary>
+        /// 환경 온도를 덮어쓰는 축이 있으면 그 값. <b>먼저 값을 낸 구현체가 이긴다</b> —
+        /// 온도는 곱셈이 성립하지 않아 이속 배율처럼 겹칠 수 없다(<see cref="IAmbientTemperatureOverride"/>).
+        /// </summary>
+        private bool TryGetAmbientOverride(out float ambientCelsius, out bool ignoresInsulation)
+        {
+            ambientCelsius = 0f;
+            ignoresInsulation = false;
+
+            if (_ambientOverrides == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _ambientOverrides.Length; i++)
+            {
+                if (_ambientOverrides[i] != null
+                    && _ambientOverrides[i].TryGetAmbient(out ambientCelsius, out ignoresInsulation))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>진행 중인 날씨의 환경 온도 오프셋 (M7 3차). 맑거나 서비스가 없으면 0.</summary>
@@ -225,6 +266,13 @@ namespace Game.Gameplay.Player
         {
             cold = 0f;
             heat = 0f;
+
+            // 젖으면 단열이 없다 (북극 3차). 이 한 줄이 없으면 방한 풀셋(0.9)이 침수 처벌을
+            // 통째로 지워, "물에 빠져도 옷만 갖추면 괜찮다"가 된다.
+            if (TryGetAmbientOverride(out _, out bool ignoresInsulation) && ignoresInsulation)
+            {
+                return;
+            }
 
             if (_inventory != null)
             {

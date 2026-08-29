@@ -134,7 +134,7 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            if (!FishingLogic.CanCast(origin, direction, waterY, _settings.CastRange))
+            if (!CanCastHere(origin, direction.normalized, waterY, _settings.CastRange))
             {
                 return;
             }
@@ -166,12 +166,7 @@ namespace Game.Gameplay.World
         {
             waterY = 0f;
 
-            if (!ServiceLocator.TryGet(out IRegionService region))
-            {
-                return false;
-            }
-
-            RegionDefinition definition = region.CurrentRegion;
+            RegionDefinition definition = CurrentRegion();
             if (definition == null || !definition.HasWater)
             {
                 return false;
@@ -179,6 +174,34 @@ namespace Game.Gameplay.World
 
             waterY = definition.WaterSurfaceY;
             return true;
+        }
+
+        private static RegionDefinition CurrentRegion()
+        {
+            return ServiceLocator.TryGet(out IRegionService region) ? region.CurrentRegion : null;
+        }
+
+        /// <summary>
+        /// 던질 수 있는 자리인가 — 사거리 안에서 물면에 닿고, <b>그 앞을 지형이 막지 않는가</b>
+        /// (북극 계획 §8.3 결정 ⑫). 얼음 위에서는 찌가 얼음에 박히므로 던져지지 않는다.
+        ///
+        /// <para>레이캐스트는 <b>캐스팅 시점에 한 번</b>이다 — 조준 중 매 프레임 쏘지 않는다.
+        /// 소유자와 서버가 각자 같은 판정을 하므로(서버 재검증) 비용은 두 번뿐이다.</para>
+        /// </summary>
+        private static bool CanCastHere(Vector3 origin, Vector3 direction, float waterY, float castRange)
+        {
+            float distance = FishingLogic.DistanceToWaterPlane(origin, direction, waterY);
+            if (distance < 0f || distance > castRange)
+            {
+                return false;
+            }
+
+            float blocked = Physics.Raycast(
+                origin, direction, out RaycastHit hit, distance, ~0, QueryTriggerInteraction.Ignore)
+                ? hit.distance
+                : -1f;
+
+            return !FishingLogic.IsBlockedBeforeWater(distance, blocked);
         }
 
         // ── 서버 ──
@@ -209,17 +232,19 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            // 소유자 판정을 그대로 믿지 않는다 — 물 지역인지·사거리 안인지 서버가 다시 본다.
+            // 소유자 판정을 그대로 믿지 않는다 — 물 지역인지·사거리 안인지·지형이 막지 않는지 서버가 다시 본다.
             if (!TryGetWaterY(out float waterY)
-                || !FishingLogic.CanCast(origin, direction.normalized, waterY, _settings.CastRange))
+                || !CanCastHere(origin, direction.normalized, waterY, _settings.CastRange))
             {
                 return;
             }
 
             float scrollSpeed = ServiceLocator.TryGet(out IWorldScrollService scroll) ? scroll.ScrollSpeed : 0f;
+            RegionDefinition region = CurrentRegion();
             float delay = FishingLogic.BiteDelaySeconds(
                 Random.value, scrollSpeed, _settings.ReferenceScrollSpeed,
-                _settings.MinBiteDelaySeconds, _settings.MaxBiteDelaySeconds, _settings.SpeedInfluence);
+                _settings.MinBiteDelaySeconds, _settings.MaxBiteDelaySeconds, _settings.SpeedInfluence,
+                region == null ? 1f : region.FishingBiteDelayMultiplier);
 
             _serverPhase = FishingPhase.Waiting;
             _serverBiteAt = Time.time + delay;
@@ -248,7 +273,10 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            int count = FishingLogic.CatchCount(Random.value, _settings.DoubleCatchChance);
+            RegionDefinition region = CurrentRegion();
+            float doubleChance = _settings.DoubleCatchChance
+                * (region == null ? 1f : region.FishingDoubleCatchMultiplier);
+            int count = FishingLogic.CatchCount(Random.value, doubleChance);
             if (_inventory == null || !_inventory.ServerTryAdd(_settings.CatchType, count))
             {
                 // 가방이 차 있으면 놓친다 — 물고기가 사라지는 것이 아니라 올리지 못한 것이다.

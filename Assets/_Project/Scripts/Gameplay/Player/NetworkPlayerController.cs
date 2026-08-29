@@ -69,6 +69,9 @@ namespace Game.Gameplay.Player
         private IExternalTow _externalTow;
         private IMoveSpeedModifier[] _speedModifiers;
 
+        /// <summary>침수 축 (북극 3차) — 얼음 턱 기어오르기가 "지금 물에 잠겼는가"를 여기서 읽는다.</summary>
+        private PlayerSubmersion _submersion;
+
         // 수영·잠수 (바다 지역 구현 계획 §6) — 네트워크 상태가 아니다.
         // 발 높이와 지역 물면은 이미 모든 피어가 알므로 각자 유도한다 (SwimMotion 주석 참조).
         private bool _isSwimming;
@@ -109,6 +112,13 @@ namespace Game.Gameplay.Player
         private bool _storagePanelOpen;
         private bool _bundlePanelOpen;
         private bool _standingOnWorldFrame;
+
+        /// <summary>
+        /// 밟고 있는 표면의 접지 가속(m/s²) — 0이면 마찰 무한(종전 동작).
+        /// <see cref="ProbeGround"/>가 갱신하고 <see cref="PlayerMotor.ComputeHorizontalVelocity"/>가 쓴다.
+        /// 공중에서는 이륙 당시의 값을 유지한다 — 착지 프레임에 값이 튀면 제동 거리가 갈린다.
+        /// </summary>
+        private float _groundAcceleration;
 
         /// <summary>
         /// 지금 겹쳐 있는 사다리 볼륨 — 소유자 로컬이다. 붙을지 말지는 전적으로 소유자가 아는 정보
@@ -171,6 +181,7 @@ namespace Game.Gameplay.Player
             _health = GetComponent<PlayerHealth>();
             _externalTow = GetComponent<IExternalTow>();
             _speedModifiers = GetComponents<IMoveSpeedModifier>();
+            _submersion = GetComponent<PlayerSubmersion>();
         }
 
         /// <summary>
@@ -491,6 +502,16 @@ namespace Game.Gameplay.Player
 
             // ── 수영·잠수 (바다 지역 §6) ──
             UpdateSwimState();
+
+            // ── 얼음 턱 기어오르기 (북극 지역 §5.4 · §8.1 ④) ──
+            // 수영 판정보다 **먼저**다: 얕은 물(잠김 0.8)에서는 걷기가 유지되므로 아래 수영 분기를
+            // 타지 않고, 그때야말로 1.5 m 얼음 벽 앞에서 점프가 소용없는 자리다.
+            if (keyboard.spaceKey.wasPressedThisFrame && TryBeginIceMantle(wishDirection))
+            {
+                UpdateMantle();
+                return;
+            }
+
             if (_isSwimming)
             {
                 UpdateSwim(wishDirection, keyboard);
@@ -514,7 +535,8 @@ namespace Game.Gameplay.Player
 
             _horizontalVelocity = PlayerMotor.ComputeHorizontalVelocity(
                 _horizontalVelocity, wishDirection * targetSpeed,
-                grounded, _settings.AirControlRatio, _settings.AirAcceleration, Time.deltaTime);
+                grounded, _settings.AirControlRatio, _settings.AirAcceleration, Time.deltaTime,
+                _groundAcceleration);
 
             if (grounded)
             {
@@ -804,8 +826,12 @@ namespace Game.Gameplay.Player
         // ── 수영·잠수 (바다 지역 구현 계획 §6) ─────────────────────────
 
         /// <summary>
-        /// 지역의 물면 높이. 물이 없는 지역(숲·사막·대초원·북극)에서는 false —
+        /// 지역의 물면 높이. 물이 없는 지역(숲·사막·대초원)에서는 false —
         /// 그 지역들은 <c>HasWater</c>가 꺼져 있어 이 경로가 통째로 비활성이다.
+        ///
+        /// <para><b>북극은 물이 있지만 사방이 물은 아니다</b>(2026-08-30). 얼음(y 0)과 물(−1.5)이
+        /// 교차하므로 이 값은 <b>물이 있는 자리의 높이</b>일 뿐이고, 실제로 잠겼는지는 발 높이가
+        /// 정한다 — 그 판정이 <see cref="SwimMotion"/>·<see cref="PlayerSubmersion"/>이다.</para>
         /// </summary>
         private static bool TryGetWaterSurfaceY(out float waterSurfaceY)
         {
@@ -1053,6 +1079,100 @@ namespace Game.Gameplay.Player
             _horizontalVelocity = Vector3.zero;
         }
 
+        // ── 얼음 턱 기어오르기 (북극 지역 구현 계획 §5.4 · §8.1 ④) ─────────────────────────
+
+        /// <summary>턱을 찾을 때 앞으로 뻗는 거리(m) — 캡슐 반경 밖으로 살짝 나가면 충분하다.</summary>
+        private const float IceLedgeProbeReach = 0.75f;
+
+        /// <summary>턱 위 지점을 찾기 위해 벽 너머로 파고드는 거리(m).</summary>
+        private const float IceLedgeProbeInward = 0.55f;
+
+        /// <summary>올라선 뒤 안쪽으로 밀어 넣는 거리(m). 안 밀면 캡슐 절반이 허공이라 다시 미끄러진다.</summary>
+        private const float IceLedgeExitInward = 0.85f;
+
+        /// <summary>
+        /// 물에 잠긴 채 얼음 턱을 마주보고 점프하면 <b>기어오른다</b>.
+        ///
+        /// <para><b>왜 점프 키인가.</b> 새 키를 만들지 않는 이유는 여기서 점프가 이미 <b>소용없기</b>
+        /// 때문이다 — 1.2 m 로는 1.5 m 턱을 못 넘는다(얕은 물 바닥에서는 2.3 m). 눌러 봐야 안 되는
+        /// 자리에 대체 동작을 얹는 것이 배우기 쉽다.</para>
+        ///
+        /// <para>판정은 전부 <see cref="IceLedgeMantleLogic"/>이 소유하고, 여기서는 <b>레이캐스트 두 번</b>만 한다:
+        /// 앞으로 한 번(벽이 있는가) · 그 너머에서 아래로 한 번(턱 높이가 얼마인가).</para>
+        /// </summary>
+        private bool TryBeginIceMantle(Vector3 wishDirection)
+        {
+            if (_settings == null || _submersion == null || !_submersion.IsSubmerged)
+            {
+                return false;
+            }
+
+            // 바라보는 쪽을 기본으로 하되, 이동 입력이 있으면 그쪽이 우선이다.
+            Vector3 forward = wishDirection.sqrMagnitude > 0.01f ? wishDirection : transform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                return false;
+            }
+
+            forward.Normalize();
+
+            float feetY = transform.position.y;
+            Vector3 chest = transform.position + Vector3.up * 0.45f;
+            if (!Physics.Raycast(chest, forward, out RaycastHit wall,
+                    _characterController.radius + IceLedgeProbeReach, ~0, QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            if (!IceLedgeMantleLogic.IsClimbableWall(wall.normal))
+            {
+                return false;
+            }
+
+            // 벽 너머 위쪽에서 아래로 쏴 턱의 상면을 찾는다.
+            Vector3 above = wall.point + forward * IceLedgeProbeInward
+                + Vector3.up * (IceLedgeMantleLogic.DefaultMaxRise + 0.5f);
+            if (!Physics.Raycast(above, Vector3.down, out RaycastHit top,
+                    IceLedgeMantleLogic.DefaultMaxRise + 1.2f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            float ledgeY = top.point.y;
+            if (!IceLedgeMantleLogic.ShouldMantle(
+                    true, true, true, wall.normal, feetY, ledgeY, _settings.JumpHeight))
+            {
+                return false;
+            }
+
+            // 턱 위에 몸이 들어갈 자리가 있는가 — 처마 밑으로 기어들어 끼는 것을 막는다.
+            Vector3 standing = top.point + Vector3.up * 0.05f;
+            if (Physics.CheckCapsule(
+                    standing + Vector3.up * _characterController.radius,
+                    standing + Vector3.up * (IceLedgeMantleLogic.DefaultHeadroom - _characterController.radius),
+                    _characterController.radius * 0.85f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            Vector3 mantle = LadderClimbLogic.ComputeMantleMotion(
+                wall.normal, feetY, ledgeY, IceLedgeExitInward, LadderMantleClearance);
+
+            _characterController.Move(new Vector3(0f, mantle.y, 0f));
+
+            _mantleTimer = LadderMantleDuration;
+            _mantleVelocity = new Vector3(mantle.x, 0f, mantle.z) / LadderMantleDuration;
+
+            // 얼음은 지형 타일 소속이라 오르는 사이에도 뒤로 흐른다 — 안 실으면 허공에 내려선다.
+            _mantleWorldFrame = true;
+            _isSwimming = false;
+            _verticalSpeed = 0f;
+            _horizontalVelocity = Vector3.zero;
+            _groundGraceTimer = 0f;
+            return true;
+        }
+
         /// <summary>올려놓기를 중단한다 — 구속·사망·순간이동이 끼어들면 남은 이동을 버린다.</summary>
         private void CancelMantle()
         {
@@ -1148,6 +1268,15 @@ namespace Game.Gameplay.Player
                 car = null;
                 _standingOnWorldFrame = closestCollider != null
                     && closestCollider.GetComponentInParent<WorldFrameSurface>() != null;
+
+                // 표면 마찰도 같은 조회에서 나온다 (북극 계획 §5.5). 열차 갑판·지붕은 월드 소속이
+                // 아니라 여기 오지 않으므로 **자동으로 안 미끄러진다**(결정 ⑬).
+                _groundAcceleration = WorldFrameSurface.ResolveGroundAcceleration(closestCollider);
+            }
+            else
+            {
+                // 칸 위 — 갑판은 마찰이 무한이다.
+                _groundAcceleration = 0f;
             }
 
             // 다른 칸으로 옮겨 탔거나 칸에서 내려오면 위치 델타 추적을 리셋한다(엉뚱한 큰 델타 방지).

@@ -465,9 +465,32 @@ namespace Game.Gameplay.Monsters
             return false;
         }
 
+        /// <summary>발밑 보정 간격(초) — 웨이브 개체와 같은 값(북극 3차 §3.1).</summary>
+        private const float SupportProbeInterval = 0.25f;
+
+        private float _regionSurfaceY;
+        private float _supportProbeTimer;
+
         /// <summary>지상 고정 + 열차 관통 방지 + 이탈 리시(leash) — 보스가 무대를 벗어나지 않게 한다.</summary>
         private void ClampToGround()
         {
+            // 얼음과 물이 교차하는 지역(북극)에서는 지역 물면 단일값이 보스를 얼음에 묻는다.
+            // 물이 없는 지역은 SurfaceY 가 0이라 이 분기가 아예 돌지 않는다.
+            _regionSurfaceY = World.WaterSurfaceQuery.SurfaceY();
+            if (_regionSurfaceY >= 0f)
+            {
+                _surfaceY = _regionSurfaceY;
+            }
+            else
+            {
+                _supportProbeTimer -= Time.deltaTime;
+                if (_supportProbeTimer <= 0f)
+                {
+                    _supportProbeTimer = SupportProbeInterval;
+                    _surfaceY = GroundSupportProbe.Sample(transform.position, _regionSurfaceY);
+                }
+            }
+
             Vector3 position = transform.position;
             position.y = _surfaceY;
 
