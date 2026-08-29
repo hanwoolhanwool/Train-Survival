@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84fb8a448d024464e880623d9d66669b, type: 3}
   m_Name: Region_Arctic
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionDefinition
-  _displayName: "북극"
+  _displayName: "\uBD81\uADF9"
   _dayCount: 3
   _waveCountMultiplier: 1.7
   _monsterHealthMultiplier: 1.5
@@ -24,13 +24,17 @@ MonoBehaviour:
   _weatherChancePerDay: 0.7
   _stampedeChancePerDay: 0
   _bossDefinition: {fileID: 11400000, guid: 6b1f0a5c4d3e42f0a9c7b8d1e2f30404, type: 2}
+  _monsterVariantWeights: []
   _overridesFog: 1
   _dayFogColor: {r: 0.863, g: 0.91, b: 0.941, a: 1}
   _dayFogDensity: 0.0017
   _nightFogColor: {r: 0.165, g: 0.259, b: 0.341, a: 1}
   _nightFogDensity: 0.0017
+  _segmentPalette: {fileID: 11400000, guid: 1ef0a3afbbbef9e409638e8f9468fbdf, type: 2}
   _skyboxMaterial: {fileID: 2100000, guid: 332367d7b808f574f81d5daffd78ad02, type: 2}
   _terrainTilePrefab: {fileID: 4483235474033511132, guid: c8b2f5417d3e4a90b1c6d8e2f3a40517, type: 3}
+  _hasWater: 0
+  _waterSurfaceY: -4
   _resourceSpawns:
   - _type: 11
     _weight: 0.45
