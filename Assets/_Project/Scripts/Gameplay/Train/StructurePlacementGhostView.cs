@@ -206,7 +206,11 @@ namespace Game.Gameplay.Train
             for (int i = 0; i < components.Length; i++)
             {
                 Component component = components[i];
-                if (component == null || component is StructureView)
+
+                // 발자국 뷰는 남긴다 — 상태(StructureEntry)를 읽지 않고 <b>모양만</b> 맞추는
+                // 순수 표현이라 고스트에서도 그대로 쓴다. 이걸 떼면 가변 크기 프리뷰가
+                // 원본 크기 덩어리로 뜬다 (천막 계획 Play 3회차 결함 ②).
+                if (component == null || component is StructureView || component is IStructureFootprintView)
                 {
                     continue;
                 }

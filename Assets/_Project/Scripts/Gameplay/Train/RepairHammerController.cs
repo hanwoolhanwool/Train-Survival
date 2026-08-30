@@ -246,13 +246,17 @@ namespace Game.Gameplay.Train
             int cellZ = 0;
             bool placeAfford = false;
             bool placeOccupied = false;
-            bool canBuild = kind == TrainPartKind.Car
+            bool placeValid = false;
+            bool placeAiming = kind == TrainPartKind.Car
                 && TryUpdatePlacementAim(train, index, hit.point,
-                    out cellX, out cellZ, out placeAfford, out placeOccupied);
-            if (!canBuild)
+                    out cellX, out cellZ, out placeAfford, out placeOccupied, out placeValid);
+            if (!placeAiming)
             {
                 PublishNoPlaceAim();
             }
+
+            // 조준은 섰는데 자리가 막힌 상태 — 프리뷰는 빨갛게 남고 우클릭만 막힌다.
+            bool canBuild = placeAiming && placeValid;
 
             bool hasExpansion = ServiceLocator.TryGet(out ITrainExpansion expansion);
             int structureCost = hasExpansion ? expansion.GetStructureBuildCost(_selectedStructureKind) : 0;
@@ -290,12 +294,13 @@ namespace Game.Gameplay.Train
         /// 반환 = 지금 우클릭으로 설치가 성립하는지(그리드 판정 통과).
         /// </summary>
         private bool TryUpdatePlacementAim(ITrainState train, int carIndex, Vector3 hitPoint,
-            out int cellX, out int cellZ, out bool afford, out bool occupied)
+            out int cellX, out int cellZ, out bool afford, out bool occupied, out bool canPlace)
         {
             cellX = 0;
             cellZ = 0;
             afford = false;
             occupied = false;
+            canPlace = false;
 
             if (_layoutSettings == null || _structureCatalog == null
                 || !ServiceLocator.TryGet(out ITrainExpansion expansion))
@@ -388,7 +393,7 @@ namespace Game.Gameplay.Train
             }
 
             // 판정은 실제로 설 사각형 기준 — 커서 한 칸이 아니라 지어질 것을 본다.
-            bool canPlace = expansion.CanPlaceStructureSized(carIndex, ghostX, ghostZ, _previewRotation,
+            canPlace = expansion.CanPlaceStructureSized(carIndex, ghostX, ghostZ, _previewRotation,
                 _selectedStructureKind, ghostWidth, ghostLength);
 
             int cost;
@@ -419,7 +424,10 @@ namespace Game.Gameplay.Train
                 _selectedStructureKind, cost, afford, canPlace, occupied, ghostCenter, ghostSize,
                 ghostWidth, ghostLength));
 
-            return canPlace;
+            // 조준이 성립했다는 뜻이다 — 설치 가능 여부는 canPlace가 따로 나간다.
+            // 자리가 막혔어도 프리뷰는 <b>빨갛게 떠 있어야</b> 왜 못 짓는지 보인다
+            // (천막 계획 Play 3회차 결함 ①: 천막 위에 천막을 겨누면 고스트가 통째로 사라졌다).
+            return true;
         }
 
         /// <summary>
