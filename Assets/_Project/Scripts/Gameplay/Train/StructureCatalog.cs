@@ -63,6 +63,23 @@ namespace Game.Gameplay.Train
                 "세 번째 거치 무기는 에셋 추가만으로 성립한다(OCP).")]
             [SerializeField] private MountedWeaponSettings _mountedWeapon;
 
+            [Header("가변 크기 (천막 계획 1차)")]
+            [Tooltip("설치할 때 크기를 끌어서 정하는지 (천막 계획 결정 ②) — 켜면 우클릭 2회(시작·끝)로 " +
+                "발자국이 정해지고, 카탈로그 발자국은 최소값으로만 쓰인다.")]
+            [SerializeField] private bool _resizable;
+
+            [Tooltip("셀 1칸당 건축 비용 (천막 계획 결정 ⑤) — 0이면 크기와 무관하게 BuildCost 고정. " +
+                "가변 크기는 넓이가 곧 재료라, 0.25 = 셀 4칸당 1개.")]
+            [SerializeField, Min(0f)] private float _costPerCell;
+
+            [Tooltip("체온 효과가 닿는 범위 (천막 계획 결정 ③) — Car = 그 칸 어디서든(기존 규약), " +
+                "Footprint = 발자국 안에 있어야 한다.")]
+            [SerializeField] private ShelterScope _shelterScope = ShelterScope.Car;
+
+            [Tooltip("그리드에서 실제로 막는 셀 모양 (천막 계획 결정 ⑥) — Solid = 발자국 전체(기존 규약), " +
+                "Corners = 네 모서리만(천막 기둥). Corners면 안쪽에 다른 건축물이 들어간다.")]
+            [SerializeField] private StructureOccupancy _occupancy = StructureOccupancy.Solid;
+
             public StructureKind Kind => _kind;
 
             public string DisplayName => _displayName;
@@ -98,6 +115,18 @@ namespace Game.Gameplay.Train
 
             /// <summary>거치 무기 설정 (M7 4차 §2.1) — null이면 이 종류는 거치 무기가 아니다.</summary>
             public MountedWeaponSettings MountedWeapon => _mountedWeapon;
+
+            /// <summary>설치 시 크기를 끌어서 정하는지 (천막 계획 결정 ②).</summary>
+            public bool Resizable => _resizable;
+
+            /// <summary>셀 1칸당 건축 비용 (결정 ⑤) — 0이면 <see cref="BuildCost"/> 고정.</summary>
+            public float CostPerCell => _costPerCell;
+
+            /// <summary>체온 효과가 닿는 범위 (결정 ③) — 기본은 기존 규약인 칸 단위.</summary>
+            public ShelterScope ShelterScope => _shelterScope;
+
+            /// <summary>그리드에서 실제로 막는 셀 모양 (결정 ⑥) — 기본은 기존 규약인 발자국 전체.</summary>
+            public StructureOccupancy Occupancy => _occupancy;
         }
 
         [Tooltip("종류별 정의 — Kind 값으로 식별하므로 배열 순서는 자유다(설치 UI의 순환 순서로만 쓰인다).")]
@@ -177,6 +206,43 @@ namespace Game.Gameplay.Train
         {
             Entry entry = Find(kind);
             return entry != null && entry.Placeable;
+        }
+
+        /// <summary>
+        /// 설치 시 크기를 끌어서 정하는 종류인지 (천막 계획 결정 ②) — 미등재·기존 종류는 false라
+        /// 고정 발자국 경로가 그대로 돈다.
+        /// </summary>
+        public bool IsResizable(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null && entry.Resizable;
+        }
+
+        /// <summary>셀 1칸당 건축 비용 (결정 ⑤) — 0이면 크기와 무관한 고정 비용이다.</summary>
+        public float GetCostPerCell(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null ? entry.CostPerCell : 0f;
+        }
+
+        /// <summary>
+        /// 체온 효과가 닿는 범위 (결정 ③) — 미등재·기존 종류는 <see cref="ShelterScope.Car"/>라
+        /// 난방기·돔의 칸 단위 규약이 무수정으로 유지된다.
+        /// </summary>
+        public ShelterScope GetShelterScope(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null ? entry.ShelterScope : ShelterScope.Car;
+        }
+
+        /// <summary>
+        /// 그리드에서 실제로 막는 셀 모양 (결정 ⑥) — 미등재·기존 종류는
+        /// <see cref="StructureOccupancy.Solid"/>라 기존 8종의 설치 판정이 바뀌지 않는다.
+        /// </summary>
+        public StructureOccupancy GetOccupancy(StructureKind kind)
+        {
+            Entry entry = Find(kind);
+            return entry != null ? entry.Occupancy : StructureOccupancy.Solid;
         }
 
         /// <summary>

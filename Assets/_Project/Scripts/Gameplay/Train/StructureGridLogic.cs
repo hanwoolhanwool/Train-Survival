@@ -101,6 +101,23 @@ namespace Game.Gameplay.Train
             return FirstBodyColumn + Mathf.FloorToInt((worldX + bodyHalf) / cellSize);
         }
 
+        /// <summary>
+        /// 월드 Z가 놓이는 칸 안 행 좌표 — 범위 밖(연결부·칸 밖)도 그대로 돌려준다.
+        /// <see cref="TryWorldToPlacementCell"/>이 쓰는 행 식과 같은 것을 스냅 없이 노출한 것이라,
+        /// 설치 자리와 "지금 서 있는 자리"가 같은 좌표계를 쓴다 (천막 그늘 판정 — 계획 §4.4).
+        /// </summary>
+        public static int WorldZToRow(float worldZ, float carCenterZ, float carLength, float cellSize)
+        {
+            if (cellSize <= 0f)
+            {
+                return 0;
+            }
+
+            int rows = Rows(carLength, cellSize);
+            float rowSpanHalf = rows * cellSize * 0.5f;
+            return Mathf.FloorToInt((worldZ - (carCenterZ - rowSpanHalf)) / cellSize);
+        }
+
         /// <summary>그 열(모든 행)에 걸친 건축물이 하나라도 있는지 — 판자 제거 기각 판정.</summary>
         public static bool ColumnHasStructure(StructureEntry[] entries, int carIndex, int cellX)
         {
@@ -134,6 +151,52 @@ namespace Game.Gameplay.Train
             bool swapped = (rotation & 1) == 1;
             rotatedWidth = swapped ? length : width;
             rotatedLength = swapped ? width : length;
+        }
+
+        /// <summary>
+        /// 그 셀을 실제로 <b>막는가</b> (천막 계획 결정 ⑥) — 발자국 사각형 안이라도 점유 모양이
+        /// <see cref="StructureOccupancy.Corners"/>면 네 모서리 셀에서만 true다.
+        /// 발자국(덮는 범위)과 점유(막는 범위)를 가르는 유일한 지점이라, 설치 판정·그늘·비용이
+        /// 서로 다른 범위를 쓰면서도 한 함수를 근거로 삼는다.
+        /// </summary>
+        public static bool OccupiesCell(int originX, int originZ, int rotatedWidth, int rotatedLength,
+            StructureOccupancy occupancy, int cellX, int cellZ)
+        {
+            if (cellX < originX || cellX >= originX + rotatedWidth
+                || cellZ < originZ || cellZ >= originZ + rotatedLength)
+            {
+                return false;
+            }
+
+            if (occupancy != StructureOccupancy.Corners)
+            {
+                return true;
+            }
+
+            // 네 모서리 = 첫/끝 열이면서 동시에 첫/끝 행. 2x2면 네 셀이 전부 모서리라 Solid와 같아진다.
+            bool edgeX = cellX == originX || cellX == originX + rotatedWidth - 1;
+            bool edgeZ = cellZ == originZ || cellZ == originZ + rotatedLength - 1;
+            return edgeX && edgeZ;
+        }
+
+        /// <summary>항목이 그 셀을 막는지 — <see cref="OccupiesCell"/>에 항목의 회전·원점을 풀어 넘긴다.</summary>
+        public static bool EntryOccupiesCell(StructureEntry entry, StructureOccupancy occupancy, int cellX, int cellZ)
+        {
+            RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
+                out int rotatedWidth, out int rotatedLength);
+            return OccupiesCell(entry.CellX, entry.CellZ, rotatedWidth, rotatedLength, occupancy, cellX, cellZ);
+        }
+
+        /// <summary>
+        /// 발자국 사각형 안인지 — 점유 모양과 무관한 <b>덮는 범위</b> 판정 (천막 계획 결정 ③의 그늘 축).
+        /// 천막은 기둥만 막지만 그늘은 천 아래 전체에 든다.
+        /// </summary>
+        public static bool EntryCoversCell(StructureEntry entry, int cellX, int cellZ)
+        {
+            RotatedFootprint(entry.FootprintWidth, entry.FootprintLength, entry.Rotation,
+                out int rotatedWidth, out int rotatedLength);
+            return cellX >= entry.CellX && cellX < entry.CellX + rotatedWidth
+                && cellZ >= entry.CellZ && cellZ < entry.CellZ + rotatedLength;
         }
 
         /// <summary>
@@ -217,9 +280,16 @@ namespace Game.Gameplay.Train
                 && cellZ + rotatedLength <= rows;
         }
 
-        /// <summary>같은 칸 위 기존 항목들과 점유 셀이 교차하는지 — 셀 사각형 교차 판정.</summary>
-        private static bool OverlapsExisting(StructureEntry[] entries, int carIndex,
-            int cellX, int cellZ, int rotatedWidth, int rotatedLength)
+        /// <summary>
+        /// 같은 칸 위 기존 항목들과 <b>실제로 막는 셀</b>이 겹치는지.
+        /// 점유가 전부 <see cref="StructureOccupancy.Solid"/>이면 사각형 교차 한 번으로 끝나
+        /// 기존 8종의 판정 비용이 그대로다. 한쪽이라도 <see cref="StructureOccupancy.Corners"/>면
+        /// 겹치는 사각형 안에서만 셀 단위로 확인한다 — 천막 기둥 넷과 그 안쪽을 가르는 지점이다.
+        /// <paramref name="occupancies"/>가 null이면 전부 Solid로 본다(기존 호출 경로).
+        /// </summary>
+        private static bool OverlapsExisting(StructureEntry[] entries, StructureOccupancy[] occupancies,
+            int carIndex, int cellX, int cellZ, int rotatedWidth, int rotatedLength,
+            StructureOccupancy occupancy)
         {
             if (entries == null)
             {
@@ -238,9 +308,49 @@ namespace Game.Gameplay.Train
                     out int existingWidth, out int existingLength);
                 bool intersects = cellX < entry.CellX + existingWidth && entry.CellX < cellX + rotatedWidth
                     && cellZ < entry.CellZ + existingLength && entry.CellZ < cellZ + rotatedLength;
-                if (intersects)
+                if (!intersects)
+                {
+                    continue;
+                }
+
+                StructureOccupancy existing = occupancies != null && i < occupancies.Length
+                    ? occupancies[i]
+                    : StructureOccupancy.Solid;
+                if (occupancy != StructureOccupancy.Corners && existing != StructureOccupancy.Corners)
                 {
                     return true;
+                }
+
+                if (AnyOccupiedCellShared(entry, existing,
+                    cellX, cellZ, rotatedWidth, rotatedLength, occupancy,
+                    Mathf.Max(cellX, entry.CellX), Mathf.Max(cellZ, entry.CellZ),
+                    Mathf.Min(cellX + rotatedWidth, entry.CellX + existingWidth),
+                    Mathf.Min(cellZ + rotatedLength, entry.CellZ + existingLength)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 겹치는 사각형 안에서 <b>둘 다 막는 셀</b>이 하나라도 있는지. 사각형 교차가 이미 성립한
+        /// 구간만 훑으므로 최대 그리드 한 칸(6x13) 크기를 넘지 않는다.
+        /// </summary>
+        private static bool AnyOccupiedCellShared(StructureEntry entry, StructureOccupancy existing,
+            int cellX, int cellZ, int rotatedWidth, int rotatedLength, StructureOccupancy occupancy,
+            int minX, int minZ, int maxX, int maxZ)
+        {
+            for (int x = minX; x < maxX; x++)
+            {
+                for (int z = minZ; z < maxZ; z++)
+                {
+                    if (OccupiesCell(cellX, cellZ, rotatedWidth, rotatedLength, occupancy, x, z)
+                        && EntryOccupiesCell(entry, existing, x, z))
+                    {
+                        return true;
+                    }
                 }
             }
 
@@ -255,6 +365,23 @@ namespace Game.Gameplay.Train
         public static bool CanPlace(StructureEntry[] entries, CarState[] cars, int carIndex,
             int cellX, int cellZ, int rotation, StructureKind kind,
             int footprintWidth, int footprintLength, bool placeable,
+            float carWidth, float carLength, float cellSize)
+        {
+            return CanPlace(entries, null, cars, carIndex, cellX, cellZ, rotation, kind,
+                footprintWidth, footprintLength, placeable, StructureOccupancy.Solid,
+                carWidth, carLength, cellSize);
+        }
+
+        /// <summary>
+        /// 점유 모양을 반영한 설치 판정 (천막 계획 결정 ⑥). <paramref name="occupancies"/>는
+        /// <paramref name="entries"/>와 같은 순서의 기존 항목 점유 모양이고, null이면 전부
+        /// <see cref="StructureOccupancy.Solid"/>로 본다 — 위 오버로드(기존 8종 경로)가 그 경우다.
+        /// 순수 함수를 유지하려고 카탈로그 조회를 호출부가 미리 풀어 넘긴다.
+        /// </summary>
+        public static bool CanPlace(StructureEntry[] entries, StructureOccupancy[] occupancies,
+            CarState[] cars, int carIndex,
+            int cellX, int cellZ, int rotation, StructureKind kind,
+            int footprintWidth, int footprintLength, bool placeable, StructureOccupancy occupancy,
             float carWidth, float carLength, float cellSize)
         {
             if (entries == null || cars == null || carIndex < 0 || carIndex >= cars.Length
@@ -275,7 +402,8 @@ namespace Game.Gameplay.Train
 
             return IsWithinColumns(cellX, cellZ, rotatedWidth, rotatedLength, bodyColumns, rows,
                     car.LeftPlanks, car.RightPlanks)
-                && !OverlapsExisting(entries, carIndex, cellX, cellZ, rotatedWidth, rotatedLength);
+                && !OverlapsExisting(entries, occupancies, carIndex, cellX, cellZ,
+                    rotatedWidth, rotatedLength, occupancy);
         }
 
         /// <summary>항목이 살아 있는지 — 리스트 존재 = 설치이므로 방어적 체력 검사만 남는다.</summary>

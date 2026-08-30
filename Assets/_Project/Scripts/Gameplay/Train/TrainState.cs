@@ -38,6 +38,10 @@ namespace Game.Gameplay.Train
         // 호스트 전용 — 건축물 Id 발급 일련번호 (1부터, 0 = 무효). 철거·피해 RPC의 안정 참조 키.
         private ushort _nextStructureId = 1;
 
+        // 설치 판정용 점유 모양 버퍼 (천막 계획 결정 ⑥) — 순수 함수에 넘길 값을 매 프레임
+        // 새로 할당하지 않으려고 재사용한다. 항목 수보다 길 수 있고, 판정은 인덱스 범위로만 읽는다.
+        private StructureOccupancy[] _occupancyBuffer;
+
         // 이탈 칸이 슬롯 기준 뒤로 밀려난 거리(m) — 호스트가 시뮬레이션해 복제한다(손잡이-이탈저항 스펙 §6).
         private readonly NetworkList<float> _ejectOffsets = new NetworkList<float>();
 
@@ -890,15 +894,58 @@ namespace Game.Gameplay.Train
 
         public bool CanPlaceStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind)
         {
-            if (_layoutSettings == null || _structureCatalog == null)
+            if (_structureCatalog == null)
             {
                 return false;
             }
 
             _structureCatalog.GetFootprint(kind, out int width, out int length);
-            return StructureGridLogic.CanPlace(QueryStructures(), QueryCars(), carIndex,
+            return CanPlaceStructureSized(carIndex, cellX, cellZ, rotation, kind, width, length);
+        }
+
+        /// <summary>
+        /// 크기를 지정한 설치 판정 (천막 계획 §4.2) — 가변 크기 종류는 카탈로그 발자국이 최소값일 뿐이라
+        /// 실제 크기를 인자로 받는다. 점유 모양(<see cref="StructureOccupancy"/>)을 풀어 넘겨
+        /// 천막 안쪽이 빈 자리로 취급되게 한다(결정 ⑥).
+        /// </summary>
+        public bool CanPlaceStructureSized(int carIndex, int cellX, int cellZ, int rotation,
+            StructureKind kind, int width, int length)
+        {
+            if (_layoutSettings == null || _structureCatalog == null)
+            {
+                return false;
+            }
+
+            StructureEntry[] entries = QueryStructures();
+            return StructureGridLogic.CanPlace(entries, ResolveOccupancies(entries), QueryCars(), carIndex,
                 cellX, cellZ, rotation, kind, width, length, _structureCatalog.IsPlaceable(kind),
+                _structureCatalog.GetOccupancy(kind),
                 _layoutSettings.CarWidth, _layoutSettings.DeckLength, _layoutSettings.StructureCellSize);
+        }
+
+        /// <summary>
+        /// 기존 항목들의 점유 모양을 항목 순서대로 푼다 — 순수 판정 함수가 카탈로그를 모르게 하려고
+        /// 호출부에서 미리 풀어 넘기는 배열이다. 매 프레임 프리뷰가 호출하므로 버퍼를 재사용한다
+        /// (버퍼가 항목 수보다 길 수 있으나 판정은 인덱스 범위로만 읽는다).
+        /// </summary>
+        private StructureOccupancy[] ResolveOccupancies(StructureEntry[] entries)
+        {
+            if (entries == null)
+            {
+                return null;
+            }
+
+            if (_occupancyBuffer == null || _occupancyBuffer.Length < entries.Length)
+            {
+                _occupancyBuffer = new StructureOccupancy[Mathf.Max(8, entries.Length)];
+            }
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                _occupancyBuffer[i] = _structureCatalog.GetOccupancy(entries[i].Kind);
+            }
+
+            return _occupancyBuffer;
         }
 
         /// <summary>
@@ -907,12 +954,29 @@ namespace Game.Gameplay.Train
         /// </summary>
         public bool ServerTryBuildStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind)
         {
-            if (!IsServer || !CanPlaceStructure(carIndex, cellX, cellZ, rotation, kind))
+            if (_structureCatalog == null)
             {
                 return false;
             }
 
-            _structureCatalog.GetFootprint(kind, out int width, out int length);
+            _structureCatalog.GetFootprint(kind, out int catalogWidth, out int catalogLength);
+            return ServerTryBuildStructureSized(carIndex, cellX, cellZ, rotation, kind,
+                catalogWidth, catalogLength);
+        }
+
+        /// <summary>
+        /// 크기를 지정해 건축물 1채를 설치한다 (천막 계획 §4.2) — 가변 크기 종류(천막)는 드래그가 정한
+        /// 발자국이 항목에 실린다. 프리뷰와 같은 순수 판정(<see cref="CanPlaceStructureSized"/>)을
+        /// 다시 통과해야 확정되는 규약은 고정 크기 경로와 같다.
+        /// </summary>
+        public bool ServerTryBuildStructureSized(int carIndex, int cellX, int cellZ, int rotation,
+            StructureKind kind, int width, int length)
+        {
+            if (!IsServer || !CanPlaceStructureSized(carIndex, cellX, cellZ, rotation, kind, width, length))
+            {
+                return false;
+            }
+
             float structureMax = _structureCatalog.GetMaxHealth(kind, 1f);
             var entry = new StructureEntry
             {

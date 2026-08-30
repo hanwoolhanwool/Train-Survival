@@ -41,6 +41,17 @@ namespace Game.Gameplay.Train
         bool ServerTryBuildStructure(int carIndex, int cellX, int cellZ, int rotation, StructureKind kind);
 
         /// <summary>
+        /// 크기를 지정한 설치 판정 (천막 계획 §4.2) — 가변 크기 종류는 카탈로그 발자국이 최소값이라
+        /// 드래그가 정한 크기로 묻는다. 고정 크기 종류에 쓰면 카탈로그 값과 같은 값을 넘기면 된다.
+        /// </summary>
+        bool CanPlaceStructureSized(int carIndex, int cellX, int cellZ, int rotation,
+            StructureKind kind, int width, int length);
+
+        /// <summary>크기를 지정해 건축물 1채를 설치한다. 서버 전용 — 클라이언트 호출은 항상 false.</summary>
+        bool ServerTryBuildStructureSized(int carIndex, int cellX, int cellZ, int rotation,
+            StructureKind kind, int width, int length);
+
+        /// <summary>
         /// 이 종류의 건축물 철거 시 반환되는 자원 수 (건축 개편 2차 — 결정 ⑤) —
         /// floor(건설 비용 × 반환 비율). 자원 종류는 StructureCatalog가 정한다.
         /// </summary>
