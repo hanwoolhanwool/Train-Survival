@@ -335,8 +335,12 @@ namespace Game.Gameplay.Player
                     continue;
                 }
 
-                hasShade |= _structureCatalog.ProvidesShade(entry.Kind);
-                bool entryHeat = _structureCatalog.ProvidesHeat(entry.Kind);
+                // 효과 범위는 카탈로그가 소유한다 (천막 계획 결정 ③) — 난방기는 칸 어디서든,
+                // 천막은 천 아래여야 든다. 종류를 코드가 알지 않으므로 다음 그늘 건축물도 무수정이다.
+                hasShade |= _structureCatalog.ProvidesShade(entry.Kind)
+                    && IsWithinShelterScope(entry, position, carIndex, train);
+                bool entryHeat = _structureCatalog.ProvidesHeat(entry.Kind)
+                    && IsWithinShelterScope(entry, position, carIndex, train);
                 hasHeat |= entryHeat;
 
                 // 강화 난방로 (M7 3차 결정 ③-ⓑ) — "연료를 태우는 난방"이고 탱크에 연료가 남아 있을 때만
@@ -353,6 +357,37 @@ namespace Game.Gameplay.Player
                     return;
                 }
             }
+        }
+
+        /// <summary>
+        /// 그 항목의 효과가 지금 이 자리에 닿는지 (천막 계획 결정 ③).
+        /// <see cref="Train.ShelterScope.Car"/>(기본값·기존 8종)면 칸 위 어디서든 true라
+        /// 난방기·강화 난방로의 판정이 한 번도 바뀌지 않는다. <see cref="Train.ShelterScope.Footprint"/>는
+        /// 서 있는 셀이 항목의 <b>발자국</b> 안일 때만 true다 — 천막은 점유(기둥 넷)보다
+        /// 덮는 범위가 넓으므로 점유가 아니라 발자국으로 본다(결정 ⑥).
+        /// </summary>
+        private bool IsWithinShelterScope(in Train.StructureEntry entry, Vector3 position,
+            int carIndex, ITrainState train)
+        {
+            if (_structureCatalog.GetShelterScope(entry.Kind) != Train.ShelterScope.Footprint)
+            {
+                return true;
+            }
+
+            float cellSize = _trainLayout.StructureCellSize;
+            if (cellSize <= 0f)
+            {
+                return false;
+            }
+
+            // 설치 판정과 같은 좌표계를 쓴다 — TrainState.CanPlaceStructure도 DeckLength로 행을 센다.
+            int bodyColumns = Train.StructureGridLogic.BodyColumns(_trainLayout.CarWidth, cellSize);
+            int column = Train.StructureGridLogic.WorldXToColumn(position.x, bodyColumns, cellSize);
+            float carCenterZ = _trainLayout.CarCenterZ(carIndex, train.GetEjectOffset(carIndex));
+            int row = Train.StructureGridLogic.WorldZToRow(position.z, carCenterZ,
+                _trainLayout.DeckLength, cellSize);
+
+            return Train.StructureGridLogic.EntryCoversCell(entry, column, row);
         }
 
         /// <summary>
