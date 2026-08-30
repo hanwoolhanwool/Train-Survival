@@ -7128,6 +7128,7 @@ GameObject:
   - component: {fileID: 1704432528}
   - component: {fileID: 1704432529}
   - component: {fileID: 1704432530}
+  - component: {fileID: 1704432540}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -9145,3 +9146,17 @@ SceneRoots:
   - {fileID: 1704432602}
   - {fileID: 1704432603}
   - {fileID: 1704432604}
+--- !u!114 &1704432540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cccc67bf7cc98c545bb98851d40fa348, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.EnvironmentWindController
+  _nightScale: 0.45
+  _changeRatePerSecond: 0.6
