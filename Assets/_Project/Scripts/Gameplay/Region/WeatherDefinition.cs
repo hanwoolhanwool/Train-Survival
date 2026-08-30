@@ -34,6 +34,10 @@ namespace Game.Gameplay.Region
             "기본 1 = 개입 없음.")]
         [SerializeField, Range(0.1f, 1f)] private float _harpoonRangeMultiplier = 1f;
 
+        [Tooltip("이 날씨가 부는 동안의 바람 배율 (천막 계획 3차) — 1이 맑은 날 기준이다. " +
+            "모래폭풍처럼 몰아치는 날씨는 크게 잡는다. 0이면 맑음과 같이 본다(미배선 소급).")]
+        [SerializeField, Min(0f)] private float _windScale = 1f;
+
         public string DisplayName => _displayName;
 
         public float ScrollSpeedMultiplier => _scrollSpeedMultiplier;
@@ -47,6 +51,9 @@ namespace Game.Gameplay.Region
 
         /// <summary>집게 사거리 배율 (M7 3차 폭설). 1 = 개입 없음.</summary>
         public float HarpoonRangeMultiplier => _harpoonRangeMultiplier;
+
+        /// <summary>이 날씨가 부는 동안의 바람 배율 (3차) — 0이면 맑음과 같다(값을 안 넣은 기존 에셋).</summary>
+        public float WindScale => _windScale;
 
         /// <summary>발생 시 지속 시간을 무작위로 뽑는다 (호스트 전용 — 결과는 복제로 전파된다).</summary>
         public float RollDurationSeconds()

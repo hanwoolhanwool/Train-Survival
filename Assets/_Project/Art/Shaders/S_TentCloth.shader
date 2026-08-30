@@ -45,6 +45,11 @@ Shader "Train Survival/Tent Cloth"
             float4 _AmbientFloor;
         CBUFFER_END
 
+        // 환경 바람 배율 — EnvironmentWindController가 날씨·국면을 보고 밀어 준다 (3차).
+        // UnityPerMaterial <b>바깥</b>에 둔다: 머티리얼마다 다른 값이 아니라 씬 전체가 한 값을 쓰므로
+        // 천막이 몇 채든 배칭이 깨지지 않고, 공유 머티리얼 에셋을 런타임에 고칠 일도 없다.
+        float _GlobalWindScale;
+
         // 천을 미는 양 — 가장자리(기둥에 묶인 곳)에서 0, 가운데에서 최대.
         // 두 방향 사인을 겹쳐 같은 자리로 되돌아오는 주기를 길게 만든다.
         float3 WindOffset(float3 positionOS, float2 uv)
@@ -53,10 +58,14 @@ Shader "Train Survival/Tent Cloth"
             // 들쭉날쭉해져 가장자리가 찢어져 보인다. 변마다 0으로 균일하게 내려가야 한다.
             float2 d = abs(uv - 0.5) * 2.0;
             float edgeFade = saturate((1.0 - d.x * d.x) * (1.0 - d.y * d.y));
-            float t = _Time.y * _WindSpeed;
+            // 컨트롤러가 없는 씬(뷰랩·프리뷰)에서는 전역이 0이라 천이 굳는다 — 그때는 1로 본다.
+            float envWind = _GlobalWindScale > 0.0001 ? _GlobalWindScale : 1.0;
+
+            // 세기뿐 아니라 속도도 함께 오른다 — 폭풍은 크게, 그리고 빠르게 흔든다.
+            float t = _Time.y * _WindSpeed * lerp(1.0, envWind, 0.5);
             float wave = sin((uv.x + uv.y) * _WindScale + t)
                        + 0.5 * sin((uv.x - uv.y) * _WindScale * 1.7 - t * 1.3);
-            return float3(0, wave * _WindStrength * edgeFade, 0);
+            return float3(0, wave * _WindStrength * envWind * edgeFade, 0);
         }
         ENDHLSL
 
