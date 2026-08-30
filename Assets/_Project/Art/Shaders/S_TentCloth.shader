@@ -49,8 +49,10 @@ Shader "Train Survival/Tent Cloth"
         // 두 방향 사인을 겹쳐 같은 자리로 되돌아오는 주기를 길게 만든다.
         float3 WindOffset(float3 positionOS, float2 uv)
         {
-            float2 centered = uv - 0.5;
-            float edgeFade = saturate(1.0 - dot(centered, centered) * 4.0);
+            // 감쇠는 <b>사각형</b> 기준이다 — 반지름(원) 기준으로 접으면 네 변을 따라 진폭이
+            // 들쭉날쭉해져 가장자리가 찢어져 보인다. 변마다 0으로 균일하게 내려가야 한다.
+            float2 d = abs(uv - 0.5) * 2.0;
+            float edgeFade = saturate((1.0 - d.x * d.x) * (1.0 - d.y * d.y));
             float t = _Time.y * _WindSpeed;
             float wave = sin((uv.x + uv.y) * _WindScale + t)
                        + 0.5 * sin((uv.x - uv.y) * _WindScale * 1.7 - t * 1.3);

@@ -145,8 +145,12 @@ namespace Game.Tests.EditMode
                 {
                     if (child.name == "Canopy")
                     {
-                        Assert.AreEqual(4f, child.localScale.x, 0.001f, "천이 발자국만큼 늘어야 한다");
-                        Assert.AreEqual(13f, child.localScale.z, 0.001f);
+                        // 천은 발자국 전체가 아니라 <b>기둥 사이 + 처마</b>다.
+                        // 발자국 끝까지 늘리면 기둥보다 반 칸씩 밖으로 떠 찢어져 보인다(Play 4회차).
+                        Assert.Less(child.localScale.x, 4f, "천이 발자국 끝까지 뻗으면 안 된다");
+                        Assert.Greater(child.localScale.x, 3f, "기둥 사이(3 m)보다는 처마만큼 넓어야 한다");
+                        Assert.Less(child.localScale.z, 13f);
+                        Assert.Greater(child.localScale.z, 12f);
                         continue;
                     }
 
