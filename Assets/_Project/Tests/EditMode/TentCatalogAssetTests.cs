@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Game.Gameplay.Train;
 using NUnit.Framework;
 using UnityEditor;
@@ -122,6 +123,81 @@ namespace Game.Tests.EditMode
             var footprintView = prefab.GetComponent<IStructureFootprintView>();
             Assert.IsNotNull(footprintView,
                 "발자국 뷰가 없으면 어떤 크기로 지어도 프리팹 원본 크기로 선다");
+        }
+
+        [Test]
+        public void 발자국을_주면_기둥_넷이_모서리_끝으로_간다()
+        {
+            // Play에서 실제로 터진 결함의 계기 — 기둥 넷이 한 점에 겹쳐 "기둥 하나"로 보였다.
+            // 원인은 스포너가 TryGetComponent로 인터페이스를 찾은 것(조용히 실패)이었다.
+            StructureCatalog catalog = LoadCatalog();
+            GameObject prefab = catalog.GetViewPrefab(StructureKind.Tent);
+            var instance = Object.Instantiate(prefab);
+
+            try
+            {
+                var view = instance.GetComponent<IStructureFootprintView>();
+                Assert.IsNotNull(view, "발자국 뷰가 없으면 어떤 크기로 지어도 원본 크기로 선다");
+                view.ApplyFootprint(4, 13, 1f); // 칸 하나를 통째로 덮은 천막
+
+                var seen = new List<Vector3>();
+                foreach (Transform child in instance.transform)
+                {
+                    if (child.name == "Canopy")
+                    {
+                        Assert.AreEqual(4f, child.localScale.x, 0.001f, "천이 발자국만큼 늘어야 한다");
+                        Assert.AreEqual(13f, child.localScale.z, 0.001f);
+                        continue;
+                    }
+
+                    seen.Add(child.localPosition);
+                }
+
+                Assert.AreEqual(4, seen.Count, "기둥은 넷이다");
+                for (int i = 0; i < seen.Count; i++)
+                {
+                    // 4×13 발자국의 모서리 셀 중심 = (±1.5, ±6).
+                    Assert.AreEqual(1.5f, Mathf.Abs(seen[i].x), 0.001f, "기둥이 폭 모서리에 있어야 한다");
+                    Assert.AreEqual(6f, Mathf.Abs(seen[i].z), 0.001f, "기둥이 길이 모서리에 있어야 한다");
+
+                    for (int j = i + 1; j < seen.Count; j++)
+                    {
+                        Assert.Greater((seen[i] - seen[j]).sqrMagnitude, 0.01f,
+                            "기둥 둘이 같은 자리에 있으면 '기둥 하나'로 보인다");
+                    }
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void 프리팹_기본_상태에서도_기둥이_겹치지_않는다()
+        {
+            // 방어선 — 발자국이 적용되지 않는 경로가 생기더라도 천막 꼴은 유지되어야 한다.
+            StructureCatalog catalog = LoadCatalog();
+            GameObject prefab = catalog.GetViewPrefab(StructureKind.Tent);
+
+            var seen = new List<Vector3>();
+            foreach (Transform child in prefab.transform)
+            {
+                if (child.name != "Canopy")
+                {
+                    seen.Add(child.localPosition);
+                }
+            }
+
+            Assert.AreEqual(4, seen.Count);
+            for (int i = 0; i < seen.Count; i++)
+            {
+                for (int j = i + 1; j < seen.Count; j++)
+                {
+                    Assert.Greater((seen[i] - seen[j]).sqrMagnitude, 0.01f,
+                        "프리팹 원본에서 기둥이 한 점에 모여 있으면 안 된다");
+                }
+            }
         }
 
         [Test]

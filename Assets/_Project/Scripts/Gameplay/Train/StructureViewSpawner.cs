@@ -151,7 +151,10 @@ namespace Game.Gameplay.Train
 
             // 가변 크기 종류(천막)는 프리팹 하나가 여러 크기로 선다 — 실제 발자국을 뷰에 알린다.
             // 회전은 위에서 Transform에 이미 걸었으므로 회전 전 값을 넘긴다 (천막 계획 §4.7).
-            if (view.TryGetComponent(out IStructureFootprintView footprintView))
+            // GetComponent를 쓴다 — TryGetComponent는 <b>인터페이스를 찾지 못한다</b>.
+            // 조용히 false를 돌려주므로 천막이 프리팹 원본 크기(기둥 넷이 한 점에 겹친 상태)로 선다.
+            var footprintView = view.GetComponent<IStructureFootprintView>();
+            if (footprintView != null)
             {
                 footprintView.ApplyFootprint(entry.FootprintWidth, entry.FootprintLength,
                     _layoutSettings.StructureCellSize);

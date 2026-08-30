@@ -341,11 +341,13 @@ namespace Game.Gameplay.Train
             StructureGridLogic.RotatedFootprint(width, length, _previewRotation,
                 out int rotatedWidth, out int rotatedLength);
 
-            // 가변 크기의 <b>첫 우클릭은 기둥 하나를 꽂는 것</b>이라 그 셀 1칸만 보면 된다
-            // (천막 계획 결정 ⑤′). 카탈로그 최소 발자국(2×2)으로 판정하면 옆 세 칸이 막혔다는
-            // 이유로 시작점조차 못 잡는다 — 정작 그 세 칸은 기둥이 설 자리도 아니다.
-            bool startingDrag = _structureCatalog.IsResizable(_selectedStructureKind) && _dragAnchorCar < 0;
-            if (startingDrag)
+            // 가변 크기에서 <b>커서는 기둥 하나가 갈 자리</b>다 (천막 계획 결정 ⑤′).
+            // 카탈로그 최소 발자국(2×2)으로 스냅하면 두 가지가 한꺼번에 망가진다 —
+            //  · 시작점: 기둥이 설 자리도 아닌 옆 세 칸이 막혔다는 이유로 첫 클릭이 기각된다
+            //  · 끝점: 스냅 클램프가 발자국만큼 안쪽으로 물러나 <b>격자 마지막 열·행에 커서가 닿지 않는다</b>
+            //    (본체 4열이면 3열까지, 13행이면 12행까지 — 칸을 끝까지 덮을 수 없다)
+            // 실제 크기는 두 점이 정하므로 커서 판정은 언제나 1칸이다.
+            if (_structureCatalog.IsResizable(_selectedStructureKind))
             {
                 rotatedWidth = 1;
                 rotatedLength = 1;
