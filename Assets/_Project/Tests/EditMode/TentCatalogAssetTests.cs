@@ -201,6 +201,27 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void 발자국_뷰는_StructureView에_의존을_선언하지_않는다()
+        {
+            // 고스트 프리뷰는 상태 바인딩(StructureView)을 떼고 모양만 남긴다.
+            // 발자국 뷰가 RequireComponent로 의존을 선언하면 그 제거가 막혀
+            // "Can't remove StructureView because ... depends on it"으로 터진다 (Play 4회차).
+            StructureCatalog catalog = LoadCatalog();
+            GameObject prefab = catalog.GetViewPrefab(StructureKind.Tent);
+            var view = prefab.GetComponent<IStructureFootprintView>();
+            Assert.IsNotNull(view);
+
+            var attributes = view.GetType().GetCustomAttributes(typeof(RequireComponent), true);
+            foreach (RequireComponent require in attributes)
+            {
+                Assert.AreNotEqual(typeof(StructureView), require.m_Type0,
+                    "발자국 뷰는 StructureView 없이도 혼자 서야 한다 (고스트 프리뷰)");
+                Assert.AreNotEqual(typeof(StructureView), require.m_Type1);
+                Assert.AreNotEqual(typeof(StructureView), require.m_Type2);
+            }
+        }
+
+        [Test]
         public void 천막_프리팹에는_콜라이더가_없다()
         {
             StructureCatalog catalog = LoadCatalog();

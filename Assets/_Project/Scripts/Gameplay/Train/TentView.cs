@@ -10,7 +10,11 @@ namespace Game.Gameplay.Train
     /// 콜라이더를 두지 않는다 — 점유가 기둥뿐이라도 사람은 천막을 그냥 통과해 걸어야 한다(결정 ⑥).
     /// 피해 표적면은 <see cref="StructureView"/>가 소유하므로 여기서는 모양만 맡는다.
     /// </summary>
-    [RequireComponent(typeof(StructureView))]
+    // RequireComponent를 달지 않는다 — 이 뷰는 StructureView의 API를 하나도 쓰지 않고,
+    // 고스트 프리뷰에서는 <b>StructureView 없이 혼자</b> 살아야 하기 때문이다.
+    // 프리뷰 사본은 상태 바인딩을 떼는데, 의존을 선언해 두면 StructureView를 떼지 못해
+    // "Can't remove StructureView because TentView depends on it"으로 막힌다.
+    // 실물 프리팹에는 둘이 함께 붙고, 그 배선은 TentCatalogAssetTests가 지킨다.
     public sealed class TentView : MonoBehaviour, IStructureFootprintView
     {
         [Tooltip("천(지붕) — 발자국만큼 X·Z로 늘어난다.")]
