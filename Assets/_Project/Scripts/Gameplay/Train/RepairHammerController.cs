@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Combat;
@@ -57,6 +58,15 @@ namespace Game.Gameplay.Train
 
         // 설치 프리뷰 회전 (건축 개편 1차 — Q/E, 0~3 × 90°). 종류 변경·망치 해제 시 0으로 리셋한다.
         private int _previewRotation;
+
+        // 가변 크기 드래그 앵커 (천막 계획 결정 ②) — 첫 우클릭이 시작 셀을 잡고 두 번째가 확정한다.
+        // -1 = 앵커 없음. 종류를 바꾸거나 갑판에서 조준이 벗어나면 취소한다.
+        private int _dragAnchorCar = -1;
+        private int _dragAnchorX;
+        private int _dragAnchorZ;
+
+        // 드래그를 칸별로 자른 조각 버퍼 (서버 전용) — 설치 확정마다 새로 채워 쓴다.
+        private List<ResizablePlacementLogic.Span> _dragSpans;
 
         // X 홀드 철거 게이지 (건축 개편 2·3차 — 결정 ④). 건축물과 판자가 같은 규약을 쓰되 표적이
         // 달라 게이지만 둘로 나눈다 (상태 기계는 HoldGauge 하나).
@@ -265,9 +275,9 @@ namespace Game.Gameplay.Train
                 RequestRepairServerRpc(kind, index, hit.point);
             }
 
-            if (mouse.rightButton.wasPressedThisFrame && canBuild && placeAfford && !placeOccupied)
+            if (mouse.rightButton.wasPressedThisFrame && canBuild)
             {
-                RequestBuildStructureServerRpc(index, cellX, cellZ, _previewRotation, _selectedStructureKind);
+                HandleBuildClick(index, cellX, cellZ, placeAfford, placeOccupied);
             }
         }
 
@@ -307,6 +317,9 @@ namespace Game.Gameplay.Train
                 {
                     _selectedStructureKind = _structureCatalog.NextPlaceableKind(_selectedStructureKind);
                     _previewRotation = 0;
+
+                    // 종류가 바뀌면 잡아 둔 드래그 시작점은 의미가 없다 (천막 계획 §4.2).
+                    ClearDragAnchor();
                 }
 
                 // 설치 회전 (Q/E — 90° 단위, 계획서 §0-2). 프리뷰에 즉시 반영된다.
@@ -338,16 +351,44 @@ namespace Game.Gameplay.Train
                 return false;
             }
 
-            bool canPlace = expansion.CanPlaceStructure(carIndex, cellX, cellZ, _previewRotation, _selectedStructureKind);
+            bool resizable = _structureCatalog.IsResizable(_selectedStructureKind);
 
-            int cost = expansion.GetStructureBuildCost(_selectedStructureKind);
+            // 가변 크기 드래그 중 — 시작점~커서 사각형으로 프리뷰를 늘린다 (천막 계획 §4.2).
+            // 앵커가 다른 칸이면 이 칸 몫을 아직 모르므로 기본 크기로 두고, 확정은 서버가 칸별로 자른다.
+            if (resizable && _dragAnchorCar == carIndex)
+            {
+                int dragX = Mathf.Min(_dragAnchorX, cellX);
+                int dragZ = Mathf.Min(_dragAnchorZ, cellZ);
+                rotatedWidth = Mathf.Max(ResizablePlacementLogic.MinSide, Mathf.Abs(cellX - _dragAnchorX) + 1);
+                rotatedLength = Mathf.Max(ResizablePlacementLogic.MinSide, Mathf.Abs(cellZ - _dragAnchorZ) + 1);
+
+                ResizablePlacementLogic.ClampToColumns(ref dragX, ref rotatedWidth,
+                    StructureGridLogic.FirstBodyColumn - StructureGridLogic.ClampPlankColumns(aimedCar.LeftPlanks),
+                    StructureGridLogic.BodyColumns(_layoutSettings.CarWidth, cellSize)
+                        + StructureGridLogic.ClampPlankColumns(aimedCar.LeftPlanks)
+                        + StructureGridLogic.ClampPlankColumns(aimedCar.RightPlanks));
+
+                cellX = dragX;
+                cellZ = Mathf.Min(dragZ,
+                    Mathf.Max(0, StructureGridLogic.Rows(_layoutSettings.DeckLength, cellSize) - rotatedLength));
+            }
+
+            bool canPlace = expansion.CanPlaceStructureSized(carIndex, cellX, cellZ, _previewRotation,
+                _selectedStructureKind, rotatedWidth, rotatedLength);
+
+            int cost = resizable
+                ? ResizablePlacementLogic.ResolveCost(rotatedWidth * rotatedLength,
+                    _structureCatalog.GetCostPerCell(_selectedStructureKind),
+                    expansion.GetStructureBuildCost(_selectedStructureKind))
+                : expansion.GetStructureBuildCost(_selectedStructureKind);
             afford = CanAfford(cost);
 
             StructureGhostVolume(cellX, cellZ, rotatedWidth, rotatedLength, centerZ,
                 out Vector3 ghostCenter, out Vector3 ghostSize);
 
             // 자리 점유 판정 — 프리뷰 테두리와 같은 상자다 (칸 건설과 같은 규약: 테두리 안이 비어야 지어진다).
-            occupied = IsVolumeOccupied(ghostCenter, ghostSize);
+            // 천막은 예외다: 지붕이라 사람·몬스터 위로 덮을 수 있어야 한다 (결정 ⑥ — 점유는 기둥뿐).
+            occupied = !resizable && IsVolumeOccupied(ghostCenter, ghostSize);
 
             PublishPlaceAim(new StructurePlaceAimLocalEvent(true, carIndex, cellX, cellZ, _previewRotation,
                 _selectedStructureKind, cost, afford, canPlace, occupied, ghostCenter, ghostSize));
@@ -907,6 +948,161 @@ namespace Game.Gameplay.Train
         /// (자원 차감 + 설치)를 원자적으로 확정한다. 설치 실패 시 자원을 되돌린다.
         /// 조작된 셀·종류 값은 그리드 판정·카탈로그 재검증에서 기각된다.
         /// </summary>
+        /// <summary>
+        /// 설치 우클릭 — 고정 크기 종류는 즉시 확정하고, 가변 크기 종류(천막)는 <b>두 번</b> 받는다
+        /// (천막 계획 결정 ②): 첫 클릭이 시작 셀을 잡고 두 번째가 범위를 확정한다.
+        /// 앵커 시점에는 크기가 없으므로 비용·점유 판정을 걸지 않는다 — 확정 때 서버가 전부 다시 본다.
+        /// </summary>
+        private void HandleBuildClick(int carIndex, int cellX, int cellZ, bool afford, bool occupied)
+        {
+            if (_structureCatalog == null)
+            {
+                return;
+            }
+
+            if (!_structureCatalog.IsResizable(_selectedStructureKind))
+            {
+                if (afford && !occupied)
+                {
+                    RequestBuildStructureServerRpc(carIndex, cellX, cellZ, _previewRotation, _selectedStructureKind);
+                }
+
+                return;
+            }
+
+            if (_dragAnchorCar < 0)
+            {
+                _dragAnchorCar = carIndex;
+                _dragAnchorX = cellX;
+                _dragAnchorZ = cellZ;
+                return;
+            }
+
+            RequestBuildResizableServerRpc(_dragAnchorCar, _dragAnchorX, _dragAnchorZ,
+                carIndex, cellX, cellZ, _selectedStructureKind);
+            ClearDragAnchor();
+        }
+
+        /// <summary>드래그 앵커를 버린다 — 종류 변경·망치 해제·조준 이탈에서 부른다.</summary>
+        private void ClearDragAnchor()
+        {
+            _dragAnchorCar = -1;
+        }
+
+        /// <summary>
+        /// 가변 크기 설치 (천막 계획 §4.2·§4.3) — 드래그 사각형을 칸별 조각으로 잘라 <b>칸마다 한 채</b>를
+        /// 세운다. 비용은 조각 합계로 <b>한 번</b> 계산해 원자적으로 지불한다(칸마다 올림하면
+        /// 쪼개질수록 비싸진다). 조각별 자리 판정은 고정 크기 경로와 같은 순수 함수를 다시 통과한다.
+        ///
+        /// 사거리는 <b>확정 지점</b>만 본다 — 열차 전체를 덮는 차양은 반대쪽 끝이 망치 사거리 밖이라
+        /// 전 조각을 검사하면 설계가 성립하지 않는다. 조작 방어는 그리드·자원 판정이 맡는다.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        private void RequestBuildResizableServerRpc(int anchorCar, int anchorX, int anchorZ,
+            int cursorCar, int cursorX, int cursorZ, StructureKind structureKind,
+            RpcParams rpcParams = default)
+        {
+            if (_settings == null || _layoutSettings == null || _structureCatalog == null
+                || !IsSenderAlive()
+                || !_structureCatalog.IsResizable(structureKind)
+                || !ServiceLocator.TryGet(out ITrainExpansion expansion)
+                || !ServiceLocator.TryGet(out ITrainState train))
+            {
+                return;
+            }
+
+            float cellSize = _layoutSettings.StructureCellSize;
+            int rows = StructureGridLogic.Rows(_layoutSettings.DeckLength, cellSize);
+            if (_dragSpans == null)
+            {
+                _dragSpans = new List<ResizablePlacementLogic.Span>();
+            }
+
+            ResizablePlacementLogic.ResolveSpans(anchorCar, anchorX, anchorZ,
+                cursorCar, cursorX, cursorZ, rows, _dragSpans);
+            if (_dragSpans.Count == 0)
+            {
+                return;
+            }
+
+            // 확정 지점 사거리 — 조각 하나하나가 아니라 지금 겨눈 자리 기준이다(위 주석).
+            float cursorCenterZ = _layoutSettings.CarCenterZ(cursorCar, train.GetEjectOffset(cursorCar));
+            StructureGridLogic.CellRegionCenterWorld(cursorX, cursorZ, 1, 1, cursorCenterZ,
+                _layoutSettings.CarWidth, _layoutSettings.DeckLength, cellSize,
+                out float cursorWorldX, out float cursorWorldZ);
+            if (!IsWithinRange(new Vector3(cursorWorldX, _layoutSettings.DeckHeight, cursorWorldZ)))
+            {
+                return;
+            }
+
+            int totalCells = ClampSpansToGrid(train, expansion, structureKind);
+            if (totalCells <= 0)
+            {
+                return;
+            }
+
+            int cost = ResizablePlacementLogic.ResolveCost(totalCells,
+                _structureCatalog.GetCostPerCell(structureKind),
+                expansion.GetStructureBuildCost(structureKind));
+
+            IResourceInventory inventory = _inventory;
+            inventory?.ServerTrySpend(cost, () => BuildResolvedSpans(expansion, structureKind));
+        }
+
+        /// <summary>
+        /// 조각들을 그 칸의 유효 열로 자르고 설치 불가한 것을 걷어낸 뒤, 남은 셀 수를 돌려준다.
+        /// 유효 열은 칸마다 다르다(판자 증축) — 확정 시점의 칸 상태로 다시 잰다.
+        /// </summary>
+        private int ClampSpansToGrid(ITrainState train, ITrainExpansion expansion, StructureKind structureKind)
+        {
+            int bodyColumns = StructureGridLogic.BodyColumns(
+                _layoutSettings.CarWidth, _layoutSettings.StructureCellSize);
+
+            for (int i = _dragSpans.Count - 1; i >= 0; i--)
+            {
+                ResizablePlacementLogic.Span span = _dragSpans[i];
+                int left = 0;
+                int right = 0;
+                if (train.TryGetCar(span.CarIndex, out CarState car))
+                {
+                    left = StructureGridLogic.ClampPlankColumns(car.LeftPlanks);
+                    right = StructureGridLogic.ClampPlankColumns(car.RightPlanks);
+                }
+
+                int cellX = span.CellX;
+                int width = span.Width;
+                ResizablePlacementLogic.ClampToColumns(ref cellX, ref width,
+                    StructureGridLogic.FirstBodyColumn - left, bodyColumns + left + right);
+
+                span.CellX = cellX;
+                span.Width = width;
+                if (width <= 0 || !expansion.CanPlaceStructureSized(span.CarIndex, span.CellX, span.CellZ,
+                    0, structureKind, span.Width, span.Length))
+                {
+                    _dragSpans.RemoveAt(i);
+                    continue;
+                }
+
+                _dragSpans[i] = span;
+            }
+
+            return ResizablePlacementLogic.TotalCells(_dragSpans);
+        }
+
+        /// <summary>남은 조각을 전부 세운다 — 하나도 못 세우면 false라 자원이 차감되지 않는다.</summary>
+        private bool BuildResolvedSpans(ITrainExpansion expansion, StructureKind structureKind)
+        {
+            bool any = false;
+            for (int i = 0; i < _dragSpans.Count; i++)
+            {
+                ResizablePlacementLogic.Span span = _dragSpans[i];
+                any |= expansion.ServerTryBuildStructureSized(span.CarIndex, span.CellX, span.CellZ,
+                    0, structureKind, span.Width, span.Length);
+            }
+
+            return any;
+        }
+
         [Rpc(SendTo.Server)]
         private void RequestBuildStructureServerRpc(int carIndex, int cellX, int cellZ, int rotation,
             StructureKind structureKind, RpcParams rpcParams = default)

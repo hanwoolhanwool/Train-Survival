@@ -148,6 +148,14 @@ namespace Game.Gameplay.Train
             }
 
             view.Bind(entry);
+
+            // 가변 크기 종류(천막)는 프리팹 하나가 여러 크기로 선다 — 실제 발자국을 뷰에 알린다.
+            // 회전은 위에서 Transform에 이미 걸었으므로 회전 전 값을 넘긴다 (천막 계획 §4.7).
+            if (view.TryGetComponent(out IStructureFootprintView footprintView))
+            {
+                footprintView.ApplyFootprint(entry.FootprintWidth, entry.FootprintLength,
+                    _layoutSettings.StructureCellSize);
+            }
             _views.Add(entry.Id, view);
         }
 
