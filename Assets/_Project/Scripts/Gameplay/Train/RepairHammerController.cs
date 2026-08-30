@@ -68,6 +68,9 @@ namespace Game.Gameplay.Train
         // 드래그를 칸별로 자른 조각 버퍼 (서버 전용) — 설치 확정마다 새로 채워 쓴다.
         private List<ResizablePlacementLogic.Span> _dragSpans;
 
+        // 같은 조각 계산의 소유자 전용 버퍼 (프리뷰) — 서버 버퍼와 섞이지 않게 따로 둔다.
+        private List<ResizablePlacementLogic.Span> _previewSpans;
+
         // X 홀드 철거 게이지 (건축 개편 2·3차 — 결정 ④). 건축물과 판자가 같은 규약을 쓰되 표적이
         // 달라 게이지만 둘로 나눈다 (상태 기계는 HoldGauge 하나).
         private HoldGauge _demolishHold;
@@ -353,34 +356,33 @@ namespace Game.Gameplay.Train
 
             bool resizable = _structureCatalog.IsResizable(_selectedStructureKind);
 
-            // 가변 크기 드래그 중 — 시작점~커서 사각형으로 프리뷰를 늘린다 (천막 계획 §4.2).
-            // 앵커가 다른 칸이면 이 칸 몫을 아직 모르므로 기본 크기로 두고, 확정은 서버가 칸별로 자른다.
-            if (resizable && _dragAnchorCar == carIndex)
+            // 가변 크기 드래그 중 — 서버와 <b>같은 함수</b>로 칸별 조각을 내고, 그중 지금 겨눈 칸의
+            // 조각을 프리뷰 상자로 쓴다 (천막 계획 §4.2·2차). 비용은 여러 칸에 걸쳐도 조각 전체
+            // 합계라 확정 금액과 어긋나지 않는다 — 프리뷰와 확정이 갈리지 않는 것이 이 경로의 규약이다.
+            int dragCells = 0;
+            if (resizable && _dragAnchorCar >= 0)
             {
-                int dragX = Mathf.Min(_dragAnchorX, cellX);
-                int dragZ = Mathf.Min(_dragAnchorZ, cellZ);
-                rotatedWidth = Mathf.Max(ResizablePlacementLogic.MinSide, Mathf.Abs(cellX - _dragAnchorX) + 1);
-                rotatedLength = Mathf.Max(ResizablePlacementLogic.MinSide, Mathf.Abs(cellZ - _dragAnchorZ) + 1);
-
-                ResizablePlacementLogic.ClampToColumns(ref dragX, ref rotatedWidth,
-                    StructureGridLogic.FirstBodyColumn - StructureGridLogic.ClampPlankColumns(aimedCar.LeftPlanks),
-                    StructureGridLogic.BodyColumns(_layoutSettings.CarWidth, cellSize)
-                        + StructureGridLogic.ClampPlankColumns(aimedCar.LeftPlanks)
-                        + StructureGridLogic.ClampPlankColumns(aimedCar.RightPlanks));
-
-                cellX = dragX;
-                cellZ = Mathf.Min(dragZ,
-                    Mathf.Max(0, StructureGridLogic.Rows(_layoutSettings.DeckLength, cellSize) - rotatedLength));
+                dragCells = ResolveDragPreview(train, carIndex, cellSize,
+                    ref cellX, ref cellZ, ref rotatedWidth, ref rotatedLength);
             }
 
             bool canPlace = expansion.CanPlaceStructureSized(carIndex, cellX, cellZ, _previewRotation,
                 _selectedStructureKind, rotatedWidth, rotatedLength);
 
-            int cost = resizable
-                ? ResizablePlacementLogic.ResolveCost(rotatedWidth * rotatedLength,
+            int cost;
+            if (resizable)
+            {
+                // 아직 시작점을 안 잡았으면 지금 커서 자리의 최소 크기로 미리 보여 준다.
+                int cells = dragCells > 0 ? dragCells : rotatedWidth * rotatedLength;
+                cost = ResizablePlacementLogic.ResolveCost(cells,
                     _structureCatalog.GetCostPerCell(_selectedStructureKind),
-                    expansion.GetStructureBuildCost(_selectedStructureKind))
-                : expansion.GetStructureBuildCost(_selectedStructureKind);
+                    expansion.GetStructureBuildCost(_selectedStructureKind));
+            }
+            else
+            {
+                cost = expansion.GetStructureBuildCost(_selectedStructureKind);
+            }
+
             afford = CanAfford(cost);
 
             StructureGhostVolume(cellX, cellZ, rotatedWidth, rotatedLength, centerZ,
@@ -987,6 +989,59 @@ namespace Game.Gameplay.Train
         private void ClearDragAnchor()
         {
             _dragAnchorCar = -1;
+        }
+
+        /// <summary>
+        /// 드래그 프리뷰 (천막 계획 2차) — 서버 확정과 같은 <see cref="ResizablePlacementLogic.ResolveSpans"/>로
+        /// 칸별 조각을 내고, <b>지금 겨눈 칸</b>의 조각을 프리뷰 상자 좌표로 돌려준다.
+        /// 반환값은 <b>조각 전체</b>의 셀 수라, 여러 칸에 걸쳐 끌어도 표시 비용이 확정 금액과 같다.
+        ///
+        /// 겨눈 칸에 조각이 없으면(칸 경계에 한 행만 걸쳐 버려진 경우) 상자를 건드리지 않는다 —
+        /// 그 칸에는 실제로 아무것도 서지 않으므로 프리뷰도 그대로 두는 것이 정직하다.
+        /// </summary>
+        private int ResolveDragPreview(ITrainState train, int carIndex, float cellSize,
+            ref int cellX, ref int cellZ, ref int width, ref int length)
+        {
+            if (_previewSpans == null)
+            {
+                _previewSpans = new List<ResizablePlacementLogic.Span>();
+            }
+
+            int rows = StructureGridLogic.Rows(_layoutSettings.DeckLength, cellSize);
+            ResizablePlacementLogic.ResolveSpans(_dragAnchorCar, _dragAnchorX, _dragAnchorZ,
+                carIndex, cellX, cellZ, rows, _previewSpans);
+
+            int bodyColumns = StructureGridLogic.BodyColumns(_layoutSettings.CarWidth, cellSize);
+            for (int i = 0; i < _previewSpans.Count; i++)
+            {
+                ResizablePlacementLogic.Span span = _previewSpans[i];
+                int left = 0;
+                int right = 0;
+                if (train.TryGetCar(span.CarIndex, out CarState car))
+                {
+                    left = StructureGridLogic.ClampPlankColumns(car.LeftPlanks);
+                    right = StructureGridLogic.ClampPlankColumns(car.RightPlanks);
+                }
+
+                int spanX = span.CellX;
+                int spanWidth = span.Width;
+                ResizablePlacementLogic.ClampToColumns(ref spanX, ref spanWidth,
+                    StructureGridLogic.FirstBodyColumn - left, bodyColumns + left + right);
+
+                span.CellX = spanX;
+                span.Width = spanWidth;
+                _previewSpans[i] = span;
+
+                if (span.CarIndex == carIndex && spanWidth > 0)
+                {
+                    cellX = span.CellX;
+                    cellZ = span.CellZ;
+                    width = span.Width;
+                    length = span.Length;
+                }
+            }
+
+            return ResizablePlacementLogic.TotalCells(_previewSpans);
         }
 
         /// <summary>
