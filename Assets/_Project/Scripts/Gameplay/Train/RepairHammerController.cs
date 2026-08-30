@@ -341,6 +341,16 @@ namespace Game.Gameplay.Train
             StructureGridLogic.RotatedFootprint(width, length, _previewRotation,
                 out int rotatedWidth, out int rotatedLength);
 
+            // 가변 크기의 <b>첫 우클릭은 기둥 하나를 꽂는 것</b>이라 그 셀 1칸만 보면 된다
+            // (천막 계획 결정 ⑤′). 카탈로그 최소 발자국(2×2)으로 판정하면 옆 세 칸이 막혔다는
+            // 이유로 시작점조차 못 잡는다 — 정작 그 세 칸은 기둥이 설 자리도 아니다.
+            bool startingDrag = _structureCatalog.IsResizable(_selectedStructureKind) && _dragAnchorCar < 0;
+            if (startingDrag)
+            {
+                rotatedWidth = 1;
+                rotatedLength = 1;
+            }
+
             float cellSize = _layoutSettings.StructureCellSize;
             float centerZ = _layoutSettings.CarCenterZ(carIndex, train.GetEjectOffset(carIndex));
 
@@ -372,9 +382,10 @@ namespace Game.Gameplay.Train
             int cost;
             if (resizable)
             {
-                // 아직 시작점을 안 잡았으면 지금 커서 자리의 최소 크기로 미리 보여 준다.
+                // 아직 시작점을 안 잡았으면 한 채 값을 미리 보여 준다 — 실제로 한 채가 서니까.
                 int cells = dragCells > 0 ? dragCells : rotatedWidth * rotatedLength;
-                cost = ResizablePlacementLogic.ResolveCost(cells,
+                int spanCount = dragCells > 0 && _previewSpans != null ? _previewSpans.Count : 1;
+                cost = ResizablePlacementLogic.ResolveCost(cells, spanCount,
                     _structureCatalog.GetCostPerCell(_selectedStructureKind),
                     expansion.GetStructureBuildCost(_selectedStructureKind));
             }
@@ -1096,7 +1107,7 @@ namespace Game.Gameplay.Train
                 return;
             }
 
-            int cost = ResizablePlacementLogic.ResolveCost(totalCells,
+            int cost = ResizablePlacementLogic.ResolveCost(totalCells, _dragSpans.Count,
                 _structureCatalog.GetCostPerCell(structureKind),
                 expansion.GetStructureBuildCost(structureKind));
 

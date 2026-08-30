@@ -269,19 +269,30 @@ namespace Game.Tests.EditMode
         // ── 비용은 넓이 비례 (결정 ⑤) ──────────────────
 
         [Test]
-        public void 비용은_셀_수에_비례하고_올림한다()
+        public void 천막_값은_크기가_아니라_기둥_넷이_정한다()
         {
-            Assert.AreEqual(1, ResizablePlacementLogic.ResolveCost(4, 0.25f, 3), "2×2 = 4셀 → 1");
-            Assert.AreEqual(4, ResizablePlacementLogic.ResolveCost(16, 0.25f, 3), "4×4 = 16셀 → 4");
-            Assert.AreEqual(13, ResizablePlacementLogic.ResolveCost(52, 0.25f, 3), "칸 하나 = 52셀 → 13");
-            Assert.AreEqual(2, ResizablePlacementLogic.ResolveCost(5, 0.25f, 3), "1.25 → 올림 2");
+            // 결정 ⑤′ — 천막이 드는 재료는 덮은 넓이가 아니라 세운 기둥이다.
+            // 2×2든 칸 하나를 통째로 덮든 한 채는 같은 값이어야 한다.
+            Assert.AreEqual(4, ResizablePlacementLogic.ResolveCost(4, 1, 0f, 4), "2×2 한 채");
+            Assert.AreEqual(4, ResizablePlacementLogic.ResolveCost(16, 1, 0f, 4), "4×4 한 채");
+            Assert.AreEqual(4, ResizablePlacementLogic.ResolveCost(52, 1, 0f, 4), "칸 하나를 다 덮어도 한 채");
         }
 
         [Test]
-        public void 셀당_비용이_0이면_고정_비용이다()
+        public void 칸마다_한_채씩이라_채_수만큼_기둥_값이_든다()
         {
-            // 기존 종류가 이 경로를 타도 값이 바뀌지 않는다.
-            Assert.AreEqual(3, ResizablePlacementLogic.ResolveCost(52, 0f, 3));
+            // 칸을 넘으면 칸마다 한 채가 서고(결정 ④) 그만큼 기둥도 실제로 늘어난다.
+            Assert.AreEqual(8, ResizablePlacementLogic.ResolveCost(80, 2, 0f, 4), "두 칸 = 기둥 여덟");
+            Assert.AreEqual(12, ResizablePlacementLogic.ResolveCost(156, 3, 0f, 4), "열차 전체(3칸) = 12");
+        }
+
+        [Test]
+        public void 넓이_비례_규칙도_남아_있다()
+        {
+            // 넓이가 곧 재료인 종류를 위해 남겨 둔 경로 — 셀당 비용이 0보다 크면 이쪽이다.
+            Assert.AreEqual(1, ResizablePlacementLogic.ResolveCost(4, 1, 0.25f, 3), "2×2 = 4셀 → 1");
+            Assert.AreEqual(13, ResizablePlacementLogic.ResolveCost(52, 1, 0.25f, 3), "52셀 → 13");
+            Assert.AreEqual(2, ResizablePlacementLogic.ResolveCost(5, 1, 0.25f, 3), "1.25 → 올림 2");
         }
 
         [Test]

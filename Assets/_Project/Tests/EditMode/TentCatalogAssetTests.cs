@@ -56,14 +56,16 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void 천막은_크기를_끌어서_정하고_넓이만큼_돈이_든다()
+        public void 천막은_크기를_끌어서_정하고_값은_기둥_넷이_정한다()
         {
             StructureCatalog catalog = LoadCatalog();
 
             Assert.IsTrue(catalog.IsResizable(StructureKind.Tent),
                 "가변 크기가 꺼지면 우클릭 2회 경로를 타지 않는다");
-            Assert.Greater(catalog.GetCostPerCell(StructureKind.Tent), 0f,
-                "셀당 비용이 0이면 크기와 무관한 고정 비용이 되어 최대 크기가 늘 정답이 된다");
+            Assert.AreEqual(0f, catalog.GetCostPerCell(StructureKind.Tent),
+                "셀당 비용이 켜지면 넓이 비례로 돌아가 큰 차양이 감당 못 할 값이 된다 (결정 ⑤′)");
+            Assert.Greater(catalog.GetBuildCost(StructureKind.Tent, 0), 0,
+                "한 채 값이 0이면 천막이 공짜가 된다");
         }
 
         [Test]

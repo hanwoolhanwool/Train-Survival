@@ -145,15 +145,20 @@ namespace Game.Gameplay.Train
         }
 
         /// <summary>
-        /// 가변 크기 건축 비용 (결정 ⑤) — <c>ceil(셀 수 × 셀당 비용)</c>.
-        /// <paramref name="costPerCell"/>이 0이면 크기와 무관한 고정 비용(<paramref name="flatCost"/>)이라
-        /// 기존 종류가 이 경로를 타도 값이 바뀌지 않는다.
+        /// 가변 크기 건축 비용 (천막 계획 결정 ⑤′ — 2026-08-30 개정).
+        ///
+        /// <paramref name="costPerCell"/>이 0이면 <b>채마다 기둥 넷 값</b>이다 — 천막이 드는 재료는
+        /// 덮은 넓이가 아니라 <b>세운 기둥</b>이라, 2×2든 칸 하나를 통째로 덮든 한 채는 같은 값이다.
+        /// 여러 칸에 걸치면 칸마다 한 채가 서므로(결정 ④) 그만큼 기둥도 늘어 값이 곱해진다.
+        ///
+        /// 0보다 크면 넓이 비례(<c>ceil(셀 수 × 셀당 비용)</c>) — 초안의 규칙이고, 넓이가 곧 재료인
+        /// 종류를 위해 남겨 둔다. 기존 고정 크기 종류는 어느 쪽이든 <paramref name="flatCost"/> 그대로다.
         /// </summary>
-        public static int ResolveCost(int totalCells, float costPerCell, int flatCost)
+        public static int ResolveCost(int totalCells, int spanCount, float costPerCell, int flatCost)
         {
             if (costPerCell <= 0f)
             {
-                return flatCost;
+                return Mathf.Max(1, spanCount) * flatCost;
             }
 
             return Mathf.Max(1, Mathf.CeilToInt(totalCells * costPerCell));
