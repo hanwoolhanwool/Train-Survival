@@ -40,6 +40,19 @@ namespace Game.Gameplay.Debugging
             _panOffset = Vector3.zero;   // 대상이 바뀌면 팬을 풀어 새 대상을 프레이밍
         }
 
+        /// <summary>
+        /// 대상을 크기에 맞춰 다시 잡는다 — 12 m 나무와 30 cm 돌을 같은 거리에서 보면
+        /// 한쪽은 화면 밖, 한쪽은 점이 된다. 줌 한계도 함께 벌려 둔다 (에셋랩용).
+        /// </summary>
+        public void Frame(Transform target, float distance, float pivotHeight)
+        {
+            SetTarget(target);
+            _pivotHeight = pivotHeight;
+            _minDistance = Mathf.Min(_minDistance, distance * 0.15f);
+            _maxDistance = Mathf.Max(_maxDistance, distance * 4f);
+            _distance = Mathf.Clamp(distance, _minDistance, _maxDistance);
+        }
+
         private void Awake()
         {
             _pitch = _startPitch;
