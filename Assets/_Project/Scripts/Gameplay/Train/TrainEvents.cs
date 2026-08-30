@@ -414,9 +414,18 @@ namespace Game.Gameplay.Train
         /// <summary>지금 우클릭으로 실제로 지어지는지.</summary>
         public bool CanBuild => CanAfford && CanPlace && !Occupied;
 
+        /// <summary>
+        /// 지금 서게 될 점유 칸 수 (회전 전) — 가변 크기 종류는 드래그가 정하므로 카탈로그 값과 다르다.
+        /// 프리뷰가 <b>실제 크기로</b> 서려면 이 값이 필요하다 (천막 계획 Play 2회차 결함 ②).
+        /// </summary>
+        public readonly int FootprintWidth;
+
+        public readonly int FootprintLength;
+
         public StructurePlaceAimLocalEvent(bool aiming, int carIndex, int cellX, int cellZ, int rotation,
             StructureKind kind, int cost, bool canAfford, bool canPlace, bool occupied,
-            UnityEngine.Vector3 ghostCenter, UnityEngine.Vector3 ghostSize)
+            UnityEngine.Vector3 ghostCenter, UnityEngine.Vector3 ghostSize,
+            int footprintWidth = 1, int footprintLength = 1)
         {
             Aiming = aiming;
             CarIndex = carIndex;
@@ -430,6 +439,8 @@ namespace Game.Gameplay.Train
             Occupied = occupied;
             GhostCenter = ghostCenter;
             GhostSize = ghostSize;
+            FootprintWidth = footprintWidth;
+            FootprintLength = footprintLength;
         }
     }
 

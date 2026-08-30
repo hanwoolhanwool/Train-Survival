@@ -371,21 +371,31 @@ namespace Game.Gameplay.Train
             // 가변 크기 드래그 중 — 서버와 <b>같은 함수</b>로 칸별 조각을 내고, 그중 지금 겨눈 칸의
             // 조각을 프리뷰 상자로 쓴다 (천막 계획 §4.2·2차). 비용은 여러 칸에 걸쳐도 조각 전체
             // 합계라 확정 금액과 어긋나지 않는다 — 프리뷰와 확정이 갈리지 않는 것이 이 경로의 규약이다.
+            // 고스트 좌표는 커서와 <b>따로 둔다</b>. 드래그 사각형의 좌하단이 곧 고스트 원점인데,
+            // 그것을 커서 자리에 덮어쓰면 우클릭이 커서가 아니라 사각형 모서리를 집는다 —
+            // 드래그 방향이 한쪽일 때(앵커가 좌하단일 때) 커서가 앵커로 덮여 그 축이 1칸에 묶였다.
+            // (Play 2회차 결함 ① — 가로로는 못 넓히고 세로로만 늘어난 증상이 이것이다.)
+            int ghostX = cellX;
+            int ghostZ = cellZ;
+            int ghostWidth = rotatedWidth;
+            int ghostLength = rotatedLength;
+
             int dragCells = 0;
             if (resizable && _dragAnchorCar >= 0)
             {
                 dragCells = ResolveDragPreview(train, carIndex, cellSize,
-                    ref cellX, ref cellZ, ref rotatedWidth, ref rotatedLength);
+                    ref ghostX, ref ghostZ, ref ghostWidth, ref ghostLength);
             }
 
-            bool canPlace = expansion.CanPlaceStructureSized(carIndex, cellX, cellZ, _previewRotation,
-                _selectedStructureKind, rotatedWidth, rotatedLength);
+            // 판정은 실제로 설 사각형 기준 — 커서 한 칸이 아니라 지어질 것을 본다.
+            bool canPlace = expansion.CanPlaceStructureSized(carIndex, ghostX, ghostZ, _previewRotation,
+                _selectedStructureKind, ghostWidth, ghostLength);
 
             int cost;
             if (resizable)
             {
                 // 아직 시작점을 안 잡았으면 한 채 값을 미리 보여 준다 — 실제로 한 채가 서니까.
-                int cells = dragCells > 0 ? dragCells : rotatedWidth * rotatedLength;
+                int cells = dragCells > 0 ? dragCells : ghostWidth * ghostLength;
                 int spanCount = dragCells > 0 && _previewSpans != null ? _previewSpans.Count : 1;
                 cost = ResizablePlacementLogic.ResolveCost(cells, spanCount,
                     _structureCatalog.GetCostPerCell(_selectedStructureKind),
@@ -398,15 +408,16 @@ namespace Game.Gameplay.Train
 
             afford = CanAfford(cost);
 
-            StructureGhostVolume(cellX, cellZ, rotatedWidth, rotatedLength, centerZ,
+            StructureGhostVolume(ghostX, ghostZ, ghostWidth, ghostLength, centerZ,
                 out Vector3 ghostCenter, out Vector3 ghostSize);
 
             // 자리 점유 판정 — 프리뷰 테두리와 같은 상자다 (칸 건설과 같은 규약: 테두리 안이 비어야 지어진다).
             // 천막은 예외다: 지붕이라 사람·몬스터 위로 덮을 수 있어야 한다 (결정 ⑥ — 점유는 기둥뿐).
             occupied = !resizable && IsVolumeOccupied(ghostCenter, ghostSize);
 
-            PublishPlaceAim(new StructurePlaceAimLocalEvent(true, carIndex, cellX, cellZ, _previewRotation,
-                _selectedStructureKind, cost, afford, canPlace, occupied, ghostCenter, ghostSize));
+            PublishPlaceAim(new StructurePlaceAimLocalEvent(true, carIndex, ghostX, ghostZ, _previewRotation,
+                _selectedStructureKind, cost, afford, canPlace, occupied, ghostCenter, ghostSize,
+                ghostWidth, ghostLength));
 
             return canPlace;
         }

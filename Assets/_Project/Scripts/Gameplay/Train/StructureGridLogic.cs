@@ -316,7 +316,13 @@ namespace Game.Gameplay.Train
                 StructureOccupancy existing = occupancies != null && i < occupancies.Length
                     ? occupancies[i]
                     : StructureOccupancy.Solid;
-                if (occupancy != StructureOccupancy.Corners && existing != StructureOccupancy.Corners)
+
+                // 같은 모양끼리는 사각형 교차만으로 충돌이다.
+                //  · Solid ↔ Solid — 기존 8종의 규약 그대로
+                //  · Corners ↔ Corners — <b>천막 안에 천막을 세우지 않는다</b>. 기둥이 안 겹치면
+                //    세워지긴 하지만 천이 두 겹으로 포개져 그늘은 그대로고 자원만 나간다.
+                //    "덮되 막지 않는다"는 지붕과 지붕 사이에는 성립하지 않는다.
+                if (occupancy == existing)
                 {
                     return true;
                 }

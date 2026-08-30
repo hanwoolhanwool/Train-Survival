@@ -21,6 +21,10 @@ namespace Game.Gameplay.Train
         [Tooltip("고스트 공용 반투명 재질 — 프리뷰의 모든 렌더러가 이것 하나로 교체된다.")]
         [SerializeField] private Material _ghostMaterial;
 
+        [Tooltip("건축 그리드 셀 크기 (m) — 가변 크기 프리뷰를 실제 크기로 세우는 데 쓴다. " +
+            "TrainLayoutSettings._structureCellSize와 같은 값이어야 한다.")]
+        [SerializeField, Min(0.25f)] private float _structureCellSize = 1f;
+
         [SerializeField] private Color _buildableColor = new Color(0.25f, 1f, 0.35f, 0.4f);
 
         [Tooltip("셀 점유·자리 점유·자원 부족으로 지금은 못 짓는 상태의 틴트 색.")]
@@ -80,6 +84,15 @@ namespace Game.Gameplay.Train
             Vector3 position = evt.GhostCenter - new Vector3(0f, evt.GhostSize.y * 0.5f, 0f);
             preview.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, evt.Rotation * 90f, 0f));
             preview.SetActive(true);
+
+            // 가변 크기 종류는 프리뷰도 <b>지금 서게 될 크기</b>로 세운다 — 원본 크기로 띄우면
+            // 천막 기둥 넷이 한가운데 모인 덩어리로 보여 어디에 서는지 알 수 없다
+            // (천막 계획 Play 2회차 결함 ②). GetComponent를 쓴다 — TryGetComponent는 인터페이스를 못 찾는다.
+            var footprintView = preview.GetComponent<IStructureFootprintView>();
+            if (footprintView != null)
+            {
+                footprintView.ApplyFootprint(evt.FootprintWidth, evt.FootprintLength, _structureCellSize);
+            }
 
             Color tint = evt.CanBuild ? _buildableColor : _blockedColor;
             _propertyBlock.SetColor(BaseColorId, tint);

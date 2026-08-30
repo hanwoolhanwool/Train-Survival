@@ -170,6 +170,35 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void 천막_안에_천막을_세울_수_없다()
+        {
+            // Play 2회차 결함 ③ — 기둥이 안 겹치면 천막이 천막 안에 들어가 천이 두 겹으로 포개졌다.
+            CarState[] cars = BuildTrain(2);
+            var entries = new[] { MakeEntry(1, 1, FirstBody, 0, StructureKind.Tent, 4, 6) };
+            var shapes = new[] { StructureOccupancy.Corners };
+
+            // 기둥 넷이 하나도 겹치지 않는 안쪽 자리 — 그래도 거절되어야 한다.
+            bool inside = CanPlaceTent(entries, shapes, cars, 1, FirstBody + 1, 1, 2, 3);
+            Assert.IsFalse(inside, "지붕 아래 또 지붕을 치는 것은 자원만 나간다");
+
+            // 살짝 걸치기만 해도 거절 — 사각형이 겹치면 안 된다.
+            bool overlapping = CanPlaceTent(entries, shapes, cars, 1, FirstBody + 2, 5, 2, 3);
+            Assert.IsFalse(overlapping);
+        }
+
+        [Test]
+        public void 천막끼리_떨어져_있으면_나란히_설_수_있다()
+        {
+            CarState[] cars = BuildTrain(2);
+            var entries = new[] { MakeEntry(1, 1, FirstBody, 0, StructureKind.Tent, 4, 5) };
+            var shapes = new[] { StructureOccupancy.Corners };
+
+            // 앞 천막이 행 0~4를 쓰므로 행 5부터는 비어 있다.
+            bool apart = CanPlaceTent(entries, shapes, cars, 1, FirstBody, 5, 4, 5);
+            Assert.IsTrue(apart, "겹치지만 않으면 여러 채가 이어져 서야 한다 — 칸별 분할이 이 경우다");
+        }
+
+        [Test]
         public void 점유_배열이_없으면_전부_Solid로_본다()
         {
             // 기존 호출 경로(오버로드)가 이 경우다 — 천막 작업 전과 판정이 같아야 한다.
