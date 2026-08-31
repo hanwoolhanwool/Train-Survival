@@ -26,9 +26,15 @@ namespace Game.Core.Services
             }
 
             Type type = typeof(T);
-            if (Services.ContainsKey(type))
+            if (Services.TryGetValue(type, out object existing))
             {
-                throw new InvalidOperationException($"이미 등록된 서비스입니다: {type.Name}");
+                // 파괴된 잔여 등록(해제가 늦은 종료 경로)은 새 등록을 막지 않는다.
+                if (!IsDestroyed(existing))
+                {
+                    throw new InvalidOperationException($"이미 등록된 서비스입니다: {type.Name}");
+                }
+
+                Services.Remove(type);
             }
 
             Services.Add(type, service);
@@ -42,20 +48,26 @@ namespace Game.Core.Services
         /// <summary>등록된 서비스를 반환한다. 미등록이면 예외를 던진다.</summary>
         public static T Get<T>() where T : class
         {
-            if (!Services.TryGetValue(typeof(T), out object service))
+            if (!TryGet(out T service))
             {
                 throw new InvalidOperationException($"등록되지 않은 서비스입니다: {typeof(T).Name}");
             }
 
-            return (T)service;
+            return service;
         }
 
         public static bool TryGet<T>(out T service) where T : class
         {
-            if (Services.TryGetValue(typeof(T), out object found))
+            Type type = typeof(T);
+            if (Services.TryGetValue(type, out object found))
             {
-                service = (T)found;
-                return true;
+                if (!IsDestroyed(found))
+                {
+                    service = (T)found;
+                    return true;
+                }
+
+                Services.Remove(type);
             }
 
             service = null;
@@ -64,7 +76,17 @@ namespace Game.Core.Services
 
         public static bool IsRegistered<T>() where T : class
         {
-            return Services.ContainsKey(typeof(T));
+            return TryGet(out T _);
+        }
+
+        /// <summary>
+        /// 파괴된 Unity 객체가 등록소에 남아 있는지 본다. 서비스는 인터페이스로 등록하므로
+        /// 사용처의 <c>== null</c>이 Unity의 파괴 판정 오버로드를 타지 않는다 — 여기서 걸러내지
+        /// 않으면 이미 해제된 컴포넌트(NetworkList 등)를 건드려 ObjectDisposedException이 난다.
+        /// </summary>
+        private static bool IsDestroyed(object service)
+        {
+            return service is UnityEngine.Object unityObject && unityObject == null;
         }
 
         /// <summary>모든 서비스를 해제한다. 씬 리로드·테스트 정리 용도.</summary>

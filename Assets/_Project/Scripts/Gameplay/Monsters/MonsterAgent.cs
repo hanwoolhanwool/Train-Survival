@@ -26,9 +26,6 @@ namespace Game.Gameplay.Monsters
 
         [SerializeField] private TrainLayoutSettings _trainLayout;
 
-        // 편성 상태 — 갑판 반폭(판자 증축 반영) 조회가 매 프레임 여러 번 도는 경로라 캐시한다.
-        private ITrainState _trainState;
-
         private const float Gravity = 25f;
 
         // 갑판 위 건축물 관통 금지 판정의 몸 반경 여유(m) — 건축 개편 1차 §2.10 최소 구현.
@@ -664,12 +661,13 @@ namespace Game.Gameplay.Monsters
         /// </summary>
         private float DeckHalfWidth(Vector3 position)
         {
-            if (_trainState == null && !ServiceLocator.TryGet(out _trainState))
-            {
-                return _trainLayout.CarWidth * 0.5f;
-            }
-
-            return _trainState.GetDeckHalfWidthAt(position);
+            // 편성 상태는 캐시하지 않는다 — 인터페이스 참조는 Unity의 파괴 판정(== null 오버로드)을
+            // 타지 않아 열차가 디스폰된 뒤에도 non-null로 남고, 풀에서 재사용된 개체는 이전 세션의
+            // 참조를 그대로 문다. 그 상태로 조회하면 이미 해제된 NetworkList를 건드려
+            // ObjectDisposedException이 난다. 등록소 조회는 딕셔너리 1회라 캐시할 값이 아니다.
+            return ServiceLocator.TryGet(out ITrainState train)
+                ? train.GetDeckHalfWidthAt(position)
+                : _trainLayout.CarWidth * 0.5f;
         }
 
         private void FaceVelocity(Vector3 horizontalVelocity, Transform target)
