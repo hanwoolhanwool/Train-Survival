@@ -70,7 +70,9 @@ namespace Game.Gameplay.Train
             _step.OnValueChanged -= OnStepChanged;
         }
 
-        private void OnDestroy()
+        // NetworkBehaviour.OnDestroy를 가리면(new) 기반 정리가 통째로 건너뛰어져 NetworkVariable·
+        // NetworkList가 해제되지 않는다 — NGO가 override와 base 호출을 명시로 요구한다.
+        public override void OnDestroy()
         {
             // 씬을 떠날 때 에셋을 기준 높이로 되돌린다 — 다음 씬·다음 플레이가 남은 오프셋을 물려받지 않게 한다.
             if (_layoutSettings != null)
@@ -82,6 +84,8 @@ namespace Game.Gameplay.Train
             {
                 ServiceLocator.Unregister<ITrainElevation>();
             }
+
+            base.OnDestroy();
         }
 
         /// <summary>다음 단계로 넘긴다 — 호스트가 확정하면 복제되어 전 피어가 같은 높이로 움직인다.</summary>
