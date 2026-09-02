@@ -1,0 +1,40 @@
+﻿{
+  "schemaVersion": 1,
+  "scenario": "forest-night-60s",
+  "forcedConditions": "seed=20260902 scene=Game_ArtTest warmup=300f duration=60s time=Night day=5 waves=on settle=45s",
+  "git": { "sha": "", "branch": "", "dirty": null },
+  "machine": { "gpu": "NVIDIA GeForce RTX 4060 Ti", "driver": "Direct3D 12 [level 12.2]", "cpu": "AMD Ryzen 5 7500F 6-Core Processor ", "os": "Windows 11  (10.0.26200)" },
+  "build": { "unityVersion": "6000.5.3f1", "development": true, "buildGuid": "7804572d260c466f96c2c5585366b602", "date": "2026-09-02T20:02:59" },
+  "config": { "warmupFrames": 300, "durationSeconds": 60, "resolution": "1920x1080", "frameTimingAvailable": true },
+  "frames": 51002,
+  "bottleneck": "Gpu",
+  "sceneLoad": { "monsterCountMin": 12, "monsterCountMax": 12, "monsterCountAvg": 12 },
+  "median": {
+    "cpuMainMs": { "p50": 0.9318, "p95": 1.1689, "p99": 1.4768, "max": 4.0858, "mean": 0.9525, "stdDev": 0.1412 },
+    "cpuRenderMs": { "p50": 0.415, "p95": 0.5151, "p99": 0.5789, "max": 1.0643, "mean": 0.4219, "stdDev": 0.0529 },
+    "gpuMs": { "p50": 0.9912, "p95": 1.0353, "p99": 1.0547, "max": 2.43, "mean": 0.9784, "stdDev": 0.1151 },
+    "drawCalls": { "p50": 1011, "p95": 1080, "p99": 1091, "max": 2146 },
+    "drawCallsStandard": { "p50": 46, "p95": 46, "p99": 46, "max": 92 },
+    "drawCallsSrpBatcher": { "p50": 965, "p95": 1034, "p99": 1045, "max": 2054 },
+    "drawCallsInstanced": { "p50": 0, "p95": 0, "p99": 0, "max": 0 },
+    "drawCallsBrg": { "p50": 0, "p95": 0, "p99": 0, "max": 0 },
+    "setPassCalls": { "p50": 54, "p95": 58, "p99": 58, "max": 116 },
+    "triangles": { "p50": 1035055, "p95": 1115271, "p99": 1128813, "max": 2248478 },
+    "shadowCasters": { "p50": 211, "p95": 225, "p99": 228, "max": 420 },
+    "gcAllocPerFrameBytes": { "p50": 8786, "p95": 8786, "p99": 8786, "max": 9224818 },
+    "totalUsedBytes": { "p50": 653062357, "p95": 658661851, "p99": 658914343, "max": 663124828 },
+    "textureMemoryBytes": { "p50": 271888431, "p95": 271888431, "p99": 271888431, "max": 271888431 },
+    "meshMemoryBytes": { "p50": 10007670, "p95": 10007670, "p99": 10007670, "max": 10007670 },
+    "framesOver33ms": 0
+  },
+  "spikes": [
+    { "frameIndex": 4, "timeSeconds": 0.0082, "ms": 3.4933 },
+    { "frameIndex": 692, "timeSeconds": 0.8071, "ms": 3.5293 },
+    { "frameIndex": 693, "timeSeconds": 0.8086, "ms": 3.0252 },
+    { "frameIndex": 694, "timeSeconds": 0.8111, "ms": 3.6879 },
+    { "frameIndex": 17691, "timeSeconds": 20.8307, "ms": 3.3537 },
+    { "frameIndex": 20072, "timeSeconds": 23.6713, "ms": 3.9887 },
+    { "frameIndex": 35438, "timeSeconds": 41.6488, "ms": 4.0858 },
+    { "frameIndex": 47936, "timeSeconds": 56.4046, "ms": 3.0879 }
+  ]
+}
