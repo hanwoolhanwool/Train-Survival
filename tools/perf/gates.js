@@ -101,7 +101,18 @@ const GATES = [
   },
 ];
 
-const VERDICT = { PASS: 'pass', WARN: 'warn', FAIL: 'fail', INFO: 'info' };
+const VERDICT = { PASS: 'pass', WARN: 'warn', FAIL: 'fail', INFO: 'info', UNUSABLE: 'unusable' };
+
+/**
+ * 반복 편차가 게이트 임계의 이 배수를 넘으면 **판정 자체를 무효로 본다.**
+ *
+ * 노이즈가 임계보다 크면 통과든 실패든 우연이다. 2026-09-02 에 실제로 겪었다 —
+ * 다른 프로세스가 도는 상태에서 재니 편차가 **206 %**(정상 0.8 %)로 튀었고, 표는
+ * "회귀 2건"이라고 말했다. 렌더 카운터(셰도우 캐스터 −37 %)는 의도대로 개선돼 있었는데
+ * 시간만 3배였다 — **같은 일을 더 느리게 한 것**, 즉 머신이 느려진 것이지 변경이 나쁜 게 아니었다.
+ * 그때 이 경고가 있었으면 결과를 오독할 뻔한 일이 없었다.
+ */
+const SPREAD_UNUSABLE_MULTIPLIER = 1.0;
 
 /** BOM 이 붙은 JSON 도 읽는다 — 런타임이 UTF-8 BOM 으로 쓴다. */
 function readRun(filePath) {
@@ -315,9 +326,18 @@ function compare(runs, baseline) {
   for (const row of rows) {
     row.spreadPercent = reduced.spread[row.gate.key];
     row.samples = reduced.samples[row.gate.key];
+
+    // 노이즈가 임계보다 크면 이 지표의 판정은 우연이다 — 통과든 실패든 무효로 돌린다.
+    const limit = row.gate.failOverPercent;
+    if (limit !== undefined && row.spreadPercent !== null
+        && row.spreadPercent > limit * SPREAD_UNUSABLE_MULTIPLIER) {
+      row.verdict = VERDICT.UNUSABLE;
+      row.reason = `반복 편차 ${row.spreadPercent.toFixed(1)} % > 임계 ${limit} % — 판정 불가`;
+    }
   }
 
   const comparability = checkComparability(runs[0], baseline);
+  const unusable = rows.filter((r) => r.verdict === VERDICT.UNUSABLE);
   const failed = rows.filter((r) => r.verdict === VERDICT.FAIL);
   const warned = rows.filter((r) => r.verdict === VERDICT.WARN);
 
@@ -326,10 +346,14 @@ function compare(runs, baseline) {
     baseline,
     rows,
     comparability,
+    unusable,
     failed,
     warned,
     bottleneck: determineBottleneck(runs.length === 1 ? runs[0] : medianRun(runs)),
     baselineBottleneck: determineBottleneck(baseline),
+
+    // 판정 불가가 하나라도 있으면 회귀 여부를 말하지 않는다 — 모른다고 말하는 것이 맞다.
+    unreliable: unusable.length > 0,
     regressed: failed.length > 0,
   };
 }

@@ -25,6 +25,7 @@ const MARK = {
   [gates.VERDICT.WARN]: '⚠️',
   [gates.VERDICT.FAIL]: '❌',
   [gates.VERDICT.INFO]: '·',
+  [gates.VERDICT.UNUSABLE]: '❓',
 };
 
 function parseArgs(argv) {
@@ -120,9 +121,11 @@ function buildMarkdown(result, git) {
   const now = localStamp(new Date());
   const lines = [];
 
-  const headline = result.regressed
-    ? `회귀 ${result.failed.length}건`
-    : (result.warned.length > 0 ? `통과 (경고 ${result.warned.length}건)` : '통과');
+  const headline = result.unreliable
+    ? '판정 불가 — 측정이 흔들렸다'
+    : (result.regressed
+      ? `회귀 ${result.failed.length}건`
+      : (result.warned.length > 0 ? `통과 (경고 ${result.warned.length}건)` : '통과'));
 
   lines.push(`# 성능 리포트 — ${baseline.scenario} · ${headline}`);
   lines.push('');
@@ -152,6 +155,22 @@ function buildMarkdown(result, git) {
   }
 
   lines.push('');
+
+  if (result.unreliable) {
+    lines.push('## ❓ 이 측정은 판정에 쓸 수 없다');
+    lines.push('');
+    lines.push('**반복 편차가 게이트 임계보다 크다** — 통과든 회귀든 우연이다:');
+    lines.push('');
+    for (const row of result.unusable) {
+      lines.push(`- ${row.label}: 편차 **${row.spreadPercent.toFixed(1)} %** > 임계 ${row.gate.failOverPercent} %` +
+        ` (${row.samples.map((v) => formatNumber(v, row.unit)).join(' · ')})`);
+    }
+
+    lines.push('');
+    lines.push('측정 환경이 조용하지 않았을 가능성이 높다. **다른 앱(IDE·브라우저·에디터)을 닫고 다시 재야 한다.**');
+    lines.push('렌더 카운터(드로우콜·삼각형·셰도우 캐스터)는 머신 부하와 무관하므로 그쪽만 참고할 수 있다.');
+    lines.push('');
+  }
 
   if (comparability.length > 0) {
     lines.push('## ⚠️ 비교 조건이 다르다');

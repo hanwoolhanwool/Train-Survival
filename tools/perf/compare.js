@@ -27,6 +27,7 @@ const MARK = {
   [gates.VERDICT.WARN]: '[!!]',
   [gates.VERDICT.FAIL]: '[XX]',
   [gates.VERDICT.INFO]: '[--]',
+  [gates.VERDICT.UNUSABLE]: '[??]',
 };
 
 function parseArgs(argv) {
@@ -172,7 +173,12 @@ function printReport(result) {
 
   console.log('');
 
-  if (result.regressed) {
+  if (result.unreliable) {
+    console.log(`? 판정 불가 — 반복 편차가 게이트 임계보다 크다 (${result.unusable.map((r) => r.label).join(', ')})`);
+    console.log('  이 실행에서는 통과든 회귀든 우연이다. 측정 환경이 조용하지 않았을 가능성이 높다:');
+    console.log('  다른 앱(IDE·브라우저·에디터)을 닫고 다시 재야 한다.');
+    console.log('  렌더 카운터(드로우콜·삼각형·셰도우 캐스터)는 머신 부하와 무관하니 그쪽만 참고할 수 있다.');
+  } else if (result.regressed) {
     console.log(`X 회귀 ${result.failed.length}건 — ${result.failed.map((r) => r.label).join(', ')}`);
   } else if (result.warned.length > 0) {
     console.log(`! 통과 (경고 ${result.warned.length}건 — ${result.warned.map((r) => r.label).join(', ')})`);
@@ -236,6 +242,11 @@ function main() {
     }, null, 2));
   } else {
     printReport(result);
+  }
+
+  // 판정 불가는 "통과"도 "회귀"도 아니다 — 비교 불가와 같은 코드로 알린다.
+  if (result.unreliable) {
+    return EXIT_UNUSABLE;
   }
 
   return result.regressed ? EXIT_REGRESSED : EXIT_OK;
