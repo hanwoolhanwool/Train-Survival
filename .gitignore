@@ -126,3 +126,11 @@ InitTestScene*.unity*
 # .meta 는 임포트 설정·guid 유지를 위해 커밋한다 (커브 데이터 없음).
 # 반입 절차: Assets/_Project/Art/Animations/NOTICE.md
 /[Aa]ssets/_Project/Art/Animations/Anim_Hold_*.fbx
+
+# 성능 벤치 산출물 — 개별 실행과 프로파일러 캡처는 추적하지 않는다.
+# 기준선(Perf/baseline/*.json)만 커밋한다: 실행 기록을 전부 남기면 하루 몇 회로도
+# 히스토리가 수백 파일이 되고, 회귀 판정에 필요한 것은 "지금 기준선" 하나뿐이다.
+# (성능 프로파일링 자동화 계획 결정 ⑦-A)
+/Perf/runs/
+/Perf/captures/
+/Perf/reports/

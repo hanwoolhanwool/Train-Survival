@@ -22,6 +22,22 @@ namespace Game.Editor
 
         public static void PerformWindowsBuild()
         {
+            Build(BuildOptions.None);
+        }
+
+        /// <summary>
+        /// 벤치·스모크용 <b>개발 빌드</b>. 배포 빌드와 갈라 두는 이유는 하나다 —
+        /// <c>DEVELOPMENT_BUILD</c>가 켜져야 <c>ProfilerRecorder</c> 카운터 다수가 채워진다.
+        /// 그 대가로 <b>배포판은 이 빌드보다 빠르므로</b>, 결과 JSON은 <c>development: true</c>를
+        /// 함께 남겨 무엇을 잰 값인지 스스로 밝힌다 (성능 프로파일링 자동화 계획 §7).
+        /// </summary>
+        public static void PerformPerfBuild()
+        {
+            Build(BuildOptions.Development);
+        }
+
+        private static void Build(BuildOptions buildOptions)
+        {
             string outputPath = ResolveOutputPath();
 
             string[] scenes = EditorBuildSettings.scenes
@@ -36,14 +52,15 @@ namespace Game.Editor
 
             ApplyBuildVersion();
 
-            Debug.Log($"[Build] 대상 {outputPath} · 씬 {scenes.Length}개 · 버전 {PlayerSettings.bundleVersion}");
+            Debug.Log($"[Build] 대상 {outputPath} · 씬 {scenes.Length}개 · 버전 {PlayerSettings.bundleVersion}" +
+                      $" · 개발 빌드 {(buildOptions & BuildOptions.Development) != 0}");
 
             var options = new BuildPlayerOptions
             {
                 scenes = scenes,
                 locationPathName = outputPath,
                 target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.None
+                options = buildOptions
             };
 
             BuildReport report = BuildPipeline.BuildPlayer(options);

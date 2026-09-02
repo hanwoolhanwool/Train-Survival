@@ -62,6 +62,12 @@ namespace Game.Core.Logging
         /// <summary>버그 추적용 임시 진단 로그. 문제 해결 후 통째로 지우는 것이 전제다.</summary>
         Diagnostics = 1 << 15,
 
+        /// <summary>
+        /// 성능 벤치·스모크 주행 (`-perfrun` · `-smoke`). <see cref="Diagnostics"/>와 달리
+        /// <b>지우지 않는 상설 계통</b>이다 — 벤치가 무엇을 재고 어디서 멈췄는지는 실행마다 남아야 한다.
+        /// </summary>
+        Performance = 1 << 16,
+
         All = ~0,
     }
 }
