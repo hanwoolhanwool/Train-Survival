@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Core.Diagnostics;
 using Game.Core.Events;
 using Game.Core.Services;
 using Game.Gameplay.Region;
@@ -161,17 +162,20 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            if (IsServer)
+            using (GameProfilerMarkers.WorldScrollUpdate.Auto())
             {
-                _traveledDistance.Value += _scrollSpeed.Value * Time.deltaTime;
-                ServerEnsureInitialBoundary();
-                ServerTrimPassedBoundaries();
-            }
-            else
-            {
-                float correctionRate = _settings != null ? _settings.CorrectionRate : 5f;
-                _displayDistance = WorldScrollMath.SmoothToward(
-                    _displayDistance, _traveledDistance.Value, _scrollSpeed.Value, Time.deltaTime, correctionRate);
+                if (IsServer)
+                {
+                    _traveledDistance.Value += _scrollSpeed.Value * Time.deltaTime;
+                    ServerEnsureInitialBoundary();
+                    ServerTrimPassedBoundaries();
+                }
+                else
+                {
+                    float correctionRate = _settings != null ? _settings.CorrectionRate : 5f;
+                    _displayDistance = WorldScrollMath.SmoothToward(
+                        _displayDistance, _traveledDistance.Value, _scrollSpeed.Value, Time.deltaTime, correctionRate);
+                }
             }
         }
 

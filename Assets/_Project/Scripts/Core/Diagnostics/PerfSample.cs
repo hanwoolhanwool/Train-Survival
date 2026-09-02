@@ -32,7 +32,11 @@ namespace Game.Core.Diagnostics
             long gcUsedBytes,
             long totalUsedBytes,
             long textureMemoryBytes,
-            long meshMemoryBytes)
+            long meshMemoryBytes,
+            long worldScrollNs = 0,
+            long tileStreamNs = 0,
+            long tileSpawnNs = 0,
+            long waveSpawnNs = 0)
         {
             FrameIndex = frameIndex;
             TimeSeconds = timeSeconds;
@@ -55,6 +59,10 @@ namespace Game.Core.Diagnostics
             TotalUsedBytes = totalUsedBytes;
             TextureMemoryBytes = textureMemoryBytes;
             MeshMemoryBytes = meshMemoryBytes;
+            WorldScrollNs = worldScrollNs;
+            TileStreamNs = tileStreamNs;
+            TileSpawnNs = tileSpawnNs;
+            WaveSpawnNs = waveSpawnNs;
         }
 
         /// <summary>워밍업을 버린 뒤부터 0에서 시작하는 측정 프레임 번호.</summary>
@@ -118,6 +126,19 @@ namespace Game.Core.Diagnostics
         public long TextureMemoryBytes { get; }
 
         public long MeshMemoryBytes { get; }
+
+        /// <summary>
+        /// 게임 고유 마커의 이 프레임 소요 시간 — <b>단위는 나노초</b>다
+        /// (<c>ProfilerRecorder</c>가 시간 마커를 ns 로 준다).
+        /// </summary>
+        public long WorldScrollNs { get; }
+
+        public long TileStreamNs { get; }
+
+        /// <summary>타일 한 장을 실제로 까는 데 든 시간. 6.67초마다만 0이 아니다.</summary>
+        public long TileSpawnNs { get; }
+
+        public long WaveSpawnNs { get; }
 
         /// <summary>세 프레임 시간 중 가장 큰 값 — 이 프레임을 붙잡고 있던 쪽.</summary>
         public double SlowestThreadMs

@@ -1,5 +1,6 @@
 using Game.Core.Logging;
 using System.Collections.Generic;
+using Game.Core.Diagnostics;
 using Game.Core.Events;
 using Game.Core.Pooling;
 using Game.Core.Services;
@@ -208,7 +209,12 @@ namespace Game.Gameplay.Monsters
             }
 
             _spawnTimer = 0f;
-            SpawnOne();
+
+            // 스폰은 풀에서 꺼내 배선까지 하는 자리라 프레임을 튀게 할 수 있다 — 마커로 분리해 둔다.
+            using (GameProfilerMarkers.WaveSpawn.Auto())
+            {
+                SpawnOne();
+            }
         }
 
         /// <summary>

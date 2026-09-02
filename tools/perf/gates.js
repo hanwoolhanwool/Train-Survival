@@ -48,14 +48,25 @@ const GATES = [
     note: '주 병목이 아니라 경고까지만',
   },
   {
+    // 절대 임계를 쓰지 않는다. 2026-09-02 에 8 KB 로 걸었다가 야간 시나리오(8,786 B)가
+    // 첫 측정부터 실패했다 — 낮 기준선(7,218 B)에서 뽑은 절대값이 다른 시나리오에는 맞지 않는다.
+    // 시나리오마다 기준선이 따로 있으므로 상대 판정이면 그 문제가 사라진다.
     key: 'gcAllocPerFrameBytes',
     stat: 'p50',
     label: 'GC 할당/프레임',
     unit: 'B',
-    kind: 'absolute',
-    failOverAbsolute: 8192,
-    warnOnIncrease: true,
-    note: '8 KB 초과는 실패 · 기준선보다 늘면 경고',
+    kind: 'ratio',
+    failOverPercent: 20,
+    note: '기준선 +20 % 초과는 실패 (야간 실측 편차 13.5 %)',
+  },
+  {
+    // 몬스터 머티리얼이 배칭을 깨는 것이 야간의 실제 비용이다(낮 32 → 밤 54, +68.8 %).
+    // 드로우콜보다 이쪽이 먼저 움직이므로 정보 열에 둔다.
+    key: 'setPassCalls',
+    stat: 'p50',
+    label: 'SetPass p50',
+    unit: '',
+    kind: 'info',
   },
   {
     key: 'framesOver33ms',
@@ -73,13 +84,6 @@ const GATES = [
     unit: '',
     kind: 'info',
     note: '예산 §7 우선순위 1 의 진행을 보는 값',
-  },
-  {
-    key: 'setPassCalls',
-    stat: 'p50',
-    label: 'SetPass p50',
-    unit: '',
-    kind: 'info',
   },
   {
     key: 'triangles',

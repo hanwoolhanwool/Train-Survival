@@ -224,7 +224,20 @@ namespace Game.Gameplay.Cycle
         [Rpc(SendTo.Server, RequireOwnership = false)]
         private void RequestJumpToPhaseServerRpc(DayPhase phase)
         {
-            if (_settings == null)
+            ServerJumpTo(0, phase);
+        }
+
+        /// <summary>
+        /// 지정한 Day의 지정한 국면 시작으로 누적 시간을 점프시킨다 — <b>서버 전용</b>.
+        ///
+        /// <para>QA 핫키(<see cref="RequestJumpToPhaseServerRpc"/>)와 성능 벤치가 같은 경로를 쓴다.
+        /// 낮/밤·Day·지역은 전부 <b>누적 시간 하나의 순수 함수</b>이므로, 이 값만 옮기면
+        /// 웨이브 난이도·지역·날씨가 그 날의 것으로 따라온다 — 추가 복제가 0이다.</para>
+        /// </summary>
+        /// <param name="dayNumber">1부터. <b>0이면 지금 Day를 유지</b>한다.</param>
+        public void ServerJumpTo(int dayNumber, DayPhase phase)
+        {
+            if (_settings == null || !IsServer)
             {
                 return;
             }
@@ -235,7 +248,10 @@ namespace Game.Gameplay.Cycle
                 return;
             }
 
-            int cycleIndex = Mathf.FloorToInt(Mathf.Max(0f, _totalSeconds.Value) / cycleDuration);
+            int cycleIndex = dayNumber > 0
+                ? dayNumber - 1
+                : Mathf.FloorToInt(Mathf.Max(0f, _totalSeconds.Value) / cycleDuration);
+
             float cycleStart = cycleIndex * cycleDuration;
 
             // 낮(아침)은 사이클 시작, 밤(저녁)은 낮 길이만큼 지난 지점 = 각 국면의 시작 경계.

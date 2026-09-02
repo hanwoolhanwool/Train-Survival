@@ -1,3 +1,4 @@
+using Game.Core.Diagnostics;
 using UnityEngine;
 
 namespace Game.Systems.Diagnostics
@@ -30,6 +31,23 @@ namespace Game.Systems.Diagnostics
         [Tooltip("버릴 워밍업 프레임 수. 셰이더 컴파일·풀 프리웜이 첫 수 초를 오염시킨다(§2 결정 ⑤).")]
         private int _warmupFrames = 300;
 
+        [Header("게임 상태 강제")]
+        [SerializeField]
+        [Tooltip("시간대. Unchanged 면 게임이 정하는 대로 둔다. Night 로 두면 웨이브가 따라온다.")]
+        private PerfTimeOfDay _timeOfDay = PerfTimeOfDay.Unchanged;
+
+        [SerializeField, Min(0)]
+        [Tooltip("점프할 Day 번호(1부터). 0이면 유지. 숲은 1~5일이고 5일차 밤이 대형 웨이브다.")]
+        private int _dayNumber;
+
+        [SerializeField]
+        [Tooltip("웨이브 스폰을 켜 둔다. 밤 시나리오에서 꺼져 있으면 몬스터가 안 나온다.")]
+        private bool _forceWaveSpawn = true;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("상태를 강제한 뒤 측정 전까지 기다리는 시간(초). 몬스터가 스폰돼 자리를 잡을 시간이다.")]
+        private float _settleSeconds;
+
         [Header("결정론")]
         [SerializeField]
         [Tooltip("난수 시드. 매 실행 같은 타일 순서·같은 추첨 결과를 만든다(§4.4).")]
@@ -52,6 +70,15 @@ namespace Game.Systems.Diagnostics
 
         public int WarmupFrames => _warmupFrames;
 
+        public PerfTimeOfDay TimeOfDay => _timeOfDay;
+
+        public int DayNumber => _dayNumber;
+
+        public bool ForceWaveSpawn => _forceWaveSpawn;
+
+        /// <summary>강제 직후 대기 시간 — 몬스터가 스폰 간격을 따라 실제로 모일 시간이다.</summary>
+        public float SettleSeconds => _settleSeconds;
+
         public int RandomSeed => _randomSeed;
 
         public int ScreenWidth => _screenWidth;
@@ -64,7 +91,13 @@ namespace Game.Systems.Diagnostics
         /// </summary>
         public string DescribeForcedConditions()
         {
-            return $"seed={_randomSeed} scene={_sceneName} warmup={_warmupFrames}f duration={_durationSeconds}s";
+            string state = _timeOfDay == PerfTimeOfDay.Unchanged
+                ? "state=unchanged"
+                : $"time={_timeOfDay} day={(_dayNumber > 0 ? _dayNumber.ToString() : "current")} " +
+                  $"waves={(_forceWaveSpawn ? "on" : "off")} settle={_settleSeconds}s";
+
+            return $"seed={_randomSeed} scene={_sceneName} warmup={_warmupFrames}f " +
+                   $"duration={_durationSeconds}s {state}";
         }
     }
 }

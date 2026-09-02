@@ -1,5 +1,6 @@
 using Game.Core.Logging;
 using System.Collections.Generic;
+using Game.Core.Diagnostics;
 using Game.Core.Events;
 using Game.Core.Pooling;
 using Game.Core.Services;
@@ -247,7 +248,19 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            float distance = scroll.TraveledDistance;
+            using (GameProfilerMarkers.TileStreamUpdate.Auto())
+            {
+                StreamTiles(scroll.TraveledDistance);
+            }
+        }
+
+        /// <summary>
+        /// 보이는 범위를 계산해 벗어난 타일을 회수하고 빈 자리를 채운다.
+        /// <see cref="Update"/>에서 분리한 이유는 프로파일러 마커로 이 구간만 감싸기 위해서다 —
+        /// 타일 교체 스파이크의 범인을 프레임 번호로 특정하려면 경계가 정확해야 한다(계획 §4.2).
+        /// </summary>
+        private void StreamTiles(float distance)
+        {
             TileStreamingLogic.GetVisibleRange(
                 distance, _settings.TileLength, _settings.TilesAhead, _settings.TilesBehind,
                 out int first, out int last);
@@ -283,9 +296,13 @@ namespace Game.Gameplay.World
                 }
                 else
                 {
-                    GameObject prefab = ResolveTilePrefab(index, out Quaternion rotation);
-                    _activeTiles.Add(index, PoolManager.Spawn(prefab, new Vector3(0f, 0f, z), rotation));
-                    _tilePrefabsByIndex[index] = prefab;
+                    // 6.67초마다 한 번 도는 자리다 — 스파이크가 주기적이라면 범인은 거의 여기다.
+                    using (GameProfilerMarkers.TileSpawn.Auto())
+                    {
+                        GameObject prefab = ResolveTilePrefab(index, out Quaternion rotation);
+                        _activeTiles.Add(index, PoolManager.Spawn(prefab, new Vector3(0f, 0f, z), rotation));
+                        _tilePrefabsByIndex[index] = prefab;
+                    }
                 }
             }
         }

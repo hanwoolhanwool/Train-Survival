@@ -39,6 +39,12 @@ namespace Game.Core.Diagnostics
         private ProfilerRecorder _textureMemory;
         private ProfilerRecorder _meshMemory;
 
+        // 게임 고유 마커 — 스파이크가 났을 때 "어느 시스템이었나"를 프레임 번호로 특정한다(§4.2).
+        private ProfilerRecorder _worldScrollUpdate;
+        private ProfilerRecorder _tileStreamUpdate;
+        private ProfilerRecorder _tileSpawn;
+        private ProfilerRecorder _waveSpawn;
+
         private bool _started;
         private int _frameIndex;
         private float _elapsedSeconds;
@@ -86,6 +92,17 @@ namespace Game.Core.Diagnostics
             _totalUsedMemory = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Total Used Memory");
             _textureMemory = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Texture Memory");
             _meshMemory = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Mesh Memory");
+
+            // 마커 이름은 GameProfilerMarkers 가 소유한다 — 심는 쪽과 읽는 쪽이 문자열을 따로
+            // 적으면 오타가 예외 없이 0으로 나온다(§1.8의 교훈).
+            _worldScrollUpdate = ProfilerRecorder.StartNew(
+                ProfilerCategory.Scripts, GameProfilerMarkers.WorldScrollUpdateName);
+            _tileStreamUpdate = ProfilerRecorder.StartNew(
+                ProfilerCategory.Scripts, GameProfilerMarkers.TileStreamUpdateName);
+            _tileSpawn = ProfilerRecorder.StartNew(
+                ProfilerCategory.Scripts, GameProfilerMarkers.TileSpawnName);
+            _waveSpawn = ProfilerRecorder.StartNew(
+                ProfilerCategory.Scripts, GameProfilerMarkers.WaveSpawnName);
 
             _started = true;
         }
@@ -138,7 +155,11 @@ namespace Game.Core.Diagnostics
                 _gcUsedMemory.LastValue,
                 _totalUsedMemory.LastValue,
                 _textureMemory.LastValue,
-                _meshMemory.LastValue));
+                _meshMemory.LastValue,
+                _worldScrollUpdate.LastValue,
+                _tileStreamUpdate.LastValue,
+                _tileSpawn.LastValue,
+                _waveSpawn.LastValue));
 
             _frameIndex++;
         }
@@ -200,6 +221,10 @@ namespace Game.Core.Diagnostics
             _totalUsedMemory.Dispose();
             _textureMemory.Dispose();
             _meshMemory.Dispose();
+            _worldScrollUpdate.Dispose();
+            _tileStreamUpdate.Dispose();
+            _tileSpawn.Dispose();
+            _waveSpawn.Dispose();
 
             _started = false;
         }

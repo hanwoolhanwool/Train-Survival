@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Game.Core.Diagnostics;
+using Game.Core.Events;
 using Game.Core.Logging;
 using Game.Core.Services;
 using Game.Systems.Networking;
@@ -42,6 +43,12 @@ namespace Game.Systems.Diagnostics
         private PerfScenario _scenario;
         private PerfProbe _probe;
         private string _failure;
+
+        // 측정 구간의 장면 무게 — 몬스터 0마리와 24마리는 같은 시나리오 이름을 달고도 다른 것을 잰다.
+        private int _monsterCountMin = int.MaxValue;
+        private int _monsterCountMax = -1;
+        private long _monsterCountSum;
+        private int _monsterCountSamples;
 
         /// <summary>
         /// 씬에 배치하지 않고 인자가 있을 때만 스스로 생성한다 — <b>씬 파일을 건드리지 않기 위함</b>이다.
@@ -121,6 +128,8 @@ namespace Game.Systems.Diagnostics
                 Finish(_failure);
                 yield break;
             }
+
+            yield return ApplyScenarioState();
 
             yield return Measure();
             Finish(_failure);
@@ -256,6 +265,50 @@ namespace Game.Systems.Diagnostics
             GameLog.Info(LogCategory.Performance, $"스모크 주행 완료 — {seconds:F0}초 생존.");
         }
 
+        /// <summary>
+        /// 시나리오가 원하는 게임 상태를 알리고, 그 상태가 자리를 잡을 때까지 기다린다.
+        ///
+        /// <para><b>여기서 직접 밤으로 바꾸지 않는다.</b> 낮/밤·웨이브는 <c>Game.Gameplay</c>에 있고
+        /// 이 클래스는 <c>Game.Systems</c>라 부를 수 없다(단방향 의존). 원하는 상태를
+        /// <see cref="PerfRunStartedEvent"/>로 알리면 게임플레이 쪽 적용기가 받는다(§4.7).</para>
+        /// </summary>
+        private IEnumerator ApplyScenarioState()
+        {
+            if (_scenario.TimeOfDay == PerfTimeOfDay.Unchanged && _scenario.DayNumber <= 0)
+            {
+                yield break;
+            }
+
+            EventBus<PerfRunStartedEvent>.Publish(new PerfRunStartedEvent(
+                _scenario.ScenarioId,
+                _scenario.TimeOfDay,
+                _scenario.DayNumber,
+                _scenario.ForceWaveSpawn));
+
+            GameLog.Info(LogCategory.Performance,
+                $"상태 강제 통지 — {_scenario.DescribeForcedConditions()}");
+
+            if (_scenario.SettleSeconds <= 0f)
+            {
+                yield break;
+            }
+
+            // 몬스터는 스폰 간격을 두고 하나씩 나온다 — 다 모이기 전에 재면 매 실행 다른 부하를 재게 된다.
+            GameLog.Info(LogCategory.Performance, $"상태 정착 대기 {_scenario.SettleSeconds:F0}초 —");
+
+            float waited = 0f;
+            while (waited < _scenario.SettleSeconds)
+            {
+                if (_failure != null)
+                {
+                    yield break;
+                }
+
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+        }
+
         /// <summary>워밍업을 버리고 시나리오 길이만큼 수집한 뒤 결과를 남긴다.</summary>
         private IEnumerator Measure()
         {
@@ -293,6 +346,7 @@ namespace Game.Systems.Diagnostics
                 float delta = Time.unscaledDeltaTime;
                 elapsed += delta;
                 _probe.Sample(delta);
+                SampleSceneStats();
                 yield return null;
             }
 
@@ -303,6 +357,37 @@ namespace Game.Systems.Diagnostics
             }
 
             WriteResult();
+        }
+
+        /// <summary>
+        /// 장면 무게를 표본으로 남긴다. 게임플레이가 이 계약을 등록하지 않았으면(스모크·비인게임)
+        /// 아무 일도 하지 않는다 — 없는 것을 0으로 적으면 "몬스터가 0마리였다"는 거짓이 된다.
+        /// </summary>
+        private void SampleSceneStats()
+        {
+            if (!ServiceLocator.TryGet(out IPerfSceneStats stats))
+            {
+                return;
+            }
+
+            int count = stats.MonsterCount;
+            if (count < 0)
+            {
+                return;
+            }
+
+            _monsterCountSum += count;
+            _monsterCountSamples++;
+
+            if (count < _monsterCountMin)
+            {
+                _monsterCountMin = count;
+            }
+
+            if (count > _monsterCountMax)
+            {
+                _monsterCountMax = count;
+            }
         }
 
         private void WriteResult()
@@ -416,6 +501,20 @@ namespace Game.Systems.Diagnostics
             builder.Append($"  \"frames\": {_probe.SampleCount},\n");
             builder.Append($"  \"bottleneck\": \"{bottleneck}\",\n");
 
+            // 장면 무게 — 같은 시나리오 이름이라도 이 값이 다르면 다른 것을 잰 결과다.
+            if (_monsterCountSamples > 0)
+            {
+                double average = (double)_monsterCountSum / _monsterCountSamples;
+                builder.Append("  \"sceneLoad\": {");
+                builder.Append($" \"monsterCountMin\": {_monsterCountMin},");
+                builder.Append($" \"monsterCountMax\": {_monsterCountMax},");
+                builder.Append($" \"monsterCountAvg\": {Number(average)} }},\n");
+            }
+            else
+            {
+                builder.Append("  \"sceneLoad\": null,\n");
+            }
+
             builder.Append("  \"median\": {\n");
             AppendDistribution(builder, "cpuMainMs", cpuMain, true);
             AppendDistribution(builder, "cpuRenderMs", cpuRender, true);
@@ -432,6 +531,12 @@ namespace Game.Systems.Diagnostics
             AppendDistribution(builder, "totalUsedBytes", totalMemory, false);
             AppendDistribution(builder, "textureMemoryBytes", textureMemory, false);
             AppendDistribution(builder, "meshMemoryBytes", meshMemory, false);
+
+            // 게임 고유 마커 — ns 를 ms 로 바꿔 프레임 시간과 같은 자로 읽히게 한다.
+            AppendDistribution(builder, "markerWorldScrollMs", _probe.Describe(s => s.WorldScrollNs / 1e6), false);
+            AppendDistribution(builder, "markerTileStreamMs", _probe.Describe(s => s.TileStreamNs / 1e6), false);
+            AppendDistribution(builder, "markerTileSpawnMs", _probe.Describe(s => s.TileSpawnNs / 1e6), false);
+            AppendDistribution(builder, "markerWaveSpawnMs", _probe.Describe(s => s.WaveSpawnNs / 1e6), false);
             builder.Append($"    \"framesOver33ms\": {framesOver33Ms}\n");
             builder.Append("  },\n");
 
