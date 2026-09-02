@@ -143,10 +143,25 @@ namespace Game.Systems.Diagnostics
 
             Random.InitState(_scenario.RandomSeed);
 
-            if (!Application.isEditor)
+            if (Application.isEditor)
             {
-                Screen.SetResolution(_scenario.ScreenWidth, _scenario.ScreenHeight, FullScreenMode.Windowed);
+                return;
             }
+
+            // 해상도는 시나리오가 소유한다 — 창 크기가 GPU 시간을 지배하므로 실행자가 바꿀 수 있으면
+            // 같은 시나리오의 두 결과를 비교할 수 없게 된다(§4.4).
+            //
+            // 다만 조용히 덮어쓰면 `-screen-width 3840`을 넘긴 사람이 4K 를 쟀다고 믿게 된다.
+            // 실제로 그렇게 믿고 한 번 잘못 읽었다(2026-09-02). 다르면 반드시 말한다.
+            if (Screen.width != _scenario.ScreenWidth || Screen.height != _scenario.ScreenHeight)
+            {
+                GameLog.Warn(LogCategory.Performance,
+                    $"해상도를 시나리오 값으로 되돌린다 — 실행 시 {Screen.width}x{Screen.height}, " +
+                    $"시나리오 {_scenario.ScreenWidth}x{_scenario.ScreenHeight}. " +
+                    "다른 해상도로 재려면 시나리오 에셋을 따로 만들어야 한다.");
+            }
+
+            Screen.SetResolution(_scenario.ScreenWidth, _scenario.ScreenHeight, FullScreenMode.Windowed);
         }
 
         /// <summary>Boot의 서비스 등록을 기다렸다가 호스트로 세션을 연다.</summary>
