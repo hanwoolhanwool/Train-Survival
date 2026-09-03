@@ -108,6 +108,9 @@ namespace Game.Systems.Diagnostics
 
             ApplyDeterministicSettings();
 
+            // Main 씬은 한글 UI 가 가장 많이 뜨는 화면이다 — 세션을 열기 전에 찍는다.
+            yield return Capture("main");
+
             yield return WaitForSession();
             if (_failure != null)
             {
@@ -125,6 +128,7 @@ namespace Game.Systems.Diagnostics
             if (_args.Mode == PerfRunMode.Smoke)
             {
                 yield return Survive(_args.DurationSeconds);
+                yield return Capture("ingame");
                 Finish(_failure);
                 yield break;
             }
@@ -237,6 +241,54 @@ namespace Game.Systems.Diagnostics
             }
 
             GameLog.Info(LogCategory.Performance, $"인게임 씬 진입 — {sceneName}");
+        }
+
+        /// <summary>
+        /// 화면을 파일로 남긴다 — <b>게임이 스스로 찍는다</b>.
+        ///
+        /// <para>바깥에서 창을 캡처하는 방법은 못 쓴다. Windows 가 백그라운드 프로세스의 포그라운드
+        /// 전환을 막아 <b>그 좌표에 있던 다른 창이 찍힌다</b> (2026-09-04 에 실제로 브라우저가 찍혔다).</para>
+        ///
+        /// <para>수치로 답할 수 없는 것들 — 한글 폰트가 실제로 표시되는가, 그림자 해상도가
+        /// 계단현상으로 보이는가 — 을 확인하는 경로다.</para>
+        /// </summary>
+        private IEnumerator Capture(string label)
+        {
+            if (string.IsNullOrEmpty(_args.ScreenshotDirectory))
+            {
+                yield break;
+            }
+
+            string directory = _args.ScreenshotDirectory;
+            string path = Path.Combine(directory, $"{label}.png");
+
+            try
+            {
+                Directory.CreateDirectory(directory);
+            }
+            catch (IOException exception)
+            {
+                GameLog.Warn(LogCategory.Performance, $"스크린샷 폴더를 만들지 못했다 — {exception.Message}");
+                yield break;
+            }
+
+            // UI 가 한 번은 그려진 뒤에 찍어야 한다 — 씬 진입 직후 프레임은 비어 있을 수 있다.
+            yield return null;
+            yield return new WaitForSecondsRealtime(1f);
+
+            ScreenCapture.CaptureScreenshot(path);
+
+            // CaptureScreenshot 은 다음 프레임 끝에 쓴다 — 파일이 생길 때까지 기다린다.
+            float waited = 0f;
+            while (!File.Exists(path) && waited < 10f)
+            {
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            GameLog.Info(LogCategory.Performance, File.Exists(path)
+                ? $"스크린샷 — {path}"
+                : $"스크린샷이 생기지 않았다 — {path}");
         }
 
         /// <summary>스모크 — 재지 않고 버틴다. 그동안 예외나 세션 단절이 나면 실패로 끝난다.</summary>

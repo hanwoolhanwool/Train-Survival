@@ -15,12 +15,14 @@ namespace Game.Utilities.Performance
         /// <summary>인자가 없을 때의 값 — 평범한 게임 실행이다.</summary>
         public static readonly PerfRunArgs None = default;
 
-        private PerfRunArgs(PerfRunMode mode, string scenario, string outputPath, float durationSeconds)
+        private PerfRunArgs(PerfRunMode mode, string scenario, string outputPath, float durationSeconds,
+            string screenshotDirectory)
         {
             Mode = mode;
             Scenario = scenario;
             OutputPath = outputPath;
             DurationSeconds = durationSeconds;
+            ScreenshotDirectory = screenshotDirectory;
         }
 
         public PerfRunMode Mode { get; }
@@ -32,6 +34,13 @@ namespace Game.Utilities.Performance
         public string OutputPath { get; }
 
         /// <summary>
+        /// 스크린샷을 남길 폴더 (`-screenshot &lt;폴더&gt;`). null이면 찍지 않는다.
+        /// <b>화면을 눈으로 확인해야 하는 것들</b>(한글 폰트 표시·그림자 품질)을 위한 경로다 —
+        /// 바깥에서 창을 캡처하는 방식은 Windows 가 포그라운드 전환을 막아 <b>엉뚱한 창이 찍힌다</b>.
+        /// </summary>
+        public string ScreenshotDirectory { get; }
+
+        /// <summary>
         /// 스모크 주행 길이(초). `-smoke &lt;초&gt;`로 덮어쓸 수 있고, 생략하면
         /// <see cref="DefaultSmokeSeconds"/>다. 벤치 모드에서는 0 — 길이는 시나리오가 정한다(§1.4).
         /// </summary>
@@ -40,14 +49,14 @@ namespace Game.Utilities.Performance
         /// <summary>벤치·스모크 어느 쪽으로든 자동 주행해야 하는가.</summary>
         public bool IsAutomatedRun => Mode != PerfRunMode.None;
 
-        internal static PerfRunArgs Benchmark(string scenario, string outputPath)
+        internal static PerfRunArgs Benchmark(string scenario, string outputPath, string screenshotDirectory)
         {
-            return new PerfRunArgs(PerfRunMode.Benchmark, scenario, outputPath, 0f);
+            return new PerfRunArgs(PerfRunMode.Benchmark, scenario, outputPath, 0f, screenshotDirectory);
         }
 
-        internal static PerfRunArgs Smoke(float durationSeconds)
+        internal static PerfRunArgs Smoke(float durationSeconds, string screenshotDirectory)
         {
-            return new PerfRunArgs(PerfRunMode.Smoke, null, null, durationSeconds);
+            return new PerfRunArgs(PerfRunMode.Smoke, null, null, durationSeconds, screenshotDirectory);
         }
     }
 
@@ -74,6 +83,7 @@ namespace Game.Utilities.Performance
         public const string BenchmarkArgument = "-perfrun";
         public const string OutputArgument = "-perfout";
         public const string SmokeArgument = "-smoke";
+        public const string ScreenshotArgument = "-screenshot";
 
         /// <summary>`-smoke`에 초를 붙이지 않았을 때의 주행 길이.</summary>
         public const float DefaultSmokeSeconds = 30f;
@@ -94,10 +104,12 @@ namespace Game.Utilities.Performance
                 return PerfRunArgs.None;
             }
 
+            string screenshots = FindValue(args, ScreenshotArgument);
+
             string scenario = FindValue(args, BenchmarkArgument);
             if (scenario != null)
             {
-                return PerfRunArgs.Benchmark(scenario, FindValue(args, OutputArgument));
+                return PerfRunArgs.Benchmark(scenario, FindValue(args, OutputArgument), screenshots);
             }
 
             if (!HasFlag(args, SmokeArgument))
@@ -105,7 +117,7 @@ namespace Game.Utilities.Performance
                 return PerfRunArgs.None;
             }
 
-            return PerfRunArgs.Smoke(ResolveSmokeSeconds(args));
+            return PerfRunArgs.Smoke(ResolveSmokeSeconds(args), screenshots);
         }
 
         /// <summary>`-smoke [초]` — 값이 없거나 숫자가 아니면 기본값. 범위를 벗어나면 잘라 낸다.</summary>

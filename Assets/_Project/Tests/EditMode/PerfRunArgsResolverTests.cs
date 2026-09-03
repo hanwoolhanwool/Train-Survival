@@ -86,6 +86,23 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void screenshot_는_두_모드_모두에서_읽힌다()
+        {
+            Assert.That(PerfRunArgsResolver.Resolve(new[] { "-smoke", "-screenshot", "Perf/shots" })
+                .ScreenshotDirectory, Is.EqualTo("Perf/shots"));
+            Assert.That(PerfRunArgsResolver.Resolve(new[] { "-perfrun", "x", "-screenshot", "Perf/shots" })
+                .ScreenshotDirectory, Is.EqualTo("Perf/shots"));
+        }
+
+        [Test]
+        public void screenshot_가_없으면_찍지_않는다()
+        {
+            Assert.That(PerfRunArgsResolver.Resolve(new[] { "-smoke" }).ScreenshotDirectory, Is.Null);
+            Assert.That(PerfRunArgsResolver.Resolve(new[] { "-smoke", "-screenshot" }).ScreenshotDirectory,
+                Is.Null, "값이 없으면 폴더가 아니다");
+        }
+
+        [Test]
         public void 대소문자를_가리지_않는다()
         {
             Assert.That(PerfRunArgsResolver.Resolve(new[] { "-SMOKE" }).Mode, Is.EqualTo(PerfRunMode.Smoke));
