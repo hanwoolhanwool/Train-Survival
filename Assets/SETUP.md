@@ -51,9 +51,30 @@ Unity.exe -batchmode -projectPath . -runTests -testPlatform EditMode -testResult
 
 ## 4. CI/CD
 
-- `.github/workflows/ci.yml` — GitHub Actions + [GameCI](https://game.ci/) 파이프라인:
-  1. `game-ci/unity-test-runner` — EditMode + PlayMode 테스트 (`testMode: all`)
-  2. `game-ci/unity-builder` — StandaloneWindows64 빌드 → 아티팩트 업로드
+- `.github/workflows/ci.yml` — GitHub Actions + [GameCI](https://game.ci/) 파이프라인.
+  두 잡이 **병렬로** 돈다 (벽시계 약 10분):
+  1. **Test (EditMode · PlayMode 격리)** — `game-ci/unity-test-runner`
+  2. **Build (StandaloneWindows64)** — `game-ci/unity-builder` → 아티팩트 업로드
+
+**CI가 실제로 지키는 것** (통과 = 무엇이 보장되나):
+
+| 검사 | 게이트인가 | 보장 범위 |
+|---|---|---|
+| EditMode 테스트 (1,406개) | ✅ 실패하면 워크플로 실패 | 순수 로직·수학·에셋 배선 |
+| StandaloneWindows64 빌드 | ✅ 실패하면 워크플로 실패 | 컴파일과 빌드 파이프라인이 성립한다 |
+| PlayMode 테스트 (11개) | ❌ **격리됨** — 실패해도 막지 않는다 | **없다.** 아래 참조 |
+
+> ⚠ **PlayMode는 2026-08-31부터 CI에서 죽는다.** 리눅스 컨테이너에서 PlayMode 진입 시
+> 세그폴트(`signo:11`)가 나고, 원인은 미확정이다(우리 코드·라이선스·러너 이미지·GUI 경로는
+> 전부 배제됐다). 이 크래시 하나가 EditMode와 빌드까지 나흘간 막았기 때문에
+> **스텝 단위로 격리**했다 — 결과는 남기되 게이트는 세우지 않는다.
+> 매 실행의 `Detect editor crash` 스텝이 경고로 스택을 띄우며, **그 경고가 사라지는 날이
+> 복구 신호다.** 그때까지 NGO 세션·풀링 회귀는 로컬에서 수동으로 확인한다:
+> ```
+> Unity.exe -batchmode -runTests -testPlatform playmode -projectPath <프로젝트> \
+>   -testResults playmode.xml -logFile playmode.log
+> ```
+> 경위와 남은 조사 순서는 [자동화 1차 구현 계획](../docs/plans/features/자동화-1차-구현-계획.md) §1·§7.
 - **선행 조건**: 저장소 시크릿 `UNITY_LICENSE`/`UNITY_EMAIL`/`UNITY_PASSWORD` 등록.
   상세는 [.github/workflows/README.md](../.github/workflows/README.md) 참고.
 - 로컬 CLI 빌드: `Game.Editor.BuildScript.PerformWindowsBuild` (결과물 `Builds/StandaloneWindows64/`).
