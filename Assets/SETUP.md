@@ -64,18 +64,28 @@ Unity.exe -batchmode -projectPath . -runTests -testPlatform EditMode -testResult
 | PlayMode 테스트 (11개) | ✅ 실패하면 워크플로 실패 | NGO 세션·풀링·풀 네트워크 프리팹 핸들러 |
 | StandaloneWindows64 빌드 | ✅ 실패하면 워크플로 실패 | 컴파일과 빌드 파이프라인이 성립한다 |
 
-> ⚠ **`[MenuItem]`을 새로 추가하면 그 커밋의 CI를 반드시 확인한다.**
-> 2026-08-31 ~ 09-03에 CI가 아흐레 멈춰 섰는데, 범인은 에디터 메뉴 **한 줄**이었다.
-> 리눅스 batchmode 에디터는 PlayMode에 진입할 때 메뉴를 재구축하다 세그폴트(`signo:11`)로 죽고,
-> **메뉴 항목이 하나 늘어난 것만으로** 재현된다(경로·계층과 무관). 원인은 Unity 안에 있어
-> 우리 쪽 처방은 회피다 — 리눅스 에디터에서만 등록을 건너뛴다:
+> ### ⚠ 규칙 — 에디터 메뉴에는 **항상** 리눅스 가드를 씌운다
+>
 > ```csharp
 > #if !UNITY_EDITOR_LINUX
->         [MenuItem("Game/Art/Rebuild Rail Track Mesh")]
+>         [MenuItem("Game/QA/무언가")]
 > #endif
+>         private static void DoSomething() { ... }
 > ```
-> 매 실행의 `Detect editor crash` 스텝이 크래시 스택을 경고로 띄운다. **메뉴를 추가한 뒤 이 경고가
-> 뜨면 같은 문제다** — 조사할 것 없이 위 가드를 씌우면 된다.
+>
+> **왜** — 리눅스 batchmode 에디터는 PlayMode에 진입할 때 메뉴를 재구축하다 세그폴트(`signo:11`)로
+> 죽는다. 방아쇠는 특정 메뉴가 아니라 **항목 수**이고, 실측상 **7개째부터** 터진다.
+> CI가 리눅스라 이것 하나로 2026-08-31 ~ 09-03에 파이프라인 전체가 멈췄다.
+>
+> **한 번 겪고 또 겪었다.** 09-04에 문제의 메뉴 하나만 빼서 6개로 줄였는데, 같은 날 폰트 도구가
+> 메뉴 2개를 더하자 8개가 되어 즉시 재발했다. 그래서 **개별 대응을 그만두고 프로젝트의
+> `[MenuItem]` 9개 전부를 감쌌다** — 리눅스에서 0개면 임계와 무관해진다.
+>
+> Windows 에디터는 영향받지 않는다. 메서드는 남으므로 CI에서 필요하면
+> `-executeMethod Game.Editor.<클래스>.<메서드>`로 부른다.
+>
+> **재발 신호** — 매 실행의 `Detect editor crash` 스텝이 크래시 스택을 경고로 띄운다.
+> 이 경고가 뜨면 가드 없는 메뉴가 새로 들어온 것이다.
 > 경위는 [자동화 1차 구현 계획](../docs/plans/features/자동화-1차-구현-계획.md) §1.8.
 - **선행 조건**: 저장소 시크릿 `UNITY_LICENSE`/`UNITY_EMAIL`/`UNITY_PASSWORD` 등록.
   상세는 [.github/workflows/README.md](../.github/workflows/README.md) 참고.
