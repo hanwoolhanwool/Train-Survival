@@ -104,14 +104,20 @@
 ## 시작하기
 
 1. Unity Hub에서 **6000.5.3f1**로 프로젝트를 연다.
-2. 클론 직후 아래를 1회 실행한다 (커밋 템플릿 · LFS · 씬/프리팹 머지 드라이버):
+2. 클론 직후 아래를 1회 실행한다 (커밋 템플릿 · LFS · 씬/프리팹 머지 드라이버 · 커밋 훅):
 
    ```bash
    git config commit.template .gitmessage
    git lfs install --local
    git config merge.unityyamlmerge.name "Unity SmartMerge"
    git config merge.unityyamlmerge.driver '"C:/Program Files/Unity/Hub/Editor/6000.5.3f1/Editor/Data/Tools/UnityYAMLMerge.exe" merge -p %O %B %A %A'
+   cp tools/git-hooks/pre-commit .git/hooks/pre-commit
    ```
+
+   마지막 줄은 **한글 폰트 아틀라스가 커밋에 섞이는 것을 막는다** — 그 파일은 캐시라
+   비운 채로 두는 것이 규약이고, 방치하면 4 MB 짜리 diff 가 매번 쌓인다.
+   근거는 [폰트 아틀라스 가이드](docs/guide/font-atlas.md).
+   `core.hooksPath` 를 쓰지 않는 이유도 그 문서에 있다 (LFS 훅이 죽는다).
 
 3. **무기 파지 애니메이션 3종을 Mixamo에서 받는다.** Adobe 약관상 재배포가 금지돼
    저장소에 포함하지 않았다. 절차는 [`Art/Animations/NOTICE.md`](Assets/_Project/Art/Animations/NOTICE.md)

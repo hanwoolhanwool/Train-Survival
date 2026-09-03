@@ -1,0 +1,56 @@
+#!/bin/sh
+#
+# 커밋 전 자동 정비 — 사람이 기억하지 않아도 되게 한다.
+#
+# 설치: README "시작하기"의 1회 실행 절차에 포함돼 있다.
+#   git config core.hooksPath tools/git-hooks
+#
+# 지금 막는 것: 한글 폰트 아틀라스가 커밋에 섞여 들어가는 것.
+#
+# 이 에셋은 Atlas Population Mode 가 Dynamic 이라 런타임이 소스 TTF 에서 필요한 글자를
+# 알아서 굽는다. 즉 에셋에 구워진 글리프는 필수 데이터가 아니라 캐시다. 그런데 TMP 가
+# 빌드·재직렬화 시점에 그 캐시를 비우고(m_ClearDynamicDataOnBuild: 1) 플레이 중에는
+# 새 글자를 채워 넣어, 같은 파일이 끝없이 오간다.
+#
+# 방치한 결과: 커밋 14회 · 저장소 이력 47 MB · "다시 굽는다" 커밋 2회.
+# 비워서 고정한 뒤로는 4.1 MB -> 8 KB 이고, diff 가 아예 생기지 않는다.
+#
+# 근거와 검증: docs/guide/font-atlas.md
+
+set -e
+
+FONT_ASSET="Assets/_Project/Art/Fonts/F_NotoSansKR_SDF.asset"
+
+# 스테이징된 것 중에 폰트 에셋이 있나
+if ! git diff --cached --name-only | grep -qx "$FONT_ASSET"; then
+    exit 0
+fi
+
+# 스테이징된 내용의 글리프 수를 센다 (워킹트리가 아니라 커밋될 내용을 봐야 한다)
+staged_glyphs=$(git show ":$FONT_ASSET" 2>/dev/null | grep -c "m_GlyphIndex" || true)
+
+if [ "$staged_glyphs" -eq 0 ]; then
+    exit 0
+fi
+
+cat >&2 <<EOF
+
+  커밋을 멈춘다 — 한글 폰트 아틀라스에 글리프 ${staged_glyphs}개가 섞였다.
+
+    $FONT_ASSET
+
+  이 파일은 비운 상태로 유지한다. 구워진 글리프는 필수 데이터가 아니라 캐시이고
+  (Dynamic 모드라 런타임이 소스 TTF 에서 굽는다), 커밋되면 4 MB 짜리 diff 가
+  매번 쌓인다. 예전에 그렇게 47 MB 를 썼다.
+
+  해결:
+    git restore --staged "$FONT_ASSET" && git checkout -- "$FONT_ASSET"
+
+  아틀라스를 일부러 채워야 하는 상황이라면 (예: 정적 모드로 전환) 이 훅을 건너뛴다:
+    git commit --no-verify
+
+  근거: docs/guide/font-atlas.md
+
+EOF
+
+exit 1
