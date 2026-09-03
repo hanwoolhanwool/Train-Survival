@@ -54,6 +54,12 @@ jobs:
         with:
           testMode: all
           artifactsPath: test-results
+          # -nographics — PlayMode 진입에서 나던 세그폴트(signo:11)의 회피를 시험한다.
+          # 크래시 스택이 ScriptCommands::Rebuild() → MenuController::GetChecked() → DoFindItem 이고
+          # 그 위가 gtk_main 이다. 메뉴는 GUI 기능이므로 그래픽 디바이스를 초기화하지 않으면
+          # 이 경로 자체가 서지 않는다는 가설이다. 테스트 3종(NGO 세션·풀링)은 렌더링을 쓰지 않는다.
+          # 2026-08-31 이후 CI 6회 연속 실패 (자동화 1차 구현 계획 §1).
+          customParameters: -nographics
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
