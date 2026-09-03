@@ -61,20 +61,22 @@ Unity.exe -batchmode -projectPath . -runTests -testPlatform EditMode -testResult
 | 검사 | 게이트인가 | 보장 범위 |
 |---|---|---|
 | EditMode 테스트 (1,406개) | ✅ 실패하면 워크플로 실패 | 순수 로직·수학·에셋 배선 |
+| PlayMode 테스트 (11개) | ✅ 실패하면 워크플로 실패 | NGO 세션·풀링·풀 네트워크 프리팹 핸들러 |
 | StandaloneWindows64 빌드 | ✅ 실패하면 워크플로 실패 | 컴파일과 빌드 파이프라인이 성립한다 |
-| PlayMode 테스트 (11개) | ❌ **격리됨** — 실패해도 막지 않는다 | **없다.** 아래 참조 |
 
-> ⚠ **PlayMode는 2026-08-31부터 CI에서 죽는다.** 리눅스 컨테이너에서 PlayMode 진입 시
-> 세그폴트(`signo:11`)가 나고, 원인은 미확정이다(우리 코드·라이선스·러너 이미지·GUI 경로는
-> 전부 배제됐다). 이 크래시 하나가 EditMode와 빌드까지 나흘간 막았기 때문에
-> **스텝 단위로 격리**했다 — 결과는 남기되 게이트는 세우지 않는다.
-> 매 실행의 `Detect editor crash` 스텝이 경고로 스택을 띄우며, **그 경고가 사라지는 날이
-> 복구 신호다.** 그때까지 NGO 세션·풀링 회귀는 로컬에서 수동으로 확인한다:
+> ⚠ **`[MenuItem]`을 새로 추가하면 그 커밋의 CI를 반드시 확인한다.**
+> 2026-08-31 ~ 09-03에 CI가 아흐레 멈춰 섰는데, 범인은 에디터 메뉴 **한 줄**이었다.
+> 리눅스 batchmode 에디터는 PlayMode에 진입할 때 메뉴를 재구축하다 세그폴트(`signo:11`)로 죽고,
+> **메뉴 항목이 하나 늘어난 것만으로** 재현된다(경로·계층과 무관). 원인은 Unity 안에 있어
+> 우리 쪽 처방은 회피다 — 리눅스 에디터에서만 등록을 건너뛴다:
+> ```csharp
+> #if !UNITY_EDITOR_LINUX
+>         [MenuItem("Game/Art/Rebuild Rail Track Mesh")]
+> #endif
 > ```
-> Unity.exe -batchmode -runTests -testPlatform playmode -projectPath <프로젝트> \
->   -testResults playmode.xml -logFile playmode.log
-> ```
-> 경위와 남은 조사 순서는 [자동화 1차 구현 계획](../docs/plans/features/자동화-1차-구현-계획.md) §1·§7.
+> 매 실행의 `Detect editor crash` 스텝이 크래시 스택을 경고로 띄운다. **메뉴를 추가한 뒤 이 경고가
+> 뜨면 같은 문제다** — 조사할 것 없이 위 가드를 씌우면 된다.
+> 경위는 [자동화 1차 구현 계획](../docs/plans/features/자동화-1차-구현-계획.md) §1.8.
 - **선행 조건**: 저장소 시크릿 `UNITY_LICENSE`/`UNITY_EMAIL`/`UNITY_PASSWORD` 등록.
   상세는 [.github/workflows/README.md](../.github/workflows/README.md) 참고.
 - 로컬 CLI 빌드: `Game.Editor.BuildScript.PerformWindowsBuild` (결과물 `Builds/StandaloneWindows64/`).
