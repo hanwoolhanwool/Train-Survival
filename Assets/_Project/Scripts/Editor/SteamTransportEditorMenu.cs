@@ -1,6 +1,5 @@
 using Game.Systems.Networking;
 using UnityEditor;
-using UnityEngine;
 
 namespace Game.Editor
 {
@@ -19,26 +18,16 @@ namespace Game.Editor
             EditorPrefs.SetBool(ActiveTransportMode.EditorPrefsKey, next);
         }
 
-        /// <summary>
-        /// <b>배치 모드에서는 체크 표시를 건드리지 않는다 — 지우면 CI가 다시 죽는다.</b>
-        ///
-        /// <para><see cref="Menu.SetChecked"/>는 메뉴 UI에 체크를 그리는 API인데 배치 모드에는
-        /// 그릴 메뉴가 없다. 그런데도 부르면 <b>메뉴 명령 목록을 재구축하는 도중에 그 목록을
-        /// 조회</b>하게 되고, CI(Linux · 6000.5.3f1 · batchmode)에서 PlayMode 진입 시
-        /// <c>MenuController::GetChecked</c> → <c>DoFindItem</c>에서 세그폴트(signo:11)가 난다.
-        /// 2026-08-31 ~ 09-02 사이 CI 5회 연속 실패의 원인 후보이며, 스택은
-        /// <c>EnterPlayMode</c> → <c>FinalizeReload</c> → <c>ScriptCommands::Rebuild</c>로 이어진다
-        /// (자동화 1차 구현 계획 §1.2).</para>
-        /// </summary>
-        [MenuItem(MenuPath, true)]
-        private static bool Validate()
-        {
-            if (!Application.isBatchMode)
-            {
-                Menu.SetChecked(MenuPath, EditorPrefs.GetBool(ActiveTransportMode.EditorPrefsKey, false));
-            }
-
-            return true;
-        }
+        // ── validate 함수를 의도적으로 두지 않는다 (2026-09-03 · 진단 중) ──
+        //
+        // 원래 여기에 [MenuItem(MenuPath, true)] Validate()가 있었고 Menu.SetChecked 로 체크 표시를
+        // 갱신했다. CI(Linux · 6000.5.3f1 · batchmode)가 PlayMode 진입에서 세그폴트(signo:11)로
+        // 죽는데, 스택이 ScriptCommands::Rebuild() → MenuController::GetChecked() → DoFindItem 이다.
+        // 체크 상태를 쓰는 메뉴는 이 프로젝트에서 이 항목 하나뿐이라, validate 등록 자체가
+        // 방아쇠인지 확인하려고 함수를 걷어냈다.
+        //
+        // 배치 모드 가드(5d03c0e)로는 멈추지 않았다 — 그것은 SetChecked "호출"만 막았고
+        // validate 함수의 등록은 그대로였다. 원인이 확정되면 체크 표시를 어떤 방식으로
+        // 되살릴지 정한다 (자동화 1차 구현 계획 §2 결정 ①).
     }
 }
