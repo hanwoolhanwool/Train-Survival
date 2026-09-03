@@ -45,41 +45,32 @@ jobs:
           restore-keys: |
             Library-test-
 
-      # EditMode 가 게이트다 — 여기서 실패하면 워크플로가 실패한다.
-      - name: Run EditMode tests
-        uses: game-ci/unity-test-runner@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          testMode: editmode
-          artifactsPath: test-results
-
-      # PlayMode 도 게이트다 (2026-09-04 격리 해제).
+      # testMode: all — 한 번의 호출로 PlayMode 와 EditMode 를 연달아 돌린다. 둘 다 게이트다.
       #
-      # 2026-08-31 ~ 09-03 에는 리눅스 컨테이너에서 PlayMode 진입 시 세그폴트(signo:11)로 죽어
-      # continue-on-error 로 격리해 두었다. 원인은 이등분으로 잡았다 —
-      # RailTrackMeshBuilder 의 [MenuItem] 등록 한 줄이었고, 리눅스 에디터에서만 등록을
-      # 건너뛰도록 고쳤다 (자동화 1차 구현 계획 §1.8).
-      - name: Run PlayMode tests
+      # **스텝을 둘로 쪼개지 말 것.** 2026-09-04 에 editmode / playmode 스텝을 나눠 봤더니
+      # 두 번째 unity-test-runner 호출이 "Testing in playmode" 배너만 찍고 **2시간 무응답**으로
+      # 멈췄다(실행 33804136768). 같은 잡에서 액션을 두 번 부르면 두 번째 에디터가 뜨지 못한다.
+      # 격리하던 동안에는 PlayMode 가 세그폴트로 먼저 죽어 이 문제가 가려져 있었다.
+      #
+      # PlayMode 세그폴트(2026-08-31 ~ 09-03)의 원인은 RailTrackMeshBuilder 의 [MenuItem]
+      # 등록 한 줄이었고, 리눅스 에디터에서만 등록을 건너뛰도록 고쳤다
+      # (자동화 1차 구현 계획 §1.8).
+      - name: Run tests
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          testMode: playmode
-          artifactsPath: test-results-playmode
+          testMode: all
+          artifactsPath: test-results
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Test-Results
-          path: |
-            test-results
-            test-results-playmode
+          path: test-results
 
       # 실패했을 때 어떤 테스트가 죽었는지 로그 맨 끝에서 바로 보이게 한다.
       # 결과 XML 자체가 없으면 테스트가 시작되기도 전(라이선스·컴파일)에 실패한 것이다.
@@ -123,7 +114,7 @@ jobs:
         if: always()
         run: |
           found=0
-          for log in test-results/*.log test-results-playmode/*.log; do
+          for log in test-results/*.log; do
             [ -f "$log" ] || continue
             if grep -q "Caught fatal signal" "$log"; then
               found=1
