@@ -14,7 +14,11 @@ namespace Game.Editor
     {
         private static readonly LogCategory[] Categories = BuildCategoryList();
 
+        // 리눅스 에디터(= CI)에서는 등록하지 않는다 — 메뉴 항목 수가 임계를 넘으면
+        // PlayMode 진입에서 세그폴트가 난다 (자동화 1차 구현 계획 §1.8).
+#if !UNITY_EDITOR_LINUX
         [MenuItem("Game/QA/Log Categories")]
+#endif
         private static void Open()
         {
             GetWindow<GameLogWindow>(false, "Log Categories", true).minSize = new Vector2(260f, 320f);

@@ -30,7 +30,11 @@ namespace Game.Editor
         private readonly List<TileReport> _reports = new List<TileReport>();
         private string _summary = "아직 검사하지 않았다.";
 
+        // 리눅스 에디터(= CI)에서는 등록하지 않는다 — 메뉴 항목 수가 임계를 넘으면
+        // PlayMode 진입에서 세그폴트가 난다 (자동화 1차 구현 계획 §1.8).
+#if !UNITY_EDITOR_LINUX
         [MenuItem("Game/QA/Clear Zone Audit")]
+#endif
         private static void Open()
         {
             var window = GetWindow<ClearZoneAuditWindow>("클리어 존 검사기");
@@ -150,7 +154,11 @@ namespace Game.Editor
         /// <summary>
         /// 창을 열지 않고 기본 폴더를 통째로 판정해 콘솔에 남긴다 — 배치 검수·회귀 확인용.
         /// </summary>
+        // 리눅스 에디터(= CI)에서는 등록하지 않는다 — 메뉴 항목 수가 임계를 넘으면
+        // PlayMode 진입에서 세그폴트가 난다 (자동화 1차 구현 계획 §1.8).
+#if !UNITY_EDITOR_LINUX
         [MenuItem("Game/QA/Clear Zone Audit (Log)")]
+#endif
         private static void AuditAllToConsole()
         {
             var reports = new List<TileReport>();

@@ -11,7 +11,11 @@ namespace Game.Editor
     {
         private const string MenuPath = "Game/Steam Transport (Editor)";
 
+        // 리눅스 에디터(= CI)에서는 등록하지 않는다 — 메뉴 항목 수가 임계를 넘으면
+        // PlayMode 진입에서 세그폴트가 난다 (자동화 1차 구현 계획 §1.8).
+#if !UNITY_EDITOR_LINUX
         [MenuItem(MenuPath)]
+#endif
         private static void Toggle()
         {
             bool next = !EditorPrefs.GetBool(ActiveTransportMode.EditorPrefsKey, false);

@@ -31,7 +31,11 @@ namespace Game.Editor
         /// <summary>검증할 글자 목록 파일 경로를 넘기는 인자 (CLI).</summary>
         private const string CharsetArgument = "-charsetFile";
 
+        // 리눅스 에디터(= CI)에서는 등록하지 않는다 — 메뉴 항목 수가 임계를 넘으면
+        // PlayMode 진입에서 세그폴트가 난다 (자동화 1차 구현 계획 §1.8).
+#if !UNITY_EDITOR_LINUX
         [MenuItem("Game/QA/Font/아틀라스 비우기")]
+#endif
         public static void ClearAtlas()
         {
             TMP_FontAsset font = Load();
@@ -54,7 +58,11 @@ namespace Game.Editor
         /// 소스 TTF 가 지정한 글자를 전부 공급할 수 있는지 확인한다.
         /// <b>확인만 하고 아틀라스는 다시 비운다</b> — 캐시를 남기지 않는 것이 이 정비의 목적이다.
         /// </summary>
+        // 리눅스 에디터(= CI)에서는 등록하지 않는다 — 메뉴 항목 수가 임계를 넘으면
+        // PlayMode 진입에서 세그폴트가 난다 (자동화 1차 구현 계획 §1.8).
+#if !UNITY_EDITOR_LINUX
         [MenuItem("Game/QA/Font/공급 가능 여부 검증")]
+#endif
         public static void VerifyCoverage()
         {
             string charsetPath = GetCommandLineArg(CharsetArgument);
