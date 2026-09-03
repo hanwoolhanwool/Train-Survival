@@ -62,7 +62,24 @@ namespace Game.Editor
         /// <summary>레일 높이 — 침목 위에 얹힌다.</summary>
         private const float RailHeight = 0.16f;
 
+        // ── 리눅스 에디터(= CI)에서는 이 메뉴를 등록하지 않는다 ──
+        //
+        // 이 어트리뷰트 한 줄이 2026-08-31 ~ 09-03 CI 전면 실패의 원인이다. 리눅스 컨테이너의
+        // batchmode 에디터에서 PlayMode 에 진입하면 도메인 리로드 끝에 메뉴를 재구축하다가
+        // 세그폴트(signo:11)로 죽는다 — ScriptCommands::Rebuild() 안에서 MonoMenuItem 을
+        // 조회하거나(DoFindItem) 해제할 때(~MonoMenuItem) 양쪽에서 터진다.
+        //
+        // 이등분으로 확정했다 (자동화 1차 구현 계획 §1.8):
+        //   bd115b7 + 주석 한 줄 → 통과 · 065d253(이 파일 추가) → 죽음 ·
+        //   메뉴 경로만 Game/QA 로 이동 → 죽음 · 이 어트리뷰트만 주석 → 통과.
+        // 즉 방아쇠는 새 하위 메뉴가 아니라 **메뉴 항목이 하나 늘어난 것 자체**다.
+        // Windows 에디터에서는 같은 코드가 멀쩡하고 PlayMode 테스트도 11/11 통과한다.
+        //
+        // 메서드는 남으므로 필요하면 -executeMethod 로 부를 수 있다.
+        // 원인은 Unity 쪽에 있어 이 가드는 회피다 — 버전을 올릴 때 걷어낼 수 있는지 다시 본다.
+#if !UNITY_EDITOR_LINUX
         [MenuItem("Game/Art/Rebuild Rail Track Mesh")]
+#endif
         public static void Rebuild()
         {
             Mesh mesh = Build();
