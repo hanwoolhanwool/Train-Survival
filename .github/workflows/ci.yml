@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   test:
-    name: Test (EditMode + PlayMode)
+    name: Test (EditMode · PlayMode 격리)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (with LFS)
@@ -45,22 +45,44 @@ jobs:
           restore-keys: |
             Library-test-
 
-      - name: Run tests
+      # EditMode 가 게이트다 — 여기서 실패하면 워크플로가 실패한다.
+      - name: Run EditMode tests
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          testMode: all
+          testMode: editmode
           artifactsPath: test-results
+
+      # PlayMode 는 2026-08-31 부터 리눅스 컨테이너에서 PlayMode 진입 시 세그폴트(signo:11)로 죽는다.
+      # 스택은 ScriptCommands::Rebuild() → MenuController::GetChecked() → DoFindItem 이고 managed
+      # 프레임이 없다 — 우리 코드가 부르는 경로가 아니다. Windows batchmode 에서는 같은 테스트가
+      # 11/11 통과하고, 라이선스·러너 이미지·액션 SHA·도커 이미지는 성공 실행과 전부 동일하다.
+      # 원인 미확정 (자동화 1차 구현 계획 §1 · §7).
+      #
+      # 격리하는 이유는 하나다 — 이 크래시가 EditMode 1,406 개와 빌드까지 통째로 막고 있었다.
+      # continue-on-error 로 결과는 남기되 게이트는 세우지 않는다. 고쳐지면 저절로 초록으로 돌아온다.
+      - name: Run PlayMode tests (격리 · 실패해도 게이트를 막지 않는다)
+        uses: game-ci/unity-test-runner@v4
+        continue-on-error: true
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          testMode: playmode
+          artifactsPath: test-results-playmode
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Test-Results
-          path: test-results
+          path: |
+            test-results
+            test-results-playmode
 
       # 실패했을 때 어떤 테스트가 죽었는지 로그 맨 끝에서 바로 보이게 한다.
       # 결과 XML 자체가 없으면 테스트가 시작되기도 전(라이선스·컴파일)에 실패한 것이다.
@@ -94,9 +116,35 @@ jobs:
           NODE_EOF
           node "$RUNNER_TEMP/summarize-tests.js" test-results/*.xml
 
+      # 테스트 바깥에서(에디터 크래시로) 죽은 경우, 스택이 로그 맨 끝에서 바로 보이게 한다.
+      # 2026-09-03 조사에서 14,000 줄 로그를 손으로 뒤져 찾은 일을 그대로 옮긴 것이다.
+      # PlayMode 를 격리한 뒤로는 잡이 성공으로 끝나므로 failure() 로는 잡히지 않는다 — always() 다.
+      - name: Detect editor crash
+        if: always()
+        run: |
+          found=0
+          for log in test-results/*.log test-results-playmode/*.log; do
+            [ -f "$log" ] || continue
+            if grep -q "Caught fatal signal" "$log"; then
+              found=1
+              echo "::warning::에디터가 죽었다 — $log"
+              grep -m1 -A 6 "Caught fatal signal" "$log" | while IFS= read -r line; do
+                echo "::warning::$line"
+              done
+            fi
+          done
+          if [ "$found" = "0" ]; then
+            echo "에디터 크래시 흔적 없음."
+          fi
+
   build:
     name: Build (StandaloneWindows64)
-    needs: test
+    # needs: test 를 제거했다 (2026-09-03).
+    # 두 잡은 Library 캐시 키가 이미 분리돼 있어 서로를 기다릴 기술적 이유가 없고,
+    # 붙여 두면 테스트가 죽는 동안 "빌드는 되는가"를 아무도 모르게 된다 —
+    # 2026-08-31 ~ 09-03 에 실제로 그랬다(build 잡이 나흘 내리 skipped).
+    # "깨진 코드를 굽지 않는다"는 의도는 워크플로 실패 표시가 이미 수행한다.
+    # 부수 효과로 벽시계가 17분 38초(순차) → 약 10분(병렬)으로 준다.
     runs-on: ubuntu-latest
     steps:
       # fetch-depth: 0 — unity-builder 의 기본 versioning(Semantic)이 커밋 수를 세므로
