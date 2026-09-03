@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   test:
-    name: Test (EditMode · PlayMode 격리)
+    name: Test (EditMode + PlayMode)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (with LFS)
@@ -56,17 +56,14 @@ jobs:
           testMode: editmode
           artifactsPath: test-results
 
-      # PlayMode 는 2026-08-31 부터 리눅스 컨테이너에서 PlayMode 진입 시 세그폴트(signo:11)로 죽는다.
-      # 스택은 ScriptCommands::Rebuild() → MenuController::GetChecked() → DoFindItem 이고 managed
-      # 프레임이 없다 — 우리 코드가 부르는 경로가 아니다. Windows batchmode 에서는 같은 테스트가
-      # 11/11 통과하고, 라이선스·러너 이미지·액션 SHA·도커 이미지는 성공 실행과 전부 동일하다.
-      # 원인 미확정 (자동화 1차 구현 계획 §1 · §7).
+      # PlayMode 도 게이트다 (2026-09-04 격리 해제).
       #
-      # 격리하는 이유는 하나다 — 이 크래시가 EditMode 1,406 개와 빌드까지 통째로 막고 있었다.
-      # continue-on-error 로 결과는 남기되 게이트는 세우지 않는다. 고쳐지면 저절로 초록으로 돌아온다.
-      - name: Run PlayMode tests (격리 · 실패해도 게이트를 막지 않는다)
+      # 2026-08-31 ~ 09-03 에는 리눅스 컨테이너에서 PlayMode 진입 시 세그폴트(signo:11)로 죽어
+      # continue-on-error 로 격리해 두었다. 원인은 이등분으로 잡았다 —
+      # RailTrackMeshBuilder 의 [MenuItem] 등록 한 줄이었고, 리눅스 에디터에서만 등록을
+      # 건너뛰도록 고쳤다 (자동화 1차 구현 계획 §1.8).
+      - name: Run PlayMode tests
         uses: game-ci/unity-test-runner@v4
-        continue-on-error: true
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -118,7 +115,10 @@ jobs:
 
       # 테스트 바깥에서(에디터 크래시로) 죽은 경우, 스택이 로그 맨 끝에서 바로 보이게 한다.
       # 2026-09-03 조사에서 14,000 줄 로그를 손으로 뒤져 찾은 일을 그대로 옮긴 것이다.
-      # PlayMode 를 격리한 뒤로는 잡이 성공으로 끝나므로 failure() 로는 잡히지 않는다 — always() 다.
+      #
+      # always() 인 이유 — 크래시는 테스트 결과 XML 에 "실패"로 기록되지 않는다. 잡이 성공으로
+      # 끝나는 경우(격리 중이거나, 크래시가 결과 집계 뒤에 나는 경우)에도 잡아야 한다.
+      # 메뉴 항목을 새로 추가한 뒤 이 경고가 뜨면 §1.8 의 그 문제가 재발한 것이다.
       - name: Detect editor crash
         if: always()
         run: |
