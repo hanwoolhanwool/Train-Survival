@@ -1038,6 +1038,7 @@
           <div class="after">
             <h4>After</h4>
             <p>원인은 체크박스 하나였다 — 프로젝트 설정의 <code>enableFrameTimingStats: 0</code>이 GPU 시간 수집을 막고 있었다. 켠 뒤 측정을 3층으로 나눴다(수집기 <code>Core</code> · 주행기 <code>Systems</code> · 판정 <code>node</code>). 에디터가 아니라 <b>빌드</b>에서 재는 이유는 에디터 플레이가 포커스를 잃으면 프레임이 흐르지 않기 때문이고, <b>절대값이 아니라 같은 머신에서 연속으로 잰 델타로만</b> 판정한다는 규칙을 먼저 정했다.</p>
+            <p style="margin-top:10px">수집기는 하나지만 <b>소비자는 둘</b>이다 — 같은 값을 <code>F6</code> 화면 HUD(프레임 p50/p95/max · 스레드별 ms · 병목 · 드로우콜 · GC)와 벤치가 함께 읽는다. 대신 HUD에는 <b>"기록용 아님"을 화면에 박아</b> 두었다. 방금 말한 이유로 그 숫자는 판정에 쓸 수 없는데, 눈앞에 뜨는 숫자는 <b>쓰고 싶어지기 때문</b>이다. 사람이 기억하도록 두지 않고 <b>화면 문구와 QA 키 문서에 규약으로</b> 고정했다.</p>
           </div>
         </div>
         <div class="result">
@@ -1048,7 +1049,7 @@
           <span>이력서 문구</span>
           <p>3개월간 측정되지 않던 프레임 시간의 원인(Frame Timing Stats 비활성)을 규명하고 빌드 자동 주행 기반 측정 체계를 3계층으로 구축해, 병목을 GPU로 확정하고 반복 편차 0.8 % 수준의 측정 신뢰도 확보</p>
         </div>
-        <p class="src">근거 · <code>docs/tech/performance-measurement.md §1</code> · <code>Core/Diagnostics/PerfProbe.cs</code> · <code>Systems/Diagnostics/PerfRunner.cs</code></p>
+        <p class="src">근거 · <code>docs/tech/performance-measurement.md §1</code> · <code>Core/Diagnostics/PerfProbe.cs</code> · <code>Systems/Diagnostics/PerfRunner.cs</code> · <code>UI/Debug/PerfHudView.cs</code> · <code>docs/guide/qa-debug-keys.md</code>(F6)</p>
       </article>
 
       <article class="case">
