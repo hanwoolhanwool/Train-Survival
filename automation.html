@@ -1,0 +1,1306 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Train Survival 을 만들며 함께 만든 자동화·도구 14건 — 게이트 · 시점 이동 · 가시성">
+<meta property="og:title" content="Train Survival 자동화 설비">
+<meta property="og:description" content="Train Survival 을 만들며 함께 만든 자동화·도구 14건 — 게이트 · 시점 이동 · 가시성">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Ctext%20y%3D'.9em'%20font-size%3D'90'%3E%F0%9F%94%A7%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Train Survival 자동화 설비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper:      #F5F7F5;
+    --surface:    #FFFFFF;
+    --ink:        #16201F;
+    --ink-2:      #47534F;
+    --muted:      #78857F;
+    --rule:       #DCE3DF;
+    --rule-soft:  #E8EDEA;
+    --accent:     #0E5C58;
+    --accent-2:   #0B4A47;
+    --accent-soft:#E1EFEC;
+    --warn:       #8C4A38;
+    --warn-soft:  #F1E8E5;
+
+    --f-display: "Song Myung", "Nanum Myeongjo", Georgia, serif;
+    --f-body: "IBM Plex Sans KR", "Malgun Gothic", -apple-system, system-ui, sans-serif;
+    --f-mono: "IBM Plex Mono", "Consolas", ui-monospace, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0F1413;
+      --surface:    #171E1C;
+      --ink:        #E9EFEC;
+      --ink-2:      #B2BFBA;
+      --muted:      #7F8D88;
+      --rule:       #27302E;
+      --rule-soft:  #202826;
+      --accent:     #57C4B7;
+      --accent-2:   #7FD6CB;
+      --accent-soft:#12312D;
+      --warn:       #D3907B;
+      --warn-soft:  #2B1F1B;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0F1413;
+    --surface:    #171E1C;
+    --ink:        #E9EFEC;
+    --ink-2:      #B2BFBA;
+    --muted:      #7F8D88;
+    --rule:       #27302E;
+    --rule-soft:  #202826;
+    --accent:     #57C4B7;
+    --accent-2:   #7FD6CB;
+    --accent-soft:#12312D;
+    --warn:       #D3907B;
+    --warn-soft:  #2B1F1B;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent-soft);
+  }
+
+  a:hover { border-bottom-color: var(--accent); }
+
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 1px;
+  }
+
+  .wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+  }
+
+  /* ── 머리말 ─────────────────────────────────────── */
+
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .masthead { display: flex; flex-direction: column; gap: 14px; }
+
+  .masthead h1 {
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: clamp(34px, 5.2vw, 52px);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .masthead .lede {
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--ink-2);
+    max-width: 46em;
+    margin: 0;
+  }
+
+  .rule-double {
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    height: 4px;
+    margin: 30px 0 0;
+  }
+
+  /* ── 계기 스트립 ───────────────────────────────── */
+
+  .gauges {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 28px;
+  }
+
+  .gauge {
+    background: var(--surface);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .gauge b {
+    font-family: var(--f-mono);
+    font-size: 21px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .gauge span {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ── 먼저 읽을 5건 ─────────────────────────────── */
+
+  .picks {
+    margin-top: 28px;
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    padding: 24px 28px 10px;
+  }
+
+  .picks-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .picks-head h2 {
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: 23px;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+
+  .picks-head .count {
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .picks > .note {
+    font-size: 13.5px;
+    color: var(--ink-2);
+    margin: 8px 0 0;
+    max-width: 58em;
+  }
+
+  .pick-list {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .pick-list li {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    column-gap: 16px;
+    row-gap: 3px;
+    align-items: baseline;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .pick-list .rank {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+
+  .pick-list .name {
+    font-size: 15.5px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .pick-list .name .axis {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+
+  .pick-list .metric {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    text-align: right;
+  }
+
+  .pick-list .why {
+    grid-column: 2 / -1;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink-2);
+  }
+
+  .picks > .tail {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin: 14px 0 16px;
+  }
+
+  .case[id] { scroll-margin-top: 24px; }
+
+  /* ── 대표 성과 ─────────────────────────────────── */
+
+  .headline-box {
+    margin-top: 40px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 26px 28px 28px;
+  }
+
+  .headline-box ol {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    counter-reset: hl;
+  }
+
+  .headline-box li {
+    counter-increment: hl;
+    position: relative;
+    padding-left: 38px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+
+  .headline-box li::before {
+    content: counter(hl, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--f-mono);
+    font-size: 12px;
+    line-height: 2.15;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+
+  .headline-box li b { font-weight: 600; }
+
+  /* ── 섹션 ───────────────────────────────────────── */
+
+  section { margin-top: 64px; }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .sec-head h2 {
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: 27px;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+
+  .sec-head .count {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .sec-note {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin: 0 0 26px;
+    max-width: 58em;
+  }
+
+  /* ── 사례 카드 ─────────────────────────────────── */
+
+  .cases { display: flex; flex-direction: column; gap: 20px; }
+
+  .case {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 26px 28px 24px;
+  }
+
+  .case-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .tag {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 8px;
+  }
+
+  .tag.new {
+    color: var(--warn);
+    background: var(--warn-soft);
+  }
+
+  .case-no {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .case h3 {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: 0 0 18px;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+
+  .ba {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .ba > div {
+    border-left: 3px solid var(--rule);
+    padding-left: 15px;
+  }
+
+  .ba .before { border-left-color: var(--warn); }
+  .ba .after  { border-left-color: var(--accent); }
+
+  .ba h4 {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 0 0 7px;
+  }
+
+  .ba .before h4 { color: var(--warn); }
+  .ba .after h4  { color: var(--accent); }
+
+  .ba p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.72;
+    color: var(--ink-2);
+  }
+
+  .ba .after p { color: var(--ink); }
+
+  .result {
+    margin-top: 20px;
+    background: var(--accent-soft);
+    padding: 13px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .result h4 {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .result p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.65;
+    flex: 1 1 320px;
+  }
+
+  .result strong {
+    font-family: var(--f-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  /* 사례집으로 넘기는 줄 — 결과와 이력서 문구 사이에 둔다 */
+  .xref {
+    margin: 14px 0 0;
+    border-left: 3px solid var(--accent-soft);
+    padding: 2px 0 2px 15px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--ink-2);
+  }
+
+  .xref b {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+  }
+
+  .resume {
+    margin-top: 18px;
+    border-top: 1px dashed var(--rule);
+    padding-top: 14px;
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .resume span {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 5px;
+  }
+
+  .resume p {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+
+  .src {
+    margin-top: 12px;
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--muted);
+    word-break: break-word;
+  }
+
+  /* ── 부록 ───────────────────────────────────────── */
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 620px;
+    font-size: 14px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  th {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  td:first-child { font-weight: 500; white-space: nowrap; }
+  td code { font-family: var(--f-mono); font-size: 12.5px; color: var(--accent); }
+
+  /* ── 이력서 문안 ───────────────────────────────── */
+
+  .copy-group { display: flex; flex-direction: column; gap: 22px; }
+
+  .copy-item h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 9px;
+    letter-spacing: -0.005em;
+  }
+
+  .copy-item .kicker {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .copyblock {
+    margin: 0;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 17px 19px;
+    overflow-x: auto;
+    font-family: var(--f-mono);
+    font-size: 12.5px;
+    line-height: 1.85;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .notes {
+    margin-top: 30px;
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  .notes p { margin: 0 0 8px; max-width: 62em; }
+  .notes b { color: var(--ink-2); font-weight: 500; }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 40px 20px 72px; }
+    .ba { grid-template-columns: 1fr; gap: 16px; }
+    .resume { grid-template-columns: 1fr; gap: 6px; }
+    .resume span { padding-top: 0; }
+    .picks { padding: 20px 20px 8px; }
+    .pick-list li { grid-template-columns: 28px minmax(0, 1fr); }
+    .pick-list .metric { grid-column: 2; text-align: left; }
+    .pick-list .name .axis { display: block; margin-left: 0; }
+  }
+
+  @media print {
+    body { background: #fff; }
+    .case, .headline-box, .table-scroll { break-inside: avoid; }
+    .wrap { padding: 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">게임 클라이언트 지원 · 도구 · 파이프라인 자동화</p>
+    <h1>사람이 기억하지 않아도<br>되게 만든 것들</h1>
+    <p class="lede">
+      Unity 6 · Netcode for GameObjects로 만든 1~4인 협동 생존 게임
+      <b>Train Survival</b>을 만드는 동안 함께 만든 자동화·도구 <b>14건</b>이다.
+      통과와 실패를 <b>사람이 정하지 않게</b> 하고, 반복되는 보정을 <b>임포트·빌드 시점으로</b> 옮기고,
+      눈으로 볼 수 없던 것을 <b>보이게</b> 했다. 이 셋이 그대로 목차다.
+      각 항목의 성능 성과와 측정 과정은
+      <a href="performance.html">성능·검증 사례집</a>에 있다.
+    </p>
+    <div class="rule-double"></div>
+  </header>
+
+  <div class="gauges">
+    <div class="gauge"><b>14건</b><span>자동화 · 도구</span></div>
+    <div class="gauge"><b>11개</b><span>에디터 스크립트</span></div>
+    <div class="gauge"><b>958줄</b><span>판정 도구 (node)</span></div>
+    <div class="gauge"><b>9:54</b><span>CI 벽시계 (17:38에서)</span></div>
+    <div class="gauge"><b>1,408 + 11</b><span>CI가 지키는 테스트</span></div>
+    <div class="gauge"><b>5 %</b><span>성능 회귀 임계</span></div>
+  </div>
+
+  <div class="picks">
+    <div class="picks-head">
+      <p class="eyebrow" style="margin:0">먼저 읽을 5건</p>
+      <h2>다섯만 남긴다면</h2>
+      <span class="count">역량 축 4개 · 겹치지 않게</span>
+    </div>
+    <p class="note">
+      선정 기준은 넷이다 — 흔치 않은가 · 수치로 증명되는가 · 구현이 아니라 <b>판단</b>을 보여주는가 ·
+      <b>서로 다른 역량</b>을 말하는가. 마지막 조건 때문에 같은 능력을 두 번 말하는 항목은 뺐다.
+    </p>
+
+    <ol class="pick-list">
+      <li>
+        <span class="rank">01</span>
+        <span class="name"><a href="#pick-ci">CI 복구와 세그폴트 원인 규명</a><span class="axis">인프라</span></span>
+        <span class="metric">임계 7 · 17:38 → 9:54</span>
+        <span class="why">복구는 설정 문제였지만, 나흘짜리 세그폴트를 <b>이등분 4회로 어트리뷰트 한 줄까지</b> 좁힌 과정은 흉내 내기 어렵다. "먼저 살리고 나중에 판다"는 순서 판단도 여기 있다.</span>
+      </li>
+      <li>
+        <span class="rank">02</span>
+        <span class="name"><a href="#pick-bench">성능 측정 자동화</a><span class="axis">측정 · 판정</span></span>
+        <span class="metric">노이즈 0.8 % → 임계 5 %</span>
+        <span class="why"><b>재는 것과 판정하는 것을 나눴다.</b> 빌드가 스스로 주행하고 판정은 <a href="#pick-gate">종료 코드 하나</a>로 끝난다. 임계를 짐작이 아니라 실측 노이즈에서 유도했고, 편차가 크면 판정 자체를 무효로 돌린다.</span>
+      </li>
+      <li>
+        <span class="rank">03</span>
+        <span class="name"><a href="#pick-import">임포트 자동화</a><span class="axis">에셋 파이프라인</span></span>
+        <span class="metric">−41.0 % · 1,183k → 698k</span>
+        <span class="why"><b>유일하게 큰 정량 성과.</b> 원본 FBX·guid를 건드리지 않고 화면 비용만 걷어낸 건이라 "무엇을 얼마나 줄였나"에 한 문장으로 답한다.</span>
+      </li>
+      <li>
+        <span class="rank">04</span>
+        <span class="name"><a href="#pick-assetlab">에셋 검수 씬</a><span class="axis">에셋 파이프라인</span></span>
+        <span class="metric">LOD 실패 26~43 %</span>
+        <span class="why">03과 한 축이지만 <b>빼면 03의 근거가 사라진다.</b> 자동 감축이 형상에 따라 실패한다는 것을 눈으로 규명했기에 LOD 승격이 안전했다 — 도구가 먼저고 최적화가 뒤였다.</span>
+      </li>
+      <li>
+        <span class="rank">05</span>
+        <span class="name"><a href="#pick-viewlab">뷰랩 — 파지 작업장</a><span class="axis">에디터 툴링</span></span>
+        <span class="metric">987줄</span>
+        <span class="why">앞의 넷이 전부 검사·측정이라, 하나는 <b>에디터 확장 자체의 깊이</b>가 필요하다. 플레이 중 씬 뷰 핸들 조작 결과를 프리팹에 직접 저장하는 것은 에디터 API를 실제로 다뤄 봐야 나온다.</span>
+      </li>
+    </ol>
+
+    <p class="tail">
+      <b>여섯 번째는 <a href="#pick-hook">커밋 훅</a></b>이다 — <i>"CI는 커밋된 뒤에 돈다"</i>는 통찰과 47 MB → 8 KB가 아깝지만 성과 규모에서 밀렸다.
+      도구 프로그래머 포지션이라면 05를 <a href="#pick-qakeys">QA 키와 문서 생성</a>으로 바꾸는 편이 낫다 — 키 정의에서 그림을 뽑아 문서 동기화 비용을 없앤 쪽이 <b>툴 체인을 짠다</b>는 인상에 더 가깝다.
+    </p>
+  </div>
+
+  <div class="headline-box">
+    <p class="eyebrow">이력서 상단에 바로 쓸 3줄 · 도구 · 파이프라인 기준</p>
+    <ol>
+      <li><b>꺼진 게이트를 되살리고 원인까지 규명</b> — 라이선스 미등록으로 <b>55전 55패</b>이던 CI를 복구하고, 이후 나흘간 PlayMode를 죽이던 세그폴트를 이등분 4회로 <b>단일 변수</b>(에디터 메뉴 항목 수, 임계 7)까지 좁혀 확정. 잡 의존 제거로 벽시계 17분 38초 → 9분 54초</li>
+      <li><b>판정을 도구에 넘김</b> — 빌드가 스스로 주행해 프레임을 재고, 기준선 대비 회귀를 <b>종료 코드 하나</b>로 판정한다. 임계는 실측 노이즈(0.7~0.8 %)의 6~7배로 잡고, 반복 편차가 임계를 넘으면 <b>판정 자체를 무효</b>로 돌린다</li>
+      <li><b>반복 보정을 시점으로 이동</b> — 에셋 LOD·피벗 보정을 임포트 시점으로 옮겨 화면에 그려지는 삼각형 <b>41 % 감축</b>, 커밋마다 오가던 4 MB 캐시를 훅으로 차단해 <b>diff 0</b></li>
+    </ol>
+  </div>
+
+  <!-- ══ Part 1 · 게이트 ═══════════════════════ -->
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow" style="margin:0">Part 1</p>
+      <h2>게이트 — 통과와 실패를 사람이 정하지 않는다</h2>
+      <span class="count">5건</span>
+    </div>
+    <p class="sec-note">
+      자동화의 값은 무엇을 <b>막느냐</b>에 있다. 이 절의 다섯은 전부 실제로 겪은 사고에서 나왔고,
+      각각 다른 시점을 지킨다 — 커밋 전, 커밋 시점, 푸시 후, 그리고 차수를 닫을 때.
+    </p>
+
+    <div class="cases">
+
+      <article class="case" id="pick-ci">
+        <div class="case-top"><span class="tag">CI 파이프라인</span><span class="case-no">게이트 01</span></div>
+        <h3>CI를 되살리고, 나흘 뒤 원인까지 잡았다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>워크플로 도입 후 <b>55회 실행, 55회 실패</b>. 시크릿이 <code>UNITY_LICENSE</code> 하나뿐이라 에디터가 한 번도 기동하지 못했다. 복구한 뒤에는 다른 증상이 왔다 — PlayMode 진입에서 <code>signo:11</code> 세그폴트가 나흘 연속, <code>build</code> 잡은 <code>needs: test</code>에 걸려 <b>4일째 미실행</b>이었다. 게이트가 있다는 표시만 남고 지키는 것은 없었다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>순서를 지켰다 — <b>먼저 살리고 나중에 팠다.</b> PlayMode를 격리해 EditMode와 빌드를 나흘 만에 되살린 뒤, 이등분 4회로 원인을 좁혔다. 마지막 성공 커밋 → 파일 하나 추가 → 메뉴 경로 변경 → <b>어트리뷰트 한 줄</b>. 범인은 특정 메뉴가 아니라 <b><code>[MenuItem]</code> 항목 수</b>였고 임계는 7이었다. 하나만 빼자 같은 날 다른 도구가 둘을 더해 즉시 재발했고, 결국 프로젝트의 메뉴 9개를 전부 <code>#if !UNITY_EDITOR_LINUX</code>로 감쌌다 — 리눅스에서 0개면 임계와 무관해진다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p><strong>55전 55패 → 복구</strong>(첫 성공 2026-08-25) → 세그폴트 <strong>원인 확정</strong>(2026-09-04). 격리를 풀고 <strong>PlayMode 11/11 · EditMode 1,408/1,408 · 빌드 성공</strong>이 08-30 이후 처음으로 한 실행에서 나왔다. <code>needs: test</code>를 떼 벽시계 <strong>17분 38초 → 9분 54초</strong></p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>100 % 실패하던 Unity CI를 복구하고, 이후 재발한 에디터 세그폴트를 이등분 4회로 단일 변수까지 좁혀 원인을 규명했으며, 잡 의존 제거로 파이프라인 벽시계를 44 % 단축</p>
+        </div>
+        <p class="src">근거 · <code>docs/plans/features/CI-복구-계획.md</code> · <code>docs/plans/features/자동화-1차-구현-계획.md §1.8</code> · <code>.github/workflows/ci.yml</code></p>
+      </article>
+
+      <article class="case" id="pick-gate">
+        <div class="case-top"><span class="tag new">신규 · 성능 게이트</span><span class="case-no">게이트 02</span></div>
+        <h3>회귀 판정을 종료 코드 하나로 압축했다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>프레임 시간을 재게 되자 새 문제가 생겼다 — <b>재는 것과 판정하는 것은 다른 일</b>이다. 수치를 눈으로 비교하면 사람마다 다른 결론이 나오고, 임계를 두 스크립트에 나눠 적으면 한쪽만 고쳐진 채 "통과"가 나온다. 그 통과를 믿게 된다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>판정 규칙의 출처를 <code>gates.js</code> <b>한 파일</b>로 모으고 비교기·리포터가 그것을 공유하게 했다. 임계는 짐작이 아니라 <b>실측 노이즈에서 유도</b>했다 — 60초 × 3회 반복의 편차가 gpu p95 0.8 % · cpuMain p95 0.7 %라, 그 6~7배인 5 %를 실패선으로 잡았다. GC 할당만 반대로 느슨하다(+20 %): 목표는 0이지만 기준선이 이미 7,218 B라 <b>악화만 막는 봉인</b>으로 뒀다. 절대 임계는 쓰지 않는다 — 낮 기준선에서 뽑은 8 KB 절대값이 야간 시나리오를 첫 측정부터 실패시켰기 때문이다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>판정이 <strong>종료 코드 0 / 1 / 2</strong>로 끝난다(통과 · 회귀 · 비교 불가). 특히 <strong>반복 편차가 임계를 넘으면 판정 자체를 무효</strong>로 돌린다 — 도구가 노이즈 위에서 "회귀 2건"이라고 단정한 적이 있어 넣은 안전장치다</p>
+        </div>
+        <p class="xref"><b>성능 성과는 사례집에서</b>이 게이트가 실제로 뒤집은 최적화 우선순위와, 측정 도구가 거짓말한 다섯 번은 <a href="performance.html">성능·검증 사례집</a>에 있다.</p>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>성능 회귀 판정 도구를 구현해 기준선 대비 판정을 종료 코드로 자동화하고, 임계를 실측 노이즈의 6~7배로 유도했으며, 측정 편차가 큰 실행은 판정을 무효화해 거짓 판정을 차단</p>
+        </div>
+        <p class="src">근거 · <code>tools/perf/gates.js</code> · <code>compare.js</code> · <code>report.js</code>(합계 958줄) · <code>Perf/baseline/</code> 시나리오 2종</p>
+      </article>
+
+      <article class="case">
+        <div class="case-top"><span class="tag new">신규 · 로그 진단</span><span class="case-no">게이트 03</span></div>
+        <h3>크래시는 실패로 기록되지 않는다 — 그래서 따로 잡는다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>에디터가 죽으면 결과 XML에 <b>"실패"가 남지 않는다</b>. 잡이 성공으로 끝나는 경우도 있어(격리 중이거나 크래시가 결과 집계 뒤에 날 때) 초록 뒤에 숨는다. 원인을 찾으려면 <b>14,000줄 로그</b>를 손으로 뒤져야 했다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>조사에 쓴 방법을 그대로 스텝으로 굳혔다. 실패 시에는 결과 XML을 파싱해 죽은 테스트를 <code>::error::</code>로 요약하고, 그와 별개로 <b><code>always()</code></b>로 도는 스텝이 로그에서 <code>Caught fatal signal</code>을 찾아 앞뒤 6줄을 <code>::warning::</code>으로 실행 요약에 끌어올린다. 결과 XML 자체가 없으면 "테스트가 시작되기 전(라이선스·컴파일)에 실패했다"고 명시한다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>크래시 스택이 <strong>로그 맨 끝</strong>에서 바로 보인다 · 첫 실전에서 새 스택을 잡았고, 이후 <b>게이트 01의 재발 감시기</b>가 됐다 — 가드 없는 메뉴가 새로 들어오면 이 경고가 뜬다</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>CI가 테스트 실패와 에디터 크래시를 각각 다른 경로로 요약하도록 자동화해, 결과 파일에 기록되지 않는 네이티브 크래시까지 실행 요약에서 즉시 확인 가능하게 구성</p>
+        </div>
+        <p class="src">근거 · <code>.github/workflows/ci.yml</code> — <code>Summarize failed tests</code> · <code>Detect editor crash</code></p>
+      </article>
+
+      <article class="case" id="pick-hook">
+        <div class="case-top"><span class="tag new">신규 · 커밋 훅</span><span class="case-no">게이트 04</span></div>
+        <h3>CI가 볼 수 없는 시점 하나를 훅이 메운다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>한글 폰트 아틀라스는 <code>Dynamic</code> 모드라 런타임이 필요한 글자를 스스로 굽는다. 즉 에셋에 구워진 글리프는 <b>필수 데이터가 아니라 캐시</b>다. 그런데 TMP가 재직렬화 때 그 캐시를 비우고 플레이 중 다시 채워, <b>같은 파일이 끝없이 오갔다</b> — 커밋 14회 · 저장소 이력 <b>47 MB</b>, 그중 둘은 "다시 굽는다"였다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>아틀라스를 비운 채로 고정하고, <b>스테이징된 내용</b>의 글리프 수를 세어 0이 아니면 커밋을 막는 훅을 뒀다(워킹트리가 아니라 커밋될 내용을 본다). 처음에는 "CI가 같은 일을 한다"며 짓지 않기로 했던 항목인데, <b>그 판단의 앞 절반이 틀렸다</b> — CI는 커밋이 된 뒤에 돈다. 무엇이 커밋에 섞이는지는 CI가 구조적으로 막을 수 없고, 잡아낸 시점에는 이미 이력에 들어가 있다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>파일 크기 <strong>4.1 MB → 8 KB</strong> · diff가 아예 생기지 않는다 · 비워도 되는 근거는 적중률이었다 — 게임이 쓰는 한글 <strong>757자 중 구워져 있던 것은 108자(14 %)</strong>뿐이고 나머지는 이미 런타임이 굽고 있었다</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>저장소 이력 47 MB를 소모하던 폰트 아틀라스 캐시를 분석해 커밋 대상에서 제외하고, 스테이징 내용을 검사하는 커밋 훅으로 재발을 차단(4.1 MB → 8 KB)</p>
+        </div>
+        <p class="src">근거 · <code>tools/git-hooks/pre-commit</code> · <code>Editor/FontAtlasMaintenance.cs</code> · <code>docs/guide/font-atlas.md</code></p>
+      </article>
+
+      <article class="case">
+        <div class="case-top"><span class="tag">규약 게이트</span><span class="case-no">게이트 05</span></div>
+        <h3>설계 원칙을 grep으로 검사할 수 있는 문장으로 적었다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>"SOLID를 지켰다", "판정과 표현을 분리했다" 같은 서술은 <b>그 자체로는 확인할 방법이 없다</b>. 리팩터링을 했다고 적어 두어도 시간이 지나면 실제로 지켜졌는지 아무도 모르고, 다음 차수에서 조용히 무너진다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>계획서마다 <b>아키텍처 마감 게이트</b>를 두고 원칙마다 <b>검사 방법을 함께</b> 적었다 — "신규 <code>NetworkVariable</code>·RPC 0건(diff에서 grep)", "무기 컨트롤러 구체 타입 참조 0건", "모델명 분기 0건", "TODO 0건". 차수를 닫을 때 게이트별 통과·미달을 표로 남기고, <b>미달이면 계획서를 닫지 않는다.</b></p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>원칙 준수가 주장이 아니라 <strong>확인 가능한 증거</strong>로 남는다 — 건축 개편 차수에서 창고 판정의 <code>StructureKind</code> 하드코딩 <strong>6곳</strong>을 카탈로그 플래그로 대체해 OCP 게이트를 통과시켰고, 그 결과 창고 계열 추가가 <strong>에셋 편집만으로</strong> 끝나게 됐다</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>설계 원칙을 grep으로 검증 가능한 완료 기준으로 정의하고 차수마다 통과 여부를 기록해, 리팩터링 품질을 주관 평가가 아닌 확인 가능한 증거로 관리</p>
+        </div>
+        <p class="src">근거 · <code>docs/plans/features/*-계획.md</code> 아키텍처 마감 기준 · <code>docs/conventions/solid-principles.md</code></p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══ Part 2 · 시점 이동 ════════════════════ -->
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow" style="margin:0">Part 2</p>
+      <h2>시점 이동 — 반복되는 일을 임포트·빌드로 옮긴다</h2>
+      <span class="count">4건</span>
+    </div>
+    <p class="sec-note">
+      사람이 매번 하던 판단을 <b>더 이른 시점</b>으로 옮기면 그 판단은 다시 틀릴 수 없다.
+      에셋 보정은 임포트로, 성능 측정과 화면 확인은 빌드 실행 자체로 옮겼다.
+    </p>
+
+    <div class="cases">
+
+      <article class="case" id="pick-import">
+        <div class="case-top"><span class="tag">임포트 자동화</span><span class="case-no">시점 01</span></div>
+        <h3>에셋 보정을 임포트 시점으로 옮겼다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>원본 모델이 과하게 촘촘한데 근거리 비용은 LOD0이 정한다. 지면에 세우는 모델은 피벗이 <b>바운즈 중심</b>이라 프리팹 원점을 지면에 놓으면 절반이 묻혔다. Blender로 다시 구우면 같은 품질을 밖에서 다시 만들어야 하고 guid·머티리얼·UV가 함께 흔들린다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>두 보정을 <code>AssetPostprocessor</code>로 옮겼다. LOD 승격은 <code>Mesh.SetLods</code>로 시작 단계를 뒤로 밀어, Unity가 이미 만들어 둔 — 그리고 <b>가시성 01의 검수 씬에서 눈으로 검증한 바로 그</b> — 감축본을 LOD0으로 쓴다. 피벗은 축을 손으로 고르지 않고 <code>InverseTransformVector</code>로 월드 +Y를 각 메시 로컬로 환산했다(루트가 scale 100 · rotX 270.02°라 로컬 축이 월드와 다르다). <b>원본 FBX·guid·머티리얼은 건드리지 않는다.</b></p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>지형 타일 51장 LOD0 합 <strong>1,081,206 → 710,436 tris</strong> · 화면 실측에서 그려지는 삼각형 <strong>1,183,649 → 698,531 (−41.0 %)</strong> · 드로우콜·SetPass·섀도우 캐스터는 <strong>변화 0</strong></p>
+        </div>
+        <p class="xref"><b>측정 조건과 함께 보기</b>이 수치를 어떤 시점·해상도에서 어떻게 쟀는지는 <a href="performance.html">성능·검증 사례집</a>의 렌더 계측 사례에 정리돼 있다.</p>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p><code>AssetPostprocessor</code>로 LOD 승격·피벗 보정을 임포트 시점에 자동 적용해, 원본 에셋을 수정하지 않고 화면에 그려지는 삼각형을 41 % 감축</p>
+        </div>
+        <p class="src">근거 · <code>Editor/MeshLodPromotionPostprocessor.cs</code> · <code>Editor/GroundPivotPostprocessor.cs</code> · <code>docs/plans/features/에셋랩-씬-계획.md §3.7</code></p>
+      </article>
+
+      <article class="case" id="pick-bench">
+        <div class="case-top"><span class="tag new">신규 · 자동 주행</span><span class="case-no">시점 02</span></div>
+        <h3>빌드가 스스로 주행해 프레임을 잰다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>3주간 폴리곤 수를 네 번 실측해 기록했는데 <b>프레임 시간(ms)은 한 번도 잰 적이 없었다</b>. 에디터 플레이 모드는 포커스를 잃으면 프레임이 흐르지 않아 사람이 화면을 지키고 서 있어야 했고, 사람이 조작하는 한 <b>같은 상황을 두 번 만들 수 없다</b>.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>측정을 3층으로 나눴다 — 수집기는 <code>Core</code>, 주행기는 <code>Systems</code>, 판정은 <code>node</code>. 빌드에 <code>-perfrun &lt;시나리오&gt;</code>를 주면 게임이 스스로 인게임까지 들어가 정해진 구간을 달리고 결과를 JSON으로 남긴다. 시나리오(낮·밤)가 <b>해상도까지 소유</b>해서, 명령행으로 해상도를 덮어쓰려 하면 무시하고 경고를 찍는다 — 다른 조건으로 재려면 시나리오 에셋을 하나 더 만들어야 한다. 길이는 60초로, 게임의 낮/밤 <b>정확히 한 사이클</b>이다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>반복 측정 편차 <strong>0.7~0.8 %</strong>(60초 × 3회) — 이 값이 그대로 게이트 02의 임계 근거가 됐다 · <code>-smoke</code>는 부팅 검증으로 쓴다(종료 코드 0이면 인게임까지 살아서 들어갔다는 뜻)</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>빌드가 스스로 게임을 주행하며 프레임 시간·GC·드로우콜을 수집하는 벤치 자동화를 구현하고, 시나리오 에셋이 측정 조건을 소유하도록 설계해 반복 편차 0.8 % 확보</p>
+        </div>
+        <p class="src">근거 · <code>Systems/Diagnostics/PerfRunner.cs</code> · <code>Core/Diagnostics/PerfProbe.cs</code> · <code>Utilities/Performance/PerfRunArgs.cs</code> · <code>Editor/PerfBenchWindow.cs</code></p>
+      </article>
+
+      <article class="case">
+        <div class="case-top"><span class="tag new">신규 · 자체 캡처</span><span class="case-no">시점 03</span></div>
+        <h3>게임이 스스로 화면을 찍는다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>폰트 아틀라스를 비운 뒤 <b>한글이 실제로 표시되는지</b> 확인해야 했다. 그런데 바깥에서 창을 캡처하는 방법이 안 됐다 — Windows가 백그라운드 프로세스의 포그라운드 전환을 막아 <b>그 좌표에 있던 브라우저가 찍혔다</b>.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p><code>-screenshot &lt;폴더&gt;</code>를 붙이면 게임이 Main과 인게임에서 각각 한 장을 스스로 남긴다. 스모크와 벤치 양쪽에서 돌고, 인자가 없으면 아무 일도 하지 않는다. <code>CaptureScreenshot</code>은 다음 프레임 끝에 파일을 쓰므로 <b>생길 때까지 기다렸다가</b> 결과를 로그로 알린다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p><strong>"경고 0건"과 "글자가 보인다"는 다른 문장</strong>이라는 사각을 메웠다 — 메뉴 4항목·공고문 본문·HUD의 자원·연료·Day·핫바까지 <strong>깨진 글자 0</strong>을 스크린샷 2장으로 확인하고 폰트 가이드에 근거로 넣었다</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>OS 제약으로 외부 캡처가 불가능한 검증 항목을 위해 빌드 자체 스크린샷 경로를 구현하고, 스모크·벤치 공용 인자로 두어 수치화할 수 없는 품질을 증거로 남기는 절차 확립</p>
+        </div>
+        <p class="src">근거 · <code>Systems/Diagnostics/PerfRunner.cs</code> · <code>docs/guide/font-atlas.md</code> · <code>docs/images/font-verify-*.png</code></p>
+      </article>
+
+      <article class="case">
+        <div class="case-top"><span class="tag">빌드 · 개발 환경</span><span class="case-no">시점 04</span></div>
+        <h3>빌드 경로를 하나로 합치고, 에디터 환경을 손에 맞췄다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>로컬에서 굽는 빌드와 CI가 굽는 빌드가 다른 코드를 타면 <b>CI에서만 나는 문제를 로컬에서 재현할 수 없다</b>. 개발 로그는 전부 켜면 홍수고 끄면 아무것도 안 보인다. 두 번째 에디터로 클라이언트를 띄울 때는 트랜스포트 설정이 서로를 간섭했다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>CLI 빌드 진입점 하나를 <b>로컬과 CI가 같이 타게</b> 했다(인자가 없으면 로컬 기본값, CI는 출력 경로·버전을 넘긴다). 로그는 카테고리 비트마스크를 창에서 켜고 끄며 설정이 <code>EditorPrefs</code>에 남아 플레이 모드를 드나들어도 유지된다. Steam 릴레이 토글도 <code>EditorPrefs</code>라 에디터 인스턴스별로 갈려 가상 플레이어에 영향이 없다. 서드파티 패키지가 남기는 숨김 오브젝트는 플레이 종료 직전에 정리해 어설션 로그를 막는다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>빌드 경로 이원화 제거(로컬 = CI) · 로그 가시성을 바꾸는 비용 <strong>0</strong> · 멀티 인스턴스 테스트 중 설정 간섭 차단 · 패키지 결함이 콘솔을 더럽히지 않음</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>로컬·CI 공용 빌드 진입점과 에디터 환경 도구(로그 카테고리 창, 인스턴스별 트랜스포트 토글, 외부 패키지 결함 워크어라운드)를 구축해 개발·검증 환경의 일관성 확보</p>
+        </div>
+        <p class="src">근거 · <code>Editor/BuildScript.cs</code> · <code>Editor/GameLogWindow.cs</code> · <code>Editor/SteamTransportEditorMenu.cs</code> · <code>MultiplayerToolsHiddenUpdaterCleanup.cs</code></p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══ Part 3 · 가시성 ═══════════════════════ -->
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow" style="margin:0">Part 3</p>
+      <h2>가시성 — 눈으로 볼 수 없던 것을 보이게 한다</h2>
+      <span class="count">5건</span>
+    </div>
+    <p class="sec-note">
+      게이트가 막고 임포트가 고치려면, 먼저 <b>무엇이 잘못됐는지 보여야</b> 한다.
+      이 절의 도구들은 판정하지 않는다 — 사람이 판정할 수 있는 화면을 만든다.
+    </p>
+
+    <div class="cases">
+
+      <article class="case" id="pick-assetlab">
+        <div class="case-top"><span class="tag">에셋 검수 씬</span><span class="case-no">가시성 01</span></div>
+        <h3>에셋을 한 점씩 세워 놓고 예산을 재는 방을 만들었다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>예산 문서에는 "배경 프롭 개당 1,500 tris" 같은 기준이 있었지만 <b>에셋을 보면서 확인할 수단이 없었다</b>. 게다가 Unity가 임포트할 때 자동 생성한 하위 LOD는 형상에 따라 다르게 망가지는데, tris 수치만 봐서는 어느 것이 망가졌는지 알 수 없다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>에셋을 한 번에 하나씩 세우고 360°로 돌려 보는 전용 씬을 만들었다. 인스턴스에서 tris·바운즈·머티리얼·LOD 단계를 계측해 패널에 띄우고, <code>Renderer.forceMeshLod</code>로 단계를 강제 전환해 <b>같은 자리에서 눈으로 비교</b>하게 했다. 예산 위반은 진단 코드로 뜬다 — 절차 메시(15~200 tris)가 걸리지 않도록 500 tris 면제선을 둔 <code>NO_LOD</code>, 머티리얼 3개 이상인 <code>MATERIAL_SPLIT</code> 등.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p><strong>만들자마자 LOD 뚫림을 잡았다</strong> — 침엽수 LOD2(320 tris)에서 잎 껍질이 뚫려 안이 비쳤고, 같은 단계의 바위(128 tris)는 멀쩡했다. 수치로는 보이지 않던 결함이며, 자동 감축이 형상에 따라 <strong>26~43 %</strong>로 다르게 실패한다는 것을 규명했다</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>에셋 검수 전용 씬과 계측 패널을 구현해 tris·LOD·머티리얼 예산 위반을 진단 코드로 자동 표시하고, 자동 생성 LOD가 형상에 따라 실패하는 지점을 육안 비교로 규명</p>
+        </div>
+        <p class="src">근거 · <code>Gameplay/Debugging/AssetLabController.cs</code>(676줄) · <code>AssetLabProbe</code> · <code>AssetLabDiagnostics</code> · <code>docs/plans/features/에셋랩-씬-계획.md</code></p>
+      </article>
+
+      <article class="case" id="pick-viewlab">
+        <div class="case-top"><span class="tag">개발 작업장</span><span class="case-no">가시성 02</span></div>
+        <h3>플레이를 멈추지 않고 자세를 잡아 프리팹에 저장한다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>손에 쥔 무기의 위치·회전을 맞추려면 값을 고치고 → 플레이하고 → 끄고 → 다시 고치기를 반복해야 했다. 게다가 <b>원격 피어에게 어떻게 보이는지</b>는 세션을 띄워야 알 수 있어, 한 값을 확인하는 데 세션 두 개가 필요했다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>전용 씬에서 <b>플레이 중에 씬 뷰 핸들로</b> 피벗의 위치·회전·스케일을 잡고, 결과를 <code>Player.prefab</code>에 바로 저장하는 작업장을 만들었다. 캐릭터 애니메이션 파라미터도 같은 화면에서 돌려 자세가 움직임 중에도 성립하는지 본다. 조작은 마우스와 핸들뿐이고 네트워크는 띄우지 않는다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>값 하나를 고치는 주기가 "수정 → 플레이 → 종료"에서 <strong>플레이 중 드래그 한 번</strong>으로 축소 · 저장 대상이 프리팹 하나라 작업 결과가 곧 게임에 반영</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>플레이 중 씬 뷰 핸들로 무기 파지 자세를 조정하고 프리팹에 직접 저장하는 에디터 작업장(약 1,000줄)을 구현해, 아트 튜닝 반복 주기를 세션 재시작 없이 단축</p>
+        </div>
+        <p class="src">근거 · <code>Gameplay/Debugging/ViewLabController.cs</code>(987줄) · <code>ViewLabGizmo</code> · <code>ViewLabOrbitCamera</code> · <code>docs/plans/features/뷰랩-씬-계획.md</code></p>
+      </article>
+
+      <article class="case">
+        <div class="case-top"><span class="tag">검수 자동화</span><span class="case-no">가시성 03</span></div>
+        <h3>사람이 셀 수 없는 물량은 도구가 세게 했다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>지형 타일이 지역당 10종, 총 40장으로 늘면서 "플레이어가 지나갈 통로가 막히지 않았는가"를 <b>눈으로 검수할 수 없게</b> 됐다. 빠뜨리면 플레이 중에 길이 막힌 채로 발견된다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>규격 판정을 순수 함수에 두고, 에디터 창이 프리팹의 콜라이더·렌더러를 타일 로컬 좌표계 AABB로 환산해 <b>폴더 단위로 일괄 검사</b>하게 했다. 배경에 네트워크 오브젝트가 섞여 들어오는 것도 같은 창이 함께 잡는다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>타일 <strong>40장</strong> 규격 검수 자동화 · 판정 로직은 순수 함수라 <strong>그 자체도 단위 테스트 대상</strong> — 도구와 런타임이 같은 규칙을 쓴다</p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>육안 검수가 불가능해진 레벨 에셋 규격 검사를 에디터 도구로 자동화하고, 판정 로직을 순수 함수로 분리해 도구와 런타임이 같은 규칙을 쓰도록 설계</p>
+        </div>
+        <p class="src">근거 · <code>Editor/ClearZoneAuditWindow.cs</code> · <code>ClearZoneRules</code></p>
+      </article>
+
+      <article class="case" id="pick-qakeys">
+        <div class="case-top"><span class="tag">QA 입력 · 문서 생성</span><span class="case-no">가시성 04</span></div>
+        <h3>검증 상황을 부르는 키와, 그 키에서 나오는 그림</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>밤 웨이브·보스·건축 파괴 같은 상황을 확인하려면 그 상황이 자연히 올 때까지 플레이해야 한다. 그렇다고 디버그 키를 늘리다 보면 <b>어느 키가 무엇인지 아무도 기억하지 못하고</b>, 문서를 적어 둬도 키가 바뀌면 곧 어긋난다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>상황을 즉시 만드는 키를 <b>숫자패드 물리 배치에 맞춰 그룹으로</b> 묶었다 — 한 행이 한 그룹(몬스터·보스 / 편성·건축 / 자원·피해 / 사이클)이라 개별 키가 아니라 손이 행을 기억한다. 키마다 권위(호스트 확정 / 로컬)를 표에 함께 적고, <b>키 정의 배열에서 SVG 마인드맵을 생성하는 스크립트</b>를 두어 키가 바뀌면 그림을 다시 뽑게 했다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>검증 상황 즉시 재현(웨이브·보스·건축·자원·시간대) · 키가 늘어도 문서와 그림이 어긋나지 않는다 — <strong>배열만 고치면 좌표는 자동 재계산</strong></p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>QA 디버그 입력을 물리 키 배치와 기능 그룹이 일치하도록 설계하고, 키 정의에서 문서 다이어그램을 생성하는 스크립트를 만들어 문서 동기화 비용 제거</p>
+        </div>
+        <p class="src">근거 · <code>docs/guide/qa-debug-keys.md</code> · <code>docs/guide/assets/qa-keyboard-map.gen.js</code>(239줄)</p>
+      </article>
+
+      <article class="case">
+        <div class="case-top"><span class="tag">로그 시스템</span><span class="case-no">가시성 05</span></div>
+        <h3>판정이 콘솔에서 나므로, 로그를 시스템으로 만들었다</h3>
+        <div class="ba">
+          <div class="before">
+            <h4>Before</h4>
+            <p>이 프로젝트의 플레이 검증은 상당 부분 <b>콘솔 로그가 판정</b>한다 — 창고 경합의 총량, 피해 실측의 전/후 값, 그랩 승인·거부. 그런데 태그를 <code>Debug.Log("[Xxx] …")</code>처럼 손으로 붙이니 표기가 파일마다 갈렸고, 필요 없는 계통을 <b>끌 수단이 없어</b> 로그가 콘솔을 덮으면 검증 자체가 불가능해졌다.</p>
+          </div>
+          <div class="after">
+            <h4>After</h4>
+            <p>모든 디버그 로그가 지나가는 <b>단일 창구</b>를 만들고 카테고리 비트마스크로 계통을 켜고 끄게 했다. 여기에 <code>[Conditional]</code>을 걸어 릴리스 빌드에서는 <b>호출 자체가 컴파일 단계에서 사라진다</b> — 로그는 출력을 꺼도 인자 문자열은 이미 조립된 뒤라, 끄는 것만으로는 비용이 남기 때문이다.</p>
+          </div>
+        </div>
+        <div class="result">
+          <h4>결과</h4>
+          <p>릴리스 빌드의 로그·계측 비용 <strong>0</strong>(인자 문자열 조립 포함) · 개발 중에는 필요한 계열만 켜서 <strong>콘솔이 판정 도구로 남는다</strong></p>
+        </div>
+        <div class="resume">
+          <span>이력서 문구</span>
+          <p>로그·계측 API를 단일 창구로 통합하고 카테고리 비트마스크와 조건부 컴파일을 적용해, 개발 중 가시성을 유지하면서 릴리스 빌드에서 호출과 인자 조립까지 제거</p>
+        </div>
+        <p class="src">근거 · <code>Core/Logging/GameLog.cs</code> · <code>Editor/GameLogWindow.cs</code></p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══ 부록 ══════════════════════════════════ -->
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow" style="margin:0">부록 A</p>
+      <h2>짓지 않기로 한 것</h2>
+      <span class="count">판정 근거를 수치로 남긴다</span>
+    </div>
+    <p class="sec-note">
+      현업에서 쓰는 자동화 16종을 저장소와 대조했을 때, <b>비어 있는 칸의 절반은 채우면 안 되는 칸</b>이었다.
+      "지금 지으면 쓰는 곳이 없다"와 "영원히 필요 없다"는 다르므로, 다시 여는 조건을 함께 적었다.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>짓지 않은 것</th><th>판정 근거</th><th>다시 여는 조건</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>.meta</code>·GUID 검사기</td>
+            <td>전수 검사 결과 <b>잡을 것이 0건</b> — 파일 2,685 · 폴더 77 · <code>.meta</code> 1,379를 양방향 대조해 누락 0 · 고아 0 · 중복 0</td>
+            <td>1회 수동 스캔에서 0건이 아닌 항목이 나올 때</td>
+          </tr>
+          <tr>
+            <td>성능 게이트의 CI 연결</td>
+            <td>우분투 러너에 <b>GPU가 없고</b> 산출물은 Windows <code>.exe</code>다. self-hosted(개발 PC)는 "측정 머신은 조용해야 한다"는 전제를 못 지킨다</td>
+            <td>Windows 러너를 두기로 결정할 때</td>
+          </tr>
+          <tr>
+            <td>오디오 압축 자동화</td>
+            <td>오디오 에셋 <b>0개</b></td>
+            <td>사운드 반입 시작 시</td>
+          </tr>
+          <tr>
+            <td>라이브옵스 (Remote Config·A/B)</td>
+            <td>전용 서버가 없다 — P2P + Steam 릴레이 구조</td>
+            <td>해당 없음 (구조가 바뀌지 않는 한)</td>
+          </tr>
+          <tr>
+            <td>로컬라이제이션 키 생성</td>
+            <td>로컬라이제이션 시스템 자체가 없다(한국어 단일)</td>
+            <td>다국어 착수 시</td>
+          </tr>
+          <tr>
+            <td>패치노트 자동 생성 · 알림 연동</td>
+            <td>릴리스가 아직 없고, 1인 개발이라 알림 대상이 자신뿐이다</td>
+            <td>첫 배포 일정이 정해질 때</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <p><b>이 표가 목록의 절반이다</b> — 자동화는 "있으면 좋은 것"을 모으는 일이 아니라 <b>무엇을 막을지 고르는 일</b>이다. 짓기 전에 먼저 세어 보고, 0건이면 사람이 아니라 <b>문서에 규약으로</b> 남긴다. 실제로 이 프로젝트에서 지어진 자동화는 전부 <b>이미 겪은 사고</b>에서 나왔다 — 커밋에 4 MB가 섞였고(게이트 04), CI가 나흘 죽어 있었고(게이트 01), 측정 도구가 노이즈 위에서 회귀를 단정했다(게이트 02).</p>
+      <p><b>우선순위 원칙 세 줄</b> — ① 꺼진 게이트가 새 게이트보다 앞선다(작동하지 않는 자동화는 없는 것보다 나쁘다 — 있다고 착각하게 만든다). ② 지금 잡을 것이 0건인 검사기는 짓지 않는다. ③ 화면에 보이지 않는 자동화는 그것이 막는 사고를 실제로 겪었을 때 짓는다.</p>
+    </div>
+  </section>
+
+  <!-- ══ 부록 B · 이력서 문안 ═══════════════════ -->
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow" style="margin:0">부록 B</p>
+      <h2>이력서에 그대로 쓸 문안</h2>
+      <span class="count">구조 2종 · 5건</span>
+    </div>
+    <p class="sec-note">
+      위에서 뽑은 <b>다섯 건</b>을 두 가지 구조로 옮겼다. 구조 1은 이력서 본문의 불릿 리스트용이고,
+      구조 2는 경력기술서·포트폴리오 상세용이다. 수치는 전부 저장소·CI 실행 이력·벤치 로그에서
+      확인된 값이며, 문구는 <b>그대로 복사해 쓸 수 있게</b> 정리했다.
+    </p>
+
+    <div class="copy-group">
+
+      <div class="copy-item">
+        <span class="kicker">공통</span>
+        <h3>프로젝트 헤더</h3>
+        <pre class="copyblock">Train Survival — 1~4인 협동 생존 크래프팅 (PC / Steam)
+Unity 6 (6000.5.3f1) · URP 17.5 · Netcode for GameObjects · C#
+1인 개발 (기획 · 구현 · 검증) · 2026.07 ~ 진행 중
+커밋 902 · C# 85,755줄 / 564파일 · EditMode 테스트 1,412개 · 어셈블리 8개(런타임 5 · 에디터 1 · 테스트 2)</pre>
+      </div>
+
+      <div class="copy-item">
+        <span class="kicker">구조 1</span>
+        <h3>기능 + 해결한 것 (수치)</h3>
+        <pre class="copyblock">· Unity CI 파이프라인(GitHub Actions + GameCI) 복구 및 안정화
+  — 100% 실패(55전 55패)하던 파이프라인을 복구하고, 재발한 에디터 세그폴트의 원인을
+    [MenuItem] 등록 개수(임계 7개)로 규명. 잡 의존 제거로 벽시계 17분 38초 → 9분 54초(-44%),
+    EditMode 1,408 · PlayMode 11 · Windows 빌드를 상시 게이트로 확보
+
+· 빌드 자동 주행 기반 성능 측정·회귀 판정 체계 구축 (C# 3계층 + Node 958줄)
+  — 3개월간 측정되지 않던 프레임 시간을 최초 계측(1.24ms, 병목 GPU 확정),
+    반복 편차 0.7~0.8% 확보 후 그 6~7배인 5%를 회귀 임계로 설정해 종료 코드로 자동 판정.
+    문서상 우선순위 1순위가 CPU +16.7% 회귀임을 확인하고 최하위 항목을 채택해 GPU 프레임 -6.3%
+
+· AssetPostprocessor 기반 에셋 임포트 자동화 (LOD 승격 · 피벗 보정)
+  — 원본 FBX·guid·머티리얼 무수정으로 화면에 그려지는 삼각형 1,183,649 → 698,531 (-41.0%),
+    지형 타일 51장 LOD0 합 1,081,206 → 710,436 tris. 드로우콜·SetPass·섀도우 캐스터 변화 0
+
+· 에셋 예산 검수 전용 씬·계측 패널 구현 (C# 676줄)
+  — 배치 에셋 152종의 tris·머티리얼·LOD 단계를 진단 코드로 자동 판정(오류 26 · 경고 20 · 무결 106),
+    자동 생성 LOD가 형상에 따라 26~43%로 다르게 실패하는 지점을 육안 비교로 규명
+
+· 플레이 중 무기 파지 자세 편집·저장 에디터 도구 구현 (C# 987줄)
+  — 씬 뷰 핸들 조작 결과를 프리팹에 직접 저장. 값 1회 수정 주기를
+    "코드 수정 → 플레이 → 종료" 3단계에서 플레이 중 드래그 1회로 단축</pre>
+      </div>
+
+      <div class="copy-item">
+        <span class="kicker">구조 2 · 01</span>
+        <h3>CI 파이프라인 복구와 크래시 원인 규명</h3>
+        <pre class="copyblock">문제 · 워크플로 도입 후 55회 실행 55회 실패로 에디터가 한 번도 기동하지 못했고,
+      복구 이후에도 리눅스 CI가 PlayMode 진입에서 세그폴트로 4일간 중단됐다.
+      build 잡이 test 잡에 의존해 함께 건너뛰어져, 그동안 빌드 가능 여부조차 알 수 없었다.
+해결 · 라이선스 활성화 전략이 요구하는 시크릿 3종을 규명해 복구하고, 세그폴트는
+      먼저 PlayMode를 격리해 나머지 게이트를 되살린 뒤 이등분 4회로 원인을 좁혔다.
+      범인은 특정 메뉴가 아니라 [MenuItem] 항목 수(임계 7)였고, 프로젝트 메뉴 9개
+      전부를 플랫폼 가드로 감싸 조건 자체를 제거했다. 잡 의존도 함께 끊었다.
+수치 · 55전 55패 → 상시 통과 · 벽시계 17분 38초 → 9분 54초(-44%)
+      · 한 실행에서 EditMode 1,408/1,408 · PlayMode 11/11 · Windows 빌드 성공</pre>
+      </div>
+
+      <div class="copy-item">
+        <span class="kicker">구조 2 · 02</span>
+        <h3>성능 측정·회귀 판정 자동화</h3>
+        <pre class="copyblock">문제 · 3주간 폴리곤 수를 4회 실측해 기록했으나 프레임 시간(ms)은 착수 47일째까지
+      한 번도 재지 않았다. 그 상태로 최적화 우선순위 7개가 문서에 정해져 있었고,
+      대리 지표만으로는 CPU와 GPU 중 어디가 병목인지 판단할 수 없었다.
+해결 · 측정을 막고 있던 프로젝트 설정(Frame Timing Stats 비활성)을 규명하고,
+      수집기·주행기·판정기 3계층으로 측정 체계를 구축했다. 빌드가 스스로 인게임까지
+      진입해 정해진 구간을 주행하고, 판정 규칙은 단일 파일에 모아 종료 코드로 반환한다.
+      임계는 실측 반복 편차에서 유도했고, 편차가 임계를 넘으면 판정을 무효 처리한다.
+수치 · 프레임 1.24ms 최초 계측(gpu 1.02 &gt; cpuMain 0.86 &gt; cpuRender 0.40, 병목 GPU 확정)
+      · 반복 편차 0.7~0.8% → 회귀 임계 5%(노이즈의 6~7배)
+      · 우선순위 1순위 적용 시 CPU +16.7% 회귀 확인해 기각, 최하위 항목 채택으로 GPU 프레임 -6.3%</pre>
+      </div>
+
+      <div class="copy-item">
+        <span class="kicker">구조 2 · 03</span>
+        <h3>에셋 임포트 자동화</h3>
+        <pre class="copyblock">문제 · 생성형 툴로 만든 원본 메시가 과도하게 촘촘한데 근거리 렌더 비용은 LOD0이 결정했고,
+      지면 배치 모델은 피벗이 바운즈 중심이라 프리팹 원점을 지면에 두면 절반이 묻혔다.
+      외부 툴에서 다시 구우면 guid·머티리얼·UV가 함께 흔들려 씬 배선이 깨진다.
+해결 · 두 보정을 AssetPostprocessor로 옮겨 임포트 시점에 자동 적용했다. LOD 승격은
+      엔진이 이미 생성한 감축본의 시작 단계를 뒤로 밀어 재사용했고, 피벗은 축을 수동
+      지정하지 않고 월드 기준 벡터를 각 메시 로컬로 환산해 계산했다.
+수치 · 화면에 그려지는 삼각형 1,183,649 → 698,531 (-41.0%)
+      · 지형 타일 51장 LOD0 합 1,081,206 → 710,436 tris
+      · 드로우콜 · SetPass · 섀도우 캐스터 변화 0 (감소분이 지오메트리·그림자 부하임을 분리 확인)</pre>
+      </div>
+
+      <div class="copy-item">
+        <span class="kicker">구조 2 · 04</span>
+        <h3>에셋 예산 검수 도구</h3>
+        <pre class="copyblock">문제 · 예산 문서에 "배경 프롭 개당 1,500 tris" 같은 기준은 있었으나 에셋을 보면서
+      확인할 수단이 없었고, 엔진이 자동 생성한 하위 LOD는 형상에 따라 다르게 깨지는데
+      삼각형 수치만으로는 어느 것이 깨졌는지 판별할 수 없었다.
+해결 · 에셋을 한 점씩 세워 360°로 검수하는 전용 씬과 계측 패널을 구현했다.
+      tris·바운즈·머티리얼·LOD 단계를 계측해 예산 위반을 진단 코드로 표시하고,
+      LOD 단계를 강제 전환해 같은 자리에서 육안 비교가 가능하게 했다.
+수치 · 배치 에셋 152종 일괄 검수(오류 26 · 경고 20 · 무결 106)
+      · 자동 감축이 형상에 따라 26~43%로 다르게 실패함을 규명(침엽수 LOD2 관통, 동일 단계 바위는 정상)
+      · 이 검증 결과가 임포트 자동화(3번)의 LOD 승격 대상 선정 근거가 됨</pre>
+      </div>
+
+      <div class="copy-item">
+        <span class="kicker">구조 2 · 05</span>
+        <h3>파지 자세 편집 에디터 도구</h3>
+        <pre class="copyblock">문제 · 캐릭터가 든 무기의 위치·회전을 맞추려면 값 수정 → 플레이 → 종료를 반복해야 했고,
+      원격 피어에서의 표시는 세션을 띄워야 확인 가능해 값 하나를 보는 데 세션이 둘 필요했다.
+해결 · 전용 씬에서 플레이 중 씬 뷰 핸들로 피벗의 위치·회전·스케일을 조작하고 결과를
+      플레이어 프리팹에 직접 저장하는 도구를 구현했다. 애니메이션 6종과 시점 피치를
+      같은 화면에서 함께 재생해 움직임 중에도 자세가 성립하는지 확인한다.
+수치 · 값 1회 수정 주기 3단계 → 드래그 1회 · 네트워크 세션 없이 검증 가능
+      · 도구 987줄, 저장 대상이 프리팹 하나라 작업 결과가 곧 게임에 반영</pre>
+      </div>
+
+    </div>
+
+    <div class="notes">
+      <p><b>지면 배분</b> — 구조 1은 다섯 줄 전부, 구조 2는 두세 건만 넣는 편이 낫다. 한 장짜리라면 구조 2는 <b>01·02만</b> — 이 둘이 다른 지원자와 가장 안 겹친다.</p>
+      <p><b>묶어 쓰기</b> — 04는 03과 한 항목으로 합쳐도 된다("검수 도구로 실패 지점을 규명하고, 그 결과를 임포트 자동화로 적용해 −41 %"). 지면이 부족하면 이쪽이 효율적이다.</p>
+      <p><b>"55전 55패"는 표현을 고를 것</b> — 원인이 시크릿 미등록이라 그대로 쓰면 방치 이력으로 읽힐 수 있다. 위 문안은 "100 % 실패하던 파이프라인을 복구"로 원인을 적시하지 않았으나, 면접에서 물으면 사실대로 답하는 편이 낫다 — 값은 방치가 아니라 <b>경합 가설 9개를 실측으로 배제한 과정</b>에 있다.</p>
+      <p><b>수치 표기</b> — 원본 그대로 뒀다. 이력서 톤에 맞춰 <code>1,183,649 → 698,531</code>을 "약 118만 → 70만"으로 줄여 써도 된다.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="notes" style="margin-top:0">
+      <p><b>수치 출처</b> — 코드·설정 규모는 저장소를 직접 집계한 값이다(에디터 스크립트 11 · <code>tools/perf</code> 958줄 · <code>[Test]</code> 1,412개, 최근 CI 실행 1,408 통과). CI 벽시계와 실행 결과는 GitHub Actions 실행 이력, 렌더 수치는 <code>UnityEditor.UnityStats</code>와 빌드 벤치 실측이다.</p>
+      <p><b>함께 보기</b> — 성능 개선 자체의 실측·판정 과정과 런타임 최적화 사례는 <a href="performance.html">Train Survival 성능·검증 사례집</a>에 있다. 이 문서가 <b>도구</b>를, 사례집이 <b>그 도구로 얻은 결과</b>를 담는다.</p>
+      <p><b>프로젝트</b> — Train Survival · Unity 6 (6000.5.3f1) / URP 17.5 / Netcode for GameObjects · PC(Steam) 타깃 협동 생존 크래프팅 · 1인 개발 · 2026-07-17 착수.</p>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
