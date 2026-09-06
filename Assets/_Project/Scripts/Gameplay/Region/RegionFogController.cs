@@ -34,6 +34,10 @@ namespace Game.Gameplay.Region
                  "안개만 다른 속도로 바뀌면 전환이 두 번 일어난 것처럼 보인다.")]
         [SerializeField, Min(0f)] private float _fadeSeconds = 6f;
 
+        [Tooltip("지역 경계 앞뒤로 안개를 섞는 거리(m). RegionSkyController._blendRange 와 같은 값을 쓴다 — " +
+                 "하늘과 안개가 다른 자리에서 바뀌면 전환이 두 번 일어난 것처럼 보인다.")]
+        [SerializeField, Min(0f)] private float _blendRange = 60f;
+
         private bool _hasBackup;
         private bool _sceneFogEnabled;
         private FogMode _sceneFogMode;
@@ -52,6 +56,9 @@ namespace Game.Gameplay.Region
         private RegionDefinition _appliedRegion;
         private DayPhase _appliedPhase;
         private bool _hasApplied;
+
+        /// <summary>국면이 방금 바뀌었는가 — <b>이때만</b> 크로스페이드를 처음부터 돌린다.</summary>
+        private bool _phaseChanged;
 
         /// <inheritdoc />
         public bool OwnsFog => _owns;
@@ -119,13 +126,13 @@ namespace Game.Gameplay.Region
                 ServiceLocator.Register<IRegionFogProvider>(this);
             }
 
-            EventBus<RegionChangedEvent>.Subscribe(OnRegionChanged);
+            // 지역 전환은 구독하지 않는다 — 선포 시점이 아니라 <b>발밑 경계</b>가 정하므로
+            // LateUpdate 의 거리 조회가 유일한 출처다(RegionSkyController 와 같은 규약).
             EventBus<DayPhaseChangedEvent>.Subscribe(OnPhaseChanged);
         }
 
         private void OnDisable()
         {
-            EventBus<RegionChangedEvent>.Unsubscribe(OnRegionChanged);
             EventBus<DayPhaseChangedEvent>.Unsubscribe(OnPhaseChanged);
 
             if (ServiceLocator.TryGet(out IRegionFogProvider provider) && ReferenceEquals(provider, this))
@@ -163,14 +170,23 @@ namespace Game.Gameplay.Region
                 _fadeElapsed = _fadeSeconds;
                 _hasApplied = true;
             }
-            else if (_toColor != color || !Mathf.Approximately(_toDensity, density))
+            else if (_phaseChanged)
             {
-                // 국면·지역이 바뀌었다 — 지금 화면에 있는 색에서 출발해야 이어져 보인다.
+                // 국면이 바뀌었다 — 지금 화면에 있는 색에서 출발해야 이어져 보인다.
+                _phaseChanged = false;
                 _fromColor = RenderSettings.fogColor;
                 _fromDensity = RenderSettings.fogDensity;
                 _toColor = color;
                 _toDensity = density;
                 _fadeElapsed = 0f;
+            }
+            else
+            {
+                // 지역 전환은 <b>거리</b>로 진행한다 — 목표가 매 프레임 조금씩 움직이므로
+                // 여기서 페이드를 되감으면 안개가 목표를 영영 따라잡지 못하고 뒤처진다.
+                // 섞는 일은 이미 TryResolveTarget 이 끝냈다.
+                _toColor = color;
+                _toDensity = density;
             }
 
             _fadeElapsed += Time.deltaTime;
@@ -185,51 +201,82 @@ namespace Game.Gameplay.Region
             Write(Color.Lerp(_fromColor, _toColor, t), Mathf.Lerp(_fromDensity, _toDensity, t));
         }
 
-        private void OnRegionChanged(RegionChangedEvent evt)
-        {
-            if (evt.Region == _appliedRegion)
-            {
-                return;
-            }
-
-            GameLog.Info(LogCategory.Cycle, evt.Region != null && evt.Region.OverridesFog
-                ? $"지역 안개 적용 — {evt.Region.DisplayName}"
-                : "지역 안개 없음 — 씬 값 유지");
-        }
-
         private void OnPhaseChanged(DayPhaseChangedEvent evt)
         {
-            // 목표 조회는 LateUpdate 가 하므로 여기서는 아무것도 하지 않는다.
-            // 구독을 유지하는 이유는 국면 전환이 이벤트로 통지된다는 계약을 이 컴포넌트도 따르기 때문이다.
+            // 목표 조회는 LateUpdate 가 하고, 여기서는 <b>크로스페이드를 되감을 때</b>만 표시한다.
+            // 지역 전환은 거리로 진행하므로 되감기 대상이 아니다 — 국면 전환만이 순간 사건이다.
+            if (evt.Phase != _appliedPhase)
+            {
+                _phaseChanged = true;
+            }
+
             _appliedPhase = evt.Phase;
         }
 
-        /// <summary>현재 지역 × 국면의 fog 한 벌. 지역이 fog를 소유하지 않으면 false.</summary>
+        /// <summary>
+        /// 지역 × 국면의 fog 한 벌. 두 지역 다 fog를 소유하지 않으면 false.
+        ///
+        /// <para><b>지역은 경계 앞뒤 <see cref="_blendRange"/> m에 걸쳐 섞는다</b>
+        /// (<see cref="World.RegionBlendQuery"/>). 종전에는 <c>CurrentRegion</c>을 읽어
+        /// 선포 즉시 바뀌었고, 그래서 지형보다 <b>240 m · 40초 먼저</b> 안개색이 넘어갔다 —
+        /// 하늘이 지나온 숲 위에 사막색으로 섰던 것과 같은 원인이다.</para>
+        /// </summary>
         private bool TryResolveTarget(out Color color, out float density)
         {
             color = _sceneFogColor;
             density = _sceneFogDensity;
 
-            if (!ServiceLocator.TryGet(out IRegionService region))
+            if (!World.RegionBlendQuery.TryResolve(
+                    _blendRange, out RegionDefinition from, out RegionDefinition to, out float blend))
             {
                 return false;
             }
 
-            RegionDefinition definition = region.CurrentRegion;
-            if (definition == null || !definition.OverridesFog)
+            bool fromOwns = from != null && from.OverridesFog;
+            bool toOwns = to != null && to.OverridesFog;
+            if (!fromOwns && !toOwns)
             {
+                // 어느 쪽도 소유하지 않는다 — 씬 값 그대로다(회귀 방어선).
                 return false;
             }
 
             DayPhase phase = ServiceLocator.TryGet(out IDayCycleService cycle) ? cycle.Phase : _appliedPhase;
+
+            // 한쪽만 배선돼 있으면 그쪽과 씬 값을 섞는다 — 배선 전 지역도 튀지 않고 넘어간다.
+            ResolveRegionFog(from, fromOwns, phase, out Color fromColor, out float fromDensity);
+            ResolveRegionFog(to, toOwns, phase, out Color toColor, out float toDensity);
+
+            color = Color.Lerp(fromColor, toColor, blend);
+            density = Mathf.Lerp(fromDensity, toDensity, blend);
+
+            RegionDefinition dominant = blend >= 0.5f ? to : from;
+            if (!ReferenceEquals(dominant, _appliedRegion))
+            {
+                _appliedRegion = dominant;
+                GameLog.Info(LogCategory.Cycle, dominant != null && dominant.OverridesFog
+                    ? $"지역 안개 적용 — {dominant.DisplayName}"
+                    : "지역 안개 없음 — 씬 값 유지");
+            }
+
+            return true;
+        }
+
+        /// <summary>지역 하나의 국면 fog — fog를 소유하지 않는 지역은 씬 값이 그 자리를 대신한다.</summary>
+        private void ResolveRegionFog(
+            RegionDefinition region, bool owns, DayPhase phase, out Color color, out float density)
+        {
+            if (!owns)
+            {
+                color = _sceneFogColor;
+                density = _sceneFogDensity;
+                return;
+            }
+
             ResolvePhaseFog(
                 phase,
-                definition.DayFogColor, definition.DayFogDensity,
-                definition.NightFogColor, definition.NightFogDensity,
+                region.DayFogColor, region.DayFogDensity,
+                region.NightFogColor, region.NightFogDensity,
                 out color, out density);
-
-            _appliedRegion = definition;
-            return true;
         }
 
         private void Write(Color color, float density)

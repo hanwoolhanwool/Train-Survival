@@ -59,6 +59,41 @@ namespace Game.Gameplay.World
         }
 
         /// <summary>
+        /// <b>수면을 그릴 z 구간</b> [back, front] (열차 원점 기준, m)과 그 높이.
+        /// 보이는 범위 안에 물이 없으면 false.
+        ///
+        /// <para><b>왜 발밑 판정만으로는 부족한가.</b> 수면은 지역 전체를 덮는 <b>한 장</b>이라
+        /// 발밑 지역에만 속하지 않는다. 발밑으로만 켜고 끄면 두 방향으로 틀린다 —
+        /// 바다를 벗어나는 순간 <b>뒤에 남은 300 m 바다가 통째로 마르고</b>, 반대로 바다에
+        /// 들어가기 전에는 앞의 대초원 타일이 <b>60~100 m 잠긴 채</b>로 다가온다.
+        /// 그래서 켜고 끄는 대신 <b>물인 구간에 맞춰 자른다</b> — 그 잘린 끝이 해안선이 된다.</para>
+        ///
+        /// <para>경계 기록이 없으면 구간이 양쪽 무한대다 — 호출자가 자기 크기를 그대로 쓰므로
+        /// 종전 동작이다.</para>
+        /// </summary>
+        public static bool TryGetWaterSpan(out float waterSurfaceY, out float backZ, out float frontZ)
+        {
+            waterSurfaceY = 0f;
+
+            if (!RegionBlendQuery.TryResolveSpanFor(
+                    HasWaterPredicate, out RegionDefinition region, out backZ, out frontZ))
+            {
+                return false;
+            }
+
+            waterSurfaceY = region.WaterSurfaceY;
+            return true;
+        }
+
+        /// <summary>매 프레임 델리게이트를 새로 만들지 않으려고 캐시해 둔다.</summary>
+        private static readonly System.Func<RegionDefinition, bool> HasWaterPredicate = HasWater;
+
+        private static bool HasWater(RegionDefinition region)
+        {
+            return region.HasWater;
+        }
+
+        /// <summary>
         /// 지상 개체가 서는 높이 — 물이면 물면, 아니면 지면(0).
         /// 물 없는 지역에서는 0이라 <b>동작이 종전과 같다.</b>
         /// </summary>

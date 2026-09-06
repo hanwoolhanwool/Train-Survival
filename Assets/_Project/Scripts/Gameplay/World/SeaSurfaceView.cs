@@ -23,8 +23,12 @@ namespace Game.Gameplay.World
         [Tooltip("수면 머티리얼 — 월드 XZ UV 를 켠 스타일라이즈드 워터.")]
         [SerializeField] private Material _waterMaterial;
 
-        [Tooltip("한 변 길이 (m). 카메라 far clip 안에서 수평선까지 덮을 만큼 커야 한다.")]
+        [Tooltip("한 변 길이 (m). 카메라 far clip 안에서 수평선까지 덮을 만큼 커야 한다. " +
+                 "지역 경계가 이 안에 들어오면 그 자리에서 잘린다 — 잘린 끝이 해안선이다.")]
         [SerializeField, Min(50f)] private float _size = 600f;
+
+        /// <summary>수면 판의 두께 — 위에서만 보이므로 얇아도 된다.</summary>
+        private const float PlaneThickness = 0.1f;
 
         private Transform _plane;
         private Renderer _renderer;
@@ -43,7 +47,7 @@ namespace Game.Gameplay.World
 
             _plane = go.transform;
             _plane.SetParent(transform, false);
-            _plane.localScale = new Vector3(_size, 0.1f, _size);
+            _plane.localScale = new Vector3(_size, PlaneThickness, _size);
 
             _renderer = go.GetComponent<Renderer>();
             _renderer.sharedMaterial = _waterMaterial;
@@ -60,29 +64,47 @@ namespace Game.Gameplay.World
                 return;
             }
 
-            bool show = TryGetWaterSurfaceY(out float waterY);
+            bool show = TryResolvePlane(out float waterY, out float near, out float far);
+            if (show)
+            {
+                _plane.localScale = new Vector3(_size, PlaneThickness, far - near);
+                _plane.localPosition = new Vector3(0f, waterY, (near + far) * 0.5f);
+            }
+
             if (_renderer.enabled != show)
             {
                 _renderer.enabled = show;
             }
-
-            if (show)
-            {
-                Vector3 p = _plane.localPosition;
-                if (!Mathf.Approximately(p.y, waterY))
-                {
-                    _plane.localPosition = new Vector3(p.x, waterY, p.z);
-                }
-            }
         }
 
         /// <summary>
-        /// 발밑 지형 기준으로 판정한다 — "현재 지역"으로 켜고 끄면 Day가 넘어간 순간
-        /// <b>물만 먼저 사라지고 교량은 40초 더 남는다</b> (<see cref="WaterSurfaceQuery"/>).
+        /// 이번 프레임에 그릴 수면 조각 — 물인 구간을 <see cref="_size"/> 안으로 자른 [near, far].
+        ///
+        /// <para><b>켜고 끄는 것이 아니라 자른다.</b> 종전에는 발밑이 물인지로 렌더러를 껐는데,
+        /// 이 평면은 <b>반경 300 m</b>라 발밑 한 점보다 훨씬 넓다. 그래서 바다를 벗어나는 순간
+        /// 뒤에 남은 바다까지 <b>한 프레임에 통째로 말랐고</b>, 들어가기 전에는 앞의 밀밭이
+        /// 물에 잠긴 채 다가왔다 — 사용자가 "바다가 갑자기 밀밭으로 변한다"고 본 것이 이것이다.
+        /// 지금은 지역 경계에서 잘리므로 <b>그 잘린 끝이 해안선</b>으로 지나간다.</para>
+        ///
+        /// <para>판정 자체는 <see cref="WaterSurfaceQuery"/>가 소유한다 — 수영·몬스터 지지면이
+        /// 같은 함수를 보기 때문에 여기서 규칙을 다시 쓰면 두 벌이 조용히 어긋난다.</para>
         /// </summary>
-        private static bool TryGetWaterSurfaceY(out float waterSurfaceY)
+        private bool TryResolvePlane(out float waterY, out float near, out float far)
         {
-            return WaterSurfaceQuery.TryGetWaterSurfaceY(out waterSurfaceY);
+            near = 0f;
+            far = 0f;
+
+            if (!WaterSurfaceQuery.TryGetWaterSpan(out waterY, out float backZ, out float frontZ))
+            {
+                return false;
+            }
+
+            float half = _size * 0.5f;
+            near = Mathf.Max(backZ, -half);
+            far = Mathf.Min(frontZ, half);
+
+            // 물 구간이 통째로 평면 밖으로 나갔다 — 그릴 것이 없다.
+            return far - near > 0.01f;
         }
     }
 }

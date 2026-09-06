@@ -151,8 +151,43 @@ namespace Game.Gameplay.World
                 }
 
                 return ResolveRegionIndex(TileStreamingLogic.GetCenterTileIndex(
-                    _traveledDistance.Value, _settings.TileLength));
+                    TraveledDistance, _settings.TileLength));
             }
+        }
+
+        /// <inheritdoc />
+        public void ResolveRegionBlend(
+            float blendRange, out int fromRegionIndex, out int toRegionIndex, out float blend)
+        {
+            if (_settings == null)
+            {
+                fromRegionIndex = -1;
+                toRegionIndex = -1;
+                blend = 0f;
+                return;
+            }
+
+            TileStreamingLogic.ResolveRegionBlend(
+                TraveledDistance, _settings.TileLength, blendRange, _boundaryMirror,
+                out fromRegionIndex, out toRegionIndex, out blend);
+        }
+
+        /// <inheritdoc />
+        public void ResolveRegionSpanZ(
+            out float backZ, out float frontZ, out int backRegionIndex, out int frontRegionIndex)
+        {
+            if (_settings == null)
+            {
+                backZ = float.NegativeInfinity;
+                frontZ = float.PositiveInfinity;
+                backRegionIndex = -1;
+                frontRegionIndex = -1;
+                return;
+            }
+
+            TileStreamingLogic.ResolveRegionSpanZ(
+                TraveledDistance, _settings.TileLength, _boundaryMirror,
+                out backZ, out frontZ, out backRegionIndex, out frontRegionIndex);
         }
 
         private void Update()

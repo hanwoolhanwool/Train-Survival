@@ -124,6 +124,16 @@ namespace Game.Gameplay.Region
         [Tooltip("이 지역에서 스트리밍할 지형 타일 프리팹. 비우면 이전 지역 타일을 유지한다.")]
         [SerializeField] private GameObject _terrainTilePrefab;
 
+        [Header("지평선 (타일 절단면 가리기)")]
+        [Tooltip("이 지역이 지평선 판을 소유하는가. 끄면 DistantHorizonPlane 이 현재 fog 색을 그대로 써서 " +
+            "배경에 묻힌다 — fog가 짙은 지역(숲·바다 0.0062)은 200 m에서 78 %가 지워져 절단면이 " +
+            "애초에 보이지 않으므로 켤 이유가 없다. 하늘·안개와 같은 회귀 방어선이다.")]
+        [SerializeField] private bool _overridesHorizon;
+
+        [Tooltip("타일 너머를 덮을 지평선 색. 이 지역 지형의 대표색을 넣는다 — 지형과 이어져 보여야 하므로 " +
+            "타일 머티리얼의 먼 거리 색에 맞춘다. fog가 거리에 따라 하늘색으로 수렴시킨다.")]
+        [SerializeField] private Color _horizonColor = new Color(0.62f, 0.6f, 0.5f, 1f);
+
         [Header("물 (바다)")]
         [Tooltip("이 지역의 지면이 물인가. 켜면 지상 개체가 지면(y 0)이 아니라 물면에서 선다. " +
             "바다처럼 궤도 밖이 전부 물인 지역만 켠다.")]
@@ -193,6 +203,12 @@ namespace Game.Gameplay.Region
 
         /// <summary>이 지역의 하늘. null 이면 하늘 슬롯을 건드리지 않는다.</summary>
         public Material SkyboxMaterial => _skyboxMaterial;
+
+        /// <summary>이 지역이 지평선 판을 소유하는가. false면 fog 색에 묻힌다 — 배선 전 지역의 방어선.</summary>
+        public bool OverridesHorizon => _overridesHorizon;
+
+        /// <summary>타일 절단면 너머를 덮는 지평선 색.</summary>
+        public Color HorizonColor => _horizonColor;
 
         /// <summary>이 지역이 fog를 소유하는가. false면 씬 fog 그대로 — 배선 전 지역의 회귀 방어선.</summary>
         public bool OverridesFog => _overridesFog;

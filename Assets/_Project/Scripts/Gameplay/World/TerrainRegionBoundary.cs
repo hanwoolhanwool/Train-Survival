@@ -64,5 +64,24 @@ namespace Game.Gameplay.World
         /// <para>경계 기록이 없으면 -1 — 호출자는 현재 지역으로 되돌아간다.</para>
         /// </summary>
         int RegionIndexAtTrain { get; }
+
+        /// <summary>
+        /// 지역 전환을 경계 앞뒤 <paramref name="blendRange"/> m에 걸쳐 건너는 진행도
+        /// (<see cref="TileStreamingLogic.ResolveRegionBlend"/>).
+        ///
+        /// <para>하늘·안개처럼 <b>한 벌뿐이라 타일 단위로 교체할 수 없는 것</b>이 쓴다.
+        /// <see cref="RegionIndexAtTrain"/>은 계단이라 경계를 밟는 한 프레임에 통째로 튄다.</para>
+        /// </summary>
+        void ResolveRegionBlend(float blendRange, out int fromRegionIndex, out int toRegionIndex, out float blend);
+
+        /// <summary>
+        /// 발밑 지역이 이어지는 z 구간 (열차 원점 기준, m). 경계가 없는 쪽은 무한대다
+        /// (<see cref="TileStreamingLogic.ResolveRegionSpanZ"/>).
+        ///
+        /// <para>수면·지평선판처럼 <b>지역 전체를 한 장으로 덮는 것</b>이 자기 크기를 이 구간에
+        /// 맞춰 잘라야 다음 지역 지형 위로 넘어가지 않는다. 그 한 장은 발밑 구간에만 속하지
+        /// 않으므로 양쪽 이웃 지역도 함께 낸다 — 없으면 -1이다.</para>
+        /// </summary>
+        void ResolveRegionSpanZ(out float backZ, out float frontZ, out int backRegionIndex, out int frontRegionIndex);
     }
 }
