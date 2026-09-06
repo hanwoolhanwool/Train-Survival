@@ -7129,6 +7129,7 @@ GameObject:
   - component: {fileID: 1704432529}
   - component: {fileID: 1704432530}
   - component: {fileID: 1704432540}
+  - component: {fileID: 1704432541}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -7320,6 +7321,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionFogController
   _fadeSeconds: 6
+  _blendRange: 60
 --- !u!114 &1704432522
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7416,6 +7418,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.RegionSkyController
   _fallbackSkybox: {fileID: 0}
+  _blendRange: 60
 --- !u!114 &1704432528
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9160,3 +9163,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Region.EnvironmentWindController
   _nightScale: 0.45
   _changeRatePerSecond: 0.6
+--- !u!114 &1704432541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704432510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d3e0915c8b46d2af61b704e9c35d18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.World.DistantHorizonPlane
+  _material: {fileID: 2100000, guid: e02b7c4d9f1a45368bd5c31e7a06f9b2, type: 2}
+  _size: 3000
+  _fallbackPlaneY: -0.5
