@@ -236,5 +236,19 @@ namespace Game.Gameplay.Debugging
             float halfFov = Mathf.Max(verticalFovDegrees, 1f) * 0.5f * Mathf.Deg2Rad;
             return radius / Mathf.Tan(halfFov) * margin;
         }
+
+        /// <summary>
+        /// 궤도 카메라가 겨눌 높이 — 대상 바운즈의 <b>중심</b>이다. 지면 정렬을 켜면 밑면이
+        /// y=0이라 중심은 높이의 절반이지만, 끄면 원점이 지면이므로 중심이
+        /// <paramref name="groundOffset"/>만큼 통째로 내려간다(피벗이 중심인 에셋은 −높이/2).
+        /// 이 차이를 무시하면 정렬을 끄는 순간 대상이 화면 위로 밀려 올라간다.
+        /// </summary>
+        /// <param name="minimum">너무 낮게 겨누면 지면에 카메라가 파묻힌다 — 바닥값.</param>
+        public static float FramingPivotHeight(
+            float height, float groundOffset, bool groundAligned, float minimum = 0.3f)
+        {
+            float center = height * 0.5f + (groundAligned ? 0f : groundOffset);
+            return Mathf.Max(center, minimum);
+        }
     }
 }

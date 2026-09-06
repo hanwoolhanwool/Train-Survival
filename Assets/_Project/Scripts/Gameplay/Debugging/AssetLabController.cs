@@ -54,6 +54,18 @@ namespace Game.Gameplay.Debugging
         private string _filter = string.Empty;
         private bool _spin = true;
         private bool _forceShowScatter = true;
+
+        /// <summary>
+        /// 대상을 원점이 아니라 <b>바운즈 밑면</b> 기준으로 세운다 — 피벗이 바운즈 중심인 에셋
+        /// (바위·사슴·침목 등)은 원점을 지면에 놓으면 절반이 땅에 잠겨 검수가 불가능하다.
+        /// 실측: <c>Env_Rock_L</c> −0.92 m, <c>Env_Deer_Idle</c> −0.80 m, <c>Env_RockOutcrop</c> −0.84 m.
+        ///
+        /// <para>끄면 원점을 지면에 놓던 원래 표시로 돌아간다 — 잠긴 부분은
+        /// <see cref="AssetLabBoundsView"/>가 붉게 덧그리므로 묻힘 자체를 눈으로 볼 수 있다.
+        /// 켜 두더라도 계측·검수는 그대로 산다(<see cref="ApplyGroundAlign"/> 참조).</para>
+        /// </summary>
+        private bool _groundAlign = true;
+
         private bool _onlyIssues;
         private float _sunYaw = 40f;
         private Vector2 _listScroll;
@@ -156,7 +168,9 @@ namespace Game.Gameplay.Debugging
                 ForceShowScatterSlots(_instance);
             }
 
+            // 재는 것이 먼저다 — 정렬이 계측값(지면 오프셋)을 꺼내 쓴다.
             Measure(entry);
+            ApplyGroundAlign();
             FrameCamera(entry);
 
             _lodCounts = AssetLabProbe.LodTriangleCounts(_instance);
@@ -207,6 +221,49 @@ namespace Game.Gameplay.Debugging
             }
         }
 
+        /// <summary>
+        /// 잰 지면 오프셋만큼 대상을 들어 올려 바운즈 밑면을 지면(y=0)에 맞춘다.
+        /// <b>계측이 끝난 뒤에만</b> 부른다 — 올릴 양을 <see cref="AssetLabEntry.Measurement"/>에서
+        /// 꺼내 쓰므로 재기 전에 부르면 0만 나온다.
+        ///
+        /// <para>정렬해도 검수는 그대로 산다: <see cref="AssetMeasurement.GroundOffset"/>은
+        /// 루트 원점에 대한 <b>상대</b>값이라(<c>bounds.min.y − root.position.y</c>)
+        /// 대상을 들어 올려도 값이 변하지 않는다. 실측으로 확인 — Env_Rock_L은
+        /// 월드 밑면이 −0.92 → 0.00으로 올라오지만 오프셋은 −0.918 그대로다.</para>
+        /// </summary>
+        private void ApplyGroundAlign()
+        {
+            if (_instance == null)
+            {
+                return;
+            }
+
+            _instance.transform.localPosition = new Vector3(0f, GroundAlignLift(), 0f);
+
+            if (_boundsView != null)
+            {
+                _boundsView.Target = WorldBoundsOf(_instance);
+            }
+        }
+
+        /// <summary>
+        /// 지금 대상에 지면 정렬을 걸고 있는가. <b>지면에 발을 붙이지 않는 분류는 제외한다</b> —
+        /// 지형 타일은 자기 자신이 지면이고(표면이 y=0, 두께 0.2 m가 아래로 내려간다),
+        /// 무기는 손에, 열차 부품은 차체에 붙는다. 이것들을 들어 올리면 오히려 어긋난다.
+        /// </summary>
+        private bool IsAligning()
+        {
+            return _groundAlign
+                && _current != null
+                && AssetLabDiagnostics.IsGrounded(_current.Category);
+        }
+
+        /// <summary>지금 대상을 얼마나 들어 올려야 하는가 — 정렬하지 않으면 0(원점이 지면).</summary>
+        private float GroundAlignLift()
+        {
+            return IsAligning() ? -_current.Measurement.GroundOffset : 0f;
+        }
+
         private void FrameCamera(AssetLabEntry entry)
         {
             if (_orbitCamera == null)
@@ -218,7 +275,8 @@ namespace Game.Gameplay.Debugging
             var cam = _orbitCamera.GetComponent<Camera>();
             float fov = cam != null ? cam.fieldOfView : 60f;
             float distance = AssetLabProbe.FramingDistance(size, fov);
-            _orbitCamera.Frame(_turntable, distance, Mathf.Max(size.y * 0.5f, 0.3f));
+            _orbitCamera.Frame(_turntable, distance,
+                AssetLabProbe.FramingPivotHeight(size.y, entry.Measurement.GroundOffset, IsAligning()));
         }
 
         private static Bounds WorldBoundsOf(GameObject root)
@@ -530,6 +588,18 @@ namespace Game.Gameplay.Debugging
                 _boundsView.ShowRuler = GUILayout.Toggle(_boundsView.ShowRuler, " 사람 키(1.8 m) 자");
             }
 
+            bool nextAlign = GUILayout.Toggle(_groundAlign, " 지면에 맞춰 세우기");
+            if (nextAlign != _groundAlign)
+            {
+                // 다시 스폰할 필요가 없다 — 계측값은 그대로 두고 위치만 옮긴다.
+                _groundAlign = nextAlign;
+                ApplyGroundAlign();
+                if (_current != null)
+                {
+                    FrameCamera(_current);
+                }
+            }
+
             bool nextForce = GUILayout.Toggle(_forceShowScatter, " 변주 슬롯 전부 표시");
             if (nextForce != _forceShowScatter)
             {
@@ -636,6 +706,11 @@ namespace Game.Gameplay.Debugging
             GUILayout.Label($"크기    {m.Size.x:F2} × {m.Size.y:F2} × {m.Size.z:F2} m");
             GUILayout.Label($"사람 대비  {m.Size.y / AssetLabBoundsView.HumanHeight:F2}배");
             GUILayout.Label($"지면 오프셋  {m.GroundOffset:+0.000;-0.000;0} m");
+            if (IsAligning() && Mathf.Abs(m.GroundOffset) > 0.0005f)
+            {
+                // 화면과 수치가 어긋나 보이지 않게, 얼마나 옮겨 세웠는지 밝힌다.
+                GUILayout.Label($"  └ 지면에 맞춰 {GroundAlignLift():+0.00;-0.00;0} m 옮겨 세웠다", _issueStyle);
+            }
             GUILayout.Label($"렌더러  {m.RendererCount}  ·  머티리얼 {m.MaterialCount}");
             string lod = m.HasLod
                 ? $"{m.LodLevels}단 (최하위 {m.LowestLodTriangles:N0} tris)"

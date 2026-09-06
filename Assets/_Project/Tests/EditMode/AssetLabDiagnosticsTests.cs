@@ -278,5 +278,37 @@ namespace Game.Tests.EditMode
         {
             Assert.That(AssetLabProbe.FramingDistance(Vector3.zero, 60f), Is.GreaterThan(0f));
         }
+
+        // ── 지면 정렬 ──
+
+        [Test]
+        public void 지면정렬을_켜면_카메라가_바운즈_중심을_겨눈다()
+        {
+            // Env_Rock_L 실측 — 높이 1.85 m에 피벗이 바운즈 중심이라 오프셋이 −0.92 m다.
+            float pivot = AssetLabProbe.FramingPivotHeight(1.85f, -0.918f, groundAligned: true);
+
+            Assert.That(pivot, Is.EqualTo(0.925f).Within(0.001f));
+        }
+
+        [Test]
+        public void 지면정렬을_끄면_묻힌_만큼_카메라도_내려간다()
+        {
+            // 정렬을 끄면 원점이 지면이므로 중심이 통째로 내려간다 — 이 차이를 무시하면
+            // 토글을 끄는 순간 대상이 화면 위로 밀려 올라간다.
+            float aligned = AssetLabProbe.FramingPivotHeight(12f, -2f, groundAligned: true);
+            float raw = AssetLabProbe.FramingPivotHeight(12f, -2f, groundAligned: false);
+
+            Assert.That(aligned, Is.EqualTo(6f).Within(0.001f));
+            Assert.That(raw, Is.EqualTo(4f).Within(0.001f));
+        }
+
+        [Test]
+        public void 피벗높이는_지면_아래로_내려가지_않는다()
+        {
+            // Env_Rock_S 실측(h=0.31, 오프셋 −0.155) — 정렬을 끄면 중심이 정확히 y=0에 온다.
+            float pivot = AssetLabProbe.FramingPivotHeight(0.31f, -0.155f, groundAligned: false);
+
+            Assert.That(pivot, Is.GreaterThan(0f));
+        }
     }
 }
