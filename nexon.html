@@ -237,6 +237,26 @@
   .pill.on { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent-2); font-weight: 500; }
   .arw { font-family: var(--f-mono); font-size: 0.78rem; color: var(--muted); align-self: center; }
 
+  /* ── 소스 링크 줄 ──────────────────── */
+  .src {
+    display: flex; flex-wrap: wrap; gap: 0.15rem 0.72rem; align-items: baseline;
+    font-family: var(--f-mono); font-size: 0.7rem; line-height: 1.8;
+  }
+  .src .lbl {
+    font-size: 0.61rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); flex: none;
+  }
+  .src a { color: var(--accent-2); border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+  .src a:hover { border-bottom-color: var(--accent); background: var(--accent-soft); }
+  .card > .src, .cap .src {
+    border-top: 1px dashed var(--rule); padding-top: 0.55rem; margin-top: 0.75rem;
+  }
+  .case > .src {
+    border-top: 1px solid var(--rule-soft); background: var(--surface-2);
+    padding: 0.55rem 1.15rem 0.65rem;
+  }
+  section > .src { margin-top: 0.7rem; }
+
   .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
   .shot { background: var(--surface); }
   .shot img { width: 100%; height: 190px; object-fit: cover; }
@@ -311,6 +331,11 @@
     .shot img { height: 34mm; }
     .closing { margin-top: 8mm; padding: 12pt 14pt; }
     footer { padding: 6pt 0 0; font-size: 7.4pt; }
+    .src { font-size: 6.6pt; line-height: 1.7; gap: 0.1rem 0.5rem; }
+    .src .lbl { font-size: 5.9pt; }
+    .src a { color: var(--accent-2); border-bottom: 0; }
+    .case > .src { padding: 4pt 9pt 5pt; }
+    .card > .src, .cap .src { padding-top: 4pt; margin-top: 5pt; }
   }
 </style>
 </head>
@@ -489,6 +514,7 @@
         <p>발사 → 명중 → 호스트 승인 → 견인 → 획득이 하나의 파이프라인입니다. 쏜 클라이언트가 <b>즉시 연출을 재생</b>하고 승인·거부는 호스트가 확정합니다.</p>
         <p>조작 상태와 훅 비행 상태를 서로 다른 두 상태 기계로 분리했고, 승인 판정은 순수 함수라 EditMode에서 전 경계를 검사합니다. 대상은 <code>IGrabbable</code> 한 계약으로 묶여 자원·몬스터·보따리가 같은 코드를 탑니다.</p>
         <span class="res">등급별 사거리 <b>20 / 26 / 32 m</b> · 견인 속도 8 / 11 / 14 m/s · 안전 타임아웃 1.5 s (악조건 실측 최대 135 ms 대비 10배 여유)</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonController.cs">HarpoonController.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/GrabValidation.cs">GrabValidation.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/IGrabbable.cs">IGrabbable.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/GrabValidationTests.cs">GrabValidationTests.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/harpoon/grapple-pipeline.md">명세 grapple-pipeline.md</a></div>
       </div>
       <div class="card">
         <div class="tag">02 · Train</div>
@@ -496,6 +522,7 @@
         <p>칸과 연결부에 각각 내구가 있습니다. 칸이 부서지면 <b>그 뒤 편성 전체가 이탈</b>해 뒤로 밀려나고, 손잡이를 잡아 사람 힘으로 끌어와야 다시 붙습니다.</p>
         <p>모든 서버 변이가 같은 네 단계를 지납니다 — <b>스냅샷 → 순수 함수 판정 → 일괄 반영 → 이벤트 발행</b>. 판정이 <code>NetworkList</code> API에 묶여 있지 않아 부분 적용 상태가 복제될 여지가 없습니다.</p>
         <span class="res">연결부는 <b>살아 있는 것 중 가장 후미만</b> 파괴 가능 — 제약 하나로 재건·재결합의 상태 공간을 좁혔습니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/TrainState.cs">TrainState.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/TrainStateLogic.cs">TrainStateLogic.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/EjectMotionMath.cs">EjectMotionMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/TrainStateLogicTests.cs">TrainStateLogicTests.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/train/train-state-model.md">명세 train-state-model.md</a></div>
       </div>
       <div class="card">
         <div class="tag">03 · Structure</div>
@@ -503,6 +530,7 @@
         <p>갑판이 1 m 셀 그리드이고 그 위에 건축물 7종을 90° 단위로 놓습니다. 원안의 "온실칸·무기고칸" 같은 <b>칸 종류 분화를 폐기</b>하고, 차이는 그 위에 무엇을 짓느냐가 만들게 했습니다.</p>
         <p>배치·점유·회전·피해 판정은 순수 static 함수가 처리하고, 종류별 효과(차폐·난방·창고 블록·비용)는 카탈로그의 필드입니다.</p>
         <span class="res">새 건축물을 추가할 때 늘리는 것은 코드가 아니라 <b>에셋 항목</b></span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/StructureGridLogic.cs">StructureGridLogic.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/StructureCatalog.cs">StructureCatalog.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/StructureGridLogicTests.cs">StructureGridLogicTests.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/train/construction.md">명세 construction.md</a></div>
       </div>
       <div class="card">
         <div class="tag">04 · Combat</div>
@@ -510,6 +538,7 @@
         <p>쏜 사람이 시드를 만들어 지연 0으로 즉시 연출하고, 호스트가 그 시드를 브로드캐스트하면 다른 피어가 <b>같은 시드로 펠릿 궤적을 재계산</b>합니다. 난수를 복제하지 않고 모두가 같은 탄착을 봅니다.</p>
         <p>무기 차이는 전부 설정 에셋 안에 있습니다 — 연사·펠릿 수·산탄각·장탄·재장전이 전부 필드입니다.</p>
         <span class="res">샷건과 볼트액션이 <b>컴포넌트 코드 0줄</b>로 성립 · 데미지는 호스트가 거리·펠릿 상한을 재검증한 뒤 확정</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Combat/GunController.cs">GunController.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Combat/WeaponSpreadMath.cs">WeaponSpreadMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/WeaponSpreadMathTests.cs">WeaponSpreadMathTests.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/combat/weapon-combat.md">명세 weapon-combat.md</a></div>
       </div>
       <div class="card">
         <div class="tag">05 · Region</div>
@@ -517,6 +546,7 @@
         <p>지역 인덱스·지역 내 일차·마지막 날 여부·다음 지역 예고·순환 횟수가 전부 <b>Day 번호 하나에서 순수 함수로 파생</b>됩니다. 그래서 지역 컨트롤러는 <code>NetworkBehaviour</code>조차 아닌 일반 <code>MonoBehaviour</code>입니다.</p>
         <p>복제할 것이 늘지 않으므로 피어 간 어긋날 여지 자체가 없습니다.</p>
         <span class="res">숲·사막 2종으로 시작했지만 후반에 대초원·북극을 추가할 때 <b>코드 변경 0줄</b></span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Region/RegionTimelineMath.cs">RegionTimelineMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Cycle/DayCycleController.cs">DayCycleController.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/RegionTimelineMathTests.cs">RegionTimelineMathTests.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/region/region-timeline.md">명세 region-timeline.md</a></div>
       </div>
       <div class="card">
         <div class="tag">공통 원칙</div>
@@ -524,6 +554,7 @@
         <p>게임 규칙이 되는 계산은 <code>MonoBehaviour</code>·<code>NetworkBehaviour</code> 안에 두지 않습니다. <code>*Math</code>/<code>*Logic</code> <b>55개 파일</b>이 Unity 의존 없는 static 함수로 분리되어 있고, 컴포넌트는 그 결과를 배치하는 일만 합니다.</p>
         <p>"칸 3개가 파괴되면 뒤쪽 편성이 통째로 이탈하는가" 같은 규칙을 플레이 모드에 들어가지 않고 입력값만 구성해 검사할 수 있습니다.</p>
         <span class="res">EditMode 테스트 <b>1,429개</b>가 씬 없이 수 초 안에 돕니다 — 재능이 아니라 계산을 어디에 두느냐의 문제였습니다</span>
+        <div class="src"><span class="lbl">전체</span><a href="https://github.com/hanwoolhanwool/Train-Survival/tree/main/Assets/_Project/Scripts">Scripts/ (런타임 446파일)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/tree/main/Assets/_Project/Tests/EditMode">Tests/EditMode/ (119파일)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/README.md">as-built 명세 목록</a></div>
       </div>
     </div>
   </section>
@@ -545,6 +576,7 @@
           <div><dt>해결</dt><dd>판정 범위를 그 지점이 얹힌 <b>칸 하나</b>로 한정했습니다. 함께 열차 폭 판정은 값싼 Z 범위 검사를 먼저 두도록 조건 순서를 뒤집고, 매 프레임 조회하던 서비스 참조를 에이전트에 캐시했습니다.</dd></div>
           <div class="out"><dt>결과</dt><dd><span class="num">O(몬스터 × 전체 건축물) → O(몬스터 × 칸 내 건축물)</span><br>콘텐츠 증가가 프레임 비용으로 되돌아오지 않는 구조로 전환</dd></div>
         </div>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Monsters/MonsterAgent.cs">MonsterAgent.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/StructureGridLogic.cs">StructureGridLogic.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/monsters/wave-and-steering.md">명세 wave-and-steering.md</a></div>
       </div>
 
       <div class="case">
@@ -554,6 +586,7 @@
           <div><dt>해결</dt><dd>식별을 순번이 아니라 <b>서버 발급 Id</b>로 두고, 슬롯은 창고마다 나누지 않고 평탄한 <code>NetworkList</code> 하나에 담아 <code>i × 슬롯수 + 칸 내 인덱스</code>로 찾습니다. 소유 관계는 <code>NetworkList&lt;ushort&gt;</code> 한 줄이 담보하고, 설치는 append · 파괴는 <b>swap-remove</b>입니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>칸이 뒤로 이탈해도 블록은 Id로 남아 <b>재결합하면 내용물이 그대로 돌아옵니다</b> — 순번 기반이었다면 "이탈"과 "파괴"의 구분 자체가 성립하지 않습니다</dd></div>
         </div>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Inventory/StorageLogic.cs">StorageLogic.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/TrainStorage.cs">TrainStorage.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/World/StorageBundle.cs">StorageBundle.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/StorageLogicTests.cs">StorageLogicTests.cs</a></div>
       </div>
 
       <div class="case">
@@ -563,6 +596,7 @@
           <div><dt>해결</dt><dd>실제 권위를 가져야 하는 <b>최소 원천</b>만 남겼습니다 — 지역은 Day 번호 하나, 로스터는 <code>NetworkList&lt;ulong&gt;</code> 하나. 이름은 칸 번호에서, 호스트 여부는 "첫 칸" 규칙에서, 접속 상태는 "목록에 있음"에서 파생합니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>지역 컨트롤러가 네트워크 타입이 아니게 됨 · 로스터 복제 대상 <span class="num">4종 → 1종</span> · 자리 배치 규칙은 순수 함수로 분리해 테스트로 고정</dd></div>
         </div>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Region/RegionTimelineMath.cs">RegionTimelineMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Systems/Networking/Lobby/RosterOrdering.cs">RosterOrdering.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/RegionTimelineMathTests.cs">RegionTimelineMathTests.cs</a></div>
       </div>
 
       <div class="case">
@@ -572,6 +606,7 @@
           <div><dt>해결</dt><dd>산탄은 <b>시드 하나</b>만 브로드캐스트하고 각 피어가 재계산합니다. 월드 오브젝트 위치는 <code>(스폰 위치, 스폰 시점 누적 거리, 현재 누적 거리)</code> 세 값만의 순수 함수로 유도합니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>월드 오브젝트 상시 위치 재전송 <span class="num">0건</span> · "같은 누적 거리면 스폰 시점과 무관하게 같은 위치"라는 <b>불변식을 단위 테스트로 고정</b></dd></div>
         </div>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/World/WorldScrollMath.cs">WorldScrollMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Combat/WeaponSpreadMath.cs">WeaponSpreadMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/WorldScrollMathTests.cs">WorldScrollMathTests.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/SegmentPickLogicTests.cs">SegmentPickLogicTests.cs</a></div>
       </div>
 
       <div class="case">
@@ -581,6 +616,7 @@
           <div><dt>해결</dt><dd>배열을 건드리지 않는 <b>읽기 전용 판정</b>과 상태를 바꾸는 <b>변이 경로</b>를 갈라, 판정에만 쓰는 재사용 버퍼를 뒀습니다. 변이 경로는 기존 스냅샷·되쓰기 규약을 그대로 유지해 동시 수정 안전성을 잃지 않았습니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>프리뷰 조준 중 배열 할당 <span class="num">프레임당 6~8회 → 0회</span><br>물리 쿼리도 <code>RaycastNonAlloc</code>으로, 스폰·소멸은 전량 풀링으로 통일</dd></div>
         </div>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/TrainState.cs">TrainState.cs (QueryCars / QueryStructures)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Core/Pooling/PoolManager.cs">PoolManager.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/World/TileStreamingLogic.cs">TileStreamingLogic.cs</a></div>
       </div>
     </div>
 
@@ -606,6 +642,7 @@
           <div><dt>과정</dt><dd>순서를 먼저 정했습니다 — <b>살리는 것이 먼저, 파는 것은 다음.</b> PlayMode만 격리해 EditMode와 빌드를 되살린 뒤 이등분했습니다. 마지막 성공 커밋 → 파일 하나 추가 → 메뉴 경로 변경 → <b>어트리뷰트 한 줄</b>. 범인은 특정 메뉴가 아니라 <code>[MenuItem]</code> <b>등록 개수</b>였고 임계는 7이었습니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>하나만 뺐더니 같은 날 다른 도구가 둘을 더해 즉시 재발 — 그래서 메뉴 9개를 전부 <code>#if !UNITY_EDITOR_LINUX</code>로 감싸 <b>조건 자체를 제거</b>했습니다. 이후 한 실행에서 EditMode 1,408 · PlayMode 11 · 빌드가 함께 통과. 잡 의존 제거로 벽시계 <span class="num">17:38 → 9:54</span></dd></div>
         </div>
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/.github/workflows/ci.yml">.github/workflows/ci.yml</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/tech/unity-issue-linux-menuitem-crash.md">이슈 리포트 unity-issue-linux-menuitem-crash.md</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/plans/features/CI-복구-계획.md">CI-복구-계획.md</a></div>
       </div>
 
       <div class="case">
@@ -615,6 +652,7 @@
           <div><dt>원인</dt><dd>훅 추종과 로프 그리기가 <code>Update</code>에서 위치를 읽는데 파지 부착은 <code>LateUpdate</code>에서 대상을 옮기고 있었습니다. 호스트는 서버 견인이 <code>Update</code>에서도 대상을 옮겨 오차가 가려졌고, <b>비호스트는 부착이 유일한 이동 경로</b>라 지연이 그대로 드러난 것입니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>프레임 안의 순서를 "홀더 이동 → 파지 부착 → 훅 추종 → 로프"로 못 박고 <code>DefaultExecutionOrder</code>로 <b>속성에 고정</b>했습니다 — 컴포넌트가 늘어도 같은 종류의 지연이 재발하지 않습니다</dd></div>
         </div>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonController.cs">HarpoonController.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Monsters/MonsterGrabTarget.cs">MonsterGrabTarget.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonHookMotion.cs">HarpoonHookMotion.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonRopeRenderer.cs">HarpoonRopeRenderer.cs</a></div>
       </div>
 
       <div class="case">
@@ -624,6 +662,7 @@
           <div><dt>원인</dt><dd>이 게임은 열차가 원점에 고정되고 세계가 흘러옵니다. 지상의 자원은 월드와 함께 뒤로 밀려나는데 <b>훅은 그 밀림을 받지 않아</b>, 날아가는 동안 대상만 옆으로 빠졌습니다. 정면에서는 밀림이 비행 방향과 같은 축이라 거리 오차로 흡수돼 <b>측면에서만 조준 오차로 드러난</b> 것입니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>발사 순간 <b>사수가 어느 프레임을 딛고 있는지</b>를 훅에 함께 넘기도록 바꾸고, 이후 지상에 놓이는 것(자원·보따리·낙하물)은 전부 프레임 소속을 명시적으로 들고 다니도록 규약을 맞췄습니다</dd></div>
         </div>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonAimMath.cs">HarpoonAimMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/World/WorldScrollMath.cs">WorldScrollMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/harpoon/grapple-pipeline.md">명세 grapple-pipeline.md</a></div>
       </div>
 
       <div class="case">
@@ -633,6 +672,7 @@
           <div><dt>과정</dt><dd>자를 먼저 만들고(→ 06) 순위를 하나씩 실측했습니다. 1순위 GPU Resident Drawer는 켜자 <span class="up">cpuMain +16.7 %</span> 회귀였고, 처음 보인 "GPU −70.8 % 개선"은 BRG 셰이더 스트리핑이 <b>화면을 통째로 비운</b> 결과였습니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>1순위 <b>적용 불가</b> · 3순위 이미 충족 · 아무도 기대하지 않던 최하위 7순위(섀도우 캐스케이드 4→2)가 gpu p95 <span class="down">−6.3 %</span> · 섀도우 캐스터 <span class="down">−37~39 %</span>로 <b>유일한 채택</b>. 예산 문서 §7을 실측 기준으로 개정</dd></div>
         </div>
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/tech/performance-measurement.md">performance-measurement.md §4.2</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/design/Train-Survival-아트-렌더링-예산.md">아트·렌더링 예산 §7</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Core/Diagnostics/PerfProbe.cs">PerfProbe.cs</a></div>
       </div>
 
       <div class="case">
@@ -642,6 +682,7 @@
           <div><dt>의심</dt><dd>너무 좋아서 의심했습니다. 기준선은 <b>다른 날 다른 빌드</b>로 잰 값이라는 것이 문제였습니다. 같은 코드에서 캐스케이드만 4로 되돌린 빌드를 다시 구워 대조군을 세우고 같은 세션에서 연달아 쟀습니다.</dd></div>
           <div class="out"><dt>결과</dt><dd>기준선 대비 −25.6 %(낮)·−25.0 %(밤) → <b>대조군 대비 −6.3 % · −6.6 %</b>. 차이 약 20 %는 시간대·GPU 클럭·빌드 차이였습니다 — 대조군을 안 세웠으면 <b>4배 부풀린 수치</b>를 남겼습니다</dd></div>
         </div>
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/tech/performance-measurement.md">performance-measurement.md §4.7</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/tools/perf/gates.js">tools/perf/gates.js</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/tools/perf/compare.js">tools/perf/compare.js</a></div>
       </div>
     </div>
 
@@ -684,36 +725,42 @@
         <h3>꺼진 게이트를 먼저 살렸다</h3>
         <p>워크플로 도입 후 <b>55회 실행 55회 실패</b>. 활성화 전략이 요구하는 시크릿 3종을 규명해 복구하고, "프로젝트가 CI와 안 맞는다"는 의심 <b>9가지를 하나씩 실측으로 배제</b>해 근거와 함께 남겼습니다.</p>
         <span class="res">작동하지 않는 자동화는 없는 것보다 나쁩니다 — <b>있다고 착각하게</b> 만들기 때문입니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/.github/workflows/ci.yml">ci.yml</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/plans/features/CI-복구-계획.md">CI-복구-계획.md</a></div>
       </div>
       <div class="card">
         <div class="tag">게이트 · 성능</div>
         <h3>회귀 판정을 종료 코드 하나로</h3>
         <p>판정 규칙의 출처를 <code>gates.js</code> 한 파일로 모으고 비교기·리포터가 공유하게 했습니다. 임계는 짐작이 아니라 <b>실측 노이즈(0.7~0.8 %)의 6~7배</b>인 5 %로 유도했습니다.</p>
         <span class="res">종료 코드 <b>0 / 1 / 2</b>(통과·회귀·비교 불가) · 반복 편차가 임계를 넘으면 <b>판정 자체를 무효</b>로 돌립니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/tools/perf/gates.js">gates.js (388줄)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/tools/perf/compare.js">compare.js</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/tools/perf/report.js">report.js (315줄)</a></div>
       </div>
       <div class="card">
         <div class="tag">시점 이동 · 임포트</div>
         <h3>반복 보정을 임포트 시점으로</h3>
         <p>LOD 승격과 지면 피벗 보정을 <code>AssetPostprocessor</code>로 옮겼습니다. 피벗은 축을 손으로 고르지 않고 <code>InverseTransformVector</code>로 월드 +Y를 각 메시 로컬로 환산합니다(루트가 scale 100 · rotX 270.02°).</p>
         <span class="res">화면에 그려지는 삼각형 <b>1,183,649 → 698,531 (−41.0 %)</b> · 원본 FBX·guid·머티리얼 무수정 · 드로우콜·SetPass·섀도우 캐스터 변화 0</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Editor/MeshLodPromotionPostprocessor.cs">MeshLodPromotionPostprocessor.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Editor/GroundPivotPostprocessor.cs">GroundPivotPostprocessor.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/world/asset-import-pipeline.md">명세 asset-import-pipeline.md</a></div>
       </div>
       <div class="card">
         <div class="tag">시점 이동 · 자동 주행</div>
         <h3>빌드가 스스로 주행해 프레임을 잰다</h3>
         <p>측정을 3층으로 나눴습니다 — 수집기 <code>Core</code>, 주행기 <code>Systems</code>, 판정 <code>node</code>. <code>-perfrun</code>을 주면 게임이 스스로 인게임까지 들어가 60초(낮/밤 정확히 한 사이클)를 달립니다.</p>
         <span class="res">시나리오 에셋이 <b>해상도까지 소유</b>해서 명령행으로 덮으려 하면 무시하고 경고를 찍습니다 — 반복 편차 <b>0.8 %</b> 확보</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Core/Diagnostics/PerfProbe.cs">PerfProbe.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Systems/Diagnostics/PerfRunner.cs">PerfRunner.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Utilities/Performance/PerfRunArgs.cs">PerfRunArgs.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Editor/PerfBenchWindow.cs">PerfBenchWindow.cs</a></div>
       </div>
       <div class="card">
         <div class="tag">가시성 · 에셋 검수</div>
         <h3>에셋을 한 점씩 세워 예산을 재는 방</h3>
         <p><code>Renderer.forceMeshLod</code>로 단계를 강제 전환해 <b>같은 자리에서 눈으로 비교</b>하게 했습니다. 예산 위반은 <code>NO_LOD</code>·<code>MATERIAL_SPLIT</code> 같은 진단 코드로 뜹니다.</p>
         <span class="res">만들자마자 침엽수 LOD2의 <b>잎 껍질 관통</b>을 잡았습니다 — 자동 감축이 형상에 따라 <b>26~43 %</b>로 다르게 실패한다는 것을 규명 (751줄)</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Debugging/AssetLabController.cs">AssetLabController.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Editor/ClearZoneAuditWindow.cs">ClearZoneAuditWindow.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/World/ClearZoneRules.cs">ClearZoneRules.cs</a></div>
       </div>
       <div class="card">
         <div class="tag">가시성 · 에디터 툴</div>
         <h3>플레이를 멈추지 않고 자세를 잡아 프리팹에 저장</h3>
         <p>전용 씬에서 <b>플레이 중에 씬 뷰 핸들로</b> 무기 피벗의 위치·회전·스케일을 잡고 결과를 <code>PrefabUtility</code>로 <code>Player.prefab</code>에 바로 기록합니다. 애니메이션 6종과 시점 피치를 같은 화면에서 함께 돌립니다.</p>
         <span class="res">값 하나를 고치는 주기가 "수정 → 플레이 → 종료" 3단계에서 <b>플레이 중 드래그 1회</b>로 (987줄)</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Debugging/ViewLabController.cs">ViewLabController.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Debugging/ViewLabMath.cs">ViewLabMath.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/ViewLabMathTests.cs">ViewLabMathTests.cs</a></div>
       </div>
     </div>
 
@@ -724,7 +771,8 @@
       </div>
       <div class="shot">
         <img src="assets/qa-keyboard-map.svg" alt="QA 디버그 키 20종 배치도 — 숫자패드 물리 행에 기능 그룹을 맞춘 배치">
-        <div class="cap"><b>QA 디버그 키 20종</b>한 행이 한 그룹(몬스터·보스 / 편성·건축 / 자원·피해 / 사이클)이라 손이 행을 기억합니다. 이 그림은 키 정의 배열에서 생성한 것이라, 키가 바뀌어도 문서가 어긋나지 않습니다.</div>
+        <div class="cap"><b>QA 디버그 키 20종</b>한 행이 한 그룹(몬스터·보스 / 편성·건축 / 자원·피해 / 사이클)이라 손이 행을 기억합니다. 이 그림은 키 정의 배열에서 생성한 것이라, 키가 바뀌어도 문서가 어긋나지 않습니다.
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/guide/qa-debug-keys.md">qa-debug-keys.md</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/guide/assets/qa-keyboard-map.gen.js">qa-keyboard-map.gen.js (239줄)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Core/Logging/GameLog.cs">GameLog.cs</a></div></div>
       </div>
     </div>
 
@@ -766,6 +814,7 @@
           Q2 명중 → 견인 시작 <b>평균 67~72 ms</b> (범위 57~85 · 목표 250)<br>
           Q3 워프 / 역행 <b>0</b> · Q4 <b>101발사 중 거부 0 = 불일치율 0 %</b>
         </span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Systems/Networking/NetworkLatencyProfileDriver.cs">NetworkLatencyProfileDriver.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonSliceMetrics.cs">HarpoonSliceMetrics.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/design/Train-Survival-수직슬라이스-스펙.md">지표 정의 수직슬라이스-스펙.md §3</a></div>
       </div>
       <div class="card">
         <div class="tag">지표 정의도 한 번 고쳤습니다</div>
@@ -773,18 +822,21 @@
         <p>Q2의 시작점을 처음에는 <b>발사 입력</b>으로 잡았는데, 투사체 비행 시간이 거리에 종속(20 m = 0.5 s)이라 원거리에서는 어떻게 해도 250 ms를 넘습니다. 시작점을 <b>로컬 명중 판정</b>으로 옮기고 입력 즉시성은 Q1이 따로 담당하게 나눴습니다.</p>
         <p>계측 자체도 검사 대상입니다 — 워프·역행을 세는 분석기를 <b>EditMode 테스트 10개</b>로 고정했습니다. 재는 쪽이 틀리면 위의 판단이 전부 함께 틀리기 때문입니다.</p>
         <span class="res">"규칙상 거부(집게 등급 부족)는 Q4 불일치에 세지 않는다"까지 <b>별도 검증 항목</b>으로 — 세면 숫자만 나빠지고 실제 품질은 그대로입니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/EditMode/TowMotionAnalyzerTests.cs">TowMotionAnalyzerTests.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonSliceMetrics.cs">HarpoonSliceMetrics.cs</a></div>
       </div>
       <div class="card">
         <div class="tag">대역폭</div>
         <h3>눈이 머무는 곳에 몰아줬습니다</h3>
         <p>동기화 주기를 대상별로 계층화했습니다 — 평시 몬스터는 <b>12 Hz</b>, 집게로 끌려오는 대상만 <b>30 Hz</b>. 수신 측은 스냅샷 버퍼로 보간해 그리고, 판정은 서버 값을 그대로 씁니다.</p>
         <span class="res">동시 견인은 최대 4개(플레이어 수)로 상한이 있어 <b>총 대역폭 증가 없이</b> 체감 반응성 확보</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Monsters/MonsterSettings.cs">MonsterSettings.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Monsters/MonsterAgent.cs">MonsterAgent.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/monsters/wave-and-steering.md">명세 wave-and-steering.md</a></div>
       </div>
       <div class="card">
         <div class="tag">풀링을 네트워크 스폰 안까지</div>
         <h3>조용히 새는 결함은 등록 시점에 죽게 만들었습니다</h3>
         <p>NGO의 <code>INetworkPrefabInstanceHandler</code>를 구현해 네트워크 스폰/디스폰을 풀로 라우팅했습니다. 다만 두 조건(<code>Despawn(destroy: true)</code>, <code>AutoObjectParentSync</code> 해제)이 맞지 않으면 <b>런타임에 조용히 누수</b>합니다.</p>
         <span class="res">핸들러 생성자에서 두 설정을 검사해 <b>즉시 예외</b>를 던지게 했습니다 — 잘못 설정한 프리팹은 등록 시점에 죽습니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Systems/Networking/PooledNetworkPrefabHandler.cs">PooledNetworkPrefabHandler.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Systems/Networking/NetworkPrefabPoolRegistrar.cs">NetworkPrefabPoolRegistrar.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Tests/PlayMode/PooledNetworkPrefabHandlerTests.cs">PooledNetworkPrefabHandlerTests.cs</a></div>
       </div>
     </div>
 
@@ -793,6 +845,7 @@
       결정서에는 기각한 대안(Photon Fusion 2)과 그 이유, 밤 웨이브 대역폭 같은 리스크와 완화책, 그리고 <b>재검토 조건</b>("콘솔 등으로 확장해 Steam 비종속 릴레이가 필요해질 때")까지 함께 적었습니다.
       이 결정 하나가 클라이언트 예측·랙 보상 시스템을 통째로 없앴습니다.
     </p>
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/design/Train-Survival-네트워크-아키텍처.md">네트워크 아키텍처 결정서</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/networking/transport-and-lobby.md">명세 transport-and-lobby.md</a></div>
   </section>
 
   <!-- ══ 08 생성형 AI ══ -->
@@ -817,18 +870,21 @@
         <h3>"SOLID를 지켰다"는 확인할 방법이 없는 문장입니다</h3>
         <p>그래서 계획서마다 <b>아키텍처 마감 게이트</b>를 두고 원칙마다 검사 방법을 함께 적었습니다 — "신규 <code>NetworkVariable</code>·RPC 0건(diff에서 grep)", "무기 컨트롤러 구체 타입 참조 0건", "모델명 분기 0건", "TODO 0건".</p>
         <span class="res">차수를 닫을 때 게이트별 통과·미달을 표로 남기고 <b>미달이면 계획서를 닫지 않습니다</b></span>
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/CLAUDE.md">CLAUDE.md (작업 규약)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/conventions/solid-principles.md">solid-principles.md</a><a href="https://github.com/hanwoolhanwool/Train-Survival/tree/main/docs/plans/features">docs/plans/features/ (차수별 계획서)</a></div>
       </div>
       <div class="card">
         <div class="tag">되돌린 사례</div>
         <h3>효과가 확인되지 않은 복잡도는 남기지 않습니다</h3>
         <p>집게 견인의 순간이동을 고칠 때 <b>두 처방을 함께 구현</b>했습니다. 주범(RTT 간극)이 예측 고정으로 사라진 뒤 블라인드 교차 플레이에서 잔여 체감이 보고되지 않아, 나머지 하나(부착점 오프셋 유지)는 <b>롤백했습니다</b>.</p>
         <span class="res">"간극을 버퍼로 덮는 대신 <b>간극 자체를 없애는 쪽</b>" — 표시를 늦춰 매끄럽게 만드는 처방은 반응성을 판 대가입니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Harpoon/HarpoonController.cs">HarpoonController.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/harpoon/grapple-pipeline.md">명세 grapple-pipeline.md §11</a></div>
       </div>
       <div class="card">
         <div class="tag">생성 에셋도 같은 방식</div>
         <h3>판정을 반입 전에 끝냈습니다</h3>
         <p>ChatGPT 이미지 → Tripo·Meshy → Blender → Unity 파이프라인에서, 치수·tris·영문 지시까지 명시한 <b>생성 지시 시트 74종</b>을 먼저 쓰고 반입 뒤에는 축·피벗·tris·LOD를 다시 실측했습니다. 무기 3종은 <code>rotation_euler</code>가 0인데도 메시가 <b>13.2° · 30.1° · 15.0°</b> 기울어 있었습니다.</p>
         <span class="res">반려 에셋 <b>0건</b> — 에셋이 완벽해서가 아니라 판정 기준을 <b>반입 전에</b> 확정했기 때문입니다</span>
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/design/Train-Survival-이미지생성-브리프.md">이미지생성 브리프</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/design/Train-Survival-아트-렌더링-예산.md">아트·렌더링 예산</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/world/asset-import-pipeline.md">명세 asset-import-pipeline.md</a></div>
       </div>
     </div>
 
@@ -860,6 +916,7 @@
           <span class="pill on">UI</span>
         </div>
         <span class="res">대기실 이름 짓기 로직은 처음에 UI 계층에 둘 계획이었지만, <b>이름을 확정하는 주체는 호스트</b>라 Systems로 옮겼습니다 — Systems가 UI를 참조할 수 없어 <b>계층 판단이 컴파일 단계에서 검증</b>됩니다. 어셈블리 8개(런타임 5 · 에디터 1 · 테스트 2)</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Systems/Game.Systems.asmdef">Game.Systems.asmdef</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Systems/Networking/Lobby/RosterOrdering.cs">RosterOrdering.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/conventions/architecture-rules.md">architecture-rules.md</a></div>
       </div>
       <div class="card">
         <div class="tag">OOP · 캡슐화</div>
@@ -867,18 +924,21 @@
         <p>열차 편성 상태는 HUD·칸 표현·몬스터·건축·연료가 전부 들여다보는 중심 데이터입니다. 아무나 접근할 수 있으면 어느 날 UI 코드가 <b>표시하려고 읽다가 슬쩍 고치는</b> 일이 생깁니다.</p>
         <p>인터페이스에는 조회만 넣고 변이는 <code>ServerXxx</code> 메서드로 인터페이스 밖에 뒀습니다. 소비자는 <code>ServiceLocator</code>에서 <code>ITrainState</code>로 받으므로 <b>변이 API에 의존하는 것 자체가 불가능</b>합니다.</p>
         <span class="res">인터페이스는 단순 게터가 아니라 <b>"소비자가 실제로 묻는 질문"</b>으로 설계했습니다 — <code>TryGetCarAtZ</code>(이 지점은 어느 칸 위인가)처럼. 각자 편성을 순회하면 이탈 오프셋 반영을 빠뜨리는 곳이 반드시 생기기 때문입니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/ITrainState.cs">ITrainState.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/TrainState.cs">TrainState.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/conventions/solid-principles.md">solid-principles.md</a></div>
       </div>
       <div class="card">
         <div class="tag">Git · 협업 도구</div>
         <h3>커밋 902회를 규약과 게이트 위에서</h3>
         <p>커밋 컨벤션(type·scope·Unity 전용 규칙)을 문서로 고정하고, Git LFS와 Unity YAML 머지 드라이버를 설정했습니다. 커밋 훅은 <b>워킹트리가 아니라 스테이징된 내용</b>을 검사합니다.</p>
         <span class="res">폰트 아틀라스 캐시가 저장소 이력 <b>47 MB</b>를 먹던 것을 훅으로 차단 — 파일 <b>4.1 MB → 8 KB</b>, diff가 아예 생기지 않습니다. "CI는 커밋이 된 뒤에 돈다"는 것이 훅을 만든 이유입니다</span>
+        <div class="src"><span class="lbl">코드</span><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/tools/git-hooks/pre-commit">tools/git-hooks/pre-commit</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Editor/FontAtlasMaintenance.cs">FontAtlasMaintenance.cs</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/guide/font-atlas.md">font-atlas.md</a><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/conventions/git-commit-convention.md">커밋 컨벤션</a></div>
       </div>
       <div class="card">
         <div class="tag">문서 · 인수인계</div>
         <h3>계획 / as-built 명세 / 규약을 나눴습니다</h3>
         <p>차수마다 <b>구현 계획서</b>에서 범위·비범위·완료 기준을 먼저 정하고, 끝난 뒤 결과를 <b>as-built 명세</b>로 옮겨 계획 문서와 현재 상태를 분리했습니다. 문서 <b>127편</b>이 저장소에 있습니다.</p>
         <span class="res">결함뿐 아니라 <b>버그가 아닌 것으로 판정한 근거</b>와 준비 비용 때문에 보류한 항목도 함께 기록합니다 — 미검 항목은 번호를 유지한 채 이월해 <b>반복 지연이 드러나게</b> 했습니다</span>
+        <div class="src"><span class="lbl">근거</span><a href="https://github.com/hanwoolhanwool/Train-Survival/tree/main/docs/plans">docs/plans/ (계획 · 검증)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/tree/main/docs/specs">docs/specs/ (as-built 명세)</a><a href="https://github.com/hanwoolhanwool/Train-Survival/tree/main/docs/conventions">docs/conventions/ (규약)</a></div>
       </div>
     </div>
 
