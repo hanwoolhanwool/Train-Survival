@@ -205,29 +205,91 @@
     .asset-readout b { display: block; margin-top: .15rem; color: var(--ink); font-size: .86rem; }
     .diagnostic { margin-top: .65rem; padding: .55rem .7rem; border-left: 3px solid var(--red); color: var(--red); background: rgba(255, 124, 111, .08); font-size: .72rem; }
 
-    .progress-summary { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1rem; margin-bottom: 1rem; }
-    .done-block { padding: 1.35rem; border: 1px solid rgba(120, 213, 156, .45); background: rgba(120, 213, 156, .07); }
-    .done-block .count { color: var(--green); font: 600 clamp(3.5rem, 8vw, 7rem)/.9 var(--mono); letter-spacing: -.08em; }
-    .done-block h3 { margin: .9rem 0 .4rem; }
-    .done-block p { margin: 0; color: var(--ink-2); font-size: .9rem; }
-    .active-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-    .milestone { padding: 1.15rem; border: 1px solid var(--line); background: var(--surface); }
-    .milestone .m { color: var(--amber); font: 600 .78rem var(--mono); }
-    .milestone h3 { margin: .55rem 0 .8rem; font-size: 1rem; }
-    .milestone .ratio { color: var(--ink); font: 600 1.55rem var(--mono); }
-    .milestone p { margin: .5rem 0 0; color: var(--ink-3); font-size: .8rem; line-height: 1.5; }
-    .bar { height: 5px; margin-top: .7rem; overflow: hidden; background: #27343c; }
-    .bar i { display: block; height: 100%; background: var(--amber); }
-    .blockers { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 1px; margin: 1rem 0; border: 1px solid rgba(255, 124, 111, .4); background: rgba(255, 124, 111, .35); }
-    .blockers > div { padding: 1rem; background: #17191d; }
-    .blockers .block-title { color: var(--red); font: 600 .78rem/1.5 var(--mono); }
-    .blockers b { display: block; margin-bottom: .25rem; }
-    .blockers p { margin: 0; color: var(--ink-3); font-size: .84rem; line-height: 1.5; }
-    .next-line { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-    .next-line > div { padding: 1rem 1.15rem; border: 1px solid var(--line); }
-    .next-line h3 { margin-bottom: .45rem; font-size: .95rem; }
-    .next-line p { margin: 0; color: var(--ink-3); font-size: .84rem; }
-    .date-stamp { color: var(--ink-3); font: 500 .72rem var(--mono); }
+    .progress-page {
+      --paper: #f2efeb;
+      --paper-line: #d3ccc4;
+      --paper-ink: #272827;
+      --paper-copy: #696660;
+      --paper-accent: #ba4f2e;
+      color: var(--paper-ink);
+      background: var(--paper);
+    }
+    .progress-page .section-kicker,
+    .progress-page .intent b { color: var(--paper-accent); }
+    .progress-page .story-head p { color: var(--paper-copy); }
+    .progress-page .intent { border-color: var(--paper-accent); }
+    .timeline-actions { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: -.2rem 0 .9rem; }
+    .timeline-actions p { margin: 0; color: var(--paper-copy); font-size: .86rem; }
+    .timeline-buttons { display: flex; gap: .45rem; }
+    .timeline-buttons button {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #c8beb5;
+      border-radius: 50%;
+      color: var(--paper-accent);
+      background: transparent;
+      font: 600 1rem var(--mono);
+      cursor: pointer;
+    }
+    .timeline-buttons button:hover,
+    .timeline-buttons button:focus-visible { color: #fff; background: var(--paper-accent); border-color: var(--paper-accent); outline: none; }
+    .timeline-viewport {
+      position: relative;
+      overflow-x: auto;
+      padding: .4rem 0 1.25rem;
+      scroll-snap-type: x mandatory;
+      scrollbar-color: var(--paper-accent) #ded8d1;
+      scrollbar-width: thin;
+      overscroll-behavior-inline: contain;
+    }
+    .timeline-viewport:focus-visible { outline: 2px solid var(--paper-accent); outline-offset: 6px; }
+    .timeline-track {
+      position: relative;
+      display: flex;
+      width: max-content;
+      min-width: 100%;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .timeline-track::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      left: 7px;
+      right: 0;
+      height: 1px;
+      background: var(--paper-line);
+    }
+    .timeline-item {
+      position: relative;
+      width: clamp(250px, 25vw, 315px);
+      min-height: 280px;
+      padding: 44px 2.2rem 1.1rem 0;
+      scroll-snap-align: start;
+    }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      top: 9px;
+      left: 0;
+      width: 11px;
+      height: 11px;
+      border: 3px solid var(--paper);
+      border-radius: 50%;
+      background: var(--paper-accent);
+      box-shadow: 0 0 0 1px rgba(186, 79, 46, .08);
+    }
+    .timeline-item time { display: block; margin-bottom: .42rem; color: var(--paper-accent); font: 600 .73rem/1.4 var(--mono); letter-spacing: .08em; }
+    .timeline-item h3 { margin: 0 0 .35rem; color: var(--paper-ink); font-size: 1.02rem; line-height: 1.42; }
+    .timeline-item h3 em { margin-left: .35rem; color: #a7a19a; font: 500 .7rem var(--sans); font-style: normal; }
+    .timeline-item p { margin: 0; color: var(--paper-copy); font-size: .88rem; line-height: 1.67; }
+    .timeline-item p b { color: #3d3b38; }
+    .timeline-item.current::before { width: 15px; height: 15px; top: 7px; box-shadow: 0 0 0 5px rgba(186, 79, 46, .12); }
+    .timeline-item.current h3 { color: var(--paper-accent); }
+    .progress-page .source-row a { color: #7c756e; border-color: #d2cbc4; }
+    .progress-page .source-row a:hover { color: var(--paper-accent); border-color: var(--paper-accent); }
 
     .source-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
     .source-row a { padding: .35rem .55rem; border: 1px solid var(--line); color: var(--ink-3); font: 500 .72rem var(--mono); text-decoration: none; }
@@ -240,7 +302,7 @@
       .steps, .automation-grid { grid-template-columns: 1fr 1fr; }
       .step::after { display: none; }
       .automation-card { min-height: 300px; }
-      .qa-layout, .progress-summary { grid-template-columns: 1fr; }
+      .qa-layout { grid-template-columns: 1fr; }
       .story-page { min-height: auto; }
     }
 
@@ -249,7 +311,7 @@
       .wrap { width: min(100% - 28px, 1220px); }
       .masthead { padding-top: 4rem; }
       .repo-brief, .story-head { grid-template-columns: 1fr; }
-      .factgrid, .steps, .shots-2, .decision-grid, .automation-grid, .lab-grid, .active-grid, .next-line { grid-template-columns: 1fr; }
+      .factgrid, .steps, .shots-2, .decision-grid, .automation-grid, .lab-grid { grid-template-columns: 1fr; }
       .section-nav { justify-content: flex-start; overflow-x: auto; }
       .section-nav a { white-space: nowrap; }
       .story-page { padding: 4rem 0; }
@@ -257,7 +319,9 @@
       .decision { min-height: auto; }
       .qa-flow { grid-template-columns: 1fr; gap: .55rem; }
       .qa-flow span:not(:last-child)::after { content: "↓"; right: auto; left: 50%; bottom: -.72rem; top: auto; }
-      .blockers { grid-template-columns: 1fr; }
+      .timeline-actions { align-items: flex-end; }
+      .timeline-actions p { max-width: 210px; }
+      .timeline-item { width: min(82vw, 300px); }
       .architecture-rail { grid-template-columns: 1fr; gap: .5rem; }
       .architecture-rail span:not(:last-child)::after { content: "↓"; right: auto; left: 50%; bottom: -.55rem; top: auto; }
       footer .wrap { flex-direction: column; }
@@ -277,11 +341,20 @@
       .story-head h2 { font-size: 28pt; }
       .video-embed { display: none; }
       .masthead > .shot:last-child { box-shadow: none; }
-      .fact, .decision, .panel, .automation-card, .lab, .milestone, .next-line > div { color: #162029; background: #fff; border-color: #9ba8af; box-shadow: none; }
+      .fact, .decision, .panel, .automation-card, .lab { color: #162029; background: #fff; border-color: #9ba8af; box-shadow: none; }
       .loop { color: #162029; background: #fff; box-shadow: none; }
       .step { color: #162029; background: #fff; }
       .step .t, strong, b { color: #0d1720; }
-      .step .d, .panel > p, .decision dd, .automation-card p, .lab-body p, .done-block p, .next-line p { color: #40515b; }
+      .step .d, .panel > p, .decision dd, .automation-card p, .lab-body p { color: #40515b; }
+      .progress-page { background: #fff; }
+      .timeline-actions, .progress-page .source-row { display: none; }
+      .timeline-viewport { overflow: visible; padding: 0; }
+      .timeline-track { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3mm; width: auto; min-width: 0; }
+      .timeline-track::before, .timeline-item::before { display: none; }
+      .timeline-item { width: auto; min-height: 0; padding: 2mm; border-top: 1px solid #d3ccc4; scroll-snap-align: none; }
+      .timeline-item time { font-size: 6.5pt; }
+      .timeline-item h3 { font-size: 8pt; }
+      .timeline-item p { font-size: 6.8pt; line-height: 1.45; }
       .automation-card { min-height: 92mm; }
       .decision { min-height: 58mm; }
       .story-page { break-inside: avoid; page-break-inside: avoid; }
@@ -606,59 +679,99 @@
       </div>
     </section>
 
-    <section class="story-page" id="progress" aria-labelledby="progress-title">
+    <section class="story-page progress-page" id="progress" aria-labelledby="progress-title">
       <div class="wrap">
         <header class="story-head">
           <div>
             <p class="section-kicker">05 · Current status</p>
-            <h2 id="progress-title">코어는 완성했고,<br>출시 차단 요소를 닫는 중</h2>
+            <h2 id="progress-title">개발 진행상태</h2>
           </div>
           <div>
-            <p class="intent"><b>현재 판단</b>기능 수를 늘리기보다 세션 재접속과 외부 회선 릴레이 검증을 먼저 끝내야 출시 가능한 상태가 됩니다.</p>
-            <span class="date-stamp">repository main · c06d22c · 2026.09.04 기준</span>
+            <p class="intent"><b>진행 원칙</b>가장 어려운 기능을 먼저 검증하고, 구현 결과는 플레이 검증과 자동화된 게이트로 닫았습니다.</p>
           </div>
         </header>
 
-        <div class="progress-summary">
-          <article class="done-block">
-            <div class="count">5/8</div>
-            <h3>M1–M5 완료</h3>
-            <p>집게 수직 슬라이스 → 코어 루프 → 열차 파괴·건축 → 지역·날씨 → 전투·생존 확장까지 구현 완료.</p>
-          </article>
-
-          <div class="active-grid">
-            <article class="milestone">
-              <span class="m">M6 · Steam / Session</span>
-              <h3>구현 완료 · 검증 진행</h3>
-              <div class="ratio">3/3</div>
-              <div class="bar"><i style="width:100%"></i></div>
-              <p>구현 차수 완료<br>외부 환경 검증 14건 잔여</p>
-            </article>
-            <article class="milestone">
-              <span class="m">M7 · Endgame</span>
-              <h3>후반부 시스템 확장</h3>
-              <div class="ratio">3/7</div>
-              <div class="bar"><i style="width:43%"></i></div>
-              <p>4차 계획 완료<br>검증 38건 잔여</p>
-            </article>
-            <article class="milestone">
-              <span class="m">M8 · Art / Direction</span>
-              <h3>아트·연출 패스</h3>
-              <div class="ratio">2/4</div>
-              <div class="bar"><i style="width:50%"></i></div>
-              <p>1·2차 구현 완료<br>검증 35건 잔여</p>
-            </article>
+        <div class="timeline-actions">
+          <p>가로로 넘기며 마일스톤을 확인할 수 있습니다.</p>
+          <div class="timeline-buttons" aria-label="진행상태 타임라인 이동">
+            <button type="button" data-timeline-move="-1" aria-label="이전 진행상태">←</button>
+            <button type="button" data-timeline-move="1" aria-label="다음 진행상태">→</button>
           </div>
         </div>
 
-        <div class="blockers">
-          <div class="block-title">RELEASE BLOCKERS · 2</div>
-          <div><b>세션 이탈·재접속 P1–P5</b><p>유령 플레이어 잔존, 인벤토리 초기화, 중복 토큰, 종료 오버레이를 실제 빌드에서 재확인.</p></div>
-          <div><b>외부 회선 Steam 릴레이 G8</b><p>서로 다른 회선·Steam 2계정으로 세션 생성부터 재접속까지 완주 검증.</p></div>
-        </div>
-
-        <div class="next-line">
-          <div><h3>다음 순서</h3><p>보스 타이머 수정 → P1–P5 재확인 → M8 2차 검증 → M7 4차 거치 무기 착수</p></div>
+        <div class="timeline-viewport" id="progress-timeline" tabindex="0" aria-label="Train Survival 개발 진행상태 가로 타임라인">
+          <ol class="timeline-track">
+            <li class="timeline-item">
+              <time datetime="2026-07-17">2026.07.17</time>
+              <h3>저장소 개설</h3>
+              <p>Unity 6 · URP 프로젝트 생성, 커밋 컨벤션·LFS·YAML 머지 드라이버 세팅.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-07-18">2026.07.18 — 07.19</time>
+              <h3>설계 선행 — 코드보다 문서가 먼저</h3>
+              <p>기획서, 네트워크 아키텍처 결정서, 아키텍처 규칙, SOLID 규약을 먼저 확정했습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-07-21">2026.07.21</time>
+              <h3>M1 — 집게 수직 슬라이스 <em>가장 어려운 것부터</em></h3>
+              <p>하푼·플레이어·열차·월드 스크롤. 게임 성립을 결정하는 기능을 가장 먼저 검증했습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-07-22">2026.07.22</time>
+              <h3>M2 — 코어 루프 1사이클</h3>
+              <p>낮/밤 사이클, 전투, 인벤토리, 몬스터. 착수 6일 만에 “낮에 모아 밤을 버틴다”가 돌아갔습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-07-28">2026.07.28 — 08.01</time>
+              <h3>M3 — 열차 시스템</h3>
+              <p>칸 증설·파괴·연쇄 이탈·수리·건축. 월드 떨림 문제를 2인 플레이로 검증 통과했습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-02">2026.08.02</time>
+              <h3>M4 — 지역 · 난이도 · 날씨</h3>
+              <p>3~5일마다 바뀌는 지역과 날씨 압박을 코어 루프에 연결했습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-04">2026.08.04 — 08.11</time>
+              <h3>M5 — 전투 · 생존 확장 <em>8차에 걸쳐</em></h3>
+              <p>제작, 건축 그리드, 웨이브 확장. 차수별 계획·검증 문서가 이 구간부터 정착했습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-12">2026.08.12 — 08.13</time>
+              <h3>M6 — Steam 통합 · 세션 · 메타 진행</h3>
+              <p>Steam 트랜스포트·로비 서비스, 세션 수명 주기, 업적·수집 저장을 구현했습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-13">2026.08.13 — 08.14</time>
+              <h3>M7 — 후반부 · 최종장 착수</h3>
+              <p>대초원 비축 루프, 지역 보스, 동상 압박, 보스 처치 전까지 밤을 붙잡는 새벽 보류 게이트.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-15">2026.08.15</time>
+              <h3>M8 — 아트 · 연출 패스 착수</h3>
+              <p>에셋 수용 판정 기준을 먼저 세우고 낮/밤 시각 연출을 2차까지 확장했습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-20">2026.08.20</time>
+              <h3>문서 체계 정비 + SOLID·MVP 감사</h3>
+              <p>계획 / as-built 명세 / 규약을 계층으로 나누고 프로덕션 전체 점검 보고서를 남겼습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-20">2026.08.20 — 08.22</time>
+              <h3>로비 · 메인 메뉴 · 대기실</h3>
+              <p>방 만들기부터 대기실·출발까지 완주하고, 로스터·난이도 동기화를 4차까지 올렸습니다.</p>
+            </li>
+            <li class="timeline-item">
+              <time datetime="2026-08-22">2026.08.22 — 08.23</time>
+              <h3>레벨 저작 기반 · 로깅 · 승하차</h3>
+              <p>세그먼트 팔레트와 자원 앵커, 규격 자동 검사기, 카테고리 로그를 구축하고 승하차를 사다리 구조로 변경했습니다.</p>
+            </li>
+            <li class="timeline-item current">
+              <time datetime="2026-09-04">2026.08.25 — 09.04</time>
+              <h3>자동화 · 성능 게이트 · CI 복구 <em>현재</em></h3>
+              <p>빌드 자동 주행과 회귀 판정을 구축하고, Unity CI 세그폴트를 규명해 PlayMode 11/11 · EditMode 1,408/1,408 · 빌드를 복구했습니다.</p>
+            </li>
+          </ol>
         </div>
 
         <div class="source-row">
@@ -681,17 +794,25 @@
     (() => {
       const links = [...document.querySelectorAll('.section-nav a')];
       const sections = links.map((link) => document.querySelector(link.hash)).filter(Boolean);
-      if (!('IntersectionObserver' in window)) return;
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!visible) return;
+          links.forEach((link) => link.setAttribute('aria-current', String(link.hash === `#${visible.target.id}`)));
+        }, { rootMargin: '-20% 0px -55% 0px', threshold: [0, .2, .5] });
 
-      const observer = new IntersectionObserver((entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        links.forEach((link) => link.setAttribute('aria-current', String(link.hash === `#${visible.target.id}`)));
-      }, { rootMargin: '-20% 0px -55% 0px', threshold: [0, .2, .5] });
+        sections.forEach((section) => observer.observe(section));
+      }
 
-      sections.forEach((section) => observer.observe(section));
+      const timeline = document.querySelector('#progress-timeline');
+      document.querySelectorAll('[data-timeline-move]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const direction = Number(button.dataset.timelineMove);
+          timeline?.scrollBy({ left: direction * Math.min(timeline.clientWidth * .78, 900), behavior: 'smooth' });
+        });
+      });
     })();
   </script>
 </body>
