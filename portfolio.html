@@ -132,7 +132,10 @@
       min-height: calc(100svh - 54px);
       padding: clamp(4rem, 7vh, 6.5rem) 0;
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       align-items: center;
+      min-width: 0;
+      overflow-x: clip;
       border-bottom: 1px solid var(--line);
       scroll-snap-align: start;
       scroll-margin-top: 54px;
@@ -235,6 +238,8 @@
     .timeline-buttons button:focus-visible { color: #fff; background: var(--paper-accent); border-color: var(--paper-accent); outline: none; }
     .timeline-viewport {
       position: relative;
+      width: 100%;
+      min-width: 0;
       overflow-x: auto;
       padding: .4rem 0 1.25rem;
       scroll-snap-type: x mandatory;
