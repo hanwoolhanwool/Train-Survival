@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="이한울 · 게임 프로그래머 포트폴리오 — Unity 6 / C# 협동 네트워크 게임 1인 개발. 구현 · 자료구조 · 디버깅 · 최적화 · 툴 자동화 · 생성형 AI 검증">
+<meta property="og:title" content="이한울 · 게임 프로그래머 포트폴리오">
+<meta property="og:description" content="구현하고, 측정하고, 도구로 남겼습니다 — Train Survival (Unity 6 · C# · Netcode) 1인 개발">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Ctext%20y%3D'.9em'%20font-size%3D'90'%3E%F0%9F%9A%82%3C%2Ftext%3E%3C%2Fsvg%3E">
+<title>이한울 · 게임 프로그래머 포트폴리오</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper:      #F4F1EC;
+    --surface:    #FFFFFF;
+    --surface-2:  #FAF8F4;
+    --ink:        #191614;
+    --ink-2:      #4C4640;
+    --muted:      #8A8177;
+    --rule:       #E2DCD2;
+    --rule-soft:  #EDE8E0;
+    --accent:     #B24A16;
+    --accent-2:   #8C3810;
+    --accent-soft:#FBEDE2;
+    --deep:       #16202B;
+    --deep-2:     #24323F;
+    --deep-ink:   #C7D2DC;
+    --ok:         #1D7A55;
+    --ok-soft:    #E4F1EA;
+    --risk:       #A83A2C;
+    --risk-soft:  #F8E7E4;
+    --warn:       #86620B;
+
+    --f-display: "Song Myung", "Noto Sans KR", "Malgun Gothic", Georgia, serif;
+    --f-body: "Noto Sans KR", "Malgun Gothic", -apple-system, system-ui, sans-serif;
+    --f-mono: "IBM Plex Mono", "Noto Sans KR", Consolas, ui-monospace, monospace;
+
+    --pad: clamp(1.1rem, 4vw, 2.6rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #14120F;
+      --surface:    #1C1916;
+      --surface-2:  #221E1A;
+      --ink:        #EFE9E1;
+      --ink-2:      #BAB1A6;
+      --muted:      #8B8177;
+      --rule:       #37312A;
+      --rule-soft:  #2A2520;
+      --accent:     #ED8B50;
+      --accent-2:   #F2A472;
+      --accent-soft:#33200F;
+      --deep:       #0E151D;
+      --deep-2:     #1A2530;
+      --deep-ink:   #A9B7C4;
+      --ok:         #58C593;
+      --ok-soft:    #123023;
+      --risk:       #E08375;
+      --risk-soft:  #331915;
+      --warn:       #D9AC4E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #14120F;
+    --surface:    #1C1916;
+    --surface-2:  #221E1A;
+    --ink:        #EFE9E1;
+    --ink-2:      #BAB1A6;
+    --muted:      #8B8177;
+    --rule:       #37312A;
+    --rule-soft:  #2A2520;
+    --accent:     #ED8B50;
+    --accent-2:   #F2A472;
+    --accent-soft:#33200F;
+    --deep:       #0E151D;
+    --deep-2:     #1A2530;
+    --deep-ink:   #A9B7C4;
+    --ok:         #58C593;
+    --ok-soft:    #123023;
+    --risk:       #E08375;
+    --risk-soft:  #331915;
+    --warn:       #D9AC4E;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.72;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+  a:hover { border-bottom-color: var(--accent); }
+  b, strong { font-weight: 600; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--pad); }
+
+  /* ── 상단 바 ───────────────────────── */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .topbar .wrap { display: flex; align-items: center; gap: 1rem; height: 46px; }
+  .topbar .who { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; }
+  .topnav { display: flex; gap: 0.15rem; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+  .topnav::-webkit-scrollbar { display: none; }
+  .topnav a {
+    font-size: 0.75rem; color: var(--ink-2); border: 0; padding: 0.2rem 0.5rem;
+    border-radius: 3px; white-space: nowrap;
+  }
+  .topnav a:hover { background: var(--accent-soft); color: var(--accent-2); }
+
+  /* ── 머리 ──────────────────────────── */
+  .mast { padding: clamp(2.4rem, 7vw, 4.6rem) 0 0; }
+  .eyebrow {
+    font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.19em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 1rem;
+  }
+  h1 {
+    font-family: var(--f-display); font-weight: 400;
+    font-size: clamp(2.1rem, 6.2vw, 3.7rem); line-height: 1.24;
+    letter-spacing: -0.01em; margin: 0 0 1.1rem; text-wrap: balance;
+  }
+  .lede { font-size: clamp(1rem, 2vw, 1.14rem); color: var(--ink-2); font-weight: 300; max-width: 56ch; margin: 0 0 2rem; }
+
+  .idcard {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0; border: 1px solid var(--rule); background: var(--surface);
+    margin: 0 0 1.6rem;
+  }
+  .idcard > div { padding: 0.85rem 1rem; border-right: 1px solid var(--rule-soft); }
+  .idcard > div:last-child { border-right: 0; }
+  .idcard dt { font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.3rem; }
+  .idcard dd { margin: 0; font-size: 0.9rem; font-weight: 500; line-height: 1.5; }
+
+  .figures {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 0; background: var(--deep); color: #fff; margin: 0 0 1rem;
+  }
+  .figures > div { padding: 1rem 1.05rem; border-right: 1px solid rgba(255,255,255,0.09); }
+  .figures > div:last-child { border-right: 0; }
+  .figures .n { font-family: var(--f-display); font-size: 1.6rem; line-height: 1.1; letter-spacing: -0.01em; }
+  .figures .n em { font-style: normal; font-size: 0.72em; color: #E7A97C; }
+  .figures .l { font-family: var(--f-mono); font-size: 0.63rem; letter-spacing: 0.07em; color: var(--deep-ink); margin-top: 0.35rem; line-height: 1.45; }
+  .figures-note { font-size: 0.74rem; color: var(--muted); margin: 0 0 2.6rem; }
+
+  .hero-strip { border: 1px solid var(--rule); margin: 0 0 2.2rem; overflow: hidden; }
+  .hero-strip img { width: 100%; height: clamp(150px, 26vw, 260px); object-fit: cover; object-position: center 55%; }
+
+  /* ── 섹션 ──────────────────────────── */
+  section { padding: 2.6rem 0 0; }
+  .sec-head { border-top: 2px solid var(--ink); padding-top: 0.75rem; margin: 0 0 1.6rem; }
+  .sec-num { font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.17em; color: var(--accent); }
+  .sec-head h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(1.5rem, 3.4vw, 2.05rem); line-height: 1.3; margin: 0.35rem 0 0.5rem; letter-spacing: -0.005em; }
+  .sec-head p { margin: 0; color: var(--ink-2); font-size: 0.94rem; max-width: 72ch; font-weight: 300; }
+  .sec-head .tie {
+    display: inline-block; font-family: var(--f-mono); font-size: 0.64rem; letter-spacing: 0.06em;
+    background: var(--accent-soft); color: var(--accent-2); padding: 0.2rem 0.5rem; margin-top: 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  /* ── 표 ────────────────────────────── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.87rem; background: var(--surface); border: 1px solid var(--rule); }
+  .tbl th {
+    text-align: left; font-family: var(--f-mono); font-size: 0.65rem; letter-spacing: 0.09em; text-transform: uppercase;
+    background: var(--deep); color: #fff; font-weight: 500; padding: 0.6rem 0.8rem; vertical-align: middle;
+  }
+  .tbl td { padding: 0.72rem 0.8rem; border-top: 1px solid var(--rule-soft); vertical-align: top; line-height: 1.62; }
+  .tbl tbody tr:nth-child(even) { background: var(--surface-2); }
+  .tbl .k { font-weight: 600; width: 22%; }
+  .tbl .lnk { white-space: nowrap; width: 8%; font-family: var(--f-mono); font-size: 0.72rem; }
+  .tbl-scroll { overflow-x: auto; }
+
+  .num { font-family: var(--f-mono); font-weight: 500; }
+  .up { color: var(--risk); font-weight: 600; }
+  .down { color: var(--ok); font-weight: 600; }
+  code { font-family: var(--f-mono); font-size: 0.86em; background: var(--rule-soft); padding: 0.08em 0.32em; border-radius: 2px; }
+
+  /* ── 카드 ──────────────────────────── */
+  .cards { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .cards.c2 { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+  .cards.c3 { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+  .card { background: var(--surface); padding: 1.15rem 1.25rem 1.3rem; }
+  .card .tag { font-family: var(--f-mono); font-size: 0.63rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--accent); }
+  .card h3 { font-size: 1rem; font-weight: 600; margin: 0.4rem 0 0.55rem; line-height: 1.5; }
+  .card p { margin: 0 0 0.6rem; font-size: 0.87rem; color: var(--ink-2); line-height: 1.68; }
+  .card p:last-child { margin-bottom: 0; }
+  .card .res {
+    display: block; font-family: var(--f-mono); font-size: 0.78rem; color: var(--ink);
+    border-top: 1px dashed var(--rule); padding-top: 0.6rem; margin-top: 0.75rem; line-height: 1.6;
+  }
+  .card .res b { color: var(--accent-2); }
+
+  /* ── 사례(문제→해결→결과) ─────────── */
+  .case { border: 1px solid var(--rule); background: var(--surface); margin: 0 0 1px; }
+  .case-h { display: flex; gap: 0.7rem; align-items: baseline; padding: 0.85rem 1.15rem; border-bottom: 1px solid var(--rule-soft); background: var(--surface-2); }
+  .case-h .i { font-family: var(--f-mono); font-size: 0.72rem; color: var(--accent); font-weight: 500; }
+  .case-h h3 { margin: 0; font-size: 0.98rem; font-weight: 600; line-height: 1.5; }
+  .case-b { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .case-b > div { padding: 0.9rem 1.15rem 1rem; border-right: 1px solid var(--rule-soft); }
+  .case-b > div:last-child { border-right: 0; }
+  .case-b dt { font-family: var(--f-mono); font-size: 0.63rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+  .case-b dd { margin: 0; font-size: 0.85rem; color: var(--ink-2); line-height: 1.68; }
+  .case-b .out dd { color: var(--ink); }
+  .stack { display: grid; gap: 0.9rem; }
+
+  /* ── 딥 블록 ───────────────────────── */
+  .deep {
+    background: var(--deep); color: #fff; padding: 1.4rem 1.5rem; border: 1px solid var(--deep);
+  }
+  .deep h3 { font-family: var(--f-display); font-weight: 400; font-size: 1.25rem; margin: 0 0 0.7rem; }
+  .deep p { color: var(--deep-ink); font-size: 0.88rem; margin: 0 0 0.6rem; line-height: 1.7; }
+  .deep p:last-child { margin-bottom: 0; }
+  .deep .big { font-family: var(--f-display); font-size: 2.4rem; line-height: 1.1; color: #fff; }
+  .deep .lil { font-family: var(--f-mono); font-size: 0.68rem; color: #97A6B4; letter-spacing: 0.06em; }
+  .deep b { color: #F0A97A; }
+
+  /* ── 흐름 ──────────────────────────── */
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .flow > div { background: var(--surface); padding: 1rem 1.05rem 1.1rem; position: relative; }
+  .flow .s { font-family: var(--f-mono); font-size: 0.63rem; letter-spacing: 0.12em; color: var(--accent); }
+  .flow h4 { margin: 0.3rem 0 0.4rem; font-size: 0.92rem; font-weight: 600; }
+  .flow p { margin: 0; font-size: 0.81rem; color: var(--ink-2); line-height: 1.62; }
+
+  .pills { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.9rem 0 0; }
+  .pill { font-family: var(--f-mono); font-size: 0.72rem; padding: 0.22rem 0.55rem; border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2); }
+  .pill.on { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent-2); font-weight: 500; }
+  .arw { font-family: var(--f-mono); font-size: 0.78rem; color: var(--muted); align-self: center; }
+
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .shot { background: var(--surface); }
+  .shot img { width: 100%; height: 190px; object-fit: cover; }
+  .shot .cap { padding: 0.65rem 0.9rem 0.85rem; font-size: 0.82rem; color: var(--ink-2); line-height: 1.6; }
+  .shot .cap b { display: block; color: var(--ink); font-size: 0.86rem; margin-bottom: 0.2rem; }
+
+  .note { font-size: 0.79rem; color: var(--muted); line-height: 1.7; margin: 0.85rem 0 0; }
+  .note code { background: transparent; padding: 0; color: var(--muted); }
+
+  .kicker {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    padding: 0.85rem 1.1rem; margin: 1.1rem 0 0; font-size: 0.9rem; color: var(--ink);
+    line-height: 1.7;
+  }
+
+  /* ── 맺음 ──────────────────────────── */
+  .closing { margin: 3.4rem 0 0; background: var(--deep); color: #fff; padding: 2.2rem 1.6rem; }
+  .closing h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(1.35rem, 3.2vw, 1.85rem); margin: 0 0 0.9rem; line-height: 1.4; }
+  .closing p { color: var(--deep-ink); font-size: 0.92rem; max-width: 68ch; margin: 0 0 0.7rem; line-height: 1.75; }
+  .links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.3rem; }
+  .links a {
+    font-family: var(--f-mono); font-size: 0.76rem; color: #fff; border: 1px solid rgba(255,255,255,0.3);
+    padding: 0.42rem 0.75rem; letter-spacing: 0.04em;
+  }
+  .links a:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
+  footer { padding: 1.6rem 0 3.4rem; font-size: 0.78rem; color: var(--muted); line-height: 1.7; }
+
+  @media (max-width: 640px) {
+    .tbl .k, .tbl .lnk { width: auto; }
+    .case-b > div { border-right: 0; border-bottom: 1px solid var(--rule-soft); }
+    .case-b > div:last-child { border-bottom: 0; }
+  }
+
+  /* ── 인쇄(A4) ──────────────────────── */
+  @media print {
+    @page { size: A4; margin: 12mm 11mm 13mm; }
+    :root, :root[data-theme="dark"] {
+      --paper: #FFFFFF; --surface: #FFFFFF; --surface-2: #F7F5F1;
+      --ink: #14110F; --ink-2: #3E3934; --muted: #77706A;
+      --rule: #CFC8BE; --rule-soft: #E2DCD3;
+      --accent: #A9430F; --accent-2: #8A360C; --accent-soft: #FAEDE3;
+      --deep: #17212C; --deep-2: #24323F; --deep-ink: #C8D3DC;
+      --ok: #17694A; --risk: #97331F;
+    }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    html { scroll-behavior: auto; }
+    body { background: #fff; font-size: 9.1pt; line-height: 1.6; }
+    .wrap { max-width: none; padding: 0; }
+    .topbar, .noprint { display: none !important; }
+    a { color: var(--ink); border-bottom: 0; }
+    .mast { padding: 0; }
+    h1 { font-size: 25pt; margin-bottom: 8pt; }
+    .lede { font-size: 10.5pt; margin-bottom: 12pt; }
+    .eyebrow { font-size: 7pt; margin-bottom: 8pt; }
+    .hero-strip img { height: 42mm; }
+    section { padding: 0; margin-top: 9mm; break-inside: auto; }
+    .sec-head { break-after: avoid; page-break-after: avoid; margin-bottom: 6pt; }
+    .sec-head h2 { font-size: 15pt; }
+    .sec-head p { font-size: 9pt; }
+    .page-break { break-before: page; page-break-before: always; }
+    .card, .case, .deep, .flow > div, .shot, .kicker, .figures, .idcard, .closing { break-inside: avoid; page-break-inside: avoid; }
+    .tbl { font-size: 8.2pt; }
+    .tbl th { padding: 4pt 6pt; font-size: 6.6pt; }
+    .tbl td { padding: 5pt 6pt; }
+    .tbl tr { break-inside: avoid; page-break-inside: avoid; }
+    .figures .n { font-size: 15pt; }
+    .figures > div { padding: 7pt 8pt; }
+    .card { padding: 8pt 9pt 9pt; }
+    .card p, .case-b dd { font-size: 8.2pt; }
+    .case-b > div { padding: 6pt 9pt 7pt; }
+    .deep .big { font-size: 21pt; }
+    .shot img { height: 34mm; }
+    .closing { margin-top: 8mm; padding: 12pt 14pt; }
+    footer { padding: 6pt 0 0; font-size: 7.4pt; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar noprint">
+  <div class="wrap">
+    <span class="who">이한울 · GAME PROGRAMMER</span>
+    <nav class="topnav">
+      <a href="#fit">공고 대조</a>
+      <a href="#project">프로젝트</a>
+      <a href="#impl">구현</a>
+      <a href="#cs">자료구조·알고리즘</a>
+      <a href="#fix">디버깅·최적화</a>
+      <a href="#tool">툴·자동화</a>
+      <a href="#net">네트워크</a>
+      <a href="#ai">생성형 AI</a>
+      <a href="#read">읽히는 코드</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ══ 머리 ══ -->
+  <header class="mast">
+    <p class="eyebrow">2026 넥토리얼 · For Game Programmer</p>
+    <h1>구현하고, 재고,<br>도구로 남겼습니다</h1>
+    <p class="lede">
+      Unity 6 · C#으로 1~4인 협동 네트워크 게임 <b>Train Survival</b>을 혼자 기획·구현·검증하고 있습니다.
+      기능을 돌아가게 만드는 데서 멈추지 않고, 실패 조건을 먼저 정의하고 수치로 판정한 뒤,
+      그 판정을 사람이 아니라 도구가 하게 옮기는 방식으로 일합니다.
+    </p>
+
+    <dl class="idcard">
+      <div><dt>지원 직무</dt><dd>게임 프로그래머 (클라이언트)</dd></div>
+      <div><dt>대표 프로젝트</dt><dd>Train Survival · 1인 개발</dd></div>
+      <div><dt>기간</dt><dd>2026.07.17 – 진행 중</dd></div>
+      <div><dt>기술</dt><dd>C# · Unity 6 · Netcode · Steamworks</dd></div>
+    </dl>
+
+    <div class="figures">
+      <div><div class="n">87,048<em>줄</em></div><div class="l">C# / 568 파일<br>런타임 446 · 테스트 122</div></div>
+      <div><div class="n">1,429</div><div class="l">EditMode 단위 테스트<br>[Test] 선언 기준</div></div>
+      <div><div class="n">902</div><div class="l">Git 커밋<br>규약 · LFS · CI 연동</div></div>
+      <div><div class="n">14</div><div class="l">자동화 · 도구<br>에디터 12 · node 958줄</div></div>
+      <div><div class="n">1.24<em>ms</em></div><div class="l">실측 프레임 시간<br>반복 편차 0.8 %</div></div>
+    </div>
+    <p class="figures-note">
+      코드·커밋·테스트 수치는 <code>2026-09-07</code> 기준으로 저장소를 직접 집계한 값입니다.
+      성능 수치는 빌드 자동 주행 벤치의 실측값입니다. 저장소·CI 로그·설계 문서는 전부 공개돼 있습니다.
+    </p>
+
+    <div class="hero-strip">
+      <img src="assets/nx-hero.jpg" alt="Train Survival 메인 메뉴 — 방 만들기 · 참가하기 · 설정과 운행 공고문">
+    </div>
+  </header>
+
+  <!-- ══ 01 공고 대조 ══ -->
+  <section id="fit">
+    <div class="sec-head">
+      <div class="sec-num">01 / JOB FIT</div>
+      <h2>공고의 문장에, 프로젝트의 증거로 답합니다</h2>
+      <p>기술 키워드를 나열하는 대신 공고가 적은 항목마다 이 문서 안의 근거 위치를 붙였습니다. 수치는 전부 저장소·CI 실행 이력·계측 로그에서 확인된 값입니다.</p>
+    </div>
+    <div class="tbl-scroll">
+    <table class="tbl">
+      <thead>
+        <tr><th>공고가 적은 항목</th><th>제가 제출하는 증거</th><th>위치</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="k">C#을 활용해 게임 콘텐츠와 시스템을 구현</td>
+          <td>집게·열차·건축·전투·지역 5개 시스템을 Unity 6에서 구현. 규칙 계산을 <code>MonoBehaviour</code> 밖 순수 함수로 빼고 컴포넌트는 결과를 배치만 합니다.</td>
+          <td class="lnk"><a href="#impl">→ 03</a></td>
+        </tr>
+        <tr>
+          <td class="k">자료구조·알고리즘 지식을 코드로 구현</td>
+          <td>순회를 공간 단위로 축소해 <span class="num">O(몬스터×전체 건축물) → O(몬스터×칸 내)</span>, 평탄 리스트 + 계산 인덱싱, Day 번호 하나에서 지역 상태 전량 파생, 결정론 불변식을 테스트로 고정.</td>
+          <td class="lnk"><a href="#cs">→ 04</a></td>
+        </tr>
+        <tr>
+          <td class="k">기존 코드를 분석하고 디버깅·리팩터링·최적화</td>
+          <td>나흘간 CI를 죽이던 네이티브 세그폴트를 이등분 4회로 <b>어트리뷰트 한 줄</b>까지 규명. 문서상 최적화 1순위를 실측으로 기각하고 최하위를 채택해 GPU 프레임 <span class="down">−6.3 %</span>.</td>
+          <td class="lnk"><a href="#fix">→ 05</a></td>
+        </tr>
+        <tr>
+          <td class="k">개발 생산성 향상을 위한 툴 제작 및 자동화</td>
+          <td>자동화·도구 <span class="num">14건</span>. CI 벽시계 <span class="num">17:38 → 9:54</span>, 임포트 후처리로 화면 삼각형 <span class="down">−41.0 %</span>, 회귀 판정을 종료 코드 하나로 압축.</td>
+          <td class="lnk"><a href="#tool">→ 06</a></td>
+        </tr>
+        <tr>
+          <td class="k">생성형 AI 도구로 코드를 작성·검증</td>
+          <td>제약을 저장소에 규약으로 고정하고, 완료 조건을 <code>grep</code>으로 검사 가능한 문장으로 정의하고, 결과를 테스트·플레이 계측·대조군으로 판정합니다. 채택뿐 아니라 <b>기각한 결과와 근거</b>도 남깁니다.</td>
+          <td class="lnk"><a href="#ai">→ 08</a></td>
+        </tr>
+        <tr>
+          <td class="k">게임을 직접 기획하고 완성해 본 경험</td>
+          <td>기획서·네트워크 아키텍처 결정서를 코드보다 먼저 쓰고, 수직 슬라이스 → 코어 루프 → 시스템 확장 → 아트 순으로 M8까지 진행 중. 출시 목표 2027.02.</td>
+          <td class="lnk"><a href="#project">→ 02</a></td>
+        </tr>
+        <tr>
+          <td class="k">OOP 이해 · 다른 사람이 읽기 쉬운 코드</td>
+          <td>어셈블리 6개로 계층 의존을 한 방향만 열어 <b>역참조를 컴파일 에러로</b> 만들고, 상태는 읽기 계약과 변이 API를 타입으로 분리했습니다.</td>
+          <td class="lnk"><a href="#read">→ 09</a></td>
+        </tr>
+        <tr>
+          <td class="k">Git 등 협업 도구 활용</td>
+          <td>커밋 <span class="num">902</span>회에 커밋 컨벤션·LFS·Unity YAML 머지 드라이버·pre-commit 훅·GitHub Actions CI를 붙여 운용 중.</td>
+          <td class="lnk"><a href="#read">→ 09</a></td>
+        </tr>
+        <tr>
+          <td class="k">네트워크·소켓 프로그래밍 이해 또는 경험</td>
+          <td>Netcode for GameObjects + Steam Sockets. 상태별 권위를 분리하고 월드 오브젝트의 상시 위치 재전송을 <span class="num">0건</span>으로. RTT 60 ms를 주입해 <span class="num">100회 이상</span> 실측.</td>
+          <td class="lnk"><a href="#net">→ 07</a></td>
+        </tr>
+        <tr>
+          <td class="k">Unity 등 게임 엔진 활용 프로젝트</td>
+          <td>Unity 6 (6000.5.3f1) · URP 17.5 · Input System · Netcode · Steamworks.NET · AssetPostprocessor · 에디터 확장 12종.</td>
+          <td class="lnk"><a href="#tool">→ 06</a></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="kicker">
+      한 줄로 줄이면 — <b>기능을 구현하는 데서 끝내지 않고, 실패 조건을 정의하고 수치로 판정한 뒤 그 기준을 도구에 남겼습니다.</b>
+    </div>
+  </section>
+
+  <!-- ══ 02 프로젝트 ══ -->
+  <section id="project" class="page-break">
+    <div class="sec-head">
+      <div class="sec-num">02 / PROJECT</div>
+      <h2>멈추면 죽는 열차에서, 낮에 모으고 밤에 버팁니다</h2>
+      <p>1~4인 협동 생존 크래프팅 · PC / Steam · Unity 6 · Netcode for GameObjects · 1인 개발 (기획 · 클라이언트 · 네트워크 · QA)</p>
+    </div>
+
+    <div class="shots">
+      <div class="shot">
+        <img src="assets/nx-day.jpg" alt="낮 — 집게로 지상의 자원을 채집하는 화면">
+        <div class="cap"><b>DAY · 채집</b>달리는 열차에서 집게로 지상의 자원을 낚아채 제작·건설·열차 증설에 씁니다. 몬스터도 낚아채 열차 바퀴에 넘길 수 있습니다.</div>
+      </div>
+      <div class="shot">
+        <img src="assets/nx-night.jpg" alt="밤 — 몬스터 웨이브를 방어하는 화면">
+        <div class="cap"><b>NIGHT · 방어</b>몬스터가 칸과 연결부를 공격합니다. 칸이 부서지면 뒤 편성이 통째로 이탈해, 사람이 손잡이를 잡고 끌어와야 다시 붙습니다.</div>
+      </div>
+    </div>
+
+    <div class="flow" style="margin-top:1px">
+      <div><div class="s">CORE LOOP</div><h4>연료가 시계다</h4><p>자동 충전이 아니라 기관차에 직접 넣어야 해서 채집 → 운반 → 투입이라는 협동 동선이 생깁니다.</p></div>
+      <div><div class="s">ESCALATION</div><h4>하루마다 오른다</h4><p>웨이브 물량과 몬스터 종류가 늘고, 3~5일마다 지역(숲·사막·대초원·북극)이 바뀝니다.</p></div>
+      <div><div class="s">STAKE</div><h4>중간 저장 없음</h4><p>런은 단일 세션으로 완주합니다. 궤도 도약 기관을 완성해 대기권을 벗어나면 클리어입니다.</p></div>
+      <div><div class="s">SCOPE</div><h4>1인 전 범위</h4><p>기획·게임플레이·UI·렌더링·네트워크·테스트·CI·프로파일링·QA 도구를 전부 직접 맡았습니다.</p></div>
+    </div>
+
+    <p class="note">
+      진행 상태 — 코어 루프와 네트워크 수직 슬라이스 구현 완료, 지역·전투·생존 확장 완료, Steam 통합/최종장/아트 패스 진행 중.
+      마일스톤마다 <b>구현 계획서</b>에서 범위·비범위·완료 기준을 먼저 정하고, 끝난 뒤 <b>플레이 검증 문서</b>에 결과를 적었습니다 — 검증 문서 24편 · 항목 761개.
+      자동 테스트가 다루지 못하는 연출·손맛·네트워크 타이밍은 여기서 사람이 검증하는 항목으로 따로 관리합니다.
+    </p>
+  </section>
+
+  <!-- ══ 03 구현 ══ -->
+  <section id="impl">
+    <div class="sec-head">
+      <div class="sec-num">03 / IMPLEMENTATION</div>
+      <h2>C#으로 만든 다섯 개의 시스템</h2>
+      <p>각 시스템은 "무엇을 하는가"보다 "어떤 구조로 성립시켰는가"를 먼저 적었습니다. 공통 원칙은 하나입니다 — 규칙이 되는 계산은 엔진 타입 밖으로 뺀다.</p>
+      <span class="tie">공고 · C#을 활용해 게임 콘텐츠와 시스템을 구현</span>
+    </div>
+
+    <div class="cards c2">
+      <div class="card">
+        <div class="tag">01 · Harpoon</div>
+        <h3>집게 — 지연 0과 호스트 확정 사이에 손맛을 놓는다</h3>
+        <p>발사 → 명중 → 호스트 승인 → 견인 → 획득이 하나의 파이프라인입니다. 쏜 클라이언트가 <b>즉시 연출을 재생</b>하고 승인·거부는 호스트가 확정합니다.</p>
+        <p>조작 상태와 훅 비행 상태를 서로 다른 두 상태 기계로 분리했고, 승인 판정은 순수 함수라 EditMode에서 전 경계를 검사합니다. 대상은 <code>IGrabbable</code> 한 계약으로 묶여 자원·몬스터·보따리가 같은 코드를 탑니다.</p>
+        <span class="res">등급별 사거리 <b>20 / 26 / 32 m</b> · 견인 속도 8 / 11 / 14 m/s · 안전 타임아웃 1.5 s (악조건 실측 최대 135 ms 대비 10배 여유)</span>
+      </div>
+      <div class="card">
+        <div class="tag">02 · Train</div>
+        <h3>열차 — 부서지고, 떨어져 나가고, 다시 붙는다</h3>
+        <p>칸과 연결부에 각각 내구가 있습니다. 칸이 부서지면 <b>그 뒤 편성 전체가 이탈</b>해 뒤로 밀려나고, 손잡이를 잡아 사람 힘으로 끌어와야 다시 붙습니다.</p>
+        <p>모든 서버 변이가 같은 네 단계를 지납니다 — <b>스냅샷 → 순수 함수 판정 → 일괄 반영 → 이벤트 발행</b>. 판정이 <code>NetworkList</code> API에 묶여 있지 않아 부분 적용 상태가 복제될 여지가 없습니다.</p>
+        <span class="res">연결부는 <b>살아 있는 것 중 가장 후미만</b> 파괴 가능 — 제약 하나로 재건·재결합의 상태 공간을 좁혔습니다</span>
+      </div>
+      <div class="card">
+        <div class="tag">03 · Structure</div>
+        <h3>건축 — 칸의 개성은 위에 짓는 것이 만든다</h3>
+        <p>갑판이 1 m 셀 그리드이고 그 위에 건축물 7종을 90° 단위로 놓습니다. 원안의 "온실칸·무기고칸" 같은 <b>칸 종류 분화를 폐기</b>하고, 차이는 그 위에 무엇을 짓느냐가 만들게 했습니다.</p>
+        <p>배치·점유·회전·피해 판정은 순수 static 함수가 처리하고, 종류별 효과(차폐·난방·창고 블록·비용)는 카탈로그의 필드입니다.</p>
+        <span class="res">새 건축물을 추가할 때 늘리는 것은 코드가 아니라 <b>에셋 항목</b></span>
+      </div>
+      <div class="card">
+        <div class="tag">04 · Combat</div>
+        <h3>전투 — 시드 하나로 전 피어의 탄착을 맞춘다</h3>
+        <p>쏜 사람이 시드를 만들어 지연 0으로 즉시 연출하고, 호스트가 그 시드를 브로드캐스트하면 다른 피어가 <b>같은 시드로 펠릿 궤적을 재계산</b>합니다. 난수를 복제하지 않고 모두가 같은 탄착을 봅니다.</p>
+        <p>무기 차이는 전부 설정 에셋 안에 있습니다 — 연사·펠릿 수·산탄각·장탄·재장전이 전부 필드입니다.</p>
+        <span class="res">샷건과 볼트액션이 <b>컴포넌트 코드 0줄</b>로 성립 · 데미지는 호스트가 거리·펠릿 상한을 재검증한 뒤 확정</span>
+      </div>
+      <div class="card">
+        <div class="tag">05 · Region</div>
+        <h3>지역 · 사이클 — Day 번호 하나에서 전부 파생된다</h3>
+        <p>지역 인덱스·지역 내 일차·마지막 날 여부·다음 지역 예고·순환 횟수가 전부 <b>Day 번호 하나에서 순수 함수로 파생</b>됩니다. 그래서 지역 컨트롤러는 <code>NetworkBehaviour</code>조차 아닌 일반 <code>MonoBehaviour</code>입니다.</p>
+        <p>복제할 것이 늘지 않으므로 피어 간 어긋날 여지 자체가 없습니다.</p>
+        <span class="res">숲·사막 2종으로 시작했지만 후반에 대초원·북극을 추가할 때 <b>코드 변경 0줄</b></span>
+      </div>
+      <div class="card">
+        <div class="tag">공통 원칙</div>
+        <h3>계산을 엔진 타입 밖으로</h3>
+        <p>게임 규칙이 되는 계산은 <code>MonoBehaviour</code>·<code>NetworkBehaviour</code> 안에 두지 않습니다. <code>*Math</code>/<code>*Logic</code> <b>55개 파일</b>이 Unity 의존 없는 static 함수로 분리되어 있고, 컴포넌트는 그 결과를 배치하는 일만 합니다.</p>
+        <p>"칸 3개가 파괴되면 뒤쪽 편성이 통째로 이탈하는가" 같은 규칙을 플레이 모드에 들어가지 않고 입력값만 구성해 검사할 수 있습니다.</p>
+        <span class="res">EditMode 테스트 <b>1,429개</b>가 씬 없이 수 초 안에 돕니다 — 재능이 아니라 계산을 어디에 두느냐의 문제였습니다</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 04 자료구조·알고리즘 ══ -->
+  <section id="cs">
+    <div class="sec-head">
+      <div class="sec-num">04 / DATA STRUCTURES &amp; ALGORITHMS</div>
+      <h2>비용이 콘텐츠에 비례하지 않게 만든 다섯 가지</h2>
+      <p>협동 네트워크 게임에서는 자료구조 선택이 곧 대역폭·프레임 비용·동기화 난이도가 됩니다. 아래는 그 선택이 실제로 무엇을 지웠는지 적은 것입니다.</p>
+      <span class="tie">공고 · 자료구조, 알고리즘 등 컴퓨터공학 지식을 코드로 구현</span>
+    </div>
+
+    <div class="stack">
+      <div class="case">
+        <div class="case-h"><span class="i">A</span><h3>순회 범위를 전체 목록에서 공간 단위로 축소</h3></div>
+        <div class="case-b">
+          <div><dt>문제</dt><dd>갑판 위 몬스터가 매 프레임 부르는 관통 판정이 열차에 설치된 <b>건축물 전체 목록</b>을 순회했습니다. 플레이어가 열차를 키울수록 몬스터 수 × 건축물 수로 비용이 붙는 구조였습니다.</dd></div>
+          <div><dt>해결</dt><dd>판정 범위를 그 지점이 얹힌 <b>칸 하나</b>로 한정했습니다. 함께 열차 폭 판정은 값싼 Z 범위 검사를 먼저 두도록 조건 순서를 뒤집고, 매 프레임 조회하던 서비스 참조를 에이전트에 캐시했습니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd><span class="num">O(몬스터 × 전체 건축물) → O(몬스터 × 칸 내 건축물)</span><br>콘텐츠 증가가 프레임 비용으로 되돌아오지 않는 구조로 전환</dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">B</span><h3>평탄 리스트 + 계산 인덱싱 — 순번을 버리고 발급 Id로</h3></div>
+        <div class="case-b">
+          <div><dt>문제</dt><dd>공유 창고는 <b>부서지고 떨어져 나가는 것 위에</b> 있습니다. 리스트 인덱스는 앞의 칸이 사라지면 뒤가 전부 밀리고, 창고마다 컨테이너를 따로 만들면 생성·소멸·재탐색이 매번 붙습니다.</dd></div>
+          <div><dt>해결</dt><dd>식별을 순번이 아니라 <b>서버 발급 Id</b>로 두고, 슬롯은 창고마다 나누지 않고 평탄한 <code>NetworkList</code> 하나에 담아 <code>i × 슬롯수 + 칸 내 인덱스</code>로 찾습니다. 소유 관계는 <code>NetworkList&lt;ushort&gt;</code> 한 줄이 담보하고, 설치는 append · 파괴는 <b>swap-remove</b>입니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>칸이 뒤로 이탈해도 블록은 Id로 남아 <b>재결합하면 내용물이 그대로 돌아옵니다</b> — 순번 기반이었다면 "이탈"과 "파괴"의 구분 자체가 성립하지 않습니다</dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">C</span><h3>상태를 복제하는 대신 하나의 값에서 파생</h3></div>
+        <div class="case-b">
+          <div><dt>문제</dt><dd>지역·난이도·날씨·보스 등장 여부를 각각 복제하면 동기화 대상이 늘고, 하나만 늦게 도착해도 피어마다 다른 화면이 나옵니다. 대기실 로스터도 이름·호스트 여부·접속 상태·자리 순서를 각각 복제하면 4종이 됩니다.</dd></div>
+          <div><dt>해결</dt><dd>실제 권위를 가져야 하는 <b>최소 원천</b>만 남겼습니다 — 지역은 Day 번호 하나, 로스터는 <code>NetworkList&lt;ulong&gt;</code> 하나. 이름은 칸 번호에서, 호스트 여부는 "첫 칸" 규칙에서, 접속 상태는 "목록에 있음"에서 파생합니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>지역 컨트롤러가 네트워크 타입이 아니게 됨 · 로스터 복제 대상 <span class="num">4종 → 1종</span> · 자리 배치 규칙은 순수 함수로 분리해 테스트로 고정</dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">D</span><h3>결정론 — 난수를 복제하지 않고 같은 결과를 만든다</h3></div>
+        <div class="case-b">
+          <div><dt>문제</dt><dd>산탄 펠릿 궤적, 지형 세그먼트 추첨, 지상 자원 위치처럼 <b>피어마다 갈리면 콜라이더 자체가 달라지는</b> 값이 있습니다. 값을 전부 복제하면 대역폭이 물량에 비례합니다.</dd></div>
+          <div><dt>해결</dt><dd>산탄은 <b>시드 하나</b>만 브로드캐스트하고 각 피어가 재계산합니다. 월드 오브젝트 위치는 <code>(스폰 위치, 스폰 시점 누적 거리, 현재 누적 거리)</code> 세 값만의 순수 함수로 유도합니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>월드 오브젝트 상시 위치 재전송 <span class="num">0건</span> · "같은 누적 거리면 스폰 시점과 무관하게 같은 위치"라는 <b>불변식을 단위 테스트로 고정</b></dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">E</span><h3>매 프레임 도는 경로에서 할당을 걷어낸다</h3></div>
+        <div class="case-b">
+          <div><dt>문제</dt><dd>건축물 설치·판자 프리뷰가 배치 가능 여부를 물을 때마다 열차 상태 전체를 배열로 복사했습니다. 조준하는 동안 매 프레임 도는 경로라 <b>프레임당 6~8회의 배열 할당</b>이 상시 발생했습니다.</dd></div>
+          <div><dt>해결</dt><dd>배열을 건드리지 않는 <b>읽기 전용 판정</b>과 상태를 바꾸는 <b>변이 경로</b>를 갈라, 판정에만 쓰는 재사용 버퍼를 뒀습니다. 변이 경로는 기존 스냅샷·되쓰기 규약을 그대로 유지해 동시 수정 안전성을 잃지 않았습니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>프리뷰 조준 중 배열 할당 <span class="num">프레임당 6~8회 → 0회</span><br>물리 쿼리도 <code>RaycastNonAlloc</code>으로, 스폰·소멸은 전량 풀링으로 통일</dd></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kicker">
+      다섯 건의 공통점은 <b>"복제하거나 순회할 것을 줄이는 쪽"</b>으로 풀었다는 점입니다. 버퍼를 키우거나 주기를 늦추는 처방은 증상을 가리지만, 원천을 하나로 줄이면 어긋날 경우의 수 자체가 사라집니다.
+    </div>
+  </section>
+
+  <!-- ══ 05 디버깅·최적화 ══ -->
+  <section id="fix" class="page-break">
+    <div class="sec-head">
+      <div class="sec-num">05 / DEBUG · REFACTOR · OPTIMIZE</div>
+      <h2>증상에서 원인까지 거리가 먼 문제들</h2>
+      <p>아래 다섯 건은 전부 "보이는 곳에 원인이 없던" 문제입니다. 짐작으로 고쳤다면 멀쩡한 코드를 건드렸을 사건들이라, 좁혀 간 과정을 그대로 적었습니다.</p>
+      <span class="tie">공고 · 기존 코드를 분석하고 디버깅·리팩터링·최적화 작업을 수행</span>
+    </div>
+
+    <div class="stack">
+      <div class="case">
+        <div class="case-h"><span class="i">01</span><h3>나흘간 CI를 죽이던 네이티브 세그폴트를 이등분 4회로 어트리뷰트 한 줄까지</h3></div>
+        <div class="case-b">
+          <div><dt>증상</dt><dd>리눅스 CI가 PlayMode 진입에서 <code>signo:11</code> 세그폴트로 나흘 연속 죽었습니다. 게다가 <b>크래시는 결과 XML에 "실패"로 남지 않아</b> 초록 뒤에 숨었고, 원인을 찾으려면 14,000줄 로그를 손으로 뒤져야 했습니다.</dd></div>
+          <div><dt>과정</dt><dd>순서를 먼저 정했습니다 — <b>살리는 것이 먼저, 파는 것은 다음.</b> PlayMode만 격리해 EditMode와 빌드를 되살린 뒤 이등분했습니다. 마지막 성공 커밋 → 파일 하나 추가 → 메뉴 경로 변경 → <b>어트리뷰트 한 줄</b>. 범인은 특정 메뉴가 아니라 <code>[MenuItem]</code> <b>등록 개수</b>였고 임계는 7이었습니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>하나만 뺐더니 같은 날 다른 도구가 둘을 더해 즉시 재발 — 그래서 메뉴 9개를 전부 <code>#if !UNITY_EDITOR_LINUX</code>로 감싸 <b>조건 자체를 제거</b>했습니다. 이후 한 실행에서 EditMode 1,408 · PlayMode 11 · 빌드가 함께 통과. 잡 의존 제거로 벽시계 <span class="num">17:38 → 9:54</span></dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">02</span><h3>호스트에서만 멀쩡했던 한 프레임 — 실행 순서가 만든 지연</h3></div>
+        <div class="case-b">
+          <div><dt>증상</dt><dd>몬스터를 집게로 들고 이동하는 동안 훅과 로프가 한 발씩 늦게 끌려왔습니다. 그런데 <b>호스트 화면에서는 멀쩡</b>했고 게스트 화면에서만 보였습니다.</dd></div>
+          <div><dt>원인</dt><dd>훅 추종과 로프 그리기가 <code>Update</code>에서 위치를 읽는데 파지 부착은 <code>LateUpdate</code>에서 대상을 옮기고 있었습니다. 호스트는 서버 견인이 <code>Update</code>에서도 대상을 옮겨 오차가 가려졌고, <b>비호스트는 부착이 유일한 이동 경로</b>라 지연이 그대로 드러난 것입니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>프레임 안의 순서를 "홀더 이동 → 파지 부착 → 훅 추종 → 로프"로 못 박고 <code>DefaultExecutionOrder</code>로 <b>속성에 고정</b>했습니다 — 컴포넌트가 늘어도 같은 종류의 지연이 재발하지 않습니다</dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">03</span><h3>같은 화면 안에 좌표 프레임이 둘이었다</h3></div>
+        <div class="case-b">
+          <div><dt>증상</dt><dd>열차 위에서는 정확한데 지상에 내려 <b>좌우를 보고</b> 집게를 쏘면 훅이 조준점 옆으로 흘렀습니다. 정면으로 쏠 때는 거의 티가 나지 않았습니다.</dd></div>
+          <div><dt>원인</dt><dd>이 게임은 열차가 원점에 고정되고 세계가 흘러옵니다. 지상의 자원은 월드와 함께 뒤로 밀려나는데 <b>훅은 그 밀림을 받지 않아</b>, 날아가는 동안 대상만 옆으로 빠졌습니다. 정면에서는 밀림이 비행 방향과 같은 축이라 거리 오차로 흡수돼 <b>측면에서만 조준 오차로 드러난</b> 것입니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>발사 순간 <b>사수가 어느 프레임을 딛고 있는지</b>를 훅에 함께 넘기도록 바꾸고, 이후 지상에 놓이는 것(자원·보따리·낙하물)은 전부 프레임 소속을 명시적으로 들고 다니도록 규약을 맞췄습니다</dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">04</span><h3>문서상 1순위는 적용하면 안 되는 항목이었고, 최하위가 유일한 답이었다</h3></div>
+        <div class="case-b">
+          <div><dt>배경</dt><dd>예산 문서에 최적화 우선순위 7개가 있었지만 근거는 일반론과 폴리곤 수였습니다. <b>착수 47일째까지 프레임 시간(ms)은 한 번도 잰 적이 없었습니다.</b> 원인은 프로젝트 설정의 <code>enableFrameTimingStats: 0</code>이었습니다.</dd></div>
+          <div><dt>과정</dt><dd>자를 먼저 만들고(→ 06) 순위를 하나씩 실측했습니다. 1순위 GPU Resident Drawer는 켜자 <span class="up">cpuMain +16.7 %</span> 회귀였고, 처음 보인 "GPU −70.8 % 개선"은 BRG 셰이더 스트리핑이 <b>화면을 통째로 비운</b> 결과였습니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>1순위 <b>적용 불가</b> · 3순위 이미 충족 · 아무도 기대하지 않던 최하위 7순위(섀도우 캐스케이드 4→2)가 gpu p95 <span class="down">−6.3 %</span> · 섀도우 캐스터 <span class="down">−37~39 %</span>로 <b>유일한 채택</b>. 예산 문서 §7을 실측 기준으로 개정</dd></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="case-h"><span class="i">05</span><h3>−25.6 %를 −6.3 %로 정정 — 대조군을 세웠기 때문에</h3></div>
+        <div class="case-b">
+          <div><dt>신호</dt><dd>캐스케이드 4→2를 적용하고 기준선과 비교하니 gpu p95 <span class="num">−25.6 %</span>가 나왔습니다. 실험 단계에서 본 −7.5 %의 3배가 넘는 값이고, <b>그대로 커밋 메시지와 문서에 박아도 아무도 몰랐을</b> 숫자였습니다.</dd></div>
+          <div><dt>의심</dt><dd>너무 좋아서 의심했습니다. 기준선은 <b>다른 날 다른 빌드</b>로 잰 값이라는 것이 문제였습니다. 같은 코드에서 캐스케이드만 4로 되돌린 빌드를 다시 구워 대조군을 세우고 같은 세션에서 연달아 쟀습니다.</dd></div>
+          <div class="out"><dt>결과</dt><dd>기준선 대비 −25.6 %(낮)·−25.0 %(밤) → <b>대조군 대비 −6.3 % · −6.6 %</b>. 차이 약 20 %는 시간대·GPU 클럭·빌드 차이였습니다 — 대조군을 안 세웠으면 <b>4배 부풀린 수치</b>를 남겼습니다</dd></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards c2" style="margin-top:1.2rem">
+      <div class="card" style="background:var(--deep); color:#fff; border:0">
+        <div class="tag" style="color:#7FD6CB">FIRST RELIABLE BASELINE</div>
+        <h3 style="color:#fff; font-family:var(--f-display); font-weight:400; font-size:1.9rem">1.24 ms</h3>
+        <p style="color:var(--deep-ink)">gpu <b style="color:#F0A97A">1.02</b> &gt; cpuMain 0.86 &gt; cpuRender 0.40 ms — 병목을 GPU로 확정했습니다. 반복 편차 0.7~0.8 %(60초 × 3회)라 5 % 회귀를 가릴 수 있는 해상도를 함께 확보했습니다.</p>
+        <p style="color:#97A6B4; font-size:0.78rem; font-family:var(--f-mono)">RTX 4060 Ti · Ryzen 5 7500F · 1920×1080 · Windows 11</p>
+      </div>
+      <div class="card">
+        <div class="tag">측정 도구가 거짓말한 다섯 번</div>
+        <h3>이상하게 좋은 수치는 성과가 아니라 검증 신호였습니다</h3>
+        <p>① Unity 6에 <code>Draw Calls Count</code> 카운터가 없는데 <code>ProfilerRecorder</code>가 <b>예외 대신 0</b>을 준다 ② "GPU −70.8 %"는 화면이 비어 있던 것 ③ 시나리오가 소유한 해상도를 명령행으로 덮었다고 믿을 뻔했다 ④ 도구가 노이즈 위에서 "회귀 2건"이라 단정했다 ⑤ 설정만 바꾸고 재빌드를 빠뜨렸다.</p>
+        <span class="res">다섯 건 전부 <b>코드나 절차로 봉인</b> — ②를 못 잡았으면 화면이 비는 설정을 "최대 개선"으로 채택했을 것이고, ④를 못 잡았으면 존재하지 않는 회귀를 쫓았을 것입니다</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 06 툴·자동화 ══ -->
+  <section id="tool" class="page-break">
+    <div class="sec-head">
+      <div class="sec-num">06 / TOOLING &amp; AUTOMATION</div>
+      <h2>사람이 기억하던 판단을 게이트와 도구로 옮겼습니다</h2>
+      <p>자동화 14건은 전부 <b>이미 겪은 사고</b>에서 나왔습니다. "있으면 좋아서" 만든 것은 없고, 반복될 비용이 수동 판정보다 클 때만 만들었습니다.</p>
+      <span class="tie">공고 · 개발 생산성 향상을 위한 툴 제작 및 자동화 업무 지원</span>
+    </div>
+
+    <div class="figures" style="margin-bottom:1px">
+      <div><div class="n">14</div><div class="l">자동화 · 도구</div></div>
+      <div><div class="n">12</div><div class="l">에디터 스크립트</div></div>
+      <div><div class="n">958<em>줄</em></div><div class="l">판정 도구 (node)</div></div>
+      <div><div class="n">9:54</div><div class="l">CI 벽시계 (17:38에서)</div></div>
+      <div><div class="n">5<em>%</em></div><div class="l">성능 회귀 임계</div></div>
+    </div>
+
+    <div class="cards c3" style="margin-top:1.2rem">
+      <div class="card">
+        <div class="tag">게이트 · CI</div>
+        <h3>꺼진 게이트를 먼저 살렸다</h3>
+        <p>워크플로 도입 후 <b>55회 실행 55회 실패</b>. 활성화 전략이 요구하는 시크릿 3종을 규명해 복구하고, "프로젝트가 CI와 안 맞는다"는 의심 <b>9가지를 하나씩 실측으로 배제</b>해 근거와 함께 남겼습니다.</p>
+        <span class="res">작동하지 않는 자동화는 없는 것보다 나쁩니다 — <b>있다고 착각하게</b> 만들기 때문입니다</span>
+      </div>
+      <div class="card">
+        <div class="tag">게이트 · 성능</div>
+        <h3>회귀 판정을 종료 코드 하나로</h3>
+        <p>판정 규칙의 출처를 <code>gates.js</code> 한 파일로 모으고 비교기·리포터가 공유하게 했습니다. 임계는 짐작이 아니라 <b>실측 노이즈(0.7~0.8 %)의 6~7배</b>인 5 %로 유도했습니다.</p>
+        <span class="res">종료 코드 <b>0 / 1 / 2</b>(통과·회귀·비교 불가) · 반복 편차가 임계를 넘으면 <b>판정 자체를 무효</b>로 돌립니다</span>
+      </div>
+      <div class="card">
+        <div class="tag">시점 이동 · 임포트</div>
+        <h3>반복 보정을 임포트 시점으로</h3>
+        <p>LOD 승격과 지면 피벗 보정을 <code>AssetPostprocessor</code>로 옮겼습니다. 피벗은 축을 손으로 고르지 않고 <code>InverseTransformVector</code>로 월드 +Y를 각 메시 로컬로 환산합니다(루트가 scale 100 · rotX 270.02°).</p>
+        <span class="res">화면에 그려지는 삼각형 <b>1,183,649 → 698,531 (−41.0 %)</b> · 원본 FBX·guid·머티리얼 무수정 · 드로우콜·SetPass·섀도우 캐스터 변화 0</span>
+      </div>
+      <div class="card">
+        <div class="tag">시점 이동 · 자동 주행</div>
+        <h3>빌드가 스스로 주행해 프레임을 잰다</h3>
+        <p>측정을 3층으로 나눴습니다 — 수집기 <code>Core</code>, 주행기 <code>Systems</code>, 판정 <code>node</code>. <code>-perfrun</code>을 주면 게임이 스스로 인게임까지 들어가 60초(낮/밤 정확히 한 사이클)를 달립니다.</p>
+        <span class="res">시나리오 에셋이 <b>해상도까지 소유</b>해서 명령행으로 덮으려 하면 무시하고 경고를 찍습니다 — 반복 편차 <b>0.8 %</b> 확보</span>
+      </div>
+      <div class="card">
+        <div class="tag">가시성 · 에셋 검수</div>
+        <h3>에셋을 한 점씩 세워 예산을 재는 방</h3>
+        <p><code>Renderer.forceMeshLod</code>로 단계를 강제 전환해 <b>같은 자리에서 눈으로 비교</b>하게 했습니다. 예산 위반은 <code>NO_LOD</code>·<code>MATERIAL_SPLIT</code> 같은 진단 코드로 뜹니다.</p>
+        <span class="res">만들자마자 침엽수 LOD2의 <b>잎 껍질 관통</b>을 잡았습니다 — 자동 감축이 형상에 따라 <b>26~43 %</b>로 다르게 실패한다는 것을 규명 (751줄)</span>
+      </div>
+      <div class="card">
+        <div class="tag">가시성 · 에디터 툴</div>
+        <h3>플레이를 멈추지 않고 자세를 잡아 프리팹에 저장</h3>
+        <p>전용 씬에서 <b>플레이 중에 씬 뷰 핸들로</b> 무기 피벗의 위치·회전·스케일을 잡고 결과를 <code>PrefabUtility</code>로 <code>Player.prefab</code>에 바로 기록합니다. 애니메이션 6종과 시점 피치를 같은 화면에서 함께 돌립니다.</p>
+        <span class="res">값 하나를 고치는 주기가 "수정 → 플레이 → 종료" 3단계에서 <b>플레이 중 드래그 1회</b>로 (987줄)</span>
+      </div>
+    </div>
+
+    <div class="shots" style="margin-top:1.2rem">
+      <div class="shot">
+        <img src="assets/nx-viewlab.jpg" alt="ViewLab — 무기 파지 자세를 플레이 중 씬 뷰 핸들로 조정하는 에디터 도구">
+        <div class="cap"><b>ViewLab</b>무기 피벗을 플레이 중 조정하고, 애니메이션 6종과 시점 피치를 함께 확인해 모든 상태에서 자세가 유지되는지 봅니다. 순수 계산은 <code>ViewLabMath</code>로 분리해 EditMode 테스트에 고정했습니다.</div>
+      </div>
+      <div class="shot">
+        <img src="assets/qa-keyboard-map.svg" alt="QA 디버그 키 20종 배치도 — 숫자패드 물리 행에 기능 그룹을 맞춘 배치">
+        <div class="cap"><b>QA 디버그 키 20종</b>한 행이 한 그룹(몬스터·보스 / 편성·건축 / 자원·피해 / 사이클)이라 손이 행을 기억합니다. 이 그림은 키 정의 배열에서 생성한 것이라, 키가 바뀌어도 문서가 어긋나지 않습니다.</div>
+      </div>
+    </div>
+
+    <div class="kicker">
+      <b>짓지 않기로 한 것도 함께 기록합니다.</b> 현업 자동화 16종과 대조했을 때 비어 있는 칸의 절반은 채우면 안 되는 칸이었습니다 — <code>.meta</code>/GUID 검사기는 전수 스캔에서 잡을 것이 0건(파일 2,685 · <code>.meta</code> 1,379 양방향 대조, 누락·고아·중복 전부 0)이라 짓지 않고, <b>다시 여는 조건</b>을 적어 뒀습니다. 자동화는 있으면 좋은 것을 모으는 일이 아니라 <b>무엇을 막을지 고르는 일</b>이라고 봅니다.
+    </div>
+  </section>
+
+  <!-- ══ 07 네트워크 ══ -->
+  <section id="net">
+    <div class="sec-head">
+      <div class="sec-num">07 / NETWORK</div>
+      <h2>권위를 나누고, 복제할 것을 줄이고, 반응성을 숫자로 통과시켰습니다</h2>
+      <p>Netcode for GameObjects + Steam Sockets 위에서 호스트 권위(P2P)로 설계했습니다. 전용 서버를 쓰지 않기로 한 판단과 그 대가까지 결정서에 남겼습니다.</p>
+      <span class="tie">공고 · 네트워크·소켓 프로그래밍, 멀티스레드 환경에 대한 이해 또는 프로젝트 경험</span>
+    </div>
+
+    <div class="tbl-scroll">
+    <table class="tbl">
+      <thead><tr><th>상태 / 판정</th><th>권위</th><th>근거</th></tr></thead>
+      <tbody>
+        <tr><td class="k">자기 캐릭터 이동 · 시점</td><td>각 클라이언트</td><td>지연 0. 예측·보정 코드가 필요 없어집니다</td></tr>
+        <tr><td class="k">사격 명중 판정</td><td>쏜 클라이언트</td><td>로컬 레이캐스트로 판정한 뒤 호스트에 보고 — 판정과 확정을 분리</td></tr>
+        <tr><td class="k">데미지 적용 · 사망 확정</td><td>호스트</td><td>명중 보고를 받아 거리·펠릿 상한을 재검증한 뒤 확정</td></tr>
+        <tr><td class="k">개인 인벤토리 증감</td><td>호스트</td><td>개인 소유물이라도 복제(dupe) 방지를 위해 호스트가 확정</td></tr>
+        <tr><td class="k">열차 상태 · 연쇄 이탈</td><td>호스트</td><td>원자적 상태 변화로 전파. 재접속 복원의 원천</td></tr>
+        <tr><td class="k">월드 스크롤 속도</td><td>호스트</td><td><code>NetworkVariable</code> 단 하나 — 연료 감속·추격·최종 가속의 유일한 제어 값</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="cards c2" style="margin-top:1.2rem">
+      <div class="card">
+        <div class="tag">합격 기준을 구현 전에</div>
+        <h3>지연을 주입해 100회 이상 실측했습니다</h3>
+        <p>"지연이 있어도 집게 손맛이 괜찮은가"는 느낌으로만 오가던 문제였습니다. 그래서 지표 5개와 목표치를 <b>구현 전에 스펙에 못박고</b>, RTT 0/60/120 ms 프로파일을 클라이언트에만 자동 주입하는 드라이버와 계측 허브를 만들었습니다.</p>
+        <span class="res">
+          Q1 입력 → 로컬 연출 <b>Δ0 프레임</b><br>
+          Q2 명중 → 견인 시작 <b>평균 67~72 ms</b> (범위 57~85 · 목표 250)<br>
+          Q3 워프 / 역행 <b>0</b> · Q4 <b>101발사 중 거부 0 = 불일치율 0 %</b>
+        </span>
+      </div>
+      <div class="card">
+        <div class="tag">지표 정의도 한 번 고쳤습니다</div>
+        <h3>달성 불가능한 기준은 지표가 아니라 잡음입니다</h3>
+        <p>Q2의 시작점을 처음에는 <b>발사 입력</b>으로 잡았는데, 투사체 비행 시간이 거리에 종속(20 m = 0.5 s)이라 원거리에서는 어떻게 해도 250 ms를 넘습니다. 시작점을 <b>로컬 명중 판정</b>으로 옮기고 입력 즉시성은 Q1이 따로 담당하게 나눴습니다.</p>
+        <p>계측 자체도 검사 대상입니다 — 워프·역행을 세는 분석기를 <b>EditMode 테스트 10개</b>로 고정했습니다. 재는 쪽이 틀리면 위의 판단이 전부 함께 틀리기 때문입니다.</p>
+        <span class="res">"규칙상 거부(집게 등급 부족)는 Q4 불일치에 세지 않는다"까지 <b>별도 검증 항목</b>으로 — 세면 숫자만 나빠지고 실제 품질은 그대로입니다</span>
+      </div>
+      <div class="card">
+        <div class="tag">대역폭</div>
+        <h3>눈이 머무는 곳에 몰아줬습니다</h3>
+        <p>동기화 주기를 대상별로 계층화했습니다 — 평시 몬스터는 <b>12 Hz</b>, 집게로 끌려오는 대상만 <b>30 Hz</b>. 수신 측은 스냅샷 버퍼로 보간해 그리고, 판정은 서버 값을 그대로 씁니다.</p>
+        <span class="res">동시 견인은 최대 4개(플레이어 수)로 상한이 있어 <b>총 대역폭 증가 없이</b> 체감 반응성 확보</span>
+      </div>
+      <div class="card">
+        <div class="tag">풀링을 네트워크 스폰 안까지</div>
+        <h3>조용히 새는 결함은 등록 시점에 죽게 만들었습니다</h3>
+        <p>NGO의 <code>INetworkPrefabInstanceHandler</code>를 구현해 네트워크 스폰/디스폰을 풀로 라우팅했습니다. 다만 두 조건(<code>Despawn(destroy: true)</code>, <code>AutoObjectParentSync</code> 해제)이 맞지 않으면 <b>런타임에 조용히 누수</b>합니다.</p>
+        <span class="res">핸들러 생성자에서 두 설정을 검사해 <b>즉시 예외</b>를 던지게 했습니다 — 잘못 설정한 프리팹은 등록 시점에 죽습니다</span>
+      </div>
+    </div>
+
+    <p class="note">
+      <b>전용 서버를 쓰지 않기로 한 근거</b> — 1~4인 협동 PvE이고 PvP가 없습니다. 전용 서버가 존재하는 이유는 대개 치팅 방지와 대규모 동시 접속인데 둘 다 이 게임에는 없습니다.
+      결정서에는 기각한 대안(Photon Fusion 2)과 그 이유, 밤 웨이브 대역폭 같은 리스크와 완화책, 그리고 <b>재검토 조건</b>("콘솔 등으로 확장해 Steam 비종속 릴레이가 필요해질 때")까지 함께 적었습니다.
+      이 결정 하나가 클라이언트 예측·랙 보상 시스템을 통째로 없앴습니다.
+    </p>
+  </section>
+
+  <!-- ══ 08 생성형 AI ══ -->
+  <section id="ai" class="page-break">
+    <div class="sec-head">
+      <div class="sec-num">08 / AI-ASSISTED ENGINEERING</div>
+      <h2>답을 받는 것보다, 검증 가능한 질문을 만드는 데 집중했습니다</h2>
+      <p>생성형 AI로 속도는 쉽게 얻지만 품질은 검증 기준이 정합니다. 그래서 제약을 저장소에 고정하고, 완료 조건을 검사 가능한 문장으로 적고, 결과를 코드·테스트·실측으로 판정하는 순서를 씁니다.</p>
+      <span class="tie">공고 · 생성형 AI 도구를 활용해 코드를 작성·검증할 수 있는 분</span>
+    </div>
+
+    <div class="flow">
+      <div><div class="s">01 · CONTEXT</div><h4>제약을 먼저 준다</h4><p>Unity 6의 C# 9.0 한계, 어셈블리 의존 방향, 풀링·이벤트·서비스 규칙을 저장소의 규약 문서로 고정해 작업 컨텍스트에 싣습니다.</p></div>
+      <div><div class="s">02 · PROPOSE</div><h4>문제를 쪼개 제안받는다</h4><p>기능 단위가 아니라 판단 단위로 나눕니다 — 무엇이 원천이고, 무엇을 복제하고, 무엇을 순수 함수로 뺄지.</p></div>
+      <div><div class="s">03 · VERIFY</div><h4>직접 판정한다</h4><p>컴파일·테스트 통과 뒤에도 플레이 계측과 <b>대조군</b>으로 채택 여부를 정합니다. 수치가 이상하게 좋으면 수치보다 화면을 먼저 봅니다.</p></div>
+      <div><div class="s">04 · RECORD</div><h4>기각도 근거와 함께</h4><p>채택한 것만 남기면 다음에 같은 후보가 다시 올라옵니다. 되돌린 구현과 그 이유를 계획서에 남깁니다.</p></div>
+    </div>
+
+    <div class="cards c3" style="margin-top:1.2rem">
+      <div class="card">
+        <div class="tag">완료 조건을 검사 가능하게</div>
+        <h3>"SOLID를 지켰다"는 확인할 방법이 없는 문장입니다</h3>
+        <p>그래서 계획서마다 <b>아키텍처 마감 게이트</b>를 두고 원칙마다 검사 방법을 함께 적었습니다 — "신규 <code>NetworkVariable</code>·RPC 0건(diff에서 grep)", "무기 컨트롤러 구체 타입 참조 0건", "모델명 분기 0건", "TODO 0건".</p>
+        <span class="res">차수를 닫을 때 게이트별 통과·미달을 표로 남기고 <b>미달이면 계획서를 닫지 않습니다</b></span>
+      </div>
+      <div class="card">
+        <div class="tag">되돌린 사례</div>
+        <h3>효과가 확인되지 않은 복잡도는 남기지 않습니다</h3>
+        <p>집게 견인의 순간이동을 고칠 때 <b>두 처방을 함께 구현</b>했습니다. 주범(RTT 간극)이 예측 고정으로 사라진 뒤 블라인드 교차 플레이에서 잔여 체감이 보고되지 않아, 나머지 하나(부착점 오프셋 유지)는 <b>롤백했습니다</b>.</p>
+        <span class="res">"간극을 버퍼로 덮는 대신 <b>간극 자체를 없애는 쪽</b>" — 표시를 늦춰 매끄럽게 만드는 처방은 반응성을 판 대가입니다</span>
+      </div>
+      <div class="card">
+        <div class="tag">생성 에셋도 같은 방식</div>
+        <h3>판정을 반입 전에 끝냈습니다</h3>
+        <p>ChatGPT 이미지 → Tripo·Meshy → Blender → Unity 파이프라인에서, 치수·tris·영문 지시까지 명시한 <b>생성 지시 시트 74종</b>을 먼저 쓰고 반입 뒤에는 축·피벗·tris·LOD를 다시 실측했습니다. 무기 3종은 <code>rotation_euler</code>가 0인데도 메시가 <b>13.2° · 30.1° · 15.0°</b> 기울어 있었습니다.</p>
+        <span class="res">반려 에셋 <b>0건</b> — 에셋이 완벽해서가 아니라 판정 기준을 <b>반입 전에</b> 확정했기 때문입니다</span>
+      </div>
+    </div>
+
+    <div class="kicker">
+      제 역할은 답을 받아 붙이는 것이 아니라 <b>제약을 주고, 완료 조건을 수치로 적고, 결과를 판정하는 것</b>이라고 봅니다.
+      실제로 이 프로젝트에서 가장 큰 성능 성과(<span class="down">−41.0 %</span>)와 가장 큰 오판 방지(화면이 빈 설정을 "최대 개선"으로 채택할 뻔한 건)는 둘 다 <b>도구의 출력을 그대로 믿지 않은 지점</b>에서 나왔습니다.
+    </div>
+  </section>
+
+  <!-- ══ 09 읽히는 코드 ══ -->
+  <section id="read">
+    <div class="sec-head">
+      <div class="sec-num">09 / READABLE BY OTHERS</div>
+      <h2>규칙을 부탁하지 않고, 어길 수 없게 만들었습니다</h2>
+      <p>문서 규약만으로는 실수를 막기 어렵다고 판단해, 지켜야 할 것을 가능한 한 컴파일 에러·타입·게이트로 옮겼습니다.</p>
+      <span class="tie">공고 · 객체지향 이해 · 읽기 쉬운 코드 · Git 등 협업 도구 활용</span>
+    </div>
+
+    <div class="cards c2">
+      <div class="card">
+        <div class="tag">OOP · 의존 방향</div>
+        <h3>역참조를 규칙 위반이 아니라 컴파일 에러로</h3>
+        <p>계층마다 어셈블리를 갈라 <code>asmdef</code>의 참조를 <b>한 방향으로만</b> 열었습니다.</p>
+        <div class="pills">
+          <span class="pill on">Utilities</span><span class="arw">←</span>
+          <span class="pill on">Core</span><span class="arw">←</span>
+          <span class="pill on">Systems</span><span class="arw">←</span>
+          <span class="pill on">Gameplay</span><span class="arw">←</span>
+          <span class="pill on">UI</span>
+        </div>
+        <span class="res">대기실 이름 짓기 로직은 처음에 UI 계층에 둘 계획이었지만, <b>이름을 확정하는 주체는 호스트</b>라 Systems로 옮겼습니다 — Systems가 UI를 참조할 수 없어 <b>계층 판단이 컴파일 단계에서 검증</b>됩니다. 어셈블리 8개(런타임 5 · 에디터 1 · 테스트 2)</span>
+      </div>
+      <div class="card">
+        <div class="tag">OOP · 캡슐화</div>
+        <h3>읽기 계약과 변이 API를 타입으로 가른다</h3>
+        <p>열차 편성 상태는 HUD·칸 표현·몬스터·건축·연료가 전부 들여다보는 중심 데이터입니다. 아무나 접근할 수 있으면 어느 날 UI 코드가 <b>표시하려고 읽다가 슬쩍 고치는</b> 일이 생깁니다.</p>
+        <p>인터페이스에는 조회만 넣고 변이는 <code>ServerXxx</code> 메서드로 인터페이스 밖에 뒀습니다. 소비자는 <code>ServiceLocator</code>에서 <code>ITrainState</code>로 받으므로 <b>변이 API에 의존하는 것 자체가 불가능</b>합니다.</p>
+        <span class="res">인터페이스는 단순 게터가 아니라 <b>"소비자가 실제로 묻는 질문"</b>으로 설계했습니다 — <code>TryGetCarAtZ</code>(이 지점은 어느 칸 위인가)처럼. 각자 편성을 순회하면 이탈 오프셋 반영을 빠뜨리는 곳이 반드시 생기기 때문입니다</span>
+      </div>
+      <div class="card">
+        <div class="tag">Git · 협업 도구</div>
+        <h3>커밋 902회를 규약과 게이트 위에서</h3>
+        <p>커밋 컨벤션(type·scope·Unity 전용 규칙)을 문서로 고정하고, Git LFS와 Unity YAML 머지 드라이버를 설정했습니다. 커밋 훅은 <b>워킹트리가 아니라 스테이징된 내용</b>을 검사합니다.</p>
+        <span class="res">폰트 아틀라스 캐시가 저장소 이력 <b>47 MB</b>를 먹던 것을 훅으로 차단 — 파일 <b>4.1 MB → 8 KB</b>, diff가 아예 생기지 않습니다. "CI는 커밋이 된 뒤에 돈다"는 것이 훅을 만든 이유입니다</span>
+      </div>
+      <div class="card">
+        <div class="tag">문서 · 인수인계</div>
+        <h3>계획 / as-built 명세 / 규약을 나눴습니다</h3>
+        <p>차수마다 <b>구현 계획서</b>에서 범위·비범위·완료 기준을 먼저 정하고, 끝난 뒤 결과를 <b>as-built 명세</b>로 옮겨 계획 문서와 현재 상태를 분리했습니다. 문서 <b>127편</b>이 저장소에 있습니다.</p>
+        <span class="res">결함뿐 아니라 <b>버그가 아닌 것으로 판정한 근거</b>와 준비 비용 때문에 보류한 항목도 함께 기록합니다 — 미검 항목은 번호를 유지한 채 이월해 <b>반복 지연이 드러나게</b> 했습니다</span>
+      </div>
+    </div>
+
+    <p class="note">
+      1인 개발이지만 <b>다음에 읽을 사람이 있다는 전제</b>로 만들었습니다. 저장소는 공개돼 있고 코드·설계 문서·CI 실행 로그·플레이 검증 기록을 전부 열람할 수 있습니다.
+    </p>
+  </section>
+
+  <!-- ══ 맺음 ══ -->
+  <div class="closing">
+    <h2>코드를 읽고, 재고, 고치며,<br>다음 사람이 확인할 수 있는 기준으로 남기겠습니다</h2>
+    <p>
+      이 프로젝트에서 가장 많이 배운 것은 기능을 만드는 방법이 아니라, <b>내가 만든 것이 정말 좋아졌는지 판정하는 방법</b>이었습니다.
+      측정하지 않으면 문서에 적힌 1순위가 사실은 적용하면 안 되는 항목일 수 있고, 대조군을 세우지 않으면 −6.3 %를 −25.6 %로 남기게 됩니다.
+    </p>
+    <p>
+      넥슨의 게임과 플랫폼에서도 같은 방식으로 일하고 싶습니다 — 남의 코드를 먼저 읽고, 증상과 원인 사이의 거리를 좁히고,
+      반복될 판단은 사람이 아니라 도구가 하게 옮기는 방식으로.
+    </p>
+    <div class="links">
+      <a href="https://github.com/hanwoolhanwool/Train-Survival">GitHub · Train-Survival</a>
+      <a href="https://hanwoolhanwool.github.io/Train-Survival/">전체 포트폴리오</a>
+      <a href="https://hanwoolhanwool.github.io/Train-Survival/performance.html">성능 · 검증 사례집</a>
+      <a href="https://hanwoolhanwool.github.io/Train-Survival/automation.html">자동화 설비 14건</a>
+    </div>
+  </div>
+
+  <footer>
+    이한울 · Train Survival (2026.07.17 착수 — 진행 중) · Unity 6 (6000.5.3f1) / URP 17.5 / Netcode for GameObjects / C# · PC(Steam) 협동 생존 크래프팅 · 1인 개발<br>
+    문서 기준일 2026-09-07. 코드·커밋·테스트 수치는 저장소 직접 집계, 성능 수치는 빌드 자동 주행 벤치 실측, CI 수치는 GitHub Actions 실행 이력에서 확인한 값입니다.
+  </footer>
+
+</div>
+</body>
+</html>
