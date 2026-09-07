@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Train Survival 게임 클라이언트 개발 포트폴리오 — 설계, QA, 자동화, 에디터 도구를 핵심 근거와 수치로 정리했습니다.">
+  <meta name="theme-color" content="#091016">
+  <title>Train Survival · Game Client Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    :root {
+      --bg: #091016;
+      --bg-soft: #0e171f;
+      --surface: #121e27;
+      --surface-2: #172630;
+      --line: #2c3c46;
+      --line-bright: #49606d;
+      --ink: #f3eee3;
+      --ink-2: #c7d0d3;
+      --ink-3: #8fa0a7;
+      --amber: #f2a93b;
+      --amber-soft: #ffd28d;
+      --cyan: #61d6d0;
+      --green: #78d59c;
+      --red: #ff7c6f;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .34);
+      --display: "Song Myung", serif;
+      --sans: "IBM Plex Sans KR", sans-serif;
+      --mono: "IBM Plex Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-snap-type: y proximity; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 88% 8%, rgba(97, 214, 208, .08), transparent 31rem),
+        radial-gradient(circle at 8% 46%, rgba(242, 169, 59, .06), transparent 27rem),
+        var(--bg);
+      font: 400 1rem/1.72 var(--sans);
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+    a { color: inherit; text-decoration-color: rgba(242, 169, 59, .6); text-underline-offset: .2em; }
+    a:hover { color: var(--amber-soft); }
+    img { display: block; max-width: 100%; }
+    h1, h2, h3, p, figure, dl { margin-top: 0; }
+    h1, h2, h3 { text-wrap: balance; }
+    code { font-family: var(--mono); color: var(--amber-soft); font-size: .92em; }
+    strong, b { font-weight: 650; color: #fff; }
+
+    .wrap { width: min(1220px, calc(100% - 48px)); margin: 0 auto; }
+    .eyebrow {
+      margin-bottom: 1rem;
+      color: var(--amber);
+      font: 600 .76rem/1.5 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .section-kicker {
+      margin: 0 0 .55rem;
+      color: var(--cyan);
+      font: 600 .74rem/1.5 var(--mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .story-head { display: grid; grid-template-columns: 1fr minmax(260px, 430px); gap: 2rem; align-items: end; margin-bottom: 2.2rem; }
+    .story-head h2 { margin: 0; font: 400 clamp(2.35rem, 5vw, 4.9rem)/.98 var(--display); letter-spacing: -.04em; }
+    .story-head p { margin: 0; color: var(--ink-2); font-size: 1.02rem; }
+    .intent { border-left: 3px solid var(--amber); padding-left: 1rem; }
+    .intent b { display: block; margin-bottom: .2rem; color: var(--amber-soft); font: 600 .76rem/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+
+    .masthead { padding: clamp(5rem, 10vw, 9rem) 0 4.5rem; }
+    .masthead h1 { margin-bottom: 1rem; font: 400 clamp(4rem, 10vw, 8.8rem)/.88 var(--display); letter-spacing: -.06em; }
+    .subtitle { max-width: 800px; margin-bottom: 2rem; color: var(--ink-2); font-size: clamp(1.08rem, 2vw, 1.35rem); }
+    .repo-brief {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 1rem;
+      max-width: 900px;
+      padding: 1.15rem 1.25rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--line);
+      background: rgba(18, 30, 39, .78);
+    }
+    .repo-brief p { margin: 0; color: var(--ink-2); }
+    .repo-k { color: var(--amber-soft); font: 600 .78rem/1.6 var(--mono); }
+    .factgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0 0 2rem; border: 1px solid var(--line); background: var(--line); }
+    .fact { min-height: 98px; padding: 1.05rem 1.15rem; background: var(--surface); }
+    .fact dt { margin-bottom: .35rem; color: var(--ink-3); font: 500 .72rem/1.4 var(--mono); letter-spacing: .08em; }
+    .fact dd { margin: 0; color: var(--ink); font-weight: 500; }
+    .shot { margin: 0; border: 1px solid var(--line); background: #05090c; box-shadow: var(--shadow); }
+    .shot img { width: 100%; }
+    .shot figcaption { padding: .7rem .85rem; color: var(--ink-3); font-size: .86rem; }
+    .video-embed { position: relative; aspect-ratio: 16/9; }
+    .video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .masthead .shot + .shot { margin-top: 1.25rem; }
+
+    .core-page { padding: 5rem 0 6rem; scroll-snap-align: start; }
+    .loop { padding: clamp(1.5rem, 4vw, 3.2rem); border: 1px solid var(--line-bright); background: linear-gradient(145deg, rgba(23, 38, 48, .95), rgba(10, 19, 25, .96)); box-shadow: var(--shadow); }
+    .loop h2 { margin-bottom: .65rem; font: 400 clamp(2.5rem, 5vw, 4rem)/1 var(--display); }
+    .loop > p { max-width: 850px; color: var(--ink-2); }
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 2rem 0; background: var(--line); border: 1px solid var(--line); }
+    .step { position: relative; min-height: 220px; padding: 1.25rem; background: var(--surface); }
+    .step::after { content: "→"; position: absolute; z-index: 2; top: 42%; right: -.85rem; color: var(--amber); font: 600 1.5rem var(--mono); }
+    .step:last-child::after { display: none; }
+    .step .k { display: block; margin-bottom: 2.2rem; color: var(--amber); font: 600 .78rem var(--mono); }
+    .step .t { display: block; margin-bottom: .7rem; color: #fff; font-weight: 650; font-size: 1.12rem; }
+    .step .d { display: block; color: var(--ink-3); font-size: .93rem; line-height: 1.62; }
+    .loop-note { margin: 0 !important; padding-top: 1.2rem; border-top: 1px solid var(--line); }
+    .shots-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.25rem; }
+
+    .section-nav {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      display: flex;
+      justify-content: center;
+      gap: .35rem;
+      padding: .7rem 1rem;
+      border-block: 1px solid rgba(73, 96, 109, .7);
+      background: rgba(9, 16, 22, .88);
+      backdrop-filter: blur(18px);
+    }
+    .section-nav a { padding: .45rem .75rem; border: 1px solid transparent; color: var(--ink-3); font: 500 .78rem var(--mono); text-decoration: none; }
+    .section-nav a:hover, .section-nav a[aria-current="true"] { border-color: var(--line-bright); color: var(--ink); background: var(--surface); }
+
+    .story-page {
+      min-height: calc(100svh - 54px);
+      padding: clamp(4rem, 7vh, 6.5rem) 0;
+      display: grid;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      scroll-snap-align: start;
+      scroll-margin-top: 54px;
+    }
+    .story-page:nth-of-type(even) { background: linear-gradient(90deg, rgba(18, 30, 39, .22), transparent 45%); }
+
+    .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .decision {
+      position: relative;
+      min-height: 245px;
+      padding: 1.45rem;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(23, 38, 48, .95), rgba(14, 23, 31, .95));
+    }
+    .decision .no { position: absolute; top: 1.25rem; right: 1.35rem; color: var(--line-bright); font: 600 2.2rem/1 var(--mono); }
+    .decision h3 { max-width: 78%; margin-bottom: 1rem; font-size: 1.25rem; line-height: 1.35; }
+    .decision dl { display: grid; grid-template-columns: 62px 1fr; gap: .55rem .8rem; margin: 0; }
+    .decision dt { color: var(--amber); font: 600 .74rem/1.55 var(--mono); }
+    .decision dd { margin: 0; color: var(--ink-2); font-size: .94rem; line-height: 1.58; }
+    .decision .metric { margin-top: 1rem; padding-top: .85rem; border-top: 1px solid var(--line); color: var(--green); font: 600 .83rem var(--mono); }
+    .architecture-rail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; margin-bottom: 1rem; }
+    .architecture-rail span { position: relative; padding: .62rem .4rem; border: 1px solid var(--line-bright); text-align: center; color: var(--ink-2); font: 500 .72rem var(--mono); }
+    .architecture-rail span:not(:last-child)::after { content: "←"; position: absolute; right: -16px; color: var(--amber); }
+
+    .qa-layout { display: grid; grid-template-columns: 1.14fr .86fr; gap: 1rem; }
+    .panel { padding: 1.35rem; border: 1px solid var(--line); background: rgba(18, 30, 39, .9); }
+    .panel h3 { margin-bottom: .45rem; font-size: 1.25rem; }
+    .panel > p { color: var(--ink-2); }
+    .keyboard-map { margin-top: 1rem; padding: .7rem; background: #edf2f3; border: 1px solid var(--line-bright); }
+    .keyboard-map img { width: 100%; max-height: 360px; object-fit: contain; }
+    .qa-points { display: grid; gap: .7rem; margin-top: 1rem; }
+    .qa-point { display: grid; grid-template-columns: 46px 1fr; gap: .8rem; padding: .8rem; border: 1px solid var(--line); background: var(--bg-soft); }
+    .qa-point .num { color: var(--amber); font: 600 1rem var(--mono); }
+    .qa-point p { margin: 0; color: var(--ink-2); font-size: .92rem; line-height: 1.55; }
+    .zero-cost { display: flex; align-items: baseline; gap: .8rem; padding: 1rem; margin-top: 1rem; border-left: 3px solid var(--green); background: rgba(120, 213, 156, .06); }
+    .zero-cost strong { color: var(--green); font: 600 2.2rem/1 var(--mono); }
+    .zero-cost span { color: var(--ink-2); font-size: .9rem; }
+    .qa-flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.2rem; margin-top: 1rem; }
+    .qa-flow span { position: relative; padding: .8rem .6rem; border: 1px solid var(--line); color: var(--ink-2); text-align: center; font-size: .86rem; }
+    .qa-flow span:not(:last-child)::after { content: "→"; position: absolute; right: -1rem; color: var(--amber); }
+
+    .automation-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .automation-card { min-height: 365px; padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; }
+    .automation-card .label { margin-bottom: 1.4rem; color: var(--cyan); font: 600 .72rem var(--mono); }
+    .automation-card h3 { margin-bottom: .8rem; font-size: 1.13rem; }
+    .automation-card p { margin-bottom: 0; color: var(--ink-2); font-size: .91rem; line-height: 1.58; }
+    .automation-card .big { margin-top: auto; padding-top: 1rem; color: var(--amber); font: 600 clamp(2.2rem, 4vw, 3.6rem)/1 var(--mono); letter-spacing: -.06em; }
+    .automation-card .measure { margin-top: .45rem; color: var(--ink-3); font: 500 .72rem/1.5 var(--mono); }
+    .automation-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1rem; color: var(--ink-3); font-size: .84rem; }
+
+    .lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .lab { overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+    .lab-visual { position: relative; aspect-ratio: 16/8.8; overflow: hidden; background: #18252d; }
+    .lab-visual img { width: 100%; height: 100%; object-fit: cover; }
+    .lab-visual::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 -80px 70px rgba(7, 13, 18, .55); pointer-events: none; }
+    .lab-body { padding: 1.3rem; }
+    .lab-body h3 { margin-bottom: .55rem; font-size: 1.35rem; }
+    .lab-body p { color: var(--ink-2); font-size: .92rem; line-height: 1.58; }
+    .lab-result { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: 1rem; }
+    .lab-result span { padding: .75rem; border: 1px solid var(--line); color: var(--ink-3); font-size: .78rem; }
+    .lab-result b { display: block; margin-bottom: .2rem; color: var(--green); font: 600 .98rem var(--mono); }
+    .asset-console { height: 100%; min-height: 300px; padding: 1.2rem; background: linear-gradient(150deg, #101b22, #071016); font-family: var(--mono); }
+    .asset-stage { height: 150px; display: grid; place-items: center; border: 1px dashed var(--line-bright); background: radial-gradient(circle, rgba(97, 214, 208, .08), transparent 55%); }
+    .mesh { position: relative; width: 120px; height: 90px; border: 1px solid var(--cyan); transform: skew(-12deg); }
+    .mesh::before, .mesh::after { content: ""; position: absolute; border: 1px solid rgba(97, 214, 208, .5); }
+    .mesh::before { inset: 16px -18px -16px 18px; }
+    .mesh::after { left: 50%; top: -20px; width: 1px; height: 128px; border-width: 0 0 0 1px; transform: rotate(28deg); }
+    .asset-readout { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; margin-top: .9rem; }
+    .asset-readout div { padding: .65rem; border: 1px solid var(--line); color: var(--ink-3); font-size: .67rem; }
+    .asset-readout b { display: block; margin-top: .15rem; color: var(--ink); font-size: .86rem; }
+    .diagnostic { margin-top: .65rem; padding: .55rem .7rem; border-left: 3px solid var(--red); color: var(--red); background: rgba(255, 124, 111, .08); font-size: .72rem; }
+
+    .progress-summary { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1rem; margin-bottom: 1rem; }
+    .done-block { padding: 1.35rem; border: 1px solid rgba(120, 213, 156, .45); background: rgba(120, 213, 156, .07); }
+    .done-block .count { color: var(--green); font: 600 clamp(3.5rem, 8vw, 7rem)/.9 var(--mono); letter-spacing: -.08em; }
+    .done-block h3 { margin: .9rem 0 .4rem; }
+    .done-block p { margin: 0; color: var(--ink-2); font-size: .9rem; }
+    .active-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .milestone { padding: 1.15rem; border: 1px solid var(--line); background: var(--surface); }
+    .milestone .m { color: var(--amber); font: 600 .78rem var(--mono); }
+    .milestone h3 { margin: .55rem 0 .8rem; font-size: 1rem; }
+    .milestone .ratio { color: var(--ink); font: 600 1.55rem var(--mono); }
+    .milestone p { margin: .5rem 0 0; color: var(--ink-3); font-size: .8rem; line-height: 1.5; }
+    .bar { height: 5px; margin-top: .7rem; overflow: hidden; background: #27343c; }
+    .bar i { display: block; height: 100%; background: var(--amber); }
+    .blockers { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 1px; margin: 1rem 0; border: 1px solid rgba(255, 124, 111, .4); background: rgba(255, 124, 111, .35); }
+    .blockers > div { padding: 1rem; background: #17191d; }
+    .blockers .block-title { color: var(--red); font: 600 .78rem/1.5 var(--mono); }
+    .blockers b { display: block; margin-bottom: .25rem; }
+    .blockers p { margin: 0; color: var(--ink-3); font-size: .84rem; line-height: 1.5; }
+    .next-line { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .next-line > div { padding: 1rem 1.15rem; border: 1px solid var(--line); }
+    .next-line h3 { margin-bottom: .45rem; font-size: .95rem; }
+    .next-line p { margin: 0; color: var(--ink-3); font-size: .84rem; }
+    .date-stamp { color: var(--ink-3); font: 500 .72rem var(--mono); }
+
+    .source-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
+    .source-row a { padding: .35rem .55rem; border: 1px solid var(--line); color: var(--ink-3); font: 500 .72rem var(--mono); text-decoration: none; }
+    .source-row a:hover { border-color: var(--amber); color: var(--amber-soft); }
+    footer { padding: 3rem 0 5rem; color: var(--ink-3); }
+    footer .wrap { display: flex; justify-content: space-between; gap: 1rem; }
+
+    @media (max-width: 980px) {
+      .factgrid { grid-template-columns: repeat(2, 1fr); }
+      .steps, .automation-grid { grid-template-columns: 1fr 1fr; }
+      .step::after { display: none; }
+      .automation-card { min-height: 300px; }
+      .qa-layout, .progress-summary { grid-template-columns: 1fr; }
+      .story-page { min-height: auto; }
+    }
+
+    @media (max-width: 720px) {
+      body { font-size: .98rem; }
+      .wrap { width: min(100% - 28px, 1220px); }
+      .masthead { padding-top: 4rem; }
+      .repo-brief, .story-head { grid-template-columns: 1fr; }
+      .factgrid, .steps, .shots-2, .decision-grid, .automation-grid, .lab-grid, .active-grid, .next-line { grid-template-columns: 1fr; }
+      .section-nav { justify-content: flex-start; overflow-x: auto; }
+      .section-nav a { white-space: nowrap; }
+      .story-page { padding: 4rem 0; }
+      .story-head h2 { font-size: 2.8rem; }
+      .decision { min-height: auto; }
+      .qa-flow { grid-template-columns: 1fr; gap: .55rem; }
+      .qa-flow span:not(:last-child)::after { content: "↓"; right: auto; left: 50%; bottom: -.72rem; top: auto; }
+      .blockers { grid-template-columns: 1fr; }
+      .architecture-rail { grid-template-columns: 1fr; gap: .5rem; }
+      .architecture-rail span:not(:last-child)::after { content: "↓"; right: auto; left: 50%; bottom: -.55rem; top: auto; }
+      footer .wrap { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      html { scroll-snap-type: none; }
+      body { color: #162029; background: #fff; font-size: 9.3pt; }
+      .wrap { width: 100%; }
+      .section-nav { display: none; }
+      .masthead, .core-page, .story-page { min-height: 0; padding: 6mm 0; break-after: page; page-break-after: always; border: 0; }
+      .masthead h1 { font-size: 46pt; }
+      .story-head { margin-bottom: 4mm; }
+      .story-head h2 { font-size: 28pt; }
+      .video-embed { display: none; }
+      .masthead > .shot:last-child { box-shadow: none; }
+      .fact, .decision, .panel, .automation-card, .lab, .milestone, .next-line > div { color: #162029; background: #fff; border-color: #9ba8af; box-shadow: none; }
+      .loop { color: #162029; background: #fff; box-shadow: none; }
+      .step { color: #162029; background: #fff; }
+      .step .t, strong, b { color: #0d1720; }
+      .step .d, .panel > p, .decision dd, .automation-card p, .lab-body p, .done-block p, .next-line p { color: #40515b; }
+      .automation-card { min-height: 92mm; }
+      .decision { min-height: 58mm; }
+      .story-page { break-inside: avoid; page-break-inside: avoid; }
+      .source-row, footer { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <header class="masthead">
+      <p class="eyebrow">Game Client Developer Portfolio<br>/ Co-op Survival · Networked · 1인 개발</p>
+      <h1>Train Survival</h1>
+      <p class="subtitle">멈추면 죽는 열차 위에서 자원을 낚아채고, 밤마다 몰려드는 몬스터로부터 집을 지키는 1~4인 협동 생존 크래프팅.</p>
+
+      <div class="repo-brief">
+        <span class="repo-k">GitHub README 중심</span>
+        <p>상세 구현 내역과 최신 상태는 <a href="https://github.com/hanwoolhanwool/Train-Survival#readme">Train-Survival README</a>에 모았습니다. 포트폴리오 본문은 대표 화면·영상·핵심 근거를 압축한 요약본입니다.</p>
+      </div>
+
+      <dl class="factgrid">
+        <div class="fact"><dt>역할</dt><dd>게임 클라이언트 개발자 · 1인 개발</dd></div>
+        <div class="fact"><dt>기간</dt><dd>2026.07.17 – 진행 중</dd></div>
+        <div class="fact"><dt>엔진</dt><dd>Unity 6 (6000.5.3f1) · URP 17.5</dd></div>
+        <div class="fact"><dt>네트워크</dt><dd>Netcode for GameObjects + Steamworks</dd></div>
+        <div class="fact"><dt>플랫폼</dt><dd>PC / Steam (StandaloneWindows64)</dd></div>
+        <div class="fact"><dt>저장소</dt><dd>공개 · 코드 · 설계 문서 · CI 로그 전부 열람</dd></div>
+      </dl>
+
+      <figure class="shot">
+        <img src="assets/ts-hero.png" alt="Train Survival 메인 메뉴 — 밤하늘과 오로라 아래 정차한 증기기관차, 방 만들기·참가하기·설정·종료 메뉴가 보이는 대표 화면">
+        <figcaption>대표 화면</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="video-embed">
+          <iframe src="https://www.youtube-nocookie.com/embed/uroL7HkgxMs" title="Train Survival 게임 플레이 영상" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <figcaption>게임 플레이 영상 — <a href="https://youtu.be/uroL7HkgxMs">YouTube에서 보기</a></figcaption>
+      </figure>
+    </header>
+
+    <section class="core-page" aria-labelledby="core-title">
+      <div class="loop">
+        <h2 id="core-title">코어 루프</h2>
+        <p>낮에 모은 것으로 밤을 버티고, 버틴 만큼 열차가 더 멀리 간다. 하루가 끝날 때마다 <span class="nb">난이도가</span> 오르고, 3~5일마다 지역(계절)이 바뀝니다.</p>
+
+        <div class="steps">
+          <div class="step">
+            <span class="k">Day</span>
+            <span class="t">집게로 자원 채집</span>
+            <span class="d">달리는 열차에서 지상의 자원을 집게로 낚아챕니다. 제작 · 건설 · 요리 · 열차 증설의 재료가 됩니다.</span>
+          </div>
+          <div class="step">
+            <span class="k">Night</span>
+            <span class="t">웨이브 방어</span>
+            <span class="d">몬스터가 열차에 달라붙습니다. 칸이 파괴되면 연결이 끊기고 뒤쪽 편성이 통째로 이탈합니다.</span>
+          </div>
+          <div class="step">
+            <span class="k">Day +1</span>
+            <span class="t">난이도 상승 · 지역 전환</span>
+            <span class="d">웨이브 물량과 몬스터 종류가 늘고, 3~5일마다 지역이 바뀌어 날씨 압박이 달라집니다.</span>
+          </div>
+          <div class="step">
+            <span class="k">Final</span>
+            <span class="t">우주 진입</span>
+            <span class="d">궤도 도약 기관을 완성해 대기권을 벗어나면 클리어. 중간 저장은 없고, <span class="nb">런은 단일 세션으로</span> 완주합니다.</span>
+          </div>
+        </div>
+
+        <p class="loop-note">
+          <b>연료가 이 게임의 시계입니다.</b> 자동 충전이 아니라 기관차 엔진에 직접 넣어야 해서
+          <b class="nb">채집 → 운반 → 투입</b>이라는 협동 동선이 생깁니다. 연료가 마르면 열차가 느려지고, <span class="nb">느려지면 추격이 시작됩니다.</span>
+          역할을 나누지 않으면 낮에 모으기만 하다 밤을 <span class="nb">맞습니다.</span>
+        </p>
+      </div>
+
+      <div class="shots-2">
+        <figure class="shot">
+          <img src="assets/ts-day.png" alt="낮 화면 — 달리는 열차에서 집게로 지상 자원을 끌어오는 채집 장면">
+          <figcaption>낮 — 채집</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/ts-night.png" alt="밤 화면 — 열차 위로 올라온 몬스터를 무기로 방어하는 전투 장면">
+          <figcaption>밤 — 방어</figcaption>
+        </figure>
+      </div>
+    </section>
+  </div>
+
+  <nav class="section-nav" aria-label="포트폴리오 핵심 섹션">
+    <a href="#design">설계 결정</a>
+    <a href="#qa">QA</a>
+    <a href="#automation">자동화</a>
+    <a href="#labs">ViewLab · AssetLab</a>
+    <a href="#progress">진행 상태</a>
+  </nav>
+
+  <main>
+    <section class="story-page" id="design" aria-labelledby="design-title">
+      <div class="wrap">
+        <header class="story-head">
+          <div>
+            <p class="section-kicker">01 · Architecture</p>
+            <h2 id="design-title">실수를 기억이 아니라<br>구조로 막는다</h2>
+          </div>
+          <p class="intent"><b>설계 의도</b>1인 개발에서도 기능이 늘수록 수정 범위가 퍼지지 않도록, 의존성·권위·계산의 경계를 코드가 스스로 강제하게 했습니다.</p>
+        </header>
+
+        <div class="architecture-rail" aria-label="어셈블리 의존 방향">
+          <span>Utilities</span><span>Core</span><span>Systems</span><span>Gameplay</span><span>UI</span>
+        </div>
+
+        <div class="decision-grid">
+          <article class="decision">
+            <span class="no">01</span>
+            <h3>의존 방향을 컴파일 단계에서 고정</h3>
+            <dl>
+              <dt>결정</dt><dd>계층을 <code>asmdef</code>로 분리하고 참조를 한 방향으로만 엽니다.</dd>
+              <dt>의도</dt><dd>UI가 게임 상태를 직접 고치는 식의 역참조를 리뷰가 아니라 컴파일 에러로 차단합니다.</dd>
+            </dl>
+            <p class="metric">6 assemblies · reverse reference = compile error</p>
+          </article>
+
+          <article class="decision">
+            <span class="no">02</span>
+            <h3>게임 규칙을 엔진 밖의 순수 계산으로</h3>
+            <dl>
+              <dt>결정</dt><dd>칸 파괴·그리드·웨이브·조준 규칙을 <code>*Math</code>/<code>*Logic</code> 정적 함수로 분리합니다.</dd>
+              <dt>의도</dt><dd>씬과 네트워크를 띄우지 않고 입력과 결과만으로 회귀를 재현합니다.</dd>
+            </dl>
+            <p class="metric">55 Math/Logic files · 1,412 tests</p>
+          </article>
+
+          <article class="decision">
+            <span class="no">03</span>
+            <h3>조회 계약과 상태 변경 권한을 분리</h3>
+            <dl>
+              <dt>결정</dt><dd><code>ITrainState</code>에는 조회만, 변경은 인터페이스 밖의 <code>ServerXxx</code> 경로에 둡니다.</dd>
+              <dt>의도</dt><dd>HUD·몬스터·건축이 같은 상태를 읽더라도 호스트 권위를 우회해 바꿀 수 없게 합니다.</dd>
+            </dl>
+            <p class="metric">read contract ≠ mutation API</p>
+          </article>
+
+          <article class="decision">
+            <span class="no">04</span>
+            <h3>열차 대신 세계를 움직여 복제를 제거</h3>
+            <dl>
+              <dt>결정</dt><dd>열차는 원점에 고정하고 월드 위치를 스폰 정보와 누적 거리의 순수 함수로 계산합니다.</dd>
+              <dt>의도</dt><dd>무한 주행의 좌표 오차와 월드 오브젝트 상시 위치 동기화를 함께 없앱니다.</dd>
+            </dl>
+            <p class="metric">continuous position sync · 0</p>
+          </article>
+        </div>
+
+        <div class="source-row">
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/conventions/architecture-rules.md">architecture-rules.md</a>
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/tree/main/Assets/_Project/Tests/EditMode">EditMode tests</a>
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Train/ITrainState.cs">ITrainState.cs</a>
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/World/WorldScrollMath.cs">WorldScrollMath.cs</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-page" id="qa" aria-labelledby="qa-title">
+      <div class="wrap">
+        <header class="story-head">
+          <div>
+            <p class="section-kicker">02 · QA</p>
+            <h2 id="qa-title">기다리지 않고 재현하고,<br>필요한 로그만 남긴다</h2>
+          </div>
+          <p class="intent"><b>QA 의도</b>밤·보스·경합을 기다리는 시간을 없애되, 디버그 기능도 실제 게임 경로와 호스트 권위를 그대로 통과하게 했습니다.</p>
+        </header>
+
+        <div class="qa-layout">
+          <article class="panel">
+            <p class="section-kicker">Debug keys · 즉시 재현</p>
+            <h3>키를 외우지 않고, 손이 기능 그룹을 기억합니다</h3>
+            <p>숫자패드의 물리적 행을 몬스터·편성·자원·사이클로 묶었습니다. 키 정의에서 지도를 다시 생성하므로 코드와 문서가 어긋나지 않습니다.</p>
+            <figure class="keyboard-map">
+              <img src="assets/qa-keyboard-map.svg" alt="QA 디버그 키 지도 — 숫자패드와 F열 키를 기능 그룹별로 묶은 배치">
+            </figure>
+          </article>
+
+          <article class="panel">
+            <p class="section-kicker">Log system · 판정 가시성</p>
+            <h3>콘솔을 출력창이 아니라 판정 도구로</h3>
+            <p>모든 로그를 단일 API로 모으고 카테고리 비트마스크로 필요한 계열만 켭니다. 릴리스에서는 조건부 컴파일로 호출과 인자 문자열 조립까지 제거합니다.</p>
+
+            <div class="qa-points">
+              <div class="qa-point"><span class="num">01</span><p><b>정규 경로</b> — 피해·보스 처치·건축도 실제 런타임 함수를 그대로 호출</p></div>
+              <div class="qa-point"><span class="num">02</span><p><b>호스트 확정</b> — 전 피어 상태는 QA 키도 서버 RPC를 우회하지 않음</p></div>
+              <div class="qa-point"><span class="num">03</span><p><b>무효 통과 차단</b> — 전제가 없으면 시작 단계에서 명시적 무효 로그 출력</p></div>
+            </div>
+
+            <div class="zero-cost"><strong>0</strong><span>릴리스 빌드의 로그·계측 비용<br>호출과 문자열 조립 포함</span></div>
+          </article>
+        </div>
+
+        <div class="qa-flow" aria-label="QA 판정 흐름">
+          <span>상황 호출</span><span>정규 게임 경로</span><span>호스트 확정</span><span>구조화 로그 판정</span><span>테스트로 고정</span>
+        </div>
+
+        <div class="source-row">
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/guide/qa-debug-keys.md">QA 키 참조표</a>
+          <a href="automation.html#pick-qakeys">키·문서 자동화 상세</a>
+          <a href="automation.html">로그 시스템 상세</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-page" id="automation" aria-labelledby="automation-title">
+      <div class="wrap">
+        <header class="story-head">
+          <div>
+            <p class="section-kicker">03 · Automation</p>
+            <h2 id="automation-title">반복 작업을 더 이른<br>시점으로 옮겼다</h2>
+          </div>
+          <p class="intent"><b>자동화 의도</b>사람이 기억해 실행하던 검사와 보정을 커밋·CI·빌드·임포트 시점으로 옮겨, 같은 사고가 다시 들어올 틈을 줄였습니다.</p>
+        </header>
+
+        <div class="automation-grid">
+          <article class="automation-card">
+            <span class="label">01 · CI RECOVERY</span>
+            <h3>죽어 있던 게이트를 먼저 복구</h3>
+            <p>Unity 세그폴트를 이등분 4회로 <code>[MenuItem]</code> 등록 수까지 좁히고, 테스트와 빌드 잡의 불필요한 의존을 제거했습니다.</p>
+            <div class="big">−44%</div>
+            <div class="measure">17m 38s → 9m 54s<br>Play 11/11 · Edit 1,408/1,408 · Build PASS</div>
+          </article>
+
+          <article class="automation-card">
+            <span class="label">02 · SELF-DRIVING BENCH</span>
+            <h3>빌드가 스스로 한 사이클을 주행</h3>
+            <p><code>-perfrun</code>으로 인게임 진입부터 60초 주행·프레임·GC·드로우콜 수집·JSON 저장까지 자동화했습니다.</p>
+            <div class="big">0.8%</div>
+            <div class="measure">repeat variance · 60s × 3 runs<br>same scenario · same resolution</div>
+          </article>
+
+          <article class="automation-card">
+            <span class="label">03 · REGRESSION GATE</span>
+            <h3>판정을 종료 코드 하나로 압축</h3>
+            <p>실측 노이즈의 6~7배를 실패선으로 잡고, 편차가 크면 통과도 실패도 아닌 “비교 불가”로 돌립니다.</p>
+            <div class="big">5%</div>
+            <div class="measure">noise 0.7–0.8% → threshold 5%<br>exit 0 / 1 / 2 · pass / regress / invalid</div>
+          </article>
+
+          <article class="automation-card">
+            <span class="label">04 · IMPORT PIPELINE</span>
+            <h3>LOD·피벗 보정을 임포트 시점으로</h3>
+            <p>원본 FBX·GUID·머티리얼은 유지한 채, 검수한 LOD 승격과 월드 +Y 기준 피벗 보정을 자동 적용했습니다.</p>
+            <div class="big">−41%</div>
+            <div class="measure">1,183,649 → 698,531 tris<br>draw call · SetPass · shadow caster change 0</div>
+          </article>
+        </div>
+
+        <div class="automation-foot">
+          <span>수치는 저장소 CI 실행 이력·빌드 벤치·UnityStats 실측 기준</span>
+          <span>사람의 판단 → 재현 가능한 입력 → 자동 판정</span>
+        </div>
+        <div class="source-row">
+          <a href="automation.html#pick-ci">CI 복구 상세</a>
+          <a href="automation.html#pick-bench">자동 주행 상세</a>
+          <a href="automation.html#pick-gate">성능 게이트 상세</a>
+          <a href="automation.html#pick-import">임포트 자동화 상세</a>
+          <a href="performance.html">성능·검증 사례집</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-page" id="labs" aria-labelledby="labs-title">
+      <div class="wrap">
+        <header class="story-head">
+          <div>
+            <p class="section-kicker">04 · Editor tools</p>
+            <h2 id="labs-title">눈으로 확인해야 하는 일은<br>전용 작업장으로</h2>
+          </div>
+          <p class="intent"><b>도구 의도</b>자동 판정이 대신할 수 없는 자세와 LOD 품질을 같은 조건에서 빠르게 비교하고, 확인한 값을 바로 게임 데이터로 연결합니다.</p>
+        </header>
+
+        <div class="lab-grid">
+          <article class="lab">
+            <div class="lab-visual"><img src="assets/ts-viewlab.png" alt="ViewLab에서 캐릭터의 무기 파지 위치와 회전을 조정하는 화면"></div>
+            <div class="lab-body">
+              <p class="section-kicker">ViewLab · pose workshop</p>
+              <h3>플레이를 멈추지 않고 파지 자세를 저장</h3>
+              <p>씬 뷰 핸들로 위치·회전·스케일을 조정하고, 애니메이션과 1·3인칭 시점을 같은 화면에서 비교한 뒤 <code>Player.prefab</code>에 바로 저장합니다.</p>
+              <div class="lab-result">
+                <span><b>987 lines</b>ViewLabController</span>
+                <span><b>1 drag</b>수정 → 플레이 → 종료 반복 제거</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="lab">
+            <div class="lab-visual">
+              <div class="asset-console" role="img" aria-label="AssetLab 계측 화면을 단순화한 도식 — 메시와 tris, LOD, material 수치 및 진단 코드가 표시됨">
+                <div class="asset-stage"><div class="mesh" aria-hidden="true"></div></div>
+                <div class="asset-readout">
+                  <div>TRIS<b>320</b></div><div>LOD<b>2 / 3</b></div><div>MATERIAL<b>2</b></div>
+                </div>
+                <div class="diagnostic">NO_LOD · silhouette broken at forced LOD2</div>
+              </div>
+            </div>
+            <div class="lab-body">
+              <p class="section-kicker">AssetLab · asset inspection</p>
+              <h3>한 점씩 세워 수치와 형상을 함께 검수</h3>
+              <p>에셋을 360°로 돌리고 LOD 단계를 강제 전환합니다. tris·바운즈·머티리얼·LOD를 같은 자리에서 비교하고 예산 위반은 진단 코드로 표시합니다.</p>
+              <div class="lab-result">
+                <span><b>26–43%</b>형상별 자동 LOD 실패 편차 규명</span>
+                <span><b>320 tris</b>수치만으론 안 보이던 LOD 뚫림 발견</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="source-row">
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Debugging/ViewLabController.cs">ViewLabController.cs</a>
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/Assets/_Project/Scripts/Gameplay/Debugging/AssetLabController.cs">AssetLabController.cs</a>
+          <a href="automation.html#pick-viewlab">ViewLab 상세</a>
+          <a href="automation.html#pick-assetlab">AssetLab 상세</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-page" id="progress" aria-labelledby="progress-title">
+      <div class="wrap">
+        <header class="story-head">
+          <div>
+            <p class="section-kicker">05 · Current status</p>
+            <h2 id="progress-title">코어는 완성했고,<br>출시 차단 요소를 닫는 중</h2>
+          </div>
+          <div>
+            <p class="intent"><b>현재 판단</b>기능 수를 늘리기보다 세션 재접속과 외부 회선 릴레이 검증을 먼저 끝내야 출시 가능한 상태가 됩니다.</p>
+            <span class="date-stamp">repository main · c06d22c · 2026.09.04 기준</span>
+          </div>
+        </header>
+
+        <div class="progress-summary">
+          <article class="done-block">
+            <div class="count">5/8</div>
+            <h3>M1–M5 완료</h3>
+            <p>집게 수직 슬라이스 → 코어 루프 → 열차 파괴·건축 → 지역·날씨 → 전투·생존 확장까지 구현 완료.</p>
+          </article>
+
+          <div class="active-grid">
+            <article class="milestone">
+              <span class="m">M6 · Steam / Session</span>
+              <h3>구현 완료 · 검증 진행</h3>
+              <div class="ratio">3/3</div>
+              <div class="bar"><i style="width:100%"></i></div>
+              <p>구현 차수 완료<br>외부 환경 검증 14건 잔여</p>
+            </article>
+            <article class="milestone">
+              <span class="m">M7 · Endgame</span>
+              <h3>후반부 시스템 확장</h3>
+              <div class="ratio">3/7</div>
+              <div class="bar"><i style="width:43%"></i></div>
+              <p>4차 계획 완료<br>검증 38건 잔여</p>
+            </article>
+            <article class="milestone">
+              <span class="m">M8 · Art / Direction</span>
+              <h3>아트·연출 패스</h3>
+              <div class="ratio">2/4</div>
+              <div class="bar"><i style="width:50%"></i></div>
+              <p>1·2차 구현 완료<br>검증 35건 잔여</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="blockers">
+          <div class="block-title">RELEASE BLOCKERS · 2</div>
+          <div><b>세션 이탈·재접속 P1–P5</b><p>유령 플레이어 잔존, 인벤토리 초기화, 중복 토큰, 종료 오버레이를 실제 빌드에서 재확인.</p></div>
+          <div><b>외부 회선 Steam 릴레이 G8</b><p>서로 다른 회선·Steam 2계정으로 세션 생성부터 재접속까지 완주 검증.</p></div>
+        </div>
+
+        <div class="next-line">
+          <div><h3>다음 순서</h3><p>보스 타이머 수정 → P1–P5 재확인 → M8 2차 검증 → M7 4차 거치 무기 착수</p></div>
+          <div><h3>출시 목표</h3><p><b>2027.01 중순</b> 기능 동결 · 약 3주 릴리스 검증 · <b>2027.02 초</b> 설 연휴 출시</p></div>
+        </div>
+
+        <div class="source-row">
+          <a href="https://github.com/hanwoolhanwool/Train-Survival#readme">최신 README</a>
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/plans/M6-M8-%EC%9E%94%EC%97%AC-%EC%9E%91%EC%97%85-%EC%A0%95%EB%A6%AC.md">M6–M8 잔여 작업</a>
+          <a href="https://github.com/hanwoolhanwool/Train-Survival/actions">CI 실행 이력</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>Train Survival · Game Client Developer Portfolio</span>
+      <span>설계 · QA · 자동화 · 에디터 도구</span>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const links = [...document.querySelectorAll('.section-nav a')];
+      const sections = links.map((link) => document.querySelector(link.hash)).filter(Boolean);
+      if (!('IntersectionObserver' in window)) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        links.forEach((link) => link.setAttribute('aria-current', String(link.hash === `#${visible.target.id}`)));
+      }, { rootMargin: '-20% 0px -55% 0px', threshold: [0, .2, .5] });
+
+      sections.forEach((section) => observer.observe(section));
+    })();
+  </script>
+</body>
+</html>
