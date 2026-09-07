@@ -190,6 +190,7 @@
     .lab { overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
     .lab-visual { position: relative; aspect-ratio: 16/8.8; overflow: hidden; background: #18252d; }
     .lab-visual img { width: 100%; height: 100%; object-fit: cover; }
+    .lab-visual iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
     .lab-visual::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 -80px 70px rgba(7, 13, 18, .55); pointer-events: none; }
     .lab-body { padding: 1.3rem; }
     .lab-body h3 { margin-bottom: .55rem; font-size: 1.35rem; }
@@ -197,17 +198,6 @@
     .lab-result { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: 1rem; }
     .lab-result span { padding: .75rem; border: 1px solid var(--line); color: var(--ink-3); font-size: .78rem; }
     .lab-result b { display: block; margin-bottom: .2rem; color: var(--green); font: 600 .98rem var(--mono); }
-    .asset-console { height: 100%; min-height: 300px; padding: 1.2rem; background: linear-gradient(150deg, #101b22, #071016); font-family: var(--mono); }
-    .asset-stage { height: 150px; display: grid; place-items: center; border: 1px dashed var(--line-bright); background: radial-gradient(circle, rgba(97, 214, 208, .08), transparent 55%); }
-    .mesh { position: relative; width: 120px; height: 90px; border: 1px solid var(--cyan); transform: skew(-12deg); }
-    .mesh::before, .mesh::after { content: ""; position: absolute; border: 1px solid rgba(97, 214, 208, .5); }
-    .mesh::before { inset: 16px -18px -16px 18px; }
-    .mesh::after { left: 50%; top: -20px; width: 1px; height: 128px; border-width: 0 0 0 1px; transform: rotate(28deg); }
-    .asset-readout { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; margin-top: .9rem; }
-    .asset-readout div { padding: .65rem; border: 1px solid var(--line); color: var(--ink-3); font-size: .67rem; }
-    .asset-readout b { display: block; margin-top: .15rem; color: var(--ink); font-size: .86rem; }
-    .diagnostic { margin-top: .65rem; padding: .55rem .7rem; border-left: 3px solid var(--red); color: var(--red); background: rgba(255, 124, 111, .08); font-size: .72rem; }
-
     .progress-page {
       --paper: #091016;
       --paper-line: #31414a;
@@ -641,13 +631,7 @@
 
           <article class="lab">
             <div class="lab-visual">
-              <div class="asset-console" role="img" aria-label="AssetLab 계측 화면을 단순화한 도식 — 메시와 tris, LOD, material 수치 및 진단 코드가 표시됨">
-                <div class="asset-stage"><div class="mesh" aria-hidden="true"></div></div>
-                <div class="asset-readout">
-                  <div>TRIS<b>320</b></div><div>LOD<b>2 / 3</b></div><div>MATERIAL<b>2</b></div>
-                </div>
-                <div class="diagnostic">NO_LOD · silhouette broken at forced LOD2</div>
-              </div>
+              <iframe src="https://www.youtube-nocookie.com/embed/6IC3iZvSuVo" title="AssetLab 에셋 검수 시연 영상" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
             </div>
             <div class="lab-body">
               <p class="section-kicker">AssetLab · asset inspection</p>
