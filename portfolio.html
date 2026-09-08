@@ -46,6 +46,8 @@
     }
     a { color: inherit; text-decoration-color: rgba(242, 169, 59, .6); text-underline-offset: .2em; }
     a:hover { color: var(--amber-soft); }
+    .feature-link { color: inherit; text-decoration-color: rgba(242, 169, 59, .42); text-decoration-thickness: 1px; }
+    .feature-link::after { content: " ↗"; color: var(--amber); font: 500 .7em var(--mono); white-space: nowrap; }
     img { display: block; max-width: 100%; }
     h1, h2, h3, p, figure, dl { margin-top: 0; }
     h1, h2, h3 { text-wrap: balance; }
@@ -252,6 +254,7 @@
     .timeline-item h3 em { margin-left: .35rem; color: #768991; font: 500 .7rem var(--sans); font-style: normal; }
     .timeline-item p { margin: 0; color: var(--paper-copy); font-size: .82rem; line-height: 1.58; }
     .timeline-item p b { color: var(--paper-ink); }
+    .timeline-item p a { color: var(--paper-ink); text-decoration-color: rgba(230, 107, 62, .7); }
     .timeline-item.current::before { width: 15px; height: 15px; top: -8px; box-shadow: 0 0 0 5px rgba(186, 79, 46, .12); }
     .timeline-item.current h3 { color: var(--paper-accent); }
     .progress-page .source-row a { color: #8fa0a7; border-color: #2c3c46; }
@@ -513,7 +516,7 @@
         <div class="qa-layout">
           <article class="panel">
             <p class="section-kicker">Debug keys · 즉시 재현</p>
-            <h3>키를 외우지 않고, 손이 기능 그룹을 기억합니다</h3>
+            <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/guide/qa-debug-keys.md" aria-label="QA 디버그 키 GitHub 명세서 보기">키를 외우지 않고, 손이 기능 그룹을 기억합니다</a></h3>
             <p>숫자패드의 물리적 행을 몬스터·편성·자원·사이클로 묶었습니다. 키 정의에서 지도를 다시 생성하므로 코드와 문서가 어긋나지 않습니다.</p>
             <figure class="keyboard-map">
               <img src="assets/qa-keyboard-map.svg" alt="QA 디버그 키 지도 — 숫자패드와 F열 키를 기능 그룹별로 묶은 배치">
@@ -522,7 +525,7 @@
 
           <article class="panel">
             <p class="section-kicker">Log system · 판정 가시성</p>
-            <h3>콘솔을 출력창이 아니라 판정 도구로</h3>
+            <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/conventions/architecture-rules.md#L80-L104" aria-label="로그 시스템 GitHub 명세서 보기">콘솔을 출력창이 아니라 판정 도구로</a></h3>
             <p>모든 로그를 단일 API로 모으고 카테고리 비트마스크로 필요한 계열만 켭니다. 릴리스에서는 조건부 컴파일로 호출과 인자 문자열 조립까지 제거합니다.</p>
 
             <div class="qa-points">
@@ -560,7 +563,7 @@
         <div class="automation-grid">
           <article class="automation-card">
             <span class="label">01 · CI RECOVERY</span>
-            <h3>죽어 있던 게이트를 먼저 복구</h3>
+            <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/plans/features/자동화-1차-구현-계획.md" aria-label="CI 복구 GitHub 명세서 보기">죽어 있던 게이트를 먼저 복구</a></h3>
             <p>Unity 세그폴트를 이등분 4회로 <code>[MenuItem]</code> 등록 수까지 좁히고, 테스트와 빌드 잡의 불필요한 의존을 제거했습니다.</p>
             <div class="big">−44%</div>
             <div class="measure">17m 38s → 9m 54s<br>Play 11/11 · Edit 1,408/1,408 · Build PASS</div>
@@ -568,7 +571,7 @@
 
           <article class="automation-card">
             <span class="label">02 · SELF-DRIVING BENCH</span>
-            <h3>빌드가 스스로 한 사이클을 주행</h3>
+            <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/tech/performance-measurement.md#L118-L170" aria-label="60초 자동 주행 GitHub 명세서 보기">빌드가 스스로 한 사이클을 주행</a></h3>
             <p><code>-perfrun</code>으로 인게임 진입부터 60초 주행·프레임·GC·드로우콜 수집·JSON 저장까지 자동화했습니다.</p>
             <div class="big">0.8%</div>
             <div class="measure">repeat variance · 60s × 3 runs<br>same scenario · same resolution</div>
@@ -576,7 +579,7 @@
 
           <article class="automation-card">
             <span class="label">03 · REGRESSION GATE</span>
-            <h3>판정을 종료 코드 하나로 압축</h3>
+            <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/tech/performance-measurement.md#L172-L213" aria-label="성능 회귀 게이트 GitHub 명세서 보기">판정을 종료 코드 하나로 압축</a></h3>
             <p>실측 노이즈의 6~7배를 실패선으로 잡고, 편차가 크면 통과도 실패도 아닌 “비교 불가”로 돌립니다.</p>
             <div class="big">5%</div>
             <div class="measure">noise 0.7–0.8% → threshold 5%<br>exit 0 / 1 / 2 · pass / regress / invalid</div>
@@ -584,7 +587,7 @@
 
           <article class="automation-card">
             <span class="label">04 · IMPORT PIPELINE</span>
-            <h3>LOD·피벗 보정을 임포트 시점으로</h3>
+            <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/world/asset-import-pipeline.md" aria-label="LOD·피벗 임포트 자동화 GitHub 명세서 보기">LOD·피벗 보정을 임포트 시점으로</a></h3>
             <p>원본 FBX·GUID·머티리얼은 유지한 채, 검수한 LOD 승격과 월드 +Y 기준 피벗 보정을 자동 적용했습니다.</p>
             <div class="big">−41%</div>
             <div class="measure">1,183,649 → 698,531 tris<br>draw call · SetPass · shadow caster change 0</div>
@@ -620,7 +623,7 @@
             <div class="lab-visual"><img src="assets/ts-viewlab.png" alt="ViewLab에서 캐릭터의 무기 파지 위치와 회전을 조정하는 화면"></div>
             <div class="lab-body">
               <p class="section-kicker">ViewLab · pose workshop</p>
-              <h3>플레이 중 무기 위치·각도를 바로 조정·저장</h3>
+              <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/plans/features/뷰랩-파지-포즈-편집-계획.md" aria-label="ViewLab GitHub 명세서 보기">플레이 중 무기 위치·각도를 바로 조정·저장</a></h3>
               <p>씬 뷰 핸들로 위치·회전·스케일을 조정하고, 애니메이션과 1·3인칭 시점을 같은 화면에서 비교한 뒤 <code>Player.prefab</code>에 바로 저장합니다.</p>
               <div class="lab-result">
                 <span><b>3가지 조정</b>위치 · 회전 · 스케일</span>
@@ -635,7 +638,7 @@
             </div>
             <div class="lab-body">
               <p class="section-kicker">AssetLab · asset inspection</p>
-              <h3>에셋을 돌려보며 LOD·폴리곤 수를 한 번에 검수</h3>
+              <h3><a class="feature-link" href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/plans/features/에셋랩-씬-계획.md" aria-label="AssetLab GitHub 명세서 보기">에셋을 돌려보며 LOD·폴리곤 수를 한 번에 검수</a></h3>
               <p>에셋을 360°로 돌려 가며 LOD 단계별 형상을 검증합니다. tris·바운즈·머티리얼을 비교하고, 예산 위반은 진단 코드로 표시합니다.</p>
               <div class="lab-result">
                 <span><b>26–43%</b>형상별 자동 LOD 실패 편차 규명</span>
@@ -706,7 +709,7 @@
             <li class="timeline-item current">
               <time datetime="2026-08-31">2026.08.31 — 09.04</time>
               <h3>자동화 4종 · CI 복구 <em>현재</em></h3>
-              <p>60초 자동 주행, 성능 회귀 게이트, QA 키·문서 동기화, LOD·피벗 임포트 자동화를 구현하고 테스트·빌드를 복구했습니다.</p>
+              <p><a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/tech/performance-measurement.md#L118-L170">60초 자동 주행</a>, <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/tech/performance-measurement.md#L172-L213">성능 회귀 게이트</a>, <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/guide/qa-debug-keys.md">QA 키·문서 동기화</a>, <a href="https://github.com/hanwoolhanwool/Train-Survival/blob/main/docs/specs/world/asset-import-pipeline.md">LOD·피벗 임포트 자동화</a>를 구현하고 테스트·빌드를 복구했습니다.</p>
             </li>
           </ol>
         </div>
