@@ -1,0 +1,412 @@
+{
+  "mode": "builtin image_gen; one call per item",
+  "items": [
+    {
+      "key": "Stone",
+      "label": "돌",
+      "reference": "실물 `Ref_Stone`",
+      "description": "중성 회색 돌무더기, 큰 돌 2개와 작은 받침 돌. 광맥 줄무늬 없음. (a compact cluster of plain rounded angular gray stones)",
+      "category": "Resources",
+      "file": "I_Res_Stone.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Stone.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Stone (돌): 중성 회색 돌무더기, 큰 돌 2개와 작은 받침 돌. 광맥 줄무늬 없음. (a compact cluster of plain rounded angular gray stones)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Scrap",
+      "label": "고철",
+      "reference": "실물 `Ref_Scrap`",
+      "description": "적갈색 녹슨 판금과 굽은 파이프, 구멍·접힘 한두 곳. 정제 주괴 금지. (rusted bent iron plates and one thick curved pipe)",
+      "category": "Resources",
+      "file": "I_Res_Scrap.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Scrap.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Scrap (고철): 적갈색 녹슨 판금과 굽은 파이프, 구멍·접힘 한두 곳. 정제 주괴 금지. (rusted bent iron plates and one thick curved pipe)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Niter",
+      "label": "화약 원료",
+      "reference": "실물 `Ref_Niter`",
+      "description": "흰 모암 위 굵은 노란 결정. 검은 화약 가루·화약통 금지. (white mineral base with chunky yellow crystals)",
+      "category": "Resources",
+      "file": "I_Res_Niter.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Niter.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Niter (화약 원료): 흰 모암 위 굵은 노란 결정. 검은 화약 가루·화약통 금지. (white mineral base with chunky yellow crystals)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "OreVein",
+      "label": "광맥",
+      "reference": "실물 `Ref_OreVein`",
+      "description": "어두운 큰 암석을 가로지르는 푸른 회색 광맥 띠 2개. 돌보다 높은 덩어리. (a dark bulky rock crossed by two broad blue gray ore bands)",
+      "category": "Resources",
+      "file": "I_Res_OreVein.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_OreVein.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT OreVein (광맥): 어두운 큰 암석을 가로지르는 푸른 회색 광맥 띠 2개. 돌보다 높은 덩어리. (a dark bulky rock crossed by two broad blue gray ore bands)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Rice",
+      "label": "벼",
+      "reference": "실물 `Ref_Rice`",
+      "description": "묶은 황금색 이삭, 늘어진 곡립 덩어리. 쌀밥 그릇과 구분. (a tied sheaf of golden rice stalks with drooping grain heads)",
+      "category": "Resources",
+      "file": "I_Res_Rice.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Rice.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Rice (벼): 묶은 황금색 이삭, 늘어진 곡립 덩어리. 쌀밥 그릇과 구분. (a tied sheaf of golden rice stalks with drooping grain heads)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Salt",
+      "label": "소금",
+      "reference": "실물 `Ref_Salt`",
+      "description": "낮고 넓은 백색 결정층, 연한 청색 그림자. 얼음처럼 높은 송곳 모양 금지. (a low broad slab of pale white salt crystals)",
+      "category": "Resources",
+      "file": "I_Res_Salt.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Salt.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Salt (소금): 낮고 넓은 백색 결정층, 연한 청색 그림자. 얼음처럼 높은 송곳 모양 금지. (a low broad slab of pale white salt crystals)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "BossCore",
+      "label": "보스 핵",
+      "reference": "신규",
+      "description": "둥글고 응축된 보랏빛 결정 중심과 어두운 껍질 조각 3개. 금속 기계 링 금지. (a compact violet crystal core held by three dark mineral fragments)",
+      "category": "Resources",
+      "file": "I_Res_BossCore.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT BossCore (보스 핵): 둥글고 응축된 보랏빛 결정 중심과 어두운 껍질 조각 3개. 금속 기계 링 금지. (a compact violet crystal core held by three dark mineral fragments)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Ice",
+      "label": "얼음",
+      "reference": "실물 `Ref_Ice`",
+      "description": "높고 뾰족한 푸른 얼음 덩어리와 넓은 밝은 균열면. 소금의 낮은 형태와 대비. (one tall blue ice shard with broad pale fracture planes)",
+      "category": "Resources",
+      "file": "I_Res_Ice.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Ice.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Ice (얼음): 높고 뾰족한 푸른 얼음 덩어리와 넓은 밝은 균열면. 소금의 낮은 형태와 대비. (one tall blue ice shard with broad pale fracture planes)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "RareMetal",
+      "label": "희귀 금속",
+      "reference": "실물 `Ref_RareMetal`",
+      "description": "은백색·옅은 보라의 층진 결정 광석. 금괴·작은 보석 금지. (a stepped cluster of silver white mineral blades with pale violet faces)",
+      "category": "Resources",
+      "file": "I_Res_RareMetal.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_RareMetal.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT RareMetal (희귀 금속): 은백색·옅은 보라의 층진 결정 광석. 금괴·작은 보석 금지. (a stepped cluster of silver white mineral blades with pale violet faces)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "RelicPart",
+      "label": "유적 부품",
+      "reference": "실물 `Ref_RelicPart`",
+      "description": "낮은 원형 고대 기계, 청록 중심과 반복된 금속 외륜. 보스 핵과 달리 인공적 원형 구조 유지. (a squat circular ancient machine part with a cyan center and segmented metal rim)",
+      "category": "Resources",
+      "file": "I_Res_RelicPart.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_RelicPart.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT RelicPart (유적 부품): 낮은 원형 고대 기계, 청록 중심과 반복된 금속 외륜. 보스 핵과 달리 인공적 원형 구조 유지. (a squat circular ancient machine part with a cyan center and segmented metal rim)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Fish",
+      "label": "생선",
+      "reference": "신규",
+      "description": "통통한 은청색 물고기 한 마리, 넓은 꼬리·밝은 배. 붉은 눈·별씨 없음. 적 물고기 모델을 재사용하지 않음. (one plump silver blue edible fish with a broad tail and ordinary dark eye)",
+      "category": "Resources",
+      "file": "I_Res_Fish.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT Fish (생선): 통통한 은청색 물고기 한 마리, 넓은 꼬리·밝은 배. 붉은 눈·별씨 없음. 적 물고기 모델을 재사용하지 않음. (one plump silver blue edible fish with a broad tail and ordinary dark eye)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "RevolverAmmo",
+      "label": "권총탄",
+      "reference": "신규",
+      "description": "짧고 둥근 탄두의 황동 탄약 3발. 원통형 총몸과 혼동하지 않음. (three short brass cartridges with rounded bullet tips)",
+      "category": "Resources",
+      "file": "I_Res_RevolverAmmo.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT RevolverAmmo (권총탄): 짧고 둥근 탄두의 황동 탄약 3발. 원통형 총몸과 혼동하지 않음. (three short brass cartridges with rounded bullet tips)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "ShotgunAmmo",
+      "label": "산탄",
+      "reference": "신규",
+      "description": "굵은 적갈·주황 종이 탄피 2발, 황동 바닥·평평한 끝. (two thick rust orange shotgun shells with brass bases and flat crimped tops)",
+      "category": "Resources",
+      "file": "I_Res_ShotgunAmmo.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT ShotgunAmmo (산탄): 굵은 적갈·주황 종이 탄피 2발, 황동 바닥·평평한 끝. (two thick rust orange shotgun shells with brass bases and flat crimped tops)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "RifleAmmo",
+      "label": "소총탄",
+      "reference": "신규",
+      "description": "길고 가는 뾰족 탄두 2발, 목이 좁아지는 탄피와 청록 식별 띠. (two long bottleneck rifle cartridges with pointed tips and muted teal bands)",
+      "category": "Resources",
+      "file": "I_Res_RifleAmmo.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_Revolver.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT RifleAmmo (소총탄): 길고 가는 뾰족 탄두 2발, 목이 좁아지는 탄피와 청록 식별 띠. (two long bottleneck rifle cartridges with pointed tips and muted teal bands)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "HeartyStew",
+      "label": "든든한 스튜",
+      "reference": "신규",
+      "description": "양쪽 작은 손잡이가 있는 깊은 법랑 볼, 짙은 국물과 큰 건더기. 증기 없음. (a deep enamel bowl with two small side handles filled with dark chunky stew)",
+      "category": "Resources",
+      "file": "I_Res_HeartyStew.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT HeartyStew (든든한 스튜): 양쪽 작은 손잡이가 있는 깊은 법랑 볼, 짙은 국물과 큰 건더기. 증기 없음. (a deep enamel bowl with two small side handles filled with dark chunky stew)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "CookedRice",
+      "label": "밥",
+      "reference": "신규",
+      "description": "작은 둥근 그릇 위 높게 담긴 아이보리 밥. 쌀알을 낱개로 세밀하게 묘사하지 않음. (a small round bowl holding a mound of warm ivory cooked rice)",
+      "category": "Resources",
+      "file": "I_Res_CookedRice.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT CookedRice (밥): 작은 둥근 그릇 위 높게 담긴 아이보리 밥. 쌀알을 낱개로 세밀하게 묘사하지 않음. (a small round bowl holding a mound of warm ivory cooked rice)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "PreservedMeal",
+      "label": "보존식",
+      "reference": "신규",
+      "description": "각진 갈색 기름종이 포장과 십자 끈. 회색 둥근 보따리와 구분. (a rectangular brown waxed paper food parcel tied with crossed twine)",
+      "category": "Resources",
+      "file": "I_Res_PreservedMeal.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT PreservedMeal (보존식): 각진 갈색 기름종이 포장과 십자 끈. 회색 둥근 보따리와 구분. (a rectangular brown waxed paper food parcel tied with crossed twine)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "PurifiedWater",
+      "label": "식수",
+      "reference": "신규",
+      "description": "투명한 짧은 유리병과 코르크, 푸른 물 면. PET병·갈증 상태 표시 금지. (a squat clear glass bottle with a cork and a pale blue water line)",
+      "category": "Resources",
+      "file": "I_Res_PurifiedWater.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT PurifiedWater (식수): 투명한 짧은 유리병과 코르크, 푸른 물 면. PET병·갈증 상태 표시 금지. (a squat clear glass bottle with a cork and a pale blue water line)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "WarmingTea",
+      "label": "온차",
+      "reference": "신규",
+      "description": "한쪽 손잡이의 연녹색 법랑 머그, 호박색 차. 스튜의 양손잡이·넓은 그릇과 구분. (a muted green enamel mug with one handle and amber tea)",
+      "category": "Resources",
+      "file": "I_Res_WarmingTea.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly.\nSUBJECT WarmingTea (온차): 한쪽 손잡이의 연녹색 법랑 머그, 호박색 차. 스튜의 양손잡이·넓은 그릇과 구분. (a muted green enamel mug with one handle and amber tea)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Hammer",
+      "label": "수리 망치",
+      "reference": "실물 `Ref_Hammer`",
+      "description": "양끝 둥글어진 사각 철제 머리, 짧은 황토·주황 손잡이. 장도리 집게발·렌치로 바꾸지 않음. (a short orange wooden handle and one heavy rectangular iron hammer head)",
+      "category": "Equipment",
+      "file": "I_Item_Hammer.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Hammer.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Hammer (수리 망치): 양끝 둥글어진 사각 철제 머리, 짧은 황토·주황 손잡이. 장도리 집게발·렌치로 바꾸지 않음. (a short orange wooden handle and one heavy rectangular iron hammer head)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Shotgun",
+      "label": "샷건",
+      "reference": "실물 `Ref_Shotgun`",
+      "description": "올리브색 몸통, 황토색 펌프·개머리판, 어두운 총구와 주황 가늠쇠. 측면을 충분히 보여 펌프와 길이를 읽히게 함. (the olive green shotgun with ochre pump and stock from the reference, shown mostly from the side)",
+      "category": "Equipment",
+      "file": "I_Item_Shotgun.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/docs/design/references/ingame-ui/Ref_Shotgun.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is the ACTUAL MODEL SUBJECT reference. Preserve its identity, proportions, parts, painted color blocks; ignore background and raw render lighting. Image 2 is Wood STYLE ONLY.\nSUBJECT Shotgun (샷건): 올리브색 몸통, 황토색 펌프·개머리판, 어두운 총구와 주황 가늠쇠. 측면을 충분히 보여 펌프와 길이를 읽히게 함. (the olive green shotgun with ochre pump and stock from the reference, shown mostly from the side)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Rifle",
+      "label": "라이플",
+      "reference": "신규",
+      "description": "긴 단일 총열, 길게 뻗은 어두운 목재 개머리판·수동 볼트 손잡이. 샷건보다 길고 가늘며 펌프 없음. (a long bolt action rifle with one slim iron barrel, dark wooden stock and a clear bolt handle)",
+      "category": "Equipment",
+      "file": "I_Item_Rifle.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_Revolver.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT Rifle (라이플): 긴 단일 총열, 길게 뻗은 어두운 목재 개머리판·수동 볼트 손잡이. 샷건보다 길고 가늘며 펌프 없음. (a long bolt action rifle with one slim iron barrel, dark wooden stock and a clear bolt handle)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "Melee",
+      "label": "마체테",
+      "reference": "신규",
+      "description": "넓고 짧은 무광 철제 칼날, 둥근 끝, 천 감은 손잡이. 도끼·검·피 묻은 무기 금지. (a broad short matte iron machete with a rounded tip and wrapped grip)",
+      "category": "Equipment",
+      "file": "I_Item_Melee.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_Revolver.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT Melee (마체테): 넓고 짧은 무광 철제 칼날, 둥근 끝, 천 감은 손잡이. 도끼·검·피 묻은 무기 금지. (a broad short matte iron machete with a rounded tip and wrapped grip)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "LeatherCoat",
+      "label": "가죽 옷",
+      "reference": "신규",
+      "description": "허리까지 오는 밤색 가죽 외투, 넓은 깃·큰 잠금 2개. 방한 파카의 모피 테두리는 없음. (a waist length brown leather coat with a broad collar and two large fasteners)",
+      "category": "Equipment",
+      "file": "I_Item_LeatherCoat.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT LeatherCoat (가죽 옷): 허리까지 오는 밤색 가죽 외투, 넓은 깃·큰 잠금 2개. 방한 파카의 모피 테두리는 없음. (a waist length brown leather coat with a broad collar and two large fasteners)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "DesertRobe",
+      "label": "사막 로브",
+      "reference": "신규",
+      "description": "모래빛 긴 로브, 얇고 넓은 소매·청회색 허리띠. 두꺼운 패딩 표현 없음. (a long sand colored desert robe with loose sleeves and a muted blue gray sash)",
+      "category": "Equipment",
+      "file": "I_Item_DesertRobe.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT DesertRobe (사막 로브): 모래빛 긴 로브, 얇고 넓은 소매·청회색 허리띠. 두꺼운 패딩 표현 없음. (a long sand colored desert robe with loose sleeves and a muted blue gray sash)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "ScrapHelmet",
+      "label": "고철 투구",
+      "reference": "신규",
+      "description": "둥근 회색 철제 반모, 녹슨 덧댐 판 하나와 큰 리벳 2개. 뿔·바이저·군 표식 없음. (a rounded scrap iron helmet with one rusted patch plate and two large rivets)",
+      "category": "Equipment",
+      "file": "I_Item_ScrapHelmet.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT ScrapHelmet (고철 투구): 둥근 회색 철제 반모, 녹슨 덧댐 판 하나와 큰 리벳 2개. 뿔·바이저·군 표식 없음. (a rounded scrap iron helmet with one rusted patch plate and two large rivets)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "PaddedPants",
+      "label": "누비 바지",
+      "reference": "신규",
+      "description": "황갈색 바지, 굵은 누빔 3줄·무릎 덧댐. 방한 바지와 달리 모피 끝단 없음. (ochre quilted trousers with three broad stitched bands and knee patches)",
+      "category": "Equipment",
+      "file": "I_Item_PaddedPants.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT PaddedPants (누비 바지): 황갈색 바지, 굵은 누빔 3줄·무릎 덧댐. 방한 바지와 달리 모피 끝단 없음. (ochre quilted trousers with three broad stitched bands and knee patches)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "DesertBoots",
+      "label": "사막 장화",
+      "reference": "신규",
+      "description": "모래빛 중간 높이 부츠 한 쌍, 넓은 밑창과 천 감김. 설상화처럼 부풀리지 않음. (a pair of sand colored mid height boots with broad soles and cloth wraps)",
+      "category": "Equipment",
+      "file": "I_Item_DesertBoots.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT DesertBoots (사막 장화): 모래빛 중간 높이 부츠 한 쌍, 넓은 밑창과 천 감김. 설상화처럼 부풀리지 않음. (a pair of sand colored mid height boots with broad soles and cloth wraps)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "FurHood",
+      "label": "모피 후드",
+      "reference": "신규",
+      "description": "부드러운 회갈색 후드, 아이보리 두꺼운 털 테두리, 안쪽 얼굴 부분 비움. 투구와 달리 금속 없음. (an empty gray brown fur hood with a thick ivory fur rim)",
+      "category": "Equipment",
+      "file": "I_Item_FurHood.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT FurHood (모피 후드): 부드러운 회갈색 후드, 아이보리 두꺼운 털 테두리, 안쪽 얼굴 부분 비움. 투구와 달리 금속 없음. (an empty gray brown fur hood with a thick ivory fur rim)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "WinterPants",
+      "label": "방한 바지",
+      "reference": "신규",
+      "description": "청회색 두꺼운 바지, 넓은 단열 패널과 아이보리 발목 털. (bulky slate blue insulated trousers with broad panels and ivory ankle fur)",
+      "category": "Equipment",
+      "file": "I_Item_WinterPants.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT WinterPants (방한 바지): 청회색 두꺼운 바지, 넓은 단열 패널과 아이보리 발목 털. (bulky slate blue insulated trousers with broad panels and ivory ankle fur)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "WinterBoots",
+      "label": "방한 부츠",
+      "reference": "신규",
+      "description": "짙은 회갈색 통통한 부츠 한 쌍, 두꺼운 밑창·아이보리 털 입구. (a pair of stout dark gray brown winter boots with thick soles and ivory fur cuffs)",
+      "category": "Equipment",
+      "file": "I_Item_WinterBoots.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_WinterParka.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT WinterBoots (방한 부츠): 짙은 회갈색 통통한 부츠 한 쌍, 두꺼운 밑창·아이보리 털 입구. (a pair of stout dark gray brown winter boots with thick soles and ivory fur cuffs)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    },
+    {
+      "key": "FishingRod",
+      "label": "낚싯대",
+      "reference": "신규",
+      "description": "짧게 과장한 황갈색 굵은 낚싯대, 큰 릴·한 번 굽은 끝. 가는 줄과 작은 바늘은 아이콘에서 생략. (a chunky ochre fishing rod with one large reel and a gently curved tip, no thin line)",
+      "category": "Equipment",
+      "file": "I_Item_FishingRod.png",
+      "refs": [
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Res_Wood.png",
+        "C:/Users/iam12/Train Survival/output/imagegen/ingame-ui-style-v1/originals/I_Item_Revolver.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE production inventory item icon for Train Survival, continuing the supplied existing icon set. Isolated on genuinely transparent RGBA background, square canvas at least 1024px. Entire object centered, longest extent 80% of canvas, minimum 8% padding every edge.\nSTYLE: hand-painted semi-cartoon, chunky rounded low-poly-inspired shapes, broad restrained color planes, matte surfaces, soft upper-left form shading, restrained dark contour separation. Readable at 32/48/56px. No photographic texture, tiny scratches, excessive detail or glossy specular. Match the supplied Wood icon's rendering style; don't copy its subject, wood, logs or rope unless requested.\nINPUT ROLES: Image 1 is Wood STYLE ONLY. This item has no final model: follow description exactly. Last image is a SAME-SET equipment STYLE reference; match its finish and, for winter clothing, its slate blue and ivory palette.\nSUBJECT FishingRod (낚싯대): 짧게 과장한 황갈색 굵은 낚싯대, 큰 릴·한 번 굽은 끝. 가는 줄과 작은 바늘은 아이콘에서 생략. (a chunky ochre fishing rod with one large reel and a gently curved tip, no thin line)\nCOMPOSITION: weak-perspective three-quarter view; clothing nearly front view with empty interiors and no mannequin. Long tools grip lower-left, functional end upper-right; do not mirror actual model. Food viewed slightly from above so contents read.\nNo text, numbers, UI slots/frames/badges, extra objects, hands, people, mannequins, backgrounds, ground, cast shadow, steam, particles, external glow or watermark. A single cohesive collectible; paired boots or specified clusters count as one item."
+    }
+  ]
+}
