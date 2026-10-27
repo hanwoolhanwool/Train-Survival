@@ -1,0 +1,42 @@
+{
+  "result": {
+    "success": true,
+    "message": "Test job status retrieved.",
+    "error": null,
+    "data": {
+      "job_id": "5acfcd538d884c7081c85c948ca993a3",
+      "status": "succeeded",
+      "mode": "PlayMode",
+      "started_unix_ms": 1793094791671,
+      "finished_unix_ms": 1793094793981,
+      "last_update_unix_ms": 1793094793981,
+      "progress": {
+        "completed": 1,
+        "total": 1,
+        "current_test_full_name": null,
+        "current_test_started_unix_ms": 1793094793147,
+        "last_finished_test_full_name": "Game.Tests.PlayMode.InGameUiRenderingTests.Construction_selection_and_target_render_with_their_icons",
+        "last_finished_unix_ms": 1793094793955,
+        "stuck_suspected": false,
+        "editor_is_focused": true,
+        "blocked_reason": null,
+        "failures_so_far": [],
+        "failures_capped": false
+      },
+      "error": null,
+      "result": {
+        "mode": "PlayMode",
+        "summary": {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "durationSeconds": 0.8771577,
+          "resultState": "Passed"
+        },
+        "results": []
+      }
+    },
+    "hint": null
+  }
+}

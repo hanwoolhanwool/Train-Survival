@@ -1,0 +1,844 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="131" result="Passed" total="131" passed="131" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.2505215">
+  <test-suite type="TestSuite" id="1000" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="1479" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.250522" total="131" passed="131" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2603" name="Game.Tests.EditMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.EditMode.dll" runstate="Runnable" testcasecount="1479" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.242021" total="131" passed="131" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="50828" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2604" name="Game" fullname="Game" runstate="Runnable" testcasecount="1479" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.239318" total="131" passed="131" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2605" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="1479" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.237106" total="131" passed="131" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2606" name="EditMode" fullname="Game.Tests.EditMode" runstate="Runnable" testcasecount="1479" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.234225" total="131" passed="131" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1211" name="CraftingLogicTests" fullname="Game.Tests.EditMode.CraftingLogicTests" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.026064" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1217" name="무기_제작은_재료를_차감하고_아이템_1개를_지급한다" fullname="Game.Tests.EditMode.CraftingLogicTests.무기_제작은_재료를_차감하고_아이템_1개를_지급한다" methodname="무기_제작은_재료를_차감하고_아이템_1개를_지급한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="93110825" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.011187" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1222" name="무효_무기_산출_종류는_실패한다" fullname="Game.Tests.EditMode.CraftingLogicTests.무효_무기_산출_종류는_실패한다" methodname="무효_무기_산출_종류는_실패한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="1207434545" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000408" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1221" name="밥은_벼_2개를_차감하고_2개를_적재한다" fullname="Game.Tests.EditMode.CraftingLogicTests.밥은_벼_2개를_차감하고_2개를_적재한다" methodname="밥은_벼_2개를_차감하고_2개를_적재한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="904710302" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000314" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1219" name="보존식은_식재료와_소금을_차감하고_2개를_적재한다" fullname="Game.Tests.EditMode.CraftingLogicTests.보존식은_식재료와_소금을_차감하고_2개를_적재한다" methodname="보존식은_식재료와_소금을_차감하고_2개를_적재한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="212117236" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000229" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1216" name="빈_레시피와_무효_산출은_실패한다" fullname="Game.Tests.EditMode.CraftingLogicTests.빈_레시피와_무효_산출은_실패한다" methodname="빈_레시피와_무효_산출은_실패한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="1741439876" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000182" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1218" name="빈_칸이_없으면_무기_제작은_전량_실패한다" fullname="Game.Tests.EditMode.CraftingLogicTests.빈_칸이_없으면_무기_제작은_전량_실패한다" methodname="빈_칸이_없으면_무기_제작은_전량_실패한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="1031468244" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000137" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1215" name="산출은_기존_스택에_먼저_쌓인다" fullname="Game.Tests.EditMode.CraftingLogicTests.산출은_기존_스택에_먼저_쌓인다" methodname="산출은_기존_스택에_먼저_쌓인다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="531987396" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000170" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1214" name="산출을_넣을_자리가_없으면_전량_실패한다" fullname="Game.Tests.EditMode.CraftingLogicTests.산출을_넣을_자리가_없으면_전량_실패한다" methodname="산출을_넣을_자리가_없으면_전량_실패한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="1692852461" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000249" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1220" name="소금이_없으면_보존식은_전량_실패한다" fullname="Game.Tests.EditMode.CraftingLogicTests.소금이_없으면_보존식은_전량_실패한다" methodname="소금이_없으면_보존식은_전량_실패한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="1805660630" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000193" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1212" name="재료가_부족하면_제작할_수_없다" fullname="Game.Tests.EditMode.CraftingLogicTests.재료가_부족하면_제작할_수_없다" methodname="재료가_부족하면_제작할_수_없다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="34265149" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000204" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1213" name="재료를_정확히_차감하고_산출을_적재한다" fullname="Game.Tests.EditMode.CraftingLogicTests.재료를_정확히_차감하고_산출을_적재한다" methodname="재료를_정확히_차감하고_산출을_적재한다" classname="Game.Tests.EditMode.CraftingLogicTests" runstate="Runnable" seed="1882227504" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000236" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1555" name="HotbarLogicTests" fullname="Game.Tests.EditMode.HotbarLogicTests" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.012130" total="30" passed="30" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1556" name="ContainsItem은_해당_종류의_보유_여부를_판정한다" fullname="Game.Tests.EditMode.HotbarLogicTests.ContainsItem은_해당_종류의_보유_여부를_판정한다" methodname="ContainsItem은_해당_종류의_보유_여부를_판정한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="488366540" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000387" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1566" name="같은_종류는_기존_스택을_먼저_채운다" fullname="Game.Tests.EditMode.HotbarLogicTests.같은_종류는_기존_스택을_먼저_채운다" methodname="같은_종류는_기존_스택을_먼저_채운다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1897905052" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000245" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1565" name="같은_종류의_스택에만_병합된다" fullname="Game.Tests.EditMode.HotbarLogicTests.같은_종류의_스택에만_병합된다" methodname="같은_종류의_스택에만_병합된다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="331458226" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000370" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1584" name="대기실에서는_무엇을_골랐든_무기가_닫힌다" fullname="Game.Tests.EditMode.HotbarLogicTests.대기실에서는_무엇을_골랐든_무기가_닫힌다" methodname="대기실에서는_무엇을_골랐든_무기가_닫힌다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="717342367" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000209" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1578" name="마지막_한_개를_버리면_칸이_비워진다" fullname="Game.Tests.EditMode.HotbarLogicTests.마지막_한_개를_버리면_칸이_비워진다" methodname="마지막_한_개를_버리면_칸이_비워진다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="822764723" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000348" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1573" name="무기_아이템은_첫_빈_칸에_1개_적재된다" fullname="Game.Tests.EditMode.HotbarLogicTests.무기_아이템은_첫_빈_칸에_1개_적재된다" methodname="무기_아이템은_첫_빈_칸에_1개_적재된다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="11869463" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000209" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1582" name="무기_칸과_빈_칸과_수량_0은_버릴_수_없다" fullname="Game.Tests.EditMode.HotbarLogicTests.무기_칸과_빈_칸과_수량_0은_버릴_수_없다" methodname="무기_칸과_빈_칸과_수량_0은_버릴_수_없다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1749568650" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000295" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1575" name="무효_아이템_종류는_적재가_거부된다" fullname="Game.Tests.EditMode.HotbarLogicTests.무효_아이템_종류는_적재가_거부된다" methodname="무효_아이템_종류는_적재가_거부된다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1830225947" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000149" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1576" name="보유량_이상을_요청하면_자원_칸을_전량_비운다" fullname="Game.Tests.EditMode.HotbarLogicTests.보유량_이상을_요청하면_자원_칸을_전량_비운다" methodname="보유량_이상을_요청하면_자원_칸을_전량_비운다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1122526613" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000275" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1577" name="부분_수량_버리기는_잔량을_남긴다" fullname="Game.Tests.EditMode.HotbarLogicTests.부분_수량_버리기는_잔량을_남긴다" methodname="부분_수량_버리기는_잔량을_남긴다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="342780156" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000287" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1574" name="빈_칸이_없으면_무기_적재가_실패한다" fullname="Game.Tests.EditMode.HotbarLogicTests.빈_칸이_없으면_무기_적재가_실패한다" methodname="빈_칸이_없으면_무기_적재가_실패한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1852101386" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000168" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1572" name="슬롯_교환은_범위_안의_서로_다른_두_칸만_유효하다" fullname="Game.Tests.EditMode.HotbarLogicTests.슬롯_교환은_범위_안의_서로_다른_두_칸만_유효하다" methodname="슬롯_교환은_범위_안의_서로_다른_두_칸만_유효하다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1032923328" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000215" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1558" name="여유_있는_기존_스택을_빈_칸보다_먼저_채운다" fullname="Game.Tests.EditMode.HotbarLogicTests.여유_있는_기존_스택을_빈_칸보다_먼저_채운다" methodname="여유_있는_기존_스택을_빈_칸보다_먼저_채운다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="591720718" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000198" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1583" name="인게임_씬에서만_고른_무기가_열린다" fullname="Game.Tests.EditMode.HotbarLogicTests.인게임_씬에서만_고른_무기가_열린다" methodname="인게임_씬에서만_고른_무기가_열린다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="316154157" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000143" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1581" name="일괄_획득은_보따리_아이템의_보관_id를_보존한다" fullname="Game.Tests.EditMode.HotbarLogicTests.일괄_획득은_보따리_아이템의_보관_id를_보존한다" methodname="일괄_획득은_보따리_아이템의_보관_id를_보존한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="219469929" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000808" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1579" name="일괄_획득은_전부_들어갈_때만_수납한다" fullname="Game.Tests.EditMode.HotbarLogicTests.일괄_획득은_전부_들어갈_때만_수납한다" methodname="일괄_획득은_전부_들어갈_때만_수납한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1776858508" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000300" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1580" name="일괄_획득은_한_칸이라도_부족하면_실패한다" fullname="Game.Tests.EditMode.HotbarLogicTests.일괄_획득은_한_칸이라도_부족하면_실패한다" methodname="일괄_획득은_한_칸이라도_부족하면_실패한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="937184719" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000231" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1557" name="자원은_빈_칸에_새_스택으로_적재된다" fullname="Game.Tests.EditMode.HotbarLogicTests.자원은_빈_칸에_새_스택으로_적재된다" methodname="자원은_빈_칸에_새_스택으로_적재된다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1821480335" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000198" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1561" name="자원이_없으면_차감이_실패한다" fullname="Game.Tests.EditMode.HotbarLogicTests.자원이_없으면_차감이_실패한다" methodname="자원이_없으면_차감이_실패한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1376627898" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000108" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1559" name="전_슬롯이_차면_적재가_실패한다" fullname="Game.Tests.EditMode.HotbarLogicTests.전_슬롯이_차면_적재가_실패한다" methodname="전_슬롯이_차면_적재가_실패한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="388778424" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000149" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1569" name="조건_차감은_소모된_종류를_돌려준다" fullname="Game.Tests.EditMode.HotbarLogicTests.조건_차감은_소모된_종류를_돌려준다" methodname="조건_차감은_소모된_종류를_돌려준다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1168220149" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000501" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1568" name="조건_차감은_조건에_맞는_종류를_건너뛰지_않고_고른다" fullname="Game.Tests.EditMode.HotbarLogicTests.조건_차감은_조건에_맞는_종류를_건너뛰지_않고_고른다" methodname="조건_차감은_조건에_맞는_종류를_건너뛰지_않고_고른다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="517110881" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000288" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1567" name="종류_차감은_그_종류만_뒤에서부터_비운다" fullname="Game.Tests.EditMode.HotbarLogicTests.종류_차감은_그_종류만_뒤에서부터_비운다" methodname="종류_차감은_그_종류만_뒤에서부터_비운다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1141055293" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000225" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1570" name="종류별_총량과_조건_총량을_구분해_센다" fullname="Game.Tests.EditMode.HotbarLogicTests.종류별_총량과_조건_총량을_구분해_센다" methodname="종류별_총량과_조건_총량을_구분해_센다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1294916835" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000315" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1562" name="지정_칸_차감은_다른_칸을_건드리지_않는다" fullname="Game.Tests.EditMode.HotbarLogicTests.지정_칸_차감은_다른_칸을_건드리지_않는다" methodname="지정_칸_차감은_다른_칸을_건드리지_않는다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1325780778" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000265" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1571" name="지정_칸_차감은_종류를_보존한다" fullname="Game.Tests.EditMode.HotbarLogicTests.지정_칸_차감은_종류를_보존한다" methodname="지정_칸_차감은_종류를_보존한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1687825041" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000228" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1563" name="지정_칸이_자원이_아니면_차감이_실패한다" fullname="Game.Tests.EditMode.HotbarLogicTests.지정_칸이_자원이_아니면_차감이_실패한다" methodname="지정_칸이_자원이_아니면_차감이_실패한다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1209437255" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000139" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1560" name="차감은_뒤에서부터_스택을_비우고_빈_칸으로_되돌린다" fullname="Game.Tests.EditMode.HotbarLogicTests.차감은_뒤에서부터_스택을_비우고_빈_칸으로_되돌린다" methodname="차감은_뒤에서부터_스택을_비우고_빈_칸으로_되돌린다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="902585962" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000194" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1585" name="창이_열려_있으면_인게임이어도_무기가_닫힌다" fullname="Game.Tests.EditMode.HotbarLogicTests.창이_열려_있으면_인게임이어도_무기가_닫힌다" methodname="창이_열려_있으면_인게임이어도_무기가_닫힌다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="952632974" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000173" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1564" name="총량과_상한은_현재_배치를_따른다" fullname="Game.Tests.EditMode.HotbarLogicTests.총량과_상한은_현재_배치를_따른다" methodname="총량과_상한은_현재_배치를_따른다" classname="Game.Tests.EditMode.HotbarLogicTests" runstate="Runnable" seed="1107322107" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000244" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1586" name="HudBannerQueueTests" fullname="Game.Tests.EditMode.HudBannerQueueTests" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.009671" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1596" name="Clear는_모두_비운다" fullname="Game.Tests.EditMode.HudBannerQueueTests.Clear는_모두_비운다" methodname="Clear는_모두_비운다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="1985841894" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.001862" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1591" name="같은_급함이면_최신이_이긴다" fullname="Game.Tests.EditMode.HudBannerQueueTests.같은_급함이면_최신이_이긴다" methodname="같은_급함이면_최신이_이긴다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="495836023" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000194" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1590" name="급한_것이_먼저_자리를_차지한다" fullname="Game.Tests.EditMode.HudBannerQueueTests.급한_것이_먼저_자리를_차지한다" methodname="급한_것이_먼저_자리를_차지한다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="531879756" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000177" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1587" name="넣은_배너가_그대로_나온다" fullname="Game.Tests.EditMode.HudBannerQueueTests.넣은_배너가_그대로_나온다" methodname="넣은_배너가_그대로_나온다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="639461741" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000119" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1589" name="동시에_두_개를_넘기지_않는다" fullname="Game.Tests.EditMode.HudBannerQueueTests.동시에_두_개를_넘기지_않는다" methodname="동시에_두_개를_넘기지_않는다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="213298377" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000125" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1592" name="밀렸던_배너도_자리가_나면_보인다" fullname="Game.Tests.EditMode.HudBannerQueueTests.밀렸던_배너도_자리가_나면_보인다" methodname="밀렸던_배너도_자리가_나면_보인다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="1333330432" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.001397" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1597" name="버퍼가_없거나_작아도_무너지지_않는다" fullname="Game.Tests.EditMode.HudBannerQueueTests.버퍼가_없거나_작아도_무너지지_않는다" methodname="버퍼가_없거나_작아도_무너지지_않는다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="71701502" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000176" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1593" name="보관_한도를_넘으면_가장_약한_것부터_버린다" fullname="Game.Tests.EditMode.HudBannerQueueTests.보관_한도를_넘으면_가장_약한_것부터_버린다" methodname="보관_한도를_넘으면_가장_약한_것부터_버린다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="20370244" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.003071" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1594" name="빈_텍스트는_자리를_차지하지_않는다" fullname="Game.Tests.EditMode.HudBannerQueueTests.빈_텍스트는_자리를_차지하지_않는다" methodname="빈_텍스트는_자리를_차지하지_않는다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="1863529468" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000194" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1595" name="유지_시간이_0_이하면_넣지_않는다" fullname="Game.Tests.EditMode.HudBannerQueueTests.유지_시간이_0_이하면_넣지_않는다" methodname="유지_시간이_0_이하면_넣지_않는다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="1529623505" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000159" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1588" name="유지_시간이_지나면_사라진다" fullname="Game.Tests.EditMode.HudBannerQueueTests.유지_시간이_지나면_사라진다" methodname="유지_시간이_지나면_사라진다" classname="Game.Tests.EditMode.HudBannerQueueTests" runstate="Runnable" seed="292476679" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000195" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1598" name="HudTransientFadeTests" fullname="Game.Tests.EditMode.HudTransientFadeTests" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.006125" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1606" name="Reset은_즉시_감춘다" fullname="Game.Tests.EditMode.HudTransientFadeTests.Reset은_즉시_감춘다" methodname="Reset은_즉시_감춘다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="400271805" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000954" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1601" name="등장은_퇴장보다_빠르다" fullname="Game.Tests.EditMode.HudTransientFadeTests.등장은_퇴장보다_빠르다" methodname="등장은_퇴장보다_빠르다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="1735328128" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000498" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1607" name="불투명도는_항상_0과_1_사이다" fullname="Game.Tests.EditMode.HudTransientFadeTests.불투명도는_항상_0과_1_사이다" methodname="불투명도는_항상_0과_1_사이다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="999836656" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000707" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1600" name="비정상이_되면_등장한다" fullname="Game.Tests.EditMode.HudTransientFadeTests.비정상이_되면_등장한다" methodname="비정상이_되면_등장한다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="804788222" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000591" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1605" name="사라지는_도중_다시_비정상이_되면_되돌아온다" fullname="Game.Tests.EditMode.HudTransientFadeTests.사라지는_도중_다시_비정상이_되면_되돌아온다" methodname="사라지는_도중_다시_비정상이_되면_되돌아온다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="718314740" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000727" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1602" name="안전으로_돌아와도_유예_동안은_남는다" fullname="Game.Tests.EditMode.HudTransientFadeTests.안전으로_돌아와도_유예_동안은_남는다" methodname="안전으로_돌아와도_유예_동안은_남는다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="1112066235" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000155" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1603" name="유예가_끝나면_사라진다" fullname="Game.Tests.EditMode.HudTransientFadeTests.유예가_끝나면_사라진다" methodname="유예가_끝나면_사라진다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="1592835206" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000164" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1604" name="임계값_근처에서_깜빡이지_않는다" fullname="Game.Tests.EditMode.HudTransientFadeTests.임계값_근처에서_깜빡이지_않는다" methodname="임계값_근처에서_깜빡이지_않는다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="129939302" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000280" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1599" name="처음에는_보이지_않는다" fullname="Game.Tests.EditMode.HudTransientFadeTests.처음에는_보이지_않는다" methodname="처음에는_보이지_않는다" classname="Game.Tests.EditMode.HudTransientFadeTests" runstate="Runnable" seed="85972312" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000292" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1617" name="InGameUiArtTests" fullname="Game.Tests.EditMode.InGameUiArtTests" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" testcasecount="50" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.140732" total="50" passed="50" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1662" name="Empty_slots_do_not_draw_a_resource_or_quantity" fullname="Game.Tests.EditMode.InGameUiArtTests.Empty_slots_do_not_draw_a_resource_or_quantity" methodname="Empty_slots_do_not_draw_a_resource_or_quantity" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="843600755" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.059607" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1660" name="Every_equipment_maps_to_its_image_without_showing_internal_count" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.003795" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1643" name="Every_equipment_maps_to_its_image_without_showing_internal_count(Harpoon)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(Harpoon)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1126743078" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.001090" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1644" name="Every_equipment_maps_to_its_image_without_showing_internal_count(Revolver)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(Revolver)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="229507340" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000103" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1645" name="Every_equipment_maps_to_its_image_without_showing_internal_count(Hammer)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(Hammer)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1783343780" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000068" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1646" name="Every_equipment_maps_to_its_image_without_showing_internal_count(Shotgun)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(Shotgun)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="510473377" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000048" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1647" name="Every_equipment_maps_to_its_image_without_showing_internal_count(Rifle)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(Rifle)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="427327925" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000043" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1648" name="Every_equipment_maps_to_its_image_without_showing_internal_count(Melee)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(Melee)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="115111831" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000037" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1649" name="Every_equipment_maps_to_its_image_without_showing_internal_count(LeatherCoat)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(LeatherCoat)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="25042303" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000038" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1650" name="Every_equipment_maps_to_its_image_without_showing_internal_count(DesertRobe)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(DesertRobe)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="70136347" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000036" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1651" name="Every_equipment_maps_to_its_image_without_showing_internal_count(ScrapHelmet)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(ScrapHelmet)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="601746352" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000050" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1652" name="Every_equipment_maps_to_its_image_without_showing_internal_count(PaddedPants)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(PaddedPants)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="653481082" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000052" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1653" name="Every_equipment_maps_to_its_image_without_showing_internal_count(DesertBoots)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(DesertBoots)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1799705901" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000072" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1654" name="Every_equipment_maps_to_its_image_without_showing_internal_count(Bundle)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(Bundle)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1005521490" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000050" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1655" name="Every_equipment_maps_to_its_image_without_showing_internal_count(FurHood)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(FurHood)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1443605884" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000039" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1656" name="Every_equipment_maps_to_its_image_without_showing_internal_count(WinterParka)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(WinterParka)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="181457999" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000038" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1657" name="Every_equipment_maps_to_its_image_without_showing_internal_count(WinterPants)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(WinterPants)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1571175981" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000035" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1658" name="Every_equipment_maps_to_its_image_without_showing_internal_count(WinterBoots)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(WinterBoots)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="354660410" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000034" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1659" name="Every_equipment_maps_to_its_image_without_showing_internal_count(FishingRod)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_equipment_maps_to_its_image_without_showing_internal_count(FishingRod)" methodname="Every_equipment_maps_to_its_image_without_showing_internal_count" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1788580853" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000042" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1642" name="Every_resource_maps_to_its_own_image" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" testcasecount="23" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.002575" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1619" name="Every_resource_maps_to_its_own_image(Wood)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Wood)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="632789337" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000204" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1620" name="Every_resource_maps_to_its_own_image(Stone)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Stone)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1642054736" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000046" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1621" name="Every_resource_maps_to_its_own_image(Scrap)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Scrap)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="212866321" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000029" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1622" name="Every_resource_maps_to_its_own_image(Niter)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Niter)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="2050609366" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1623" name="Every_resource_maps_to_its_own_image(RawFood)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(RawFood)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="83245938" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000038" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1624" name="Every_resource_maps_to_its_own_image(Timber)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Timber)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1054202225" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000034" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1625" name="Every_resource_maps_to_its_own_image(OreVein)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(OreVein)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1949165135" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000037" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1626" name="Every_resource_maps_to_its_own_image(Rice)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Rice)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1576382888" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000047" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1627" name="Every_resource_maps_to_its_own_image(Salt)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Salt)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="343909608" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000042" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1628" name="Every_resource_maps_to_its_own_image(BossCore)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(BossCore)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1603032343" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000038" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1629" name="Every_resource_maps_to_its_own_image(Ice)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Ice)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="488765834" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1630" name="Every_resource_maps_to_its_own_image(RareMetal)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(RareMetal)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="343781359" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000029" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1631" name="Every_resource_maps_to_its_own_image(RelicPart)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(RelicPart)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1688714123" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000032" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1632" name="Every_resource_maps_to_its_own_image(Fish)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(Fish)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1953399504" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000034" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1633" name="Every_resource_maps_to_its_own_image(RevolverAmmo)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(RevolverAmmo)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="691044492" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000033" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1634" name="Every_resource_maps_to_its_own_image(ShotgunAmmo)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(ShotgunAmmo)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="433662489" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1635" name="Every_resource_maps_to_its_own_image(RifleAmmo)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(RifleAmmo)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="632880988" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000029" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1636" name="Every_resource_maps_to_its_own_image(CookedMeal)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(CookedMeal)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1467630736" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1637" name="Every_resource_maps_to_its_own_image(HeartyStew)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(HeartyStew)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1651348484" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000028" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1638" name="Every_resource_maps_to_its_own_image(CookedRice)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(CookedRice)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="267594937" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000028" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1639" name="Every_resource_maps_to_its_own_image(PreservedMeal)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(PreservedMeal)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="423277016" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000035" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1640" name="Every_resource_maps_to_its_own_image(PurifiedWater)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(PurifiedWater)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="777416772" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000029" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1641" name="Every_resource_maps_to_its_own_image(WarmingTea)" fullname="Game.Tests.EditMode.InGameUiArtTests.Every_resource_maps_to_its_own_image(WarmingTea)" methodname="Every_resource_maps_to_its_own_image" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="655795251" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1661" name="Icon_UI_font_sizes_are_in_the_loading_warmup" fullname="Game.Tests.EditMode.InGameUiArtTests.Icon_UI_font_sizes_are_in_the_loading_warmup" methodname="Icon_UI_font_sizes_are_in_the_loading_warmup" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="2064763954" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.001335" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1670" name="Resizable_parts_keep_their_sliced_borders" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.001836" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1663" name="Resizable_parts_keep_their_sliced_borders(&quot;U_SlotBase&quot;)" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders(&quot;U_SlotBase&quot;)" methodname="Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="2057500461" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000832" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1664" name="Resizable_parts_keep_their_sliced_borders(&quot;U_SlotOutline&quot;)" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders(&quot;U_SlotOutline&quot;)" methodname="Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="859202132" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000081" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1665" name="Resizable_parts_keep_their_sliced_borders(&quot;U_PanelBody&quot;)" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders(&quot;U_PanelBody&quot;)" methodname="Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1401825395" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000075" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1666" name="Resizable_parts_keep_their_sliced_borders(&quot;U_PanelHeader&quot;)" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders(&quot;U_PanelHeader&quot;)" methodname="Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="2097251145" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000040" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1667" name="Resizable_parts_keep_their_sliced_borders(&quot;U_ControlFace&quot;)" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders(&quot;U_ControlFace&quot;)" methodname="Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="966636489" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000034" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1668" name="Resizable_parts_keep_their_sliced_borders(&quot;U_GaugeTrack&quot;)" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders(&quot;U_GaugeTrack&quot;)" methodname="Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="2034715880" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000044" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1669" name="Resizable_parts_keep_their_sliced_borders(&quot;U_GaugeFill&quot;)" fullname="Game.Tests.EditMode.InGameUiArtTests.Resizable_parts_keep_their_sliced_borders(&quot;U_GaugeFill&quot;)" methodname="Resizable_parts_keep_their_sliced_borders" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="464231828" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000052" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1618" name="Resource_catalog_contains_every_delivered_sprite_once" fullname="Game.Tests.EditMode.InGameUiArtTests.Resource_catalog_contains_every_delivered_sprite_once" methodname="Resource_catalog_contains_every_delivered_sprite_once" classname="Game.Tests.EditMode.InGameUiArtTests" runstate="Runnable" seed="1011266075" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.070119" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="2484" name="UiPaletteTests" fullname="Game.Tests.EditMode.UiPaletteTests" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.006333" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2495" name="HUD_패널_배경은_충분히_불투명하다" fullname="Game.Tests.EditMode.UiPaletteTests.HUD_패널_배경은_충분히_불투명하다" methodname="HUD_패널_배경은_충분히_불투명하다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="1766363092" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000604" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2494" name="단계별_16진값은_텍스트_색과_일치한다" fullname="Game.Tests.EditMode.UiPaletteTests.단계별_16진값은_텍스트_색과_일치한다" methodname="단계별_16진값은_텍스트_색과_일치한다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="1285235955" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.001126" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2493" name="리치텍스트_16진값은_Color_토큰과_일치한다" fullname="Game.Tests.EditMode.UiPaletteTests.리치텍스트_16진값은_Color_토큰과_일치한다" methodname="리치텍스트_16진값은_Color_토큰과_일치한다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="245878377" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000230" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2486" name="보조_텍스트와_강조색은_본문_대비를_만족한다" fullname="Game.Tests.EditMode.UiPaletteTests.보조_텍스트와_강조색은_본문_대비를_만족한다" methodname="보조_텍스트와_강조색은_본문_대비를_만족한다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="1110220000" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000621" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2491" name="상태_4단계는_휘도만으로도_구분된다" fullname="Game.Tests.EditMode.UiPaletteTests.상태_4단계는_휘도만으로도_구분된다" methodname="상태_4단계는_휘도만으로도_구분된다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="617283446" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000379" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2490" name="상태_4단계의_면색은_서로_구분된다" fullname="Game.Tests.EditMode.UiPaletteTests.상태_4단계의_면색은_서로_구분된다" methodname="상태_4단계의_면색은_서로_구분된다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="128378546" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000426" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2487" name="상태_4단계의_텍스트_색은_모두_본문_대비를_만족한다" fullname="Game.Tests.EditMode.UiPaletteTests.상태_4단계의_텍스트_색은_모두_본문_대비를_만족한다" methodname="상태_4단계의_텍스트_색은_모두_본문_대비를_만족한다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="1278126609" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000205" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2489" name="선과_비활성_면은_텍스트로_쓰지_않는다" fullname="Game.Tests.EditMode.UiPaletteTests.선과_비활성_면은_텍스트로_쓰지_않는다" methodname="선과_비활성_면은_텍스트로_쓰지_않는다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="793426938" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000178" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2492" name="알_수_없는_단계는_안전으로_떨어진다" fullname="Game.Tests.EditMode.UiPaletteTests.알_수_없는_단계는_안전으로_떨어진다" methodname="알_수_없는_단계는_안전으로_떨어진다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="1110969242" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000205" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2488" name="위험_면색은_본문_대비에_미달한다" fullname="Game.Tests.EditMode.UiPaletteTests.위험_면색은_본문_대비에_미달한다" methodname="위험_면색은_본문_대비에_미달한다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="1049054339" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000277" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2485" name="주_텍스트는_강화_대비를_만족한다" fullname="Game.Tests.EditMode.UiPaletteTests.주_텍스트는_강화_대비를_만족한다" methodname="주_텍스트는_강화_대비를_만족한다" classname="Game.Tests.EditMode.UiPaletteTests" runstate="Runnable" seed="1630604344" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000195" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="2496" name="UiWarmupTextTests" fullname="Game.Tests.EditMode.UiWarmupTextTests" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.006457" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2504" name="HUD_크기_목록에_메뉴_크기가_섞이지_않았다" fullname="Game.Tests.EditMode.UiWarmupTextTests.HUD_크기_목록에_메뉴_크기가_섞이지_않았다" methodname="HUD_크기_목록에_메뉴_크기가_섞이지_않았다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="1802710615" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000347" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2505" name="HUD_크기_목록은_비어_있지_않다" fullname="Game.Tests.EditMode.UiWarmupTextTests.HUD_크기_목록은_비어_있지_않다" methodname="HUD_크기_목록은_비어_있지_않다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="2055944895" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000178" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2499" name="공백과_줄바꿈은_굽지_않는다" fullname="Game.Tests.EditMode.UiWarmupTextTests.공백과_줄바꿈은_굽지_않는다" methodname="공백과_줄바꿈은_굽지_않는다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="415021335" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.001830" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2500" name="빈_문자열과_null은_건너뛴다" fullname="Game.Tests.EditMode.UiWarmupTextTests.빈_문자열과_null은_건너뛴다" methodname="빈_문자열과_null은_건너뛴다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="614607596" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000212" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2498" name="중복은_한_번만_굽는다" fullname="Game.Tests.EditMode.UiWarmupTextTests.중복은_한_번만_굽는다" methodname="중복은_한_번만_굽는다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="1389724454" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000144" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2501" name="크기_목록에_기본_크기_0이_들어_있다" fullname="Game.Tests.EditMode.UiWarmupTextTests.크기_목록에_기본_크기_0이_들어_있다" methodname="크기_목록에_기본_크기_0이_들어_있다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="849708398" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000123" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2503" name="크기_목록에_중복이_없다" fullname="Game.Tests.EditMode.UiWarmupTextTests.크기_목록에_중복이_없다" methodname="크기_목록에_중복이_없다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="1483915869" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000841" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2502" name="크기_목록이_UiMetrics가_내는_HUD_크기를_전부_덮는다" fullname="Game.Tests.EditMode.UiWarmupTextTests.크기_목록이_UiMetrics가_내는_HUD_크기를_전부_덮는다" methodname="크기_목록이_UiMetrics가_내는_HUD_크기를_전부_덮는다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="1050241686" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000990" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2497" name="표시명에서_문자를_모은다" fullname="Game.Tests.EditMode.UiWarmupTextTests.표시명에서_문자를_모은다" methodname="표시명에서_문자를_모은다" classname="Game.Tests.EditMode.UiWarmupTextTests" runstate="Runnable" seed="1237445338" result="Passed" start-time="2026-10-27 04:13:33Z" end-time="2026-10-27 04:13:33Z" duration="0.000399" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
