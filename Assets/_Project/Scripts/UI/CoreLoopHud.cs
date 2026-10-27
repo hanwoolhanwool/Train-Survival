@@ -65,7 +65,6 @@ namespace Game.UI
         private readonly HudTransientFade _temperatureFade = new HudTransientFade();
         private readonly HudTransientFade _buffFade = new HudTransientFade();
 
-        private GUIStyle _bannerStyle;
 
         /// <summary>버프 줄이 사라지는 동안 마지막 문구를 들고 있는다 — 없으면 퇴장 중에 글자가 비어 깜빡인다.</summary>
         private string _buffText = string.Empty;
@@ -336,6 +335,7 @@ namespace Game.UI
         {
             DrawStatusColumn();
             DrawBanners();
+            DrawAmmoLine();
         }
 
         /// <summary>
@@ -359,7 +359,6 @@ namespace Game.UI
             DrawHungerLine(now, delta);
 
             // ── C계층: 맥락에서만 등장 ────────────────────────────────
-            DrawAmmoLine();
             DrawKillLine();
 
             // ── A계층: 상시 ───────────────────────────────────────────
@@ -383,7 +382,7 @@ namespace Game.UI
             int remaining = Mathf.CeilToInt(cycle.PhaseRemaining);
             string region = ResolveRegionSuffix();
 
-            GUILayout.Label(
+            InGameUi.StatusRow(cycle.Phase == DayPhase.Night ? "G_Status_Night" : "G_Status_Day",
                 $"Day {cycle.DayNumber} · {phase} {remaining / 60}:{remaining % 60:00}{region}");
         }
 
@@ -420,11 +419,11 @@ namespace Game.UI
 
             if (low)
             {
-                DrawStatusLine(UiStatusLevel.Critical, text);
+                InGameUi.StatusRow("G_Status_Health", text, _health / _maxHealth, UiPalette.CriticalText);
                 return;
             }
 
-            DrawFaded(text, RestingAlpha);
+            InGameUi.StatusRow("G_Status_Health", text, _health / _maxHealth, alpha: RestingAlpha);
         }
 
         /// <summary>
@@ -441,12 +440,12 @@ namespace Game.UI
 
             if (_fuel <= 0f)
             {
-                DrawStatusLine(UiStatusLevel.Critical, $"연료 0 — 감속 중!");
+                InGameUi.StatusRow("G_Status_Fuel", "연료 0 — 감속 중!", 0, UiPalette.CriticalText);
                 return;
             }
 
             // 소모율을 함께 보여준다 — 칸 증설 트레이드오프(칸 수 → 소모 증가)를 눈으로 확인할 수 있다.
-            DrawFaded($"연료 {_fuel:F0} / {_fuelCapacity:F0}  (-{_fuelConsumptionPerSecond:F2}/s)", RestingAlpha);
+            InGameUi.StatusRow("G_Status_Fuel", $"연료 {_fuel:F0} / {_fuelCapacity:F0}  (-{_fuelConsumptionPerSecond:F2}/s)", _fuel / _fuelCapacity, alpha: RestingAlpha);
         }
 
         /// <summary>
@@ -457,7 +456,7 @@ namespace Game.UI
         {
             if (_detachedCars > 0)
             {
-                DrawStatusLine(UiStatusLevel.Critical, $"이탈 칸 {_detachedCars}");
+                InGameUi.StatusRow("G_Status_DetachedCar", $"이탈 칸 {_detachedCars}", tint: UiPalette.CriticalText);
             }
         }
 
@@ -474,7 +473,11 @@ namespace Game.UI
             }
 
             string state = _reloading ? "재장전 중…" : $"{_rounds} / {_capacity}";
-            GUILayout.Label($"{_ammoWeaponName}  {state}  ·  예비 {_reserveRounds}");
+            string ammoIcon = _ammoWeapon == HotbarItemType.Revolver ? "I_Res_RevolverAmmo"
+                : _ammoWeapon == HotbarItemType.Shotgun ? "I_Res_ShotgunAmmo"
+                : _ammoWeapon == HotbarItemType.Rifle ? "I_Res_RifleAmmo" : "G_Status_Ammo";
+            InGameUi.Prompt(new Rect(Screen.width - 392 - HudLayout.ScreenMargin, Screen.height - 136, 392, 32),
+                $"{_ammoWeaponName}  {state}  ·  예비 {_reserveRounds}", _reloading ? "G_Action_Reload" : ammoIcon);
         }
 
         /// <summary>
@@ -493,7 +496,7 @@ namespace Game.UI
                 return;
             }
 
-            DrawFaded($"처치 {_killCount}", RestingAlpha);
+            InGameUi.StatusRow("G_System_Confirm", $"처치 {_killCount}", alpha: RestingAlpha);
         }
 
         /// <summary>활성 요리 버프의 잔여 시간 (기획서 §7.3, M5 4차) — 임계(B)와 같은 등퇴장을 쓴다.</summary>
@@ -513,7 +516,8 @@ namespace Game.UI
                 _buffText = BuildBuffText();
             }
 
-            DrawFaded($"<color={UiPalette.HexSafeText}>{_buffText}</color>", alpha);
+            InGameUi.StatusRow(_warmthBuffSeconds > 0 ? "G_Status_Warmth" : "G_Status_Regen",
+                $"<color={UiPalette.HexSafeText}>{_buffText}</color>", tint: UiPalette.SafeText, alpha: alpha);
         }
 
         private string BuildBuffText()
@@ -556,7 +560,8 @@ namespace Game.UI
                 ? " — 굶주림! 체력이 깎인다"
                 : " — 허기! 요리를 먹어라";
 
-            DrawFaded($"<color={UiPalette.StatusHex(level)}>{text}{suffix}</color>", alpha);
+            InGameUi.StatusRow("G_Status_Hunger", $"<color={UiPalette.StatusHex(level)}>{text}{suffix}</color>",
+                _maxHunger > 0 ? _hunger / _maxHunger : 0, UiPalette.StatusTextColor(level), alpha);
         }
 
         /// <summary>체온 — 임계(B). 쾌적할 때는 줄이 없다 (기획서 §4.2 사막 낮 열사병 / 밤 급랭).</summary>
@@ -579,25 +584,8 @@ namespace Game.UI
                 ? " — 더위! 건축물 그늘로"
                 : " — 추위! 난방 칸 위로";
 
-            DrawFaded($"<color={UiPalette.StatusHex(UiStatusLevel.Alert)}>{text}{suffix}</color>", alpha);
-        }
-
-        /// <summary>
-        /// 상태 단계에 맞는 색으로 한 줄 그리기 — 단계 판정은 도메인(<see cref="HungerStress"/> 등)이
-        /// 하고, 여기서는 그것을 색으로만 옮긴다 (비주얼·UI/UX 가이드 §7.2).
-        /// </summary>
-        private static void DrawStatusLine(UiStatusLevel level, string text)
-        {
-            GUILayout.Label($"<color={UiPalette.StatusHex(level)}>{text}</color>");
-        }
-
-        /// <summary>불투명도를 낮춰 한 줄 그리기 — 물러난 상시 줄과 사라지는 임계 줄이 함께 쓴다.</summary>
-        private static void DrawFaded(string text, float alpha)
-        {
-            Color previous = GUI.color;
-            GUI.color = new Color(previous.r, previous.g, previous.b, previous.a * alpha);
-            GUILayout.Label(text);
-            GUI.color = previous;
+            InGameUi.StatusRow(_temperatureStress == TemperatureStress.Heat ? "G_Status_Heat" : "G_Status_Cold",
+                $"<color={UiPalette.HexAlertText}>{text}{suffix}</color>", tint: UiPalette.AlertFill, alpha: alpha);
         }
 
         /// <summary>
@@ -612,29 +600,16 @@ namespace Game.UI
                 return;
             }
 
-            EnsureBannerStyle();
+            float y = HudLayout.BannerSlotRect(0).y;
 
             for (int i = 0; i < count; i++)
             {
-                GUI.Label(HudLayout.BannerSlotRect(i), _visibleBanners[i].Text, _bannerStyle);
+                Rect rect = HudLayout.BannerSlotRect(i);
+                rect.y = y;
+                y += InGameUi.Prompt(rect, _visibleBanners[i].Text,
+                    _visibleBanners[i].Priority == HudBannerPriority.Notice ? "G_System_Confirm" : "G_System_Warning") + HudLayout.BannerGap;
             }
         }
 
-        private void EnsureBannerStyle()
-        {
-            int fontSize = UiMetrics.Font(UiMetrics.ContextPrompt);
-            if (_bannerStyle != null && _bannerStyle.fontSize == fontSize)
-            {
-                return;
-            }
-
-            // 창 크기가 바뀌면 글자 크기도 따라가야 한다 — 그때만 다시 만든다.
-            _bannerStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                richText = true,
-                fontSize = fontSize,
-            };
-        }
     }
 }

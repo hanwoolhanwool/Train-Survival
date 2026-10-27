@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 namespace Game.UI
 {
     /// <summary>
-    /// 통합 핫바 HUD (기획서 §3.4) — 화면 중앙 하단 핫바 5칸(무기+자원, 선택 표시) +
+    /// 통합 핫바 HUD (기획서 §3.4) — 화면 우하단 핫바 5칸(무기+자원, 선택 표시) +
     /// I키 인벤토리(드래그 재배치)/캐릭터 상태 창 + 엔진 투입 안내.
     /// UI는 상태를 소유하지 않는다: <see cref="ILocalHotbar"/> 읽기 조회와 이벤트 구독으로만 그린다.
     /// I키·드래그는 창 표시와 재배치 요청일 뿐이므로 UI 계층에서 처리한다 (확정은 호스트).
@@ -340,6 +340,8 @@ namespace Game.UI
                 return;
             }
 
+            InGameUi.BeginTooltip();
+            InGameUi.BeginPrompts();
             DrawHotbar(hotbar);
             DrawEnginePrompt(hotbar);
             DrawCarBuildPrompt(hotbar);
@@ -349,6 +351,7 @@ namespace Game.UI
             DrawStoragePrompt();
             DrawBundlePrompt();
             DrawMountPrompt();
+            InGameUi.DrawPrompts();
 
             if (_bundleOpen)
             {
@@ -362,6 +365,7 @@ namespace Game.UI
             {
                 DrawInventoryPanel(hotbar);
             }
+            if (_dragFromIndex < 0 && _dragFromEquip < 0) InGameUi.DrawTooltip();
         }
 
         /// <summary>공유 창고 접근 안내 — 창고 칸 근접 + 시선에서 표시한다 (M5 3차).</summary>
@@ -373,8 +377,7 @@ namespace Game.UI
             }
 
             // 다중 창고 (건축 개편 2차) — 조준(최근접 + 시선)한 그 창고가 열린다. Id는 내부 식별자라 노출하지 않는다.
-            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.66f, 300f, 24f),
-                $"<color={UiPalette.HexFocusBrass}>E — 공유 창고</color>");
+            InGameUi.QueuePrompt($"<color={UiPalette.HexFocusBrass}>E — 공유 창고</color>", "G_Action_Interact");
         }
 
         /// <summary>보따리 접근 안내 (M5 8차) — 근접 + 시선에서 표시한다 (창고와 같은 규약).</summary>
@@ -385,8 +388,7 @@ namespace Game.UI
                 return;
             }
 
-            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f),
-                $"<color={UiPalette.HexFocusBrass}>E — 보따리 (파괴된 창고의 내용물)</color>");
+            InGameUi.QueuePrompt($"<color={UiPalette.HexFocusBrass}>E — 보따리 (파괴된 창고의 내용물)</color>", "G_Action_Interact");
         }
 
         /// <summary>
@@ -402,15 +404,13 @@ namespace Game.UI
 
             if (_mounted)
             {
-                GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.7f, 400f, 24f),
-                    $"<color={UiPalette.HexFocusBrass}>좌클릭 — 사격  ·  R — 재장전  ·  E/Esc — 내리기</color>");
+                InGameUi.QueuePrompt($"<color={UiPalette.HexFocusBrass}>좌클릭 — 사격  ·  R — 재장전  ·  E/Esc — 내리기</color>", "G_Action_Interact");
                 return;
             }
 
             if (_mountPromptInRange)
             {
-                GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.7f, 300f, 24f),
-                    $"<color={UiPalette.HexFocusBrass}>E — {_mountPromptName}</color>");
+                InGameUi.QueuePrompt($"<color={UiPalette.HexFocusBrass}>E — {_mountPromptName}</color>", "G_Action_Interact");
             }
         }
 
@@ -460,42 +460,22 @@ namespace Game.UI
 
         private void DrawHotbar(ILocalHotbar hotbar)
         {
+            const float size = 72f;
             int slotCount = hotbar.HotbarSize;
-            float totalWidth = slotCount * SlotSize + (slotCount - 1) * SlotGap;
-            float startX = (Screen.width - totalWidth) * 0.5f;
-            float y = Screen.height - SlotSize - 16f;
-
-            // 거부 연출 (§3.6) — 거부된 칸만 좌우로 튕기고 붉게 물든다. 연출이 끝나면 원래대로 그린다.
+            float totalWidth = slotCount * size + (slotCount - 1) * SlotGap;
+            float startX = Screen.width - totalWidth - HudLayout.ScreenMargin;
+            float y = Screen.height - size - HudLayout.ScreenMargin;
             bool rejecting = Time.unscaledTime < _rejectedUntilTime;
-            float rejectShake = 0f;
-            if (rejecting)
-            {
-                float remaining = _rejectedUntilTime - Time.unscaledTime;
-                // 남은 시간이 줄수록 진폭도 준다 — 한 번 튕기고 잦아드는 모양.
-                rejectShake = Mathf.Sin(remaining * 60f) * (6f * remaining / RejectShakeSeconds);
-            }
-
-            Color baseColor = GUI.color;
-
+            float remaining = Mathf.Max(0, _rejectedUntilTime - Time.unscaledTime);
+            float shake = Mathf.Sin(remaining * 60f) * (6f * remaining / RejectShakeSeconds);
             for (int i = 0; i < slotCount; i++)
             {
                 bool rejected = rejecting && i == _rejectedSlotIndex;
-                float offsetX = rejected ? rejectShake : 0f;
-                var rect = new Rect(startX + i * (SlotSize + SlotGap) + offsetX, y, SlotSize, SlotSize);
-
-                // 거부 슬롯은 아이콘 위에 얹는 틴트라 면색이 아니라 밝은 텍스트 변형을 쓴다.
-                GUI.color = rejected ? UiPalette.CriticalText : baseColor;
-                GUI.Box(rect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
-
-                if (i == hotbar.SelectedIndex)
-                {
-                    // 선택 강조 — 테두리 박스를 겹쳐 그린다.
-                    GUI.Box(new Rect(rect.x - 2f, rect.y - 2f, rect.width + 4f, rect.height + 4f), GUIContent.none);
-                    GUI.Label(new Rect(rect.x, rect.y - 18f, rect.width, 16f), $"[{i + 1}]");
-                }
+                var rect = new Rect(startX + i * (size + SlotGap) + (rejected ? shake : 0), y, size, size);
+                HotbarSlotView slot = hotbar.GetSlot(i);
+                InGameUi.Slot(rect, slot, GetSlotLabel(slot, hotbar.StackSize), i + 1,
+                    i == hotbar.SelectedIndex, rejected, _harpoonTier);
             }
-
-            GUI.color = baseColor;
         }
 
         private void DrawEnginePrompt(ILocalHotbar hotbar)
@@ -526,7 +506,7 @@ namespace Game.UI
                 prompt = $"<color={UiPalette.HexFocusBrass}>자원 슬롯(숫자 키 1~5)을 든 채 E — 연료 투입</color>";
             }
 
-            GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height * 0.62f, 300f, 24f), prompt);
+            InGameUi.QueuePrompt(prompt, "G_Action_Refuel");
         }
 
         /// <summary>칸 건설 안내 — 망치로 건설 지점(초록 테두리 프리뷰)을 겨눈 동안 표시한다.</summary>
@@ -551,7 +531,7 @@ namespace Game.UI
                 prompt = $"<color={UiPalette.HexFocusBrass}>우클릭 — 칸 건설 (소모: {BuildSpendPreview(hotbar, _carBuildAim.Cost)})</color>";
             }
 
-            GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.58f, 360f, 24f), prompt);
+            InGameUi.QueuePrompt(prompt, "G_Action_Build");
         }
 
         /// <summary>
@@ -583,7 +563,7 @@ namespace Game.UI
                     break;
             }
 
-            GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.58f, 360f, 24f), prompt);
+            InGameUi.QueuePrompt(prompt, "G_Action_Recouple");
         }
 
         /// <summary>망치 조준 라벨 — 겨눈 부위의 체력과 가능한 조작(수리/설치)을 조준점 아래에 보여준다(수리 과정 가시화).</summary>
@@ -656,8 +636,16 @@ namespace Game.UI
             string color = _hammerTarget.CanRepair && _hammerTarget.Health < _hammerTarget.MaxHealth
                 ? UiPalette.HexAlertText
                 : UiPalette.HexTextSteam;
-            GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.54f, 400f, 24f),
-                $"<color={color}>{partName}: {healthText}{action}</color>");
+            string icon = _hammerTarget.Kind == TrainPartKind.Structure
+                ? InGameUiArt.StructureKey(_hammerTarget.TargetStructureKind)
+                : _hammerTarget.CanBuildStructure
+                    ? InGameUiArt.StructureKey(_hammerTarget.SelectedStructureKind)
+                    : "G_Action_Repair";
+            // Non-placeable legacy structures (e.g. Dome) retain the generic action symbol.
+            if (InGameUi.Art == null || InGameUi.Art.Find(icon) == null) icon = "G_Action_Repair";
+            InGameUi.QueuePrompt($"<color={color}>{partName}: {healthText}{action}</color>",
+                icon,
+                _hammerTarget.DemolishProgress > 0 ? _hammerTarget.DemolishProgress : -1);
         }
 
         /// <summary>
@@ -705,8 +693,8 @@ namespace Game.UI
                 action = $"<color={UiPalette.HexCriticalText}>위에 놓인 건축물을 먼저 철거해야 뜯을 수 있다</color>";
             }
 
-            GUI.Label(new Rect(Screen.width * 0.5f - 200f, Screen.height * 0.50f, 400f, 24f),
-                $"{where} — {action}");
+            InGameUi.QueuePrompt($"{where} — {action}", _plankAim.EmptySlot ? "G_Action_Build" : "G_Action_Demolish",
+                _plankAim.RemoveProgress > 0 ? _plankAim.RemoveProgress : -1);
         }
 
         /// <summary>
@@ -810,9 +798,9 @@ namespace Game.UI
             float panelHeight = 34f + 20f + SlotSize + 16f + 20f + bagRows * stride + 12f
                 + 20f + SlotSize + 16f + StatusAreaHeight + 8f;
 
-            var rect = new Rect(HudLayout.InventoryPanelX, HudLayout.CenteredY(panelHeight),
+            var rect = new Rect(HudLayout.InventoryX(_craftingOpen), HudLayout.CenteredY(panelHeight),
                 panelWidth, panelHeight);
-            GUI.Box(rect, "인벤토리 / 캐릭터 상태 [I·Tab 닫기] — 드래그로 재배치 · 패널 밖 드롭 = 버리기");
+            InGameUi.Panel(rect, "인벤토리 · 캐릭터 상태  [I·Tab 닫기]");
 
             float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
             float cursorY = rect.y + 34f;
@@ -827,7 +815,7 @@ namespace Game.UI
             float bagStartY = cursorY;
             cursorY += bagRows * stride + 12f;
 
-            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "착용 — 장비를 끌어다 놓기 (기획서 §6.3)");
+            GUI.Label(new Rect(gridX, cursorY, gridWidth, 18f), "착용 — 장비를 끌어다 놓기");
             cursorY += 20f;
             float equipRowY = cursorY;
             cursorY += SlotSize + 16f;
@@ -836,7 +824,8 @@ namespace Game.UI
             for (int i = 0; i < total; i++)
             {
                 Rect slotRect = GetPanelSlotRect(i, hotbarSize, columns, stride, gridX, hotbarRowY, bagStartY);
-                GUI.Box(slotRect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
+                InGameUi.Slot(slotRect, hotbar.GetSlot(i), GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize),
+                    i < hotbarSize ? i + 1 : 0, i == hotbar.SelectedIndex, tier: _harpoonTier);
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition) &&
                     !hotbar.GetSlot(i).IsEmpty)
@@ -872,7 +861,7 @@ namespace Game.UI
                 string label = equipped.IsEmpty
                     ? $"({EquipSlotLabels[part]})"
                     : GetSlotLabel(equipped, hotbar.StackSize);
-                GUI.Box(slotRect, label);
+                InGameUi.Slot(slotRect, equipped, label, equipment: part);
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
                     && !equipped.IsEmpty)
@@ -915,14 +904,14 @@ namespace Game.UI
                 HotbarSlotView dragSlot = _dragFromEquip >= 0
                     ? hotbar.GetEquipmentSlot(_dragFromEquip)
                     : hotbar.GetSlot(_dragFromIndex);
-                GUI.Box(dragRect, GetSlotLabel(dragSlot, hotbar.StackSize));
+                InGameUi.Slot(dragRect, dragSlot, GetSlotLabel(dragSlot, hotbar.StackSize), tier: _harpoonTier, hover: false);
             }
 
             GUILayout.BeginArea(new Rect(rect.x + 16f, cursorY, rect.width - 32f, StatusAreaHeight));
             GUILayout.Label("— 캐릭터 상태 —");
-            GUILayout.Label(_maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
-            GUILayout.Label(_temperature > 0f ? $"체온: {_temperature:F1}℃{GetStressSuffix()}" : "체온: -");
-            GUILayout.Label(_maxHunger > 0f ? $"허기: {_hunger:F0} / {_maxHunger:F0}{GetHungerSuffix()}" : "허기: -");
+            InGameUi.StatusRow("G_Status_Health", _maxHealth > 0f ? $"체력: {_health:F0} / {_maxHealth:F0}" : "체력: -");
+            InGameUi.StatusRow("G_Status_Temperature", _temperature > 0f ? $"체온: {_temperature:F1}℃{GetStressSuffix()}" : "체온: -");
+            InGameUi.StatusRow("G_Status_Hunger", _maxHunger > 0f ? $"허기: {_hunger:F0} / {_maxHunger:F0}{GetHungerSuffix()}" : "허기: -");
             if (DropEnabled)
             {
                 GUILayout.Label("버리기: 패널 밖 드롭 = 전량 · Shift 절반 · Ctrl 1개");
@@ -974,7 +963,7 @@ namespace Game.UI
 
             var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
                 panelWidth, panelHeight);
-            GUI.Box(rect, "공유 창고 [E 닫기] — 드래그로 이동");
+            InGameUi.Panel(rect, "공유 창고 [E 닫기] — 드래그로 이동");
 
             float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
             float cursorY = rect.y + 34f;
@@ -1000,7 +989,7 @@ namespace Game.UI
             {
                 var slotRect = new Rect(
                     gridX + i % columns * stride, storageStartY + i / columns * stride, SlotSize, SlotSize);
-                GUI.Box(slotRect, GetSlotLabel(storage.GetSlot(_storageOpenId, i), hotbar.StackSize));
+                InGameUi.Slot(slotRect, storage.GetSlot(_storageOpenId, i), GetSlotLabel(storage.GetSlot(_storageOpenId, i), hotbar.StackSize), tier: _harpoonTier);
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
                     && !storage.GetSlot(_storageOpenId, i).IsEmpty)
@@ -1024,7 +1013,8 @@ namespace Game.UI
             for (int i = 0; i < total; i++)
             {
                 Rect slotRect = GetPanelSlotRect(i, hotbarSize, columns, stride, gridX, hotbarRowY, bagStartY);
-                GUI.Box(slotRect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
+                InGameUi.Slot(slotRect, hotbar.GetSlot(i), GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize),
+                    i < hotbarSize ? i + 1 : 0, i == hotbar.SelectedIndex, tier: _harpoonTier);
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
                     && !hotbar.GetSlot(i).IsEmpty)
@@ -1072,7 +1062,7 @@ namespace Game.UI
                 HotbarSlotView dragSlot = _dragFromStorage
                     ? storage.GetSlot(_storageOpenId, _dragFromIndex)
                     : hotbar.GetSlot(_dragFromIndex);
-                GUI.Box(dragRect, GetSlotLabel(dragSlot, hotbar.StackSize));
+                InGameUi.Slot(dragRect, dragSlot, GetSlotLabel(dragSlot, hotbar.StackSize), tier: _harpoonTier, hover: false);
             }
         }
 
@@ -1110,7 +1100,7 @@ namespace Game.UI
 
             var rect = new Rect((Screen.width - panelWidth) * 0.5f, (Screen.height - panelHeight) * 0.5f,
                 panelWidth, panelHeight);
-            GUI.Box(rect, "보따리 [E 닫기] — 드래그로 이동");
+            InGameUi.Panel(rect, "보따리 [E 닫기] — 드래그로 이동");
 
             float gridX = rect.x + (rect.width - gridWidth) * 0.5f;
             float cursorY = rect.y + 34f;
@@ -1136,7 +1126,7 @@ namespace Game.UI
             {
                 var slotRect = new Rect(
                     gridX + i % columns * stride, bundleStartY + i / columns * stride, SlotSize, SlotSize);
-                GUI.Box(slotRect, GetSlotLabel(storage.GetBundleSlot(_bundleOpenId, i), hotbar.StackSize));
+                InGameUi.Slot(slotRect, storage.GetBundleSlot(_bundleOpenId, i), GetSlotLabel(storage.GetBundleSlot(_bundleOpenId, i), hotbar.StackSize), tier: _harpoonTier);
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
                     && !storage.GetBundleSlot(_bundleOpenId, i).IsEmpty)
@@ -1160,7 +1150,8 @@ namespace Game.UI
             for (int i = 0; i < total; i++)
             {
                 Rect slotRect = GetPanelSlotRect(i, hotbarSize, columns, stride, gridX, hotbarRowY, bagStartY);
-                GUI.Box(slotRect, GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize));
+                InGameUi.Slot(slotRect, hotbar.GetSlot(i), GetSlotLabel(hotbar.GetSlot(i), hotbar.StackSize),
+                    i < hotbarSize ? i + 1 : 0, i == hotbar.SelectedIndex, tier: _harpoonTier);
 
                 if (current.type == EventType.MouseDown && slotRect.Contains(current.mousePosition)
                     && !hotbar.GetSlot(i).IsEmpty)
@@ -1208,7 +1199,7 @@ namespace Game.UI
                 HotbarSlotView dragSlot = _dragFromBundle
                     ? storage.GetBundleSlot(_bundleOpenId, _dragFromIndex)
                     : hotbar.GetSlot(_dragFromIndex);
-                GUI.Box(dragRect, GetSlotLabel(dragSlot, hotbar.StackSize));
+                InGameUi.Slot(dragRect, dragSlot, GetSlotLabel(dragSlot, hotbar.StackSize), tier: _harpoonTier, hover: false);
             }
         }
     }

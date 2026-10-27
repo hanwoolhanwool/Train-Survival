@@ -48,8 +48,8 @@ namespace Game.UI
         {
             if (_promptVisible && !_panelOpen)
             {
-                GUI.Label(new Rect(Screen.width * 0.5f - 100f, Screen.height * 0.62f, 200f, 24f),
-                    $"<color={UiPalette.HexFocusBrass}>E — 제작</color>");
+                InGameUi.Prompt(new Rect(Screen.width * 0.5f - 100f, Screen.height * 0.62f, 200f, 24f),
+                    $"<color={UiPalette.HexFocusBrass}>E — 제작</color>", "G_Action_Craft");
             }
 
             if (_panelOpen)
@@ -90,7 +90,8 @@ namespace Game.UI
             {
                 if (groups[g].Count > 0)
                 {
-                    contentHeight += 26f + groups[g].Count * 64f;
+                    contentHeight += 26f;
+                    foreach (int index in groups[g]) contentHeight += RecipeHeight(station.GetRecipe(index));
                 }
             }
 
@@ -98,11 +99,11 @@ namespace Game.UI
             float panelHeight = Mathf.Min(48f + contentHeight, Screen.height * 0.7f);
             // 인벤토리 창의 <b>바로 왼쪽</b>에 나란히 붙는다 (M7 3차 검증 W3-b) — 재료를 보면서
             // 제작할 수 있는 배치다. 좌표는 두 창이 공유하는 HudLayout이 정한다.
-            const float panelWidth = 380f;
+            const float panelWidth = 392f;
             var rect = new Rect(
                 HudLayout.CraftingPanelX(panelWidth), HudLayout.CenteredY(panelHeight),
                 panelWidth, panelHeight);
-            GUI.Box(rect, "— 제작 (E·I·Tab·Esc 닫기) —");
+            InGameUi.Panel(rect, "— 제작 (E·I·Tab·Esc 닫기) —");
 
             // 재료 판정은 순수 로직과 같은 뷰로 계산한다 — 표시와 요청 가능 여부가 항상 일치.
             var slots = new HotbarSlotView[hotbar.SlotCount];
@@ -141,20 +142,33 @@ namespace Game.UI
                         blockedLabel = "집게 없음";
                     }
 
-                    GUI.Label(new Rect(16f, y, 220f, 22f), BuildOutputLine(recipe));
-
-                    string ingredientLine = BuildIngredientLine(slots, ingredients);
-                    GUI.Label(new Rect(16f, y + 20f, 260f, 22f), ingredientLine);
+                    InGameUi.Mask(new Rect(8, y, contentRect.width - 16, RecipeHeight(recipe) - 6),
+                        "U_ControlFace", UiPalette.PanelBackdrop);
+                    string outputKey = recipe.IsHarpoonTierOutput ? "I_Item_Harpoon"
+                        : recipe.IsItemOutput ? "I_Item_" + recipe.OutputItem : "I_Res_" + recipe.Output;
+                    InGameUi.Image(new Rect(12, y, 48, 48), outputKey);
+                    InGameUi.Label(new Rect(68, y, contentRect.width - 176, 48), BuildOutputLine(recipe));
+                    for (int ingredientIndex = 0; ingredientIndex < ingredients.Length; ingredientIndex++)
+                    {
+                        var ingredient = ingredients[ingredientIndex];
+                        int have = HotbarLogic.CountResource(slots, ingredient.Type);
+                        float ix = 12 + (ingredientIndex % 2) * ((contentRect.width - 24) / 2);
+                        float iy = y + 52 + (ingredientIndex / 2) * 34;
+                        InGameUi.Image(new Rect(ix, iy, 32, 32), "I_Res_" + ingredient.Type);
+                        string color = have >= ingredient.Count ? UiPalette.HexTextSteam : UiPalette.HexCriticalText;
+                        InGameUi.Label(new Rect(ix + 36, iy, (contentRect.width - 24) / 2 - 38, 32),
+                            $"{GetName(ingredient.Type)}\n<color={color}>{have}/{ingredient.Count}</color>", true);
+                    }
 
                     // 비활성 버튼이 "없는 것"처럼 보이지 않게 사유를 라벨로 말해준다 (M5 6차).
                     GUI.enabled = canCraft;
-                    if (GUI.Button(new Rect(contentRect.xMax - 84f, y + 6f, 76f, 30f), canCraft ? "제작" : blockedLabel))
+                    if (InGameUi.Button(new Rect(contentRect.xMax - 100f, y + 4f, 96f, 40f), canCraft ? "제작" : blockedLabel))
                     {
                         station.RequestCraft(recipeIndex);
                     }
 
                     GUI.enabled = true;
-                    y += 64f;
+                    y += RecipeHeight(recipe);
                 }
             }
 
@@ -165,6 +179,8 @@ namespace Game.UI
         /// 표시 그룹 (M5 6차) — 분류는 레시피에서 <b>파생</b>한다 (신규 데이터 없음):
         /// 승급 → 집게 강화, 화덕 → 요리, 아이템 산출 → 무기·장비, 그 외 → 탄약.
         /// </summary>
+        private static float RecipeHeight(CraftingRecipe recipe) => 60f + Mathf.Ceil(recipe.IngredientCount / 2f) * 34f;
+
         private static int GetGroup(CraftingRecipe recipe)
         {
             if (recipe.IsHarpoonTierOutput)
@@ -186,32 +202,13 @@ namespace Game.UI
             // 집게 승급 (M5 5차)은 인벤토리 산출이 없다 — 무엇으로 바뀌는지를 보여준다.
             if (recipe.IsHarpoonTierOutput)
             {
-                return $"{recipe.DisplayName}  →  {HotbarItemLabels.GetHarpoonLabel(recipe.OutputHarpoonTier)}";
+                return $"{HotbarItemLabels.GetHarpoonLabel(recipe.OutputHarpoonTier)} 강화";
             }
 
             // 무기 산출 레시피는 아이템 1개 지급 — 자원 산출과 표기가 다르다 (M5 2차).
             return recipe.IsItemOutput
-                ? $"{recipe.DisplayName}  →  {HotbarItemLabels.GetLabel(recipe.OutputItem)} ×1"
-                : $"{recipe.DisplayName}  →  {GetName(recipe.Output)} ×{recipe.OutputCount}";
-        }
-
-        private string BuildIngredientLine(HotbarSlotView[] slots, CraftingLogic.IngredientView[] ingredients)
-        {
-            var builder = new System.Text.StringBuilder(64);
-            for (int i = 0; i < ingredients.Length; i++)
-            {
-                int have = HotbarLogic.CountResource(slots, ingredients[i].Type);
-                int need = ingredients[i].Count;
-                string color = have >= need ? UiPalette.HexTextSteam : UiPalette.HexCriticalText;
-                if (i > 0)
-                {
-                    builder.Append("  ");
-                }
-
-                builder.Append($"<color={color}>{GetName(ingredients[i].Type)} {have}/{need}</color>");
-            }
-
-            return builder.ToString();
+                ? $"{HotbarItemLabels.GetLabel(recipe.OutputItem)} ×1"
+                : $"{GetName(recipe.Output)} ×{recipe.OutputCount}";
         }
 
         private string GetName(ResourceType type)

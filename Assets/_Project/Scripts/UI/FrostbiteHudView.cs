@@ -125,7 +125,7 @@ namespace Game.UI
             builder.Append("</color>");
 
             var rect = new Rect(_partReadoutOrigin.x, _partReadoutOrigin.y, 420f, 22f);
-            GUI.Label(rect, builder.ToString(), _labelStyle);
+            InGameUi.Prompt(rect, builder.ToString(), "G_Status_Frostbite");
         }
 
         /// <summary>

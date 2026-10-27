@@ -67,7 +67,7 @@ namespace Game.UI.Loading
         /// </summary>
         public static int[] FontSizes(float screenHeight)
         {
-            var sizes = new List<int> { 0 };
+            var sizes = new List<int> { 0, InGameUi.SmallFontSize, InGameUi.LabelFontSize, 32 };
 
             for (int i = 0; i < UiMetrics.HudSizes1440.Length; i++)
             {

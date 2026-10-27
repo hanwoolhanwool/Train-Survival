@@ -151,6 +151,8 @@ namespace Game.UI.Loading
 
         private void BuildPlan()
         {
+            // Resolve build-safe sprite references during loading instead of the first inventory frame.
+            _ = InGameUi.Art;
             _sizes = UiWarmupText.FontSizes(Screen.height);
             _text = new string(UiWarmupText.Collect(GatherSources()));
             _total = _sizes.Length * 2;

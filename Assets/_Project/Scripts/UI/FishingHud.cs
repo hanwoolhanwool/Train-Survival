@@ -23,8 +23,6 @@ namespace Game.UI
         private float _catchAt = -99f;
         private int _catchCount;
 
-        private GUIStyle _waitStyle;
-        private GUIStyle _biteStyle;
 
         private void OnEnable()
         {
@@ -55,8 +53,6 @@ namespace Game.UI
 
         private void OnGUI()
         {
-            EnsureStyles();
-
             float w = Screen.width;
             float centerX = w * 0.5f;
 
@@ -64,42 +60,20 @@ namespace Game.UI
             if (_phase == FishingPhase.Biting && Time.time - _biteAt < BiteFlashSeconds)
             {
                 var rect = new Rect(centerX - 200f, Screen.height * 0.34f, 400f, 60f);
-                GUI.Label(rect, "입질!  클릭", _biteStyle);
+                InGameUi.Prompt(rect, "<size=32><b>입질!  왼쪽 클릭</b></size>", "G_Action_FishBite");
             }
             else if (_phase == FishingPhase.Waiting)
             {
                 var rect = new Rect(centerX - 200f, Screen.height * 0.36f, 400f, 34f);
-                GUI.Label(rect, "…기다리는 중", _waitStyle);
+                InGameUi.Prompt(rect, "…기다리는 중", "I_Item_FishingRod");
             }
 
             if (Time.time - _catchAt < CatchFlashSeconds)
             {
                 var rect = new Rect(centerX - 200f, Screen.height * 0.42f, 400f, 34f);
-                GUI.Label(rect, $"생선 {_catchCount}마리", _waitStyle);
+                InGameUi.Prompt(rect, $"생선 +{_catchCount}", "I_Res_Fish");
             }
         }
 
-        private void EnsureStyles()
-        {
-            if (_biteStyle != null)
-            {
-                return;
-            }
-
-            _waitStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 20
-            };
-            _waitStyle.normal.textColor = new Color(0.85f, 0.92f, 0.96f, 0.9f);
-
-            _biteStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 40,
-                fontStyle = FontStyle.Bold
-            };
-            _biteStyle.normal.textColor = new Color(1f, 0.72f, 0.24f);
-        }
     }
 }

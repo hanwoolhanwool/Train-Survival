@@ -131,24 +131,24 @@ namespace Game.UI
             GUILayout.BeginArea(new Rect(
                 HudLayout.ScreenMargin, HudLayout.ScreenMargin, HudLayout.StatusColumnWidth, TopAreaHeight));
 
-            GUILayout.Label($"자원 {_resourceTotal}");
+            InGameUi.StatusRow("G_Action_Grab", $"팀 획득 자원 {_resourceTotal}");
 
             if (Time.unscaledTime < _warningUntilTime)
             {
-                GUILayout.Label($"<color={UiPalette.HexAlertText}>경고 — 열차에서 {_warningMeters:F0} m 뒤처짐!</color>");
+                InGameUi.StatusRow("G_System_Warning", $"<color={UiPalette.HexAlertText}>경고 — 열차에서 {_warningMeters:F0} m 뒤처짐!</color>");
             }
 
             if (Time.unscaledTime < _fellBehindUntilTime)
             {
-                GUILayout.Label($"<color={UiPalette.HexCriticalText}>플레이어 이탈 — 후미 칸에서 부활</color>");
+                InGameUi.StatusRow("G_Status_DetachedCar", $"<color={UiPalette.HexCriticalText}>플레이어 이탈 — 후미 칸에서 부활</color>");
             }
 
             GUILayout.EndArea();
 
             if (Time.unscaledTime < _grabRejectUntilTime)
             {
-                GUI.Label(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.5f + 28f, 360f, 24f),
-                    $"<color={UiPalette.HexCriticalText}>{_grabRejectMessage}</color>");
+                InGameUi.Prompt(new Rect(Screen.width * 0.5f - 180f, Screen.height * 0.5f + 28f, 360f, 24f),
+                    $"<color={UiPalette.HexCriticalText}>{_grabRejectMessage}</color>", "G_System_Cancel");
             }
 
             // 조준점.

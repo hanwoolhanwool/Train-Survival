@@ -22,7 +22,6 @@ namespace Game.UI
         [SerializeField, Min(0f)] private float _killBannerSeconds = 4f;
 
         // 체력바는 면(fill)이라 위험 텍스트 변형이 아니라 면색을 쓴다 (비주얼·UI/UX 가이드 §7.2).
-        private static readonly Color BarBackColor = UiPalette.PanelBackdrop;
         private static readonly Color BarFillColor = UiPalette.CriticalFill;
 
         private bool _visible;
@@ -109,25 +108,13 @@ namespace Game.UI
             float x = (Screen.width - width) * 0.5f;
 
             var back = new Rect(x, _topMargin, width, _barHeight);
-            DrawSolid(back, BarBackColor);
-
-            float ratio = Mathf.Clamp01(_current / _max);
-            var fill = new Rect(x, _topMargin, width * ratio, _barHeight);
-            DrawSolid(fill, BarFillColor);
+            InGameUi.Gauge(back, _current / _max, BarFillColor);
 
             string phaseLabel = _phaseCount > 1 ? $" · 페이즈 {_phaseIndex + 1}/{_phaseCount}" : string.Empty;
             var labelRect = new Rect(x, _topMargin - 22f, width, 20f);
             GUI.Label(labelRect,
                 $"<color={UiPalette.HexCriticalText}><b>{_displayName}</b></color>  {Mathf.CeilToInt(_current)} / {Mathf.CeilToInt(_max)}{phaseLabel}",
                 _labelStyle);
-        }
-
-        private static void DrawSolid(Rect rect, Color color)
-        {
-            Color previous = GUI.color;
-            GUI.color = color;
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = previous;
         }
 
         private void EnsureStyle()
