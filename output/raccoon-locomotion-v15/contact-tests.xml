@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="1.0011333">
+  <test-suite type="TestSuite" id="1059" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="42" result="Failed" site="Child" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="1.001133" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1052" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="42" result="Failed" site="Child" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="0.994525" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="44084" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1053" name="Game" fullname="Game" runstate="Runnable" testcasecount="42" result="Failed" site="Child" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="0.993825" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1054" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="42" result="Failed" site="Child" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="0.993265" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1055" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="42" result="Failed" site="Child" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="0.992695" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1040" name="RaccoonLocomotionTests" fullname="Game.Tests.PlayMode.RaccoonLocomotionTests" classname="Game.Tests.PlayMode.RaccoonLocomotionTests" runstate="Runnable" testcasecount="5" result="Failed" site="Child" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="0.991180" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1044" name="WalkingHasLevelSupportingFeetWithoutPersistentHover" fullname="Game.Tests.PlayMode.RaccoonLocomotionTests.WalkingHasLevelSupportingFeetWithoutPersistentHover" methodname="WalkingHasLevelSupportingFeetWithoutPersistentHover" classname="Game.Tests.PlayMode.RaccoonLocomotionTests" runstate="Runnable" seed="1539130316" result="Failed" start-time="2026-11-01 11:35:26Z" end-time="2026-11-01 11:35:27Z" duration="0.982816" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Walking needs support for most frames, not persistent hovering; clearance range 0.5843344..21.82023
+  Expected: greater than 100
+  But was:  0
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.RaccoonLocomotionTests.WalkingHasLevelSupportingFeetWithoutPersistentHover () [0x0035a] in C:\Users\iam12\Train Survival\Assets\_Project\Tests\PlayMode\RaccoonLocomotionTests.cs:120
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[BAKE_DEFAULT=(-0.24, -0.08, 0.12)
+BAKE_FALSE=(-0.24, -0.08, 0.12)
+BAKE_TRUE=(0.00, 0.00, 0.00)
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

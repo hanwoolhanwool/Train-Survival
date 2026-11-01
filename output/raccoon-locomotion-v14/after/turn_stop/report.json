@@ -1,0 +1,53 @@
+{
+    "phases": [
+        {
+            "phase": "Idle",
+            "frames": 120,
+            "contactSamples": 120,
+            "maxGripError": 6.351810952764936e-7,
+            "maxHandStep": 0.00015544139023404568,
+            "maxTailStep": 0.0,
+            "minFootClearance": 0.005999625660479069,
+            "minTailClearance": 0.21632947027683259,
+            "meanContactSlide": 0.010307700373232365,
+            "maxContactSlide": 0.027882952243089677
+        },
+        {
+            "phase": "Run",
+            "frames": 120,
+            "contactSamples": 94,
+            "maxGripError": 0.000001385407358611701,
+            "maxHandStep": 0.0075554028153419498,
+            "maxTailStep": 0.2960750460624695,
+            "minFootClearance": 0.005999553017318249,
+            "minTailClearance": 0.20379312336444856,
+            "meanContactSlide": 6.393270969390869,
+            "maxContactSlide": 13.600563049316407
+        },
+        {
+            "phase": "Turn",
+            "frames": 240,
+            "contactSamples": 91,
+            "maxGripError": 0.000004087375145900296,
+            "maxHandStep": 0.005751453805714846,
+            "maxTailStep": 0.6644049286842346,
+            "minFootClearance": 0.005999232642352581,
+            "minTailClearance": 0.5379893779754639,
+            "meanContactSlide": 5.568166732788086,
+            "maxContactSlide": 12.790328025817871
+        },
+        {
+            "phase": "AbruptStop",
+            "frames": 480,
+            "contactSamples": 358,
+            "maxGripError": 0.00000322884466186224,
+            "maxHandStep": 0.0212614294141531,
+            "maxTailStep": 0.2438931167125702,
+            "minFootClearance": 0.012604490853846074,
+            "minTailClearance": 0.22393356263637544,
+            "meanContactSlide": 0.07500598579645157,
+            "maxContactSlide": 3.2858359813690187
+        }
+    ],
+    "note": "Physical CharacterController movement over box/ramp/step colliders; 60 Hz. Sole geometry is sampled after Animator and equipment/tail corrections. Contact slide uses sole-centroid world velocity near the surface; this is not network or moving-train QA."
+}

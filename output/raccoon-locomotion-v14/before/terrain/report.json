@@ -1,0 +1,65 @@
+{
+    "phases": [
+        {
+            "phase": "Flat",
+            "frames": 220,
+            "contactSamples": 227,
+            "maxGripError": 0.015504041686654091,
+            "maxHandStep": 0.0026031541638076307,
+            "maxTailStep": 0.1978234350681305,
+            "minFootClearance": -0.04690587520599365,
+            "minTailClearance": 0.1767277866601944,
+            "meanContactSlide": 3.022310256958008,
+            "maxContactSlide": 7.693933963775635
+        },
+        {
+            "phase": "Ramp",
+            "frames": 80,
+            "contactSamples": 75,
+            "maxGripError": 0.01537441834807396,
+            "maxHandStep": 0.0025726782623678447,
+            "maxTailStep": 0.20174111425876618,
+            "minFootClearance": -0.0472264289855957,
+            "minTailClearance": 0.26797059178352358,
+            "meanContactSlide": 4.141076564788818,
+            "maxContactSlide": 7.535181999206543
+        },
+        {
+            "phase": "Landing",
+            "frames": 80,
+            "contactSamples": 90,
+            "maxGripError": 0.007550368085503578,
+            "maxHandStep": 0.001928644604049623,
+            "maxTailStep": 0.20174111425876618,
+            "minFootClearance": -0.08183681964874268,
+            "minTailClearance": 0.19123387336730958,
+            "meanContactSlide": 4.30076789855957,
+            "maxContactSlide": 7.699394226074219
+        },
+        {
+            "phase": "Stairs",
+            "frames": 48,
+            "contactSamples": 33,
+            "maxGripError": 0.008352412842214108,
+            "maxHandStep": 0.001979256048798561,
+            "maxTailStep": 0.20558415353298188,
+            "minFootClearance": -0.11259245872497559,
+            "minTailClearance": 0.41426730155944826,
+            "meanContactSlide": 3.985175848007202,
+            "maxContactSlide": 7.385180950164795
+        },
+        {
+            "phase": "Top",
+            "frames": 532,
+            "contactSamples": 494,
+            "maxGripError": 0.015481303445994854,
+            "maxHandStep": 0.0025993601884692909,
+            "maxTailStep": 0.20174111425876618,
+            "minFootClearance": -0.026745319366455079,
+            "minTailClearance": -0.08006906509399414,
+            "meanContactSlide": 4.082448959350586,
+            "maxContactSlide": 7.699424743652344
+        }
+    ],
+    "note": "Physical CharacterController movement over box/ramp/step colliders; 60 Hz. Sole geometry is sampled after Animator and equipment/tail corrections. Contact slide uses sole-centroid world velocity near the surface; this is not network or moving-train QA."
+}

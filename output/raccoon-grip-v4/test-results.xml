@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.3236052">
+  <test-suite type="TestSuite" id="1041" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.323605" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1034" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.317170" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="1528" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1035" name="Game" fullname="Game" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.316629" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1036" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.316254" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1037" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.315871" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1021" name="RaccoonEquipmentTests" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.315028" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1033" name="CalibratedArmsReachTargetsAtAimExtremes" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.CalibratedArmsReachTargetsAtAimExtremes" methodname="CalibratedArmsReachTargetsAtAimExtremes" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="193123130" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.025871" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1030" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.008843" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1022" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Harpoon,1,False,False,False)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Harpoon,1,False,False,False)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="1661808892" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.003989" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1023" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Harpoon,2,False,False,True)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Harpoon,2,False,False,True)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="2009261924" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.000500" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1024" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Revolver,2,True,False,True)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Revolver,2,True,False,True)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="818463689" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.000400" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1025" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Revolver,3,True,False,True)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Revolver,3,True,False,True)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="1021160587" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.000369" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1026" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Revolver,2,False,False,False)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Revolver,2,False,False,False)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="583965310" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.000358" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1027" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Shotgun,3,True,True,False)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,Shotgun,3,True,True,False)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="1714724337" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.000370" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1028" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(False,Harpoon,3,True,False,False)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(False,Harpoon,3,True,False,False)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="1429325262" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.000431" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1029" name="LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,None,2,True,False,True)" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.LeftHarpoonVisibilityMatchesTierAndHandOccupancy(True,None,2,True,False,True)" methodname="LeftHarpoonVisibilityMatchesTierAndHandOccupancy" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="409235175" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:53Z" duration="0.000374" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1031" name="PlayerSpawn_EquipmentSwitch_LeftHarpoonAndHide" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.PlayerSpawn_EquipmentSwitch_LeftHarpoonAndHide" methodname="PlayerSpawn_EquipmentSwitch_LeftHarpoonAndHide" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="312649931" result="Passed" start-time="2026-11-01 06:04:53Z" end-time="2026-11-01 06:04:54Z" duration="0.269842" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Player/PlayerViewModeController] 시점 모드 = SplitFpTp
+[Diagnostics/HarpoonController] 소유자 입력 경로 진입 (IsOwner + settings 정상).
+[Diagnostics/HarpoonController] InputEnabled=false — 핫바 선택이 집게가 아니라 발사 입력이 닫혔다.
+]]></output>
+              </test-case>
+              <test-case id="1032" name="WeaponGripClosesAllFourFingersIncludingIndex" fullname="Game.Tests.PlayMode.RaccoonEquipmentTests.WeaponGripClosesAllFourFingersIncludingIndex" methodname="WeaponGripClosesAllFourFingersIncludingIndex" classname="Game.Tests.PlayMode.RaccoonEquipmentTests" runstate="Runnable" seed="1361719884" result="Passed" start-time="2026-11-01 06:04:54Z" end-time="2026-11-01 06:04:54Z" duration="0.001554" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

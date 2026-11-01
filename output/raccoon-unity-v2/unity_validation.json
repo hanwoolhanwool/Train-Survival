@@ -1,0 +1,93 @@
+{
+    "unityVersion": "6000.5.3f1",
+    "model": "Assets/_Project/Art/Characters/Raccoon/CH_Raccoon_TP.fbx",
+    "prefab": "Assets/_Project/Art/Characters/Raccoon/CH_Raccoon_Review.prefab",
+    "avatarValid": true,
+    "avatarHuman": true,
+    "mappedHumanBones": 52,
+    "vertices": 10624,
+    "triangles": 11982,
+    "skinBones": 64,
+    "blendShapes": 2,
+    "bounds": {
+        "x": 1.681519865989685,
+        "y": 2.2593917846679689,
+        "z": 1.5833607912063599
+    },
+    "missingBones": [],
+    "blendShapeNames": [
+        "COR_Elbow90.L",
+        "COR_Elbow90.R"
+    ],
+    "clips": [
+        {
+            "path": "Assets/_Project/Art/Models/Character_Girl.fbx",
+            "name": "Character_Girl|Armature|preset:biped:idle",
+            "human": true,
+            "finite": true,
+            "duration": 15.333333969116211,
+            "maxBoneTravel": 0.5083045363426209
+        },
+        {
+            "path": "Assets/_Project/Art/Models/Character_Girl.fbx",
+            "name": "Character_Girl|Armature|preset:biped:walk",
+            "human": true,
+            "finite": true,
+            "duration": 2.3333334922790529,
+            "maxBoneTravel": 0.5189194679260254
+        },
+        {
+            "path": "Assets/_Project/Art/Models/Character_Girl.fbx",
+            "name": "Character_Girl|Armature|preset:biped:run",
+            "human": true,
+            "finite": true,
+            "duration": 1.25,
+            "maxBoneTravel": 1.720449447631836
+        },
+        {
+            "path": "Assets/_Project/Art/Models/Character_Man.fbx",
+            "name": "Character_Man|Armature|preset:biped:turn.001",
+            "human": true,
+            "finite": true,
+            "duration": 3.8333334922790529,
+            "maxBoneTravel": 1.598413109779358
+        },
+        {
+            "path": "Assets/_Project/Art/Models/Character_Man.fbx",
+            "name": "Character_Man|Armature|preset:biped:idle.001",
+            "human": true,
+            "finite": true,
+            "duration": 15.333333969116211,
+            "maxBoneTravel": 0.46124881505966189
+        },
+        {
+            "path": "Assets/_Project/Art/Models/Character_Man.fbx",
+            "name": "Character_Man|Armature|preset:biped:turn",
+            "human": true,
+            "finite": true,
+            "duration": 3.0833334922790529,
+            "maxBoneTravel": 1.5576934814453126
+        },
+        {
+            "path": "Assets/_Project/Art/Animations/Anim_Hold_RifleAim.fbx",
+            "name": "Hold_RifleAim",
+            "human": true,
+            "finite": true,
+            "duration": 3.1000001430511476,
+            "maxBoneTravel": 0.9942610859870911
+        },
+        {
+            "path": "Assets/_Project/Art/Animations/Anim_Hold_Gunplay.fbx",
+            "name": "Hold_Gunplay",
+            "human": true,
+            "finite": true,
+            "duration": 2.566666841506958,
+            "maxBoneTravel": 1.36403226852417
+        }
+    ],
+    "notes": [
+        "FBX material order: M_Raccoon_HandsTail_Stage12, Material_0, M_Raccoon_CuffFabric_v3",
+        "Review prefab only. Player.prefab and existing WeaponHoldSettings are unchanged.",
+        "Humanoid validation and sampled clips do not certify network gameplay or equipment contact."
+    ]
+}
