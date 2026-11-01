@@ -1,4 +1,5 @@
 using Game.Gameplay.Inventory;
+using Game.Gameplay.Harpoon;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -19,6 +20,7 @@ namespace Game.Gameplay.Player
     public sealed class PlayerAimView : NetworkBehaviour
     {
         [SerializeField] private PlayerAnimationSettings _settings;
+        [SerializeField] private WeaponHandednessSettings _handedness;
 
         [Tooltip("소유자 시점 피치의 원본 — CameraRig/CameraPivot.")]
         [SerializeField] private Transform _cameraPivot;
@@ -36,6 +38,10 @@ namespace Game.Gameplay.Player
             NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         private PlayerCharacterView _view;
+        private readonly NetworkVariable<bool> _leftHarpoon = new NetworkVariable<bool>(
+            false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private HarpoonController _harpoon;
+        public bool LeftHarpoonHeld => _leftHarpoon.Value;
         private PlayerHealth _health;
         private HotbarController _hotbar;
         private float _currentPitch;
@@ -62,6 +68,7 @@ namespace Game.Gameplay.Player
             _view = GetComponent<PlayerCharacterView>();
             _health = GetComponent<PlayerHealth>();
             _hotbar = GetComponent<HotbarController>();
+            _harpoon = GetComponent<HarpoonController>();
         }
 
         // Animator가 본을 쓴 뒤에 겹쳐 써야 하므로 LateUpdate다 (MonsterGrabTarget과 같은 규약).
@@ -113,6 +120,17 @@ namespace Game.Gameplay.Player
             {
                 _heldItem.Value = held;
             }
+            bool left = ShouldShowLeftHarpoon(holding, (HotbarItemType)held,
+                _harpoon != null ? _harpoon.Tier : 1,
+                _harpoon != null && HarpoonSwitchRules.IsGrabHeld(_harpoon.State),
+                _handedness != null && _handedness.IsTwoHanded((HotbarItemType)held));
+            if (_leftHarpoon.Value != left) _leftHarpoon.Value = left;
+        }
+
+        public static bool ShouldShowLeftHarpoon(bool visible, HotbarItemType item, int tier, bool grabHeld, bool twoHanded)
+        {
+            return visible && tier >= HarpoonSwitchRules.HandFreeingTier && !twoHanded
+                && (item == HotbarItemType.Harpoon || grabHeld);
         }
 
         /// <summary>
@@ -138,15 +156,18 @@ namespace Game.Gameplay.Player
             // 기본 보정 각을 더한다 — 클립이 리타게팅 편향으로 항상 고개를 숙이고 있어(피치 0에서
             // 바닥을 봄), 보정 없이는 시선 공유의 기준점 자체가 어긋난다.
             Vector3 right = transform.right;
+            RaccoonEquipmentProfile raccoon = animator.GetComponent<RaccoonEquipmentPose>()?.Profile;
             if (_chestBone != null)
             {
-                float chestAngle = _settings.ChestPitchOffsetDegrees + _currentPitch * _settings.ChestPitchWeight;
+                float chestAngle = raccoon != null ? _currentPitch * raccoon.ChestPitchWeight
+                    : _settings.ChestPitchOffsetDegrees + _currentPitch * _settings.ChestPitchWeight;
                 _chestBone.rotation = Quaternion.AngleAxis(chestAngle, right) * _chestBone.rotation;
             }
 
             if (_headBone != null)
             {
-                float headAngle = _settings.HeadPitchOffsetDegrees + _currentPitch * _settings.HeadPitchWeight;
+                float headAngle = raccoon != null ? raccoon.HeadPitchFor(animator) + _currentPitch * raccoon.HeadPitchWeight
+                    : _settings.HeadPitchOffsetDegrees + _currentPitch * _settings.HeadPitchWeight;
                 _headBone.rotation = Quaternion.AngleAxis(headAngle, right) * _headBone.rotation;
             }
         }

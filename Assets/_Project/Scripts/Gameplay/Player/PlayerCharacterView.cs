@@ -27,6 +27,10 @@ namespace Game.Gameplay.Player
         [SerializeField] private Animator _manAnimator;
         [SerializeField] private SkinnedMeshRenderer _girlRenderer;
         [SerializeField] private SkinnedMeshRenderer _manRenderer;
+        [SerializeField] private bool _useRaccoon;
+        [SerializeField] private GameObject _raccoonModel;
+        [SerializeField] private Animator _raccoonAnimator;
+        [SerializeField] private SkinnedMeshRenderer _raccoonRenderer;
 
         /// <summary>
         /// 시각 슬롯 = 접속자 목록 내 순번 — 호스트 확정, 전 피어 복제.
@@ -61,20 +65,22 @@ namespace Game.Gameplay.Player
 
         private void Apply(int slot)
         {
+            bool raccoon = _useRaccoon && _raccoonModel != null && _raccoonAnimator != null && _raccoonRenderer != null;
             bool useGirl = slot % 2 == 0;
+            if (_raccoonModel != null) _raccoonModel.SetActive(raccoon);
             if (_girlModel != null)
             {
-                _girlModel.SetActive(useGirl);
+                _girlModel.SetActive(!raccoon && useGirl);
             }
 
             if (_manModel != null)
             {
-                _manModel.SetActive(!useGirl);
+                _manModel.SetActive(!raccoon && !useGirl);
             }
 
-            ActiveAnimator = useGirl ? _girlAnimator : _manAnimator;
+            ActiveAnimator = raccoon ? _raccoonAnimator : useGirl ? _girlAnimator : _manAnimator;
 
-            SkinnedMeshRenderer renderer = useGirl ? _girlRenderer : _manRenderer;
+            SkinnedMeshRenderer renderer = raccoon ? _raccoonRenderer : useGirl ? _girlRenderer : _manRenderer;
             if (renderer != null)
             {
                 // 슬롯 틴트가 꺼져 있으면 _BaseColor 를 <b>아예 건드리지 않는다</b> — 흰색으로 덮어쓰면

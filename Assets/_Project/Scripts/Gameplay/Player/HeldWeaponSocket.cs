@@ -13,6 +13,7 @@ namespace Game.Gameplay.Player
     /// 소유자 자신은 몸체와 같은 규약으로 ShadowsOnly — 그림자에 무기가 들려 보인다
     /// (기술 확정 ④). 본 해석은 <see cref="HumanBodyBones"/> 공통 경로만 쓴다 (LSP).
     /// </summary>
+    [DefaultExecutionOrder(75)]
     public sealed class HeldWeaponSocket : MonoBehaviour
     {
         /// <summary>무기 종류 ↔ TP 월드모델 루트 — 오프셋·자세 수치는 전부 설정 에셋이 든다.</summary>
@@ -33,10 +34,15 @@ namespace Game.Gameplay.Player
         private IPlayerViewMode _viewMode;
         private Animator _cachedAnimator;
         private Transform _socket;
+        private Transform _leftSocket;
+        private RaccoonEquipmentProfile _raccoonProfile;
+        private bool _attachedLeftHarpoon;
         private Renderer[][] _renderers;
         private bool[] _visible;
         private bool[] _shadowOnly;
         private Vector3[] _baseScales;
+        private MeshFilter[][] _meshFilters;
+        private Mesh[][] _baseMeshes;
 
         private void Awake()
         {
@@ -49,6 +55,8 @@ namespace Game.Gameplay.Player
             _visible = new bool[count];
             _shadowOnly = new bool[count];
             _baseScales = new Vector3[count];
+            _meshFilters = new MeshFilter[count][];
+            _baseMeshes = new Mesh[count][];
             for (int i = 0; i < count; i++)
             {
                 Transform model = _models[i].Model;
@@ -59,6 +67,9 @@ namespace Game.Gameplay.Player
                 // 무기 모델의 임포트 스케일(FBX 0.01 보정)은 프리팹 배치가 이미 갖고 있다 —
                 // 설정의 스케일은 그 위에 얹는 배율이므로 원본을 기억해 둔다.
                 _baseScales[i] = model != null ? model.localScale : Vector3.one;
+                _meshFilters[i] = model != null ? model.GetComponentsInChildren<MeshFilter>(true) : Array.Empty<MeshFilter>();
+                _baseMeshes[i] = new Mesh[_meshFilters[i].Length];
+                for(int j=0;j<_meshFilters[i].Length;j++)_baseMeshes[i][j]=_meshFilters[i][j].sharedMesh;
                 _visible[i] = true;
                 SetVisible(i, visible: false, ownerShadowOnly: false);
             }
@@ -76,7 +87,8 @@ namespace Game.Gameplay.Player
                 return;
             }
 
-            if (animator != _cachedAnimator)
+            bool leftHarpoon = _aim.LeftHarpoonHeld && animator.GetComponent<RaccoonEquipmentPose>() != null;
+            if (animator != _cachedAnimator || _attachedLeftHarpoon != leftHarpoon)
             {
                 // Girl↔Man 전환 — 새 모델의 오른손 본으로 소켓을 옮겨 단다 (기술 확정 ⑤).
                 if (!TryAttachSocket(animator))
@@ -86,6 +98,7 @@ namespace Game.Gameplay.Player
                 }
 
                 _cachedAnimator = animator;
+                _attachedLeftHarpoon = leftHarpoon;
             }
 
             ApplyVisibility(_aim.HeldItem);
@@ -109,6 +122,17 @@ namespace Game.Gameplay.Player
             _socket.localPosition = Vector3.zero;
             _socket.localRotation = Quaternion.identity;
             _socket.localScale = NormalizeToRootScale(hand);
+            _raccoonProfile = animator.GetComponent<RaccoonEquipmentPose>()?.Profile;
+            bool leftHarpoon = _aim.LeftHarpoonHeld && _raccoonProfile != null;
+            if (leftHarpoon)
+            {
+                if (_leftSocket == null) _leftSocket = new GameObject("LeftHeldWeaponSocket").transform;
+                Transform leftHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+                _leftSocket.SetParent(leftHand, false);
+                _leftSocket.localPosition = Vector3.zero;
+                _leftSocket.localRotation = Quaternion.identity;
+                _leftSocket.localScale = NormalizeToRootScale(leftHand);
+            }
 
             for (int i = 0; i < _models.Length; i++)
             {
@@ -118,8 +142,18 @@ namespace Game.Gameplay.Player
                     continue;
                 }
 
-                model.SetParent(_socket, worldPositionStays: false);
-                if (_settings != null && _settings.TryGetEntry(_models[i].ItemType, out WeaponHoldSettings.Entry entry))
+                bool useLeft = leftHarpoon && _models[i].ItemType == HotbarItemType.Harpoon;
+                for(int j=0;j<_meshFilters[i].Length;j++)_meshFilters[i][j].sharedMesh=_baseMeshes[i][j];
+                model.SetParent(useLeft ? _leftSocket : _socket, worldPositionStays: false);
+                if (_raccoonProfile != null && _raccoonProfile.TryGetEntry(_models[i].ItemType, out RaccoonEquipmentProfile.Entry fitted))
+                {
+                    RaccoonEquipmentProfile.SocketPose socket = useLeft ? _raccoonProfile.LeftHarpoonSocket : fitted.Socket;
+                    model.localPosition = socket.Position;
+                    model.localRotation = socket.Rotation;
+                    model.localScale = Vector3.Scale(_baseScales[i], socket.Scale);
+                    if(fitted.MeshOverride!=null && _meshFilters[i].Length==1)_meshFilters[i][0].sharedMesh=fitted.MeshOverride;
+                }
+                else if (_settings != null && _settings.TryGetEntry(_models[i].ItemType, out WeaponHoldSettings.Entry entry))
                 {
                     model.localPosition = entry.SocketLocalPosition;
                     model.localRotation = entry.SocketLocalRotation;
@@ -163,7 +197,9 @@ namespace Game.Gameplay.Player
             bool ownerShadowOnly = _aim.IsOwner && !unified;
             for (int i = 0; i < _models.Length; i++)
             {
-                SetVisible(i, visible: held != HotbarItemType.None && _models[i].ItemType == held, ownerShadowOnly);
+                bool visible = held != HotbarItemType.None && _models[i].ItemType == held;
+                visible |= _attachedLeftHarpoon && _models[i].ItemType == HotbarItemType.Harpoon;
+                SetVisible(i, visible, ownerShadowOnly);
             }
         }
 

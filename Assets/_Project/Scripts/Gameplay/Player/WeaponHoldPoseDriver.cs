@@ -25,11 +25,15 @@ namespace Game.Gameplay.Player
         private PlayerAimView _aim;
         private int _holdLayerIndex = -1;
         private float _layerWeight;
+        private RaccoonEquipmentProfile _raccoon;
+        private float _runStyleWeight;
+        private static readonly int RunStyleParam = Animator.StringToHash("RaccoonShotgunRun");
 
         private void Awake()
         {
             _animator = GetComponent<Animator>();
             _aim = GetComponentInParent<PlayerAimView>();
+            _raccoon=GetComponent<RaccoonEquipmentPose>()?.Profile;
         }
 
         private void OnEnable()
@@ -37,6 +41,8 @@ namespace Game.Gameplay.Player
             // 레이어 인덱스는 컨트롤러가 붙은 뒤에만 해석된다 — 모델 교대마다 다시 찾는다.
             _holdLayerIndex = _animator != null ? _animator.GetLayerIndex(_holdLayerName) : -1;
             _layerWeight = 0f;
+            _runStyleWeight=0f;
+            if(_raccoon!=null&&_raccoon.HasAuthoredShotgunRun)_animator.SetFloat(RunStyleParam,0);
             if (_holdLayerIndex >= 0)
             {
                 _animator.SetLayerWeight(_holdLayerIndex, 0f);
@@ -56,6 +62,12 @@ namespace Game.Gameplay.Player
             WeaponHoldPose pose = held ? entry.Pose : WeaponHoldPose.None;
 
             _animator.SetInteger(HoldPoseParam, (int)pose);
+            if(_raccoon!=null&&_raccoon.HasAuthoredShotgunRun)
+            {
+                float targetStyle=_aim.HeldItem==Game.Gameplay.Inventory.HotbarItemType.Shotgun?1f:0f;
+                _runStyleWeight=Mathf.MoveTowards(_runStyleWeight,targetStyle,Time.deltaTime/.16f);
+                _animator.SetFloat(RunStyleParam,_runStyleWeight);
+            }
 
             if (_holdLayerIndex < 0)
             {
@@ -63,6 +75,7 @@ namespace Game.Gameplay.Player
             }
 
             float target = WeaponHoldMath.TargetLayerWeight(held, pose, _settings.HoldLayerWeight);
+            if(_raccoon!=null)target*=1-_raccoon.AuthoredRunWeight(_animator);
             _layerWeight = WeaponHoldMath.StepWeight(
                 _layerWeight, target, _settings.HoldLayerBlendHalfLifeSeconds, Time.deltaTime);
             _animator.SetLayerWeight(_holdLayerIndex, _layerWeight);
