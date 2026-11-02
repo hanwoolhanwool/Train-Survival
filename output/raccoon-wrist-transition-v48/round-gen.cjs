@@ -1,0 +1,4 @@
+const fs=require('fs');let s=fs.readFileSync('output/raccoon-wrist-transition-v48/patch.cjs','utf8');s=s.replace('smooth((t+.075)/.035)*(1-smooth((t-.005)/.035))','smooth((t+.115)/.045)*(1-smooth((t-.002)/.033))');let start=s.indexOf('let pts=groups.map'),end=s.indexOf('const normals=',start);s=s.slice(0,start)+`
+const vaxis=unit(sub([0,1,0],mul(axis,axis[1]))),uaxis=unit(cross(axis,vaxis));
+let pts=groups.map(g=>{if(!g.mask)return g.p;let t=g.t,delta=sub(g.p,add(wrist,mul(axis,t)));let blend=Math.max(0,Math.min(1,-t/.11)),rx=.036+.017*blend,ry=.054+.014*blend,cx=.006*blend;let u=dot(delta,uaxis)-cx,v=dot(delta,vaxis),rho=Math.sqrt(u*u/(rx*rx)+v*v/(ry*ry));let rounded=add(add(add(wrist,mul(axis,t)),mul(uaxis,cx+u/rho)),mul(vaxis,v/rho));return add(g.p,mul(sub(rounded,g.p),g.mask));});
+`+s.slice(end);fs.writeFileSync('output/raccoon-wrist-transition-v48/patch-rounded.cjs',s);

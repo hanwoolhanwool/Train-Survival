@@ -1,0 +1,17 @@
+{
+    "phases": [
+        {
+            "phase": "armed_calm / 1x original cadence / preview 0.8mps",
+            "frames": 840,
+            "contactSamples": 522,
+            "maxGripError": 0.0000017410781083526672,
+            "maxHandStep": 0.0037171219009906055,
+            "maxTailStep": 0.0,
+            "minFootClearance": 0.006460186559706926,
+            "minTailClearance": 0.17490063607692719,
+            "meanContactSlide": 0.7807718515396118,
+            "maxContactSlide": 4.006905555725098
+        }
+    ],
+    "note": "Physical CharacterController movement over box/ramp/step colliders; 60 Hz. Sole geometry is sampled after Animator and equipment/tail corrections. Contact slide uses sole-centroid world velocity near the surface; this is not network or moving-train QA."
+}

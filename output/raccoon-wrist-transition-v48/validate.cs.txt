@@ -1,0 +1,25 @@
+var src=AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_SupportArm_v18.asset");
+var dst=AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_WristTransition_v48.asset");
+var patch=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("output/raccoon-wrist-transition-v48/patch.json"));
+var changed=new System.Collections.Generic.HashSet<int>();foreach(var p in patch["vertices"])changed.Add((int)p["index"]);
+var sv=src.vertices;var dv=dst.vertices;var sw=src.boneWeights;var dw=dst.boneWeights;var sn=src.normals;var dn=dst.normals;
+int untouched=0;float maxDelta=0;
+if(src.vertexCount!=dst.vertexCount||!System.Linq.Enumerable.SequenceEqual(src.triangles,dst.triangles)||!System.Linq.Enumerable.SequenceEqual(src.uv,dst.uv)||!System.Linq.Enumerable.SequenceEqual(src.bindposes,dst.bindposes))throw new System.Exception("Topology UV or bind changed");
+for(int i=0;i<sv.Length;i++){if(!changed.Contains(i)){if(sv[i]!=dv[i]||sn[i]!=dn[i]||!sw[i].Equals(dw[i]))throw new System.Exception("Unrelated vertex changed "+i);untouched++;}else{maxDelta=Mathf.Max(maxDelta,(sv[i]-dv[i]).magnitude*100);var w=dw[i];if(Mathf.Abs(w.weight0+w.weight1+w.weight2+w.weight3-1)>1e-6f)throw new System.Exception("Weight sum");}}
+for(int shape=0;shape<src.blendShapeCount;shape++){var x=new Vector3[sv.Length];var y=new Vector3[sv.Length];src.GetBlendShapeFrameVertices(shape,0,x,null,null);dst.GetBlendShapeFrameVertices(shape,0,y,null,null);if(!System.Linq.Enumerable.SequenceEqual(x,y))throw new System.Exception("Corrective changed");}
+var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Characters/Raccoon/ActionsCandidate_v36/PC_Raccoon_Actions_v36.prefab");
+var root=UnityEngine.Object.Instantiate(prefab);var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=new Vector3(1000,-.5f,0);floor.transform.localScale=new Vector3(20,1,20);
+var reports=new System.Collections.Generic.List<object>();int totalSamples=0;
+try{
+var m=root.GetComponent<Game.Gameplay.Debugging.RaccoonActionMotorV36>();m.enabled=false;m.ResetAt(new Vector3(1000,.03f,0));var a=m.Rig.Animator;var ac=root.GetComponent<Game.Gameplay.Debugging.RaccoonActionReviewV36>();var skin=a.GetComponentInChildren<SkinnedMeshRenderer>();
+var bind=dst.bindposes;var bones=skin.bones;
+// Shared-position seam vertices must continue to deform together in every sampled pose.
+var groups=new System.Collections.Generic.Dictionary<string,System.Collections.Generic.List<int>>();foreach(int i in changed){string key=sv[i].x.ToString("F8")+","+sv[i].y.ToString("F8")+","+sv[i].z.ToString("F8");if(!groups.ContainsKey(key))groups[key]=new System.Collections.Generic.List<int>();groups[key].Add(i);}
+foreach(var context in new[]{Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Unarmed,Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Shotgun,Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Hammer,Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Revolver,Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Harpoon,Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Food,Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Bundle,Game.Gameplay.Debugging.RaccoonActionReviewV36.ReviewContext.Fishing}){
+ac.SetContext(context);var selections=new System.Collections.Generic.List<int>{-1};for(int i=0;i<ac.Library.Entries.Length;i++)if(ac.Compatible(ac.Library.Entries[i])&&ac.Library.Entries[i].Id!="Death")selections.Add(i);
+float gap=0;int samples=0;foreach(int selection in selections){ac.Select(selection);int frames=selection<0?30:Mathf.CeilToInt((ac.Entry.Duration+.5f)*60);for(int f=0;f<frames;f++){m.Advance(1f/60,Vector2.zero,false);m.Evaluate(1f/60);if(f%6!=0)continue;var matrices=new Matrix4x4[bones.Length];for(int b=0;b<bones.Length;b++)matrices[b]=bones[b].localToWorldMatrix*bind[b];var points=new System.Collections.Generic.Dictionary<int,Vector3>();foreach(int i in changed){var w=dw[i];var p=matrices[w.boneIndex0].MultiplyPoint3x4(dv[i])*w.weight0+matrices[w.boneIndex1].MultiplyPoint3x4(dv[i])*w.weight1;if(float.IsNaN(p.x)||float.IsInfinity(p.x))throw new System.Exception("Nonfinite deformation");points[i]=p;}foreach(var g in groups.Values)for(int k=1;k<g.Count;k++)gap=Mathf.Max(gap,Vector3.Distance(points[g[0]],points[g[k]]));samples++;}}
+if(gap>.0005f)throw new System.Exception("Wrist seam separated "+context+" "+gap);reports.Add(new{context=context.ToString(),poses=selections.Count,samples,maxSeamGapMetres=gap});totalSamples+=samples;
+}
+}finally{UnityEngine.Object.DestroyImmediate(root);UnityEngine.Object.DestroyImmediate(floor);}
+var result=new{changedVertices=changed.Count,unchangedVertices=untouched,maxRestChangeMetres=maxDelta,topologyUvBindCorrectivesPreserved=true,totalPoseSamples=totalSamples,contexts=reports};
+System.IO.File.WriteAllText("output/raccoon-wrist-transition-v48/validation.json",Newtonsoft.Json.JsonConvert.SerializeObject(result,Newtonsoft.Json.Formatting.Indented));return Newtonsoft.Json.JsonConvert.SerializeObject(result);
