@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Passed" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:41Z" duration="7.0502879">
+  <test-suite type="TestSuite" id="1119" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="84" result="Passed" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:41Z" duration="7.050288" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1112" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="84" result="Passed" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:41Z" duration="7.037638" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="48376" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1113" name="Game" fullname="Game" runstate="Runnable" testcasecount="84" result="Passed" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:41Z" duration="7.032940" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1114" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="84" result="Passed" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:41Z" duration="7.029330" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1115" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="84" result="Passed" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:41Z" duration="7.025700" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1075" name="RaccoonJumpV32Tests" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:41Z" duration="7.021788" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1083" name="CeilingHitStopsAscentAndLedgeFallUsesLandingWithoutLaunch" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.CeilingHitStopsAscentAndLedgeFallUsesLandingWithoutLaunch" methodname="CeilingHitStopsAscentAndLedgeFallUsesLandingWithoutLaunch" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="373078366" result="Passed" start-time="2026-11-01 20:56:34Z" end-time="2026-11-01 20:56:35Z" duration="1.296452" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1082" name="JumpLandsOnCollisionAndPreservesGrip" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.JumpLandsOnCollisionAndPreservesGrip" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-01 20:56:35Z" end-time="2026-11-01 20:56:40Z" duration="5.388337" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1076" name="JumpLandsOnCollisionAndPreservesGrip(30,False)" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.JumpLandsOnCollisionAndPreservesGrip(30,False)" methodname="JumpLandsOnCollisionAndPreservesGrip" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="817200995" result="Passed" start-time="2026-11-01 20:56:35Z" end-time="2026-11-01 20:56:36Z" duration="0.718775" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[JUMP_V32 fps=30 running=False peak=1.19829 airtime=0.6666668 minSole=0.007178767 maxGrip=9.616598E-05 maxHeadRate=99.99578
+]]></output>
+                </test-case>
+                <test-case id="1077" name="JumpLandsOnCollisionAndPreservesGrip(60,False)" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.JumpLandsOnCollisionAndPreservesGrip(60,False)" methodname="JumpLandsOnCollisionAndPreservesGrip" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="2143830450" result="Passed" start-time="2026-11-01 20:56:36Z" end-time="2026-11-01 20:56:37Z" duration="0.842721" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[JUMP_V32 fps=60 running=False peak=1.199871 airtime=0.6833333 minSole=0.006790563 maxGrip=9.517252E-05 maxHeadRate=99.9579
+]]></output>
+                </test-case>
+                <test-case id="1078" name="JumpLandsOnCollisionAndPreservesGrip(120,False)" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.JumpLandsOnCollisionAndPreservesGrip(120,False)" methodname="JumpLandsOnCollisionAndPreservesGrip" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="197776764" result="Passed" start-time="2026-11-01 20:56:37Z" end-time="2026-11-01 20:56:38Z" duration="1.333686" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[JUMP_V32 fps=120 running=False peak=1.199872 airtime=0.6916664 minSole=0.005993411 maxGrip=0.0001496801 maxHeadRate=100.2668
+]]></output>
+                </test-case>
+                <test-case id="1079" name="JumpLandsOnCollisionAndPreservesGrip(30,True)" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.JumpLandsOnCollisionAndPreservesGrip(30,True)" methodname="JumpLandsOnCollisionAndPreservesGrip" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="339737340" result="Passed" start-time="2026-11-01 20:56:38Z" end-time="2026-11-01 20:56:39Z" duration="0.679046" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[JUMP_V32 fps=30 running=True peak=1.19829 airtime=0.6666668 minSole=0.003998041 maxGrip=9.788076E-05 maxHeadRate=100.0169
+]]></output>
+                </test-case>
+                <test-case id="1080" name="JumpLandsOnCollisionAndPreservesGrip(60,True)" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.JumpLandsOnCollisionAndPreservesGrip(60,True)" methodname="JumpLandsOnCollisionAndPreservesGrip" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="1439910571" result="Passed" start-time="2026-11-01 20:56:39Z" end-time="2026-11-01 20:56:39Z" duration="0.788750" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[JUMP_V32 fps=60 running=True peak=1.199871 airtime=0.6833333 minSole=0.003996989 maxGrip=0.000148448 maxHeadRate=100.0424
+]]></output>
+                </test-case>
+                <test-case id="1081" name="JumpLandsOnCollisionAndPreservesGrip(120,True)" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.JumpLandsOnCollisionAndPreservesGrip(120,True)" methodname="JumpLandsOnCollisionAndPreservesGrip" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="217917728" result="Passed" start-time="2026-11-01 20:56:39Z" end-time="2026-11-01 20:56:40Z" duration="1.007438" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[JUMP_V32 fps=120 running=True peak=1.199872 airtime=0.6916664 minSole=0.003996788 maxGrip=9.923461E-05 maxHeadRate=100.2668
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1084" name="ZeroJumpWeightKeepsApprovedGroundMotion" fullname="Game.Tests.PlayMode.RaccoonJumpV32Tests.ZeroJumpWeightKeepsApprovedGroundMotion" methodname="ZeroJumpWeightKeepsApprovedGroundMotion" classname="Game.Tests.PlayMode.RaccoonJumpV32Tests" runstate="Runnable" seed="840986594" result="Passed" start-time="2026-11-01 20:56:40Z" end-time="2026-11-01 20:56:41Z" duration="0.321286" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[JUMP_V32_GROUND maxDifference=0
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Passed" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:59Z" duration="38.9134453">
+  <test-suite type="TestSuite" id="1082" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:59Z" duration="38.913445" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1075" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:59Z" duration="38.904233" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="48376" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1076" name="Game" fullname="Game" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:59Z" duration="38.899723" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1077" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:59Z" duration="38.895735" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1078" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:59Z" duration="38.891803" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1027" name="RaccoonCandidateV26Tests" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:59Z" duration="38.888016" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1032" name="LoopBoundaryKeepsFootVelocityContinuous" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.LoopBoundaryKeepsFootVelocityContinuous" methodname="LoopBoundaryKeepsFootVelocityContinuous" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="1641815595" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:21Z" duration="0.305869" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[LOOP_SEAM velocityJumpBefore=1.44967 after=0.01927639
+]]></output>
+              </test-case>
+              <test-case id="1028" name="PreviewRecreatesTransientSolverAfterScriptReload" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.PreviewRecreatesTransientSolverAfterScriptReload" methodname="PreviewRecreatesTransientSolverAfterScriptReload" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="358561420" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:21Z" duration="0.180759" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1031" name="RunningPreservesApprovedHybridCadenceAndLegTrajectory" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.RunningPreservesApprovedHybridCadenceAndLegTrajectory" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:23Z" duration="2.427445" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1029" name="RunningPreservesApprovedHybridCadenceAndLegTrajectory(False)" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.RunningPreservesApprovedHybridCadenceAndLegTrajectory(False)" methodname="RunningPreservesApprovedHybridCadenceAndLegTrajectory" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="21626305" result="Passed" start-time="2026-11-01 19:40:21Z" end-time="2026-11-01 19:40:22Z" duration="0.521339" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[RESTORED_RUN grounded=False maxHorizontal=1.239777E-05 maxHip=3.312753E-06
+]]></output>
+                </test-case>
+                <test-case id="1030" name="RunningPreservesApprovedHybridCadenceAndLegTrajectory(True)" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.RunningPreservesApprovedHybridCadenceAndLegTrajectory(True)" methodname="RunningPreservesApprovedHybridCadenceAndLegTrajectory" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="1715205838" result="Passed" start-time="2026-11-01 19:40:22Z" end-time="2026-11-01 19:40:23Z" duration="1.897505" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[RESTORED_RUN grounded=True maxHorizontal=1.335144E-05 maxHip=3.312753E-06
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1037" name="WalkingAcrossInclinedGroundUsesTheRuntimeCandidate" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.WalkingAcrossInclinedGroundUsesTheRuntimeCandidate" methodname="WalkingAcrossInclinedGroundUsesTheRuntimeCandidate" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="321131965" result="Passed" start-time="2026-11-01 19:40:23Z" end-time="2026-11-01 19:40:31Z" duration="7.907458" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CANDIDATE_V26 fps=60 slope=True minSole=0.004000425 maxGrip=0.000148243 maxFootSpeed=5.701175 meanPoseMs=5.510 contacts=1416
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1036" name="WalkRunStopTransitionsKeepSolesAndGripStable" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.WalkRunStopTransitionsKeepSolesAndGripStable" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-01 19:40:31Z" end-time="2026-11-01 19:40:59Z" duration="28.053888" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1033" name="WalkRunStopTransitionsKeepSolesAndGripStable(30)" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.WalkRunStopTransitionsKeepSolesAndGripStable(30)" methodname="WalkRunStopTransitionsKeepSolesAndGripStable" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="118439373" result="Passed" start-time="2026-11-01 19:40:31Z" end-time="2026-11-01 19:40:36Z" duration="4.358592" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CANDIDATE_V26 fps=30 slope=False minSole=0.003996834 maxGrip=0.0001039458 maxFootSpeed=8.041306 meanPoseMs=5.418 contacts=704
+]]></output>
+                </test-case>
+                <test-case id="1034" name="WalkRunStopTransitionsKeepSolesAndGripStable(60)" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.WalkRunStopTransitionsKeepSolesAndGripStable(60)" methodname="WalkRunStopTransitionsKeepSolesAndGripStable" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="1137188219" result="Passed" start-time="2026-11-01 19:40:36Z" end-time="2026-11-01 19:40:44Z" duration="8.195881" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CANDIDATE_V26 fps=60 slope=False minSole=0.003998041 maxGrip=0.00014877 maxFootSpeed=8.201107 meanPoseMs=5.663 contacts=1420
+]]></output>
+                </test-case>
+                <test-case id="1035" name="WalkRunStopTransitionsKeepSolesAndGripStable(120)" fullname="Game.Tests.PlayMode.RaccoonCandidateV26Tests.WalkRunStopTransitionsKeepSolesAndGripStable(120)" methodname="WalkRunStopTransitionsKeepSolesAndGripStable" classname="Game.Tests.PlayMode.RaccoonCandidateV26Tests" runstate="Runnable" seed="1358250450" result="Passed" start-time="2026-11-01 19:40:44Z" end-time="2026-11-01 19:40:59Z" duration="15.450012" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CANDIDATE_V26 fps=120 slope=False minSole=0.003997028 maxGrip=0.0001482843 maxFootSpeed=9.026824 meanPoseMs=5.524 contacts=2829
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

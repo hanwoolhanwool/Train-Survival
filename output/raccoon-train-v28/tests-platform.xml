@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.6507471">
+  <test-suite type="TestSuite" id="1090" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="63" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.650747" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1083" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="63" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.642448" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="48376" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1084" name="Game" fullname="Game" runstate="Runnable" testcasecount="63" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.639194" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1085" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="63" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.636403" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1086" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="63" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.633709" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1071" name="RaccoonTrainV28Tests" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.630563" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1078" name="DeckMotionDoesNotBecomeLocomotionOrDetachFeet" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests.DeckMotionDoesNotBecomeLocomotionOrDetachFeet" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:50:49Z" duration="58.624075" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1072" name="DeckMotionDoesNotBecomeLocomotionOrDetachFeet(30,False)" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests.DeckMotionDoesNotBecomeLocomotionOrDetachFeet(30,False)" methodname="DeckMotionDoesNotBecomeLocomotionOrDetachFeet" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" seed="381518529" result="Passed" start-time="2026-11-01 19:49:51Z" end-time="2026-11-01 19:49:56Z" duration="4.849736" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TRAIN_V28 fps=30 movement=False rootDrift=0.001282391 footDrift=0.001084411 idleSpeed=0 sole=0.005915821 grip=3.695579E-05 contacts=660
+]]></output>
+                </test-case>
+                <test-case id="1073" name="DeckMotionDoesNotBecomeLocomotionOrDetachFeet(60,False)" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests.DeckMotionDoesNotBecomeLocomotionOrDetachFeet(60,False)" methodname="DeckMotionDoesNotBecomeLocomotionOrDetachFeet" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" seed="2141160034" result="Passed" start-time="2026-11-01 19:49:56Z" end-time="2026-11-01 19:50:04Z" duration="8.397242" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TRAIN_V28 fps=60 movement=False rootDrift=0.0005381513 footDrift=0.000756981 idleSpeed=0 sole=0.005939838 grip=3.073677E-05 contacts=1320
+]]></output>
+                </test-case>
+                <test-case id="1074" name="DeckMotionDoesNotBecomeLocomotionOrDetachFeet(120,False)" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests.DeckMotionDoesNotBecomeLocomotionOrDetachFeet(120,False)" methodname="DeckMotionDoesNotBecomeLocomotionOrDetachFeet" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" seed="62623096" result="Passed" start-time="2026-11-01 19:50:04Z" end-time="2026-11-01 19:50:20Z" duration="16.176904" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TRAIN_V28 fps=120 movement=False rootDrift=0.001391784 footDrift=0.001346007 idleSpeed=0 sole=0.00591813 grip=3.240585E-05 contacts=2640
+]]></output>
+                </test-case>
+                <test-case id="1075" name="DeckMotionDoesNotBecomeLocomotionOrDetachFeet(30,True)" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests.DeckMotionDoesNotBecomeLocomotionOrDetachFeet(30,True)" methodname="DeckMotionDoesNotBecomeLocomotionOrDetachFeet" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" seed="1599169464" result="Passed" start-time="2026-11-01 19:50:20Z" end-time="2026-11-01 19:50:25Z" duration="4.427571" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TRAIN_V28 fps=30 movement=True rootDrift=0.000203701 footDrift=0.0005049321 idleSpeed=0 sole=0.003997629 grip=3.341537E-05 contacts=619
+]]></output>
+                </test-case>
+                <test-case id="1076" name="DeckMotionDoesNotBecomeLocomotionOrDetachFeet(60,True)" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests.DeckMotionDoesNotBecomeLocomotionOrDetachFeet(60,True)" methodname="DeckMotionDoesNotBecomeLocomotionOrDetachFeet" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" seed="408628817" result="Passed" start-time="2026-11-01 19:50:25Z" end-time="2026-11-01 19:50:33Z" duration="8.558936" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TRAIN_V28 fps=60 movement=True rootDrift=9.301794E-05 footDrift=0.0004592988 idleSpeed=0 sole=0.003996964 grip=3.220049E-05 contacts=1231
+]]></output>
+                </test-case>
+                <test-case id="1077" name="DeckMotionDoesNotBecomeLocomotionOrDetachFeet(120,True)" fullname="Game.Tests.PlayMode.RaccoonTrainV28Tests.DeckMotionDoesNotBecomeLocomotionOrDetachFeet(120,True)" methodname="DeckMotionDoesNotBecomeLocomotionOrDetachFeet" classname="Game.Tests.PlayMode.RaccoonTrainV28Tests" runstate="Runnable" seed="1693988166" result="Passed" start-time="2026-11-01 19:50:33Z" end-time="2026-11-01 19:50:49Z" duration="16.201799" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TRAIN_V28 fps=120 movement=True rootDrift=0.0003302991 footDrift=0.0006568989 idleSpeed=0 sole=0.003993951 grip=4.310982E-05 contacts=2469
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

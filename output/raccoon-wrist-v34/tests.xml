@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="17" result="Passed" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:29Z" duration="13.8461314">
+  <test-suite type="TestSuite" id="1140" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="101" result="Passed" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:29Z" duration="13.846131" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1133" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="101" result="Passed" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:29Z" duration="13.831047" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="48376" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1134" name="Game" fullname="Game" runstate="Runnable" testcasecount="101" result="Passed" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:29Z" duration="13.827132" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1135" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="101" result="Passed" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:29Z" duration="13.821954" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1136" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="101" result="Passed" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:29Z" duration="13.818670" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1038" name="RaccoonCombatV33Tests" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:22Z" duration="6.935419" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1046" name="CombatCanOverlapJumpAndRunning" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.CombatCanOverlapJumpAndRunning" methodname="CombatCanOverlapJumpAndRunning" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="961786895" result="Passed" start-time="2026-11-01 21:22:15Z" end-time="2026-11-01 21:22:16Z" duration="0.842366" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[COMBAT_V33_OVERLAP grip=6.99665E-05 reach=7.198859E-05
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1045" name="FireReloadAndReturnStayContinuous" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.FireReloadAndReturnStayContinuous" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-01 21:22:16Z" end-time="2026-11-01 21:22:22Z" duration="5.734310" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1039" name="FireReloadAndReturnStayContinuous(30,1)" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.FireReloadAndReturnStayContinuous(30,1)" methodname="FireReloadAndReturnStayContinuous" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="597650060" result="Passed" start-time="2026-11-01 21:22:16Z" end-time="2026-11-01 21:22:16Z" duration="0.389206" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[COMBAT_V33 fps=30 rounds=1 grip=7.203322E-05 reach=7.160761E-05 handSpeed=1.417141 headRate=0 shells=1
+]]></output>
+                </test-case>
+                <test-case id="1040" name="FireReloadAndReturnStayContinuous(60,1)" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.FireReloadAndReturnStayContinuous(60,1)" methodname="FireReloadAndReturnStayContinuous" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="1843168835" result="Passed" start-time="2026-11-01 21:22:16Z" end-time="2026-11-01 21:22:17Z" duration="0.470128" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[COMBAT_V33 fps=60 rounds=1 grip=6.481688E-05 reach=8.149671E-05 handSpeed=1.419488 headRate=0 shells=1
+]]></output>
+                </test-case>
+                <test-case id="1041" name="FireReloadAndReturnStayContinuous(120,1)" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.FireReloadAndReturnStayContinuous(120,1)" methodname="FireReloadAndReturnStayContinuous" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="630964667" result="Passed" start-time="2026-11-01 21:22:17Z" end-time="2026-11-01 21:22:18Z" duration="0.826920" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[COMBAT_V33 fps=120 rounds=1 grip=7.66563E-05 reach=7.344526E-05 handSpeed=1.425835 headRate=0 shells=1
+]]></output>
+                </test-case>
+                <test-case id="1042" name="FireReloadAndReturnStayContinuous(30,2)" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.FireReloadAndReturnStayContinuous(30,2)" methodname="FireReloadAndReturnStayContinuous" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="994129813" result="Passed" start-time="2026-11-01 21:22:18Z" end-time="2026-11-01 21:22:18Z" duration="0.706281" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[COMBAT_V33 fps=30 rounds=2 grip=6.29723E-05 reach=7.268971E-05 handSpeed=1.641209 headRate=17.32284 shells=2
+]]></output>
+                </test-case>
+                <test-case id="1043" name="FireReloadAndReturnStayContinuous(60,2)" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.FireReloadAndReturnStayContinuous(60,2)" methodname="FireReloadAndReturnStayContinuous" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="1017995771" result="Passed" start-time="2026-11-01 21:22:18Z" end-time="2026-11-01 21:22:19Z" duration="1.176444" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[COMBAT_V33 fps=60 rounds=2 grip=6.880178E-05 reach=7.406599E-05 handSpeed=1.662603 headRate=16.61717 shells=2
+]]></output>
+                </test-case>
+                <test-case id="1044" name="FireReloadAndReturnStayContinuous(120,2)" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.FireReloadAndReturnStayContinuous(120,2)" methodname="FireReloadAndReturnStayContinuous" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="1674299431" result="Passed" start-time="2026-11-01 21:22:19Z" end-time="2026-11-01 21:22:22Z" duration="2.153481" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[COMBAT_V33 fps=120 rounds=2 grip=7.172201E-05 reach=7.711932E-05 handSpeed=1.660434 headRate=0 shells=2
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1047" name="NoCombatPreservesGroundAndJump" fullname="Game.Tests.PlayMode.RaccoonCombatV33Tests.NoCombatPreservesGroundAndJump" methodname="NoCombatPreservesGroundAndJump" classname="Game.Tests.PlayMode.RaccoonCombatV33Tests" runstate="Runnable" seed="1215359048" result="Passed" start-time="2026-11-01 21:22:22Z" end-time="2026-11-01 21:22:22Z" duration="0.344814" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[COMBAT_V33_PRESERVED maxDifference=0
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1107" name="RaccoonReloadWristV34Tests" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-11-01 21:22:22Z" end-time="2026-11-01 21:22:29Z" duration="6.880067" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1117" name="ReloadWristAndElbowRemainAnatomicallyContinuous" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-11-01 21:22:22Z" end-time="2026-11-01 21:22:29Z" duration="6.868110" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1108" name="ReloadWristAndElbowRemainAnatomicallyContinuous(30,0)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(30,0)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="2128944365" result="Passed" start-time="2026-11-01 21:22:22Z" end-time="2026-11-01 21:22:22Z" duration="0.319155" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=30 movement=0 bend=35.0095 handRate=159.2944 armRate=342.0334 elbowFront=0 shellSlip=5.495978E-05
+]]></output>
+                </test-case>
+                <test-case id="1109" name="ReloadWristAndElbowRemainAnatomicallyContinuous(60,0)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(60,0)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="1466647778" result="Passed" start-time="2026-11-01 21:22:22Z" end-time="2026-11-01 21:22:23Z" duration="0.491049" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=60 movement=0 bend=35.01104 handRate=162.4022 armRate=345.1319 elbowFront=0 shellSlip=5.451276E-05
+]]></output>
+                </test-case>
+                <test-case id="1110" name="ReloadWristAndElbowRemainAnatomicallyContinuous(120,0)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(120,0)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="1188249557" result="Passed" start-time="2026-11-01 21:22:23Z" end-time="2026-11-01 21:22:23Z" duration="0.754432" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=120 movement=0 bend=35.01109 handRate=162.6767 armRate=346.5307 elbowFront=0 shellSlip=5.79462E-05
+]]></output>
+                </test-case>
+                <test-case id="1111" name="ReloadWristAndElbowRemainAnatomicallyContinuous(30,1)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(30,1)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="96460307" result="Passed" start-time="2026-11-01 21:22:23Z" end-time="2026-11-01 21:22:24Z" duration="0.684875" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=30 movement=1 bend=35.01078 handRate=159.2502 armRate=351.3971 elbowFront=0 shellSlip=5.693697E-05
+]]></output>
+                </test-case>
+                <test-case id="1112" name="ReloadWristAndElbowRemainAnatomicallyContinuous(60,1)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(60,1)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="1372157958" result="Passed" start-time="2026-11-01 21:22:24Z" end-time="2026-11-01 21:22:25Z" duration="1.181097" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=60 movement=1 bend=35.01289 handRate=161.9678 armRate=358.7324 elbowFront=0 shellSlip=5.497345E-05
+]]></output>
+                </test-case>
+                <test-case id="1113" name="ReloadWristAndElbowRemainAnatomicallyContinuous(120,1)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(120,1)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="890472860" result="Passed" start-time="2026-11-01 21:22:25Z" end-time="2026-11-01 21:22:28Z" duration="2.136938" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=120 movement=1 bend=35.01398 handRate=192.2126 armRate=384.0826 elbowFront=0 shellSlip=5.431308E-05
+]]></output>
+                </test-case>
+                <test-case id="1114" name="ReloadWristAndElbowRemainAnatomicallyContinuous(30,2)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(30,2)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="1045769941" result="Passed" start-time="2026-11-01 21:22:28Z" end-time="2026-11-01 21:22:28Z" duration="0.300980" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=30 movement=2 bend=35.0122 handRate=335.8363 armRate=562.767 elbowFront=0 shellSlip=5.225202E-05
+]]></output>
+                </test-case>
+                <test-case id="1115" name="ReloadWristAndElbowRemainAnatomicallyContinuous(60,2)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(60,2)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="1110196581" result="Passed" start-time="2026-11-01 21:22:28Z" end-time="2026-11-01 21:22:28Z" duration="0.377416" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=60 movement=2 bend=35.01446 handRate=351.0837 armRate=583.9861 elbowFront=0 shellSlip=4.35921E-05
+]]></output>
+                </test-case>
+                <test-case id="1116" name="ReloadWristAndElbowRemainAnatomicallyContinuous(120,2)" fullname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests.ReloadWristAndElbowRemainAnatomicallyContinuous(120,2)" methodname="ReloadWristAndElbowRemainAnatomicallyContinuous" classname="Game.Tests.PlayMode.RaccoonReloadWristV34Tests" runstate="Runnable" seed="854965997" result="Passed" start-time="2026-11-01 21:22:28Z" end-time="2026-11-01 21:22:29Z" duration="0.613914" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[WRIST_V34 fps=120 movement=2 bend=35.01272 handRate=356.4717 armRate=589.6667 elbowFront=0 shellSlip=5.659964E-05
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

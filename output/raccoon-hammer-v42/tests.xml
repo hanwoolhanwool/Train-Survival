@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="54" result="Passed" total="54" passed="54" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-02 06:32:03Z" end-time="2026-11-02 06:32:42Z" duration="38.8928588">
+  <test-suite type="TestSuite" id="1223" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="162" result="Passed" start-time="2026-11-02 06:32:03Z" end-time="2026-11-02 06:32:42Z" duration="38.892859" total="54" passed="54" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1216" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="162" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:42Z" duration="38.852279" total="54" passed="54" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="48376" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1217" name="Game" fullname="Game" runstate="Runnable" testcasecount="162" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:42Z" duration="38.850253" total="54" passed="54" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1218" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="162" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:42Z" duration="38.848599" total="54" passed="54" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1219" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="162" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:42Z" duration="38.846957" total="54" passed="54" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1021" name="RaccoonActionsV36Tests" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:21Z" duration="17.124457" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1022" name="ActionInventoryHasFiniteDistinctClipsAndClosedLoops" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.ActionInventoryHasFiniteDistinctClipsAndClosedLoops" methodname="ActionInventoryHasFiniteDistinctClipsAndClosedLoops" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="851805823" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:04Z" duration="0.265266" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1032" name="DeathUpdatesExtraWristJointsInsteadOfLeavingStandingSpikes" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.DeathUpdatesExtraWristJointsInsteadOfLeavingStandingSpikes" methodname="DeathUpdatesExtraWristJointsInsteadOfLeavingStandingSpikes" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="1999288011" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:04Z" duration="0.520608" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1026" name="EveryActionKeepsFiniteBonesAndBoundedWrists" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:19Z" duration="14.439475" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1023" name="EveryActionKeepsFiniteBonesAndBoundedWrists(30)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists(30)" methodname="EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="1811909082" result="Passed" start-time="2026-11-02 06:32:04Z" end-time="2026-11-02 06:32:08Z" duration="3.867384" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ACTION_V36 HitFront fps=30 wrist=23.93508 contact=2.911271E-06 step=0.001428554
+ACTION_V36 HitBack fps=30 wrist=23.87658 contact=2.911271E-06 step=0.001346792
+ACTION_V36 HitLeft fps=30 wrist=23.8872 contact=2.911271E-06 step=0.0006132181
+ACTION_V36 HitRight fps=30 wrist=23.86826 contact=2.911271E-06 step=0.0006164531
+ACTION_V36 Death fps=30 wrist=0 contact=0 step=0
+ACTION_V36 Respawn fps=30 wrist=37.02385 contact=2.911271E-06 step=0.01399792
+ACTION_V36 Equip fps=30 wrist=40.34717 contact=2.911271E-06 step=0.1544863
+ACTION_V36 Holster fps=30 wrist=40.3494 contact=2.911271E-06 step=0.01510257
+ACTION_V36 Interact fps=30 wrist=0.02797646 contact=6.201224E-05 step=0.0002455048
+ACTION_V36 Pickup fps=30 wrist=0.02797646 contact=0.00720643 step=0.01840324
+ACTION_V36 Repair fps=30 wrist=0.03426402 contact=6.227305E-05 step=0.0007860976
+ACTION_V36 Melee fps=30 wrist=0 contact=0.05238043 step=0.03553093
+ACTION_V36 Eat fps=30 wrist=0.03426402 contact=3.267815E-05 step=1.720294E-05
+ACTION_V36 Carry fps=30 wrist=26.03566 contact=6.457799E-05 step=6.740935E-05
+ACTION_V36 HarpoonFire fps=30 wrist=0.02797646 contact=0.04844856 step=0.0009273121
+ACTION_V36 HarpoonReel fps=30 wrist=15.05184 contact=0.05463939 step=0.001055264
+ACTION_V36 RevolverFire fps=30 wrist=0 contact=3.592218E-05 step=0
+ACTION_V36 RevolverReload fps=30 wrist=0.02797646 contact=6.774189E-05 step=0.01489248
+ACTION_V36 SwimIdle fps=30 wrist=19.27934 contact=6.630979E-05 step=0.003987836
+ACTION_V36 SwimMove fps=30 wrist=31.63278 contact=6.922484E-05 step=0.0141251
+ACTION_V36 LadderHold fps=30 wrist=50.651 contact=2.28923E-05 step=0
+ACTION_V36 LadderUp fps=30 wrist=56.63762 contact=6.682199E-05 step=0.01888545
+ACTION_V36 LadderDown fps=30 wrist=56.65529 contact=7.497582E-05 step=0.0168273
+ACTION_V36 Mantle fps=30 wrist=60.00665 contact=3.265172E-05 step=0.03863044
+ACTION_V36 Grabbed fps=30 wrist=60.0126 contact=6.783169E-05 step=0.004580877
+ACTION_V36 Carried fps=30 wrist=0.02797646 contact=6.412064E-05 step=0.002381645
+ACTION_V36 FishingCast fps=30 wrist=60.01708 contact=6.792346E-05 step=0.01501404
+ACTION_V36 FishingWait fps=30 wrist=54.76085 contact=1.540904E-05 step=0
+ACTION_V36 FishingReel fps=30 wrist=58.27758 contact=6.771518E-05 step=0.003786529
+ACTION_V36 RifleFire fps=30 wrist=29.7471 contact=6.21017E-05 step=0.001335159
+ACTION_V36 RifleReload fps=30 wrist=32.01068 contact=7.203144E-05 step=0.01298336
+ACTION_V36 Neutral fps=30 wrist=0 contact=2.911271E-06 step=0
+ACTION_V36 SwimLeft fps=30 wrist=20.09908 contact=6.598492E-05 step=0.00751684
+ACTION_V36 SwimRight fps=30 wrist=24.41981 contact=6.621832E-05 step=0.007576478
+ACTION_V36 SwimBack fps=30 wrist=25.55756 contact=6.947757E-05 step=0.01095309
+ACTION_V36 ShotgunDeath fps=30 wrist=0 contact=0 step=0
+]]></output>
+                </test-case>
+                <test-case id="1024" name="EveryActionKeepsFiniteBonesAndBoundedWrists(60)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists(60)" methodname="EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="1562702960" result="Passed" start-time="2026-11-02 06:32:08Z" end-time="2026-11-02 06:32:13Z" duration="4.565230" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ACTION_V36 HitFront fps=60 wrist=23.91668 contact=2.911271E-06 step=0.003816685
+ACTION_V36 HitBack fps=60 wrist=23.87803 contact=2.911271E-06 step=0.004009324
+ACTION_V36 HitLeft fps=60 wrist=23.87725 contact=2.911271E-06 step=0.00174964
+ACTION_V36 HitRight fps=60 wrist=23.88323 contact=2.911271E-06 step=0.001795911
+ACTION_V36 Death fps=60 wrist=0 contact=0 step=0
+ACTION_V36 Respawn fps=60 wrist=37.43553 contact=2.911271E-06 step=0.00702075
+ACTION_V36 Equip fps=60 wrist=40.38394 contact=2.911271E-06 step=0.154428
+ACTION_V36 Holster fps=60 wrist=40.3851 contact=2.911271E-06 step=0.00755099
+ACTION_V36 Interact fps=60 wrist=0.03426402 contact=6.609858E-05 step=0.0002464524
+ACTION_V36 Pickup fps=60 wrist=0.02797646 contact=0.007392886 step=0.01083768
+ACTION_V36 Repair fps=60 wrist=0.03426402 contact=6.227305E-05 step=0.0004094585
+ACTION_V36 Melee fps=60 wrist=0.02797646 contact=0.05435231 step=0.01777213
+ACTION_V36 Eat fps=60 wrist=0.02797646 contact=6.103647E-05 step=6.36476E-05
+ACTION_V36 Carry fps=60 wrist=26.03566 contact=6.615085E-05 step=6.523268E-05
+ACTION_V36 HarpoonFire fps=60 wrist=0.02797646 contact=0.04844856 step=0.0004760298
+ACTION_V36 HarpoonReel fps=60 wrist=15.05184 contact=0.05463939 step=0.0005308787
+ACTION_V36 RevolverFire fps=60 wrist=0 contact=3.592218E-05 step=0
+ACTION_V36 RevolverReload fps=60 wrist=0.02797646 contact=6.766849E-05 step=0.007448412
+ACTION_V36 SwimIdle fps=60 wrist=19.29173 contact=7.456072E-05 step=0.002019577
+ACTION_V36 SwimMove fps=60 wrist=31.63414 contact=6.927278E-05 step=0.007090178
+ACTION_V36 LadderHold fps=60 wrist=50.651 contact=2.28923E-05 step=0
+ACTION_V36 LadderUp fps=60 wrist=56.75272 contact=6.677679E-05 step=0.009486987
+ACTION_V36 LadderDown fps=60 wrist=56.73959 contact=7.800591E-05 step=0.008435674
+ACTION_V36 Mantle fps=60 wrist=60.00665 contact=6.237417E-05 step=0.01932818
+ACTION_V36 Grabbed fps=60 wrist=60.0126 contact=6.774343E-05 step=0.002308468
+ACTION_V36 Carried fps=60 wrist=0.03426402 contact=6.412064E-05 step=0.001193068
+ACTION_V36 FishingCast fps=60 wrist=60.01702 contact=6.787124E-05 step=0.008687926
+ACTION_V36 FishingWait fps=60 wrist=54.76085 contact=1.540904E-05 step=0
+ACTION_V36 FishingReel fps=60 wrist=58.27892 contact=6.767225E-05 step=0.001945185
+ACTION_V36 RifleFire fps=60 wrist=29.80223 contact=6.431231E-05 step=0.0006756873
+ACTION_V36 RifleReload fps=60 wrist=32.01588 contact=7.207363E-05 step=0.006492257
+ACTION_V36 Neutral fps=60 wrist=0 contact=2.911271E-06 step=0
+ACTION_V36 SwimLeft fps=60 wrist=20.09905 contact=6.60865E-05 step=0.003809203
+ACTION_V36 SwimRight fps=60 wrist=24.43937 contact=6.653604E-05 step=0.00384551
+ACTION_V36 SwimBack fps=60 wrist=25.58328 contact=7.0471E-05 step=0.005499638
+ACTION_V36 ShotgunDeath fps=60 wrist=0 contact=0 step=0
+]]></output>
+                </test-case>
+                <test-case id="1025" name="EveryActionKeepsFiniteBonesAndBoundedWrists(120)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists(120)" methodname="EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="597933727" result="Passed" start-time="2026-11-02 06:32:13Z" end-time="2026-11-02 06:32:19Z" duration="5.998558" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ACTION_V36 HitFront fps=120 wrist=23.94503 contact=2.911271E-06 step=0.002708804
+ACTION_V36 HitBack fps=120 wrist=23.86232 contact=2.911271E-06 step=0.002904522
+ACTION_V36 HitLeft fps=120 wrist=23.86198 contact=2.911271E-06 step=0.001302046
+ACTION_V36 HitRight fps=120 wrist=23.85977 contact=2.911271E-06 step=0.001271339
+ACTION_V36 Death fps=120 wrist=0 contact=0 step=0
+ACTION_V36 Respawn fps=120 wrist=37.61161 contact=2.911271E-06 step=0.003521226
+ACTION_V36 Equip fps=120 wrist=40.38396 contact=2.911271E-06 step=0.1543918
+ACTION_V36 Holster fps=120 wrist=40.3851 contact=2.911271E-06 step=0.003787618
+ACTION_V36 Interact fps=120 wrist=0.03426402 contact=6.616677E-05 step=0.0002461865
+ACTION_V36 Pickup fps=120 wrist=0.02797646 contact=0.007392886 step=0.005814459
+ACTION_V36 Repair fps=120 wrist=0.03426402 contact=6.229476E-05 step=0.0002130779
+ACTION_V36 Melee fps=120 wrist=0.02797646 contact=0.05443744 step=0.008887502
+ACTION_V36 Eat fps=120 wrist=0.03426402 contact=6.45414E-05 step=6.373041E-05
+ACTION_V36 Carry fps=120 wrist=26.03566 contact=6.691807E-05 step=6.516116E-05
+ACTION_V36 HarpoonFire fps=120 wrist=0.02797646 contact=0.0484485 step=0.0002600141
+ACTION_V36 HarpoonReel fps=120 wrist=15.05528 contact=0.05463939 step=0.0002868464
+ACTION_V36 RevolverFire fps=120 wrist=0 contact=3.592218E-05 step=0
+ACTION_V36 RevolverReload fps=120 wrist=0.02797646 contact=6.907764E-05 step=0.003758692
+ACTION_V36 SwimIdle fps=120 wrist=19.28333 contact=7.464182E-05 step=0.001101069
+ACTION_V36 SwimMove fps=120 wrist=31.63995 contact=7.663519E-05 step=0.003564659
+ACTION_V36 LadderHold fps=120 wrist=50.651 contact=2.28923E-05 step=0
+ACTION_V36 LadderUp fps=120 wrist=56.75265 contact=7.043497E-05 step=0.004770753
+ACTION_V36 LadderDown fps=120 wrist=56.73959 contact=7.507302E-05 step=0.004260352
+ACTION_V36 Mantle fps=120 wrist=60.00849 contact=6.489915E-05 step=0.009667231
+ACTION_V36 Grabbed fps=120 wrist=60.01265 contact=7.063278E-05 step=0.001161506
+ACTION_V36 Carried fps=120 wrist=0.03426402 contact=6.412064E-05 step=0.0006013036
+ACTION_V36 FishingCast fps=120 wrist=60.01702 contact=6.912216E-05 step=0.004584839
+ACTION_V36 FishingWait fps=120 wrist=54.76085 contact=1.540904E-05 step=0
+ACTION_V36 FishingReel fps=120 wrist=58.28557 contact=6.896945E-05 step=0.001016328
+ACTION_V36 RifleFire fps=120 wrist=29.82836 contact=6.431231E-05 step=0.0003558558
+ACTION_V36 RifleReload fps=120 wrist=32.01591 contact=7.227269E-05 step=0.003250238
+ACTION_V36 Neutral fps=120 wrist=0 contact=2.911271E-06 step=0
+ACTION_V36 SwimLeft fps=120 wrist=20.1103 contact=7.009438E-05 step=0.001919469
+ACTION_V36 SwimRight fps=120 wrist=24.44084 contact=7.305435E-05 step=0.001961079
+ACTION_V36 SwimBack fps=120 wrist=25.5833 contact=7.571262E-05 step=0.002781104
+ACTION_V36 ShotgunDeath fps=120 wrist=0 contact=0 step=0
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1031" name="PumpSplitPreservesAllSourceTrianglesAndAudioDoesNotClip" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.PumpSplitPreservesAllSourceTrianglesAndAudioDoesNotClip" methodname="PumpSplitPreservesAllSourceTrianglesAndAudioDoesNotClip" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="1302074112" result="Passed" start-time="2026-11-02 06:32:19Z" end-time="2026-11-02 06:32:19Z" duration="0.007591" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1036" name="ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:19Z" end-time="2026-11-02 06:32:20Z" duration="1.675506" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1033" name="ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands(30)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands(30)" methodname="ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="1260506410" result="Passed" start-time="2026-11-02 06:32:19Z" end-time="2026-11-02 06:32:19Z" duration="0.366636" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1034" name="ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands(60)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands(60)" methodname="ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="357876294" result="Passed" start-time="2026-11-02 06:32:19Z" end-time="2026-11-02 06:32:20Z" duration="0.479151" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1035" name="ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands(120)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands(120)" methodname="ReloadFeedsIntoOpenThroatThenReturnsPumpAndHands" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="947556410" result="Passed" start-time="2026-11-02 06:32:20Z" end-time="2026-11-02 06:32:20Z" duration="0.798062" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1030" name="WeaponEventsMatchShotsAndActuallyInsertedShells" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:20Z" end-time="2026-11-02 06:32:21Z" duration="0.203548" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1027" name="WeaponEventsMatchShotsAndActuallyInsertedShells(30,1)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells(30,1)" methodname="WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="416754620" result="Passed" start-time="2026-11-02 06:32:20Z" end-time="2026-11-02 06:32:21Z" duration="0.063822" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1028" name="WeaponEventsMatchShotsAndActuallyInsertedShells(60,2)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells(60,2)" methodname="WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="609030798" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:21Z" duration="0.064777" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1029" name="WeaponEventsMatchShotsAndActuallyInsertedShells(120,2)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells(120,2)" methodname="WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="987756014" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:21Z" duration="0.065305" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1095" name="RaccoonHammerV42Tests" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:22Z" duration="1.681803" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1103" name="RepairReturnsToSameHammerGripAtAnyStrokePhase" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepairReturnsToSameHammerGripAtAnyStrokePhase" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:21Z" duration="0.835261" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1100" name="RepairReturnsToSameHammerGripAtAnyStrokePhase(30)" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepairReturnsToSameHammerGripAtAnyStrokePhase(30)" methodname="RepairReturnsToSameHammerGripAtAnyStrokePhase" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" seed="1657806156" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:21Z" duration="0.280258" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1101" name="RepairReturnsToSameHammerGripAtAnyStrokePhase(60)" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepairReturnsToSameHammerGripAtAnyStrokePhase(60)" methodname="RepairReturnsToSameHammerGripAtAnyStrokePhase" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" seed="1215448570" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:21Z" duration="0.258211" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1102" name="RepairReturnsToSameHammerGripAtAnyStrokePhase(120)" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepairReturnsToSameHammerGripAtAnyStrokePhase(120)" methodname="RepairReturnsToSameHammerGripAtAnyStrokePhase" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" seed="1071789027" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:21Z" duration="0.274240" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1099" name="RepeatedRepairKeepsGripElbowAndLoopContinuous" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepeatedRepairKeepsGripElbowAndLoopContinuous" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:22Z" duration="0.843370" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1096" name="RepeatedRepairKeepsGripElbowAndLoopContinuous(30)" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepeatedRepairKeepsGripElbowAndLoopContinuous(30)" methodname="RepeatedRepairKeepsGripElbowAndLoopContinuous" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" seed="759614473" result="Passed" start-time="2026-11-02 06:32:21Z" end-time="2026-11-02 06:32:22Z" duration="0.253929" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1097" name="RepeatedRepairKeepsGripElbowAndLoopContinuous(60)" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepeatedRepairKeepsGripElbowAndLoopContinuous(60)" methodname="RepeatedRepairKeepsGripElbowAndLoopContinuous" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" seed="1904923804" result="Passed" start-time="2026-11-02 06:32:22Z" end-time="2026-11-02 06:32:22Z" duration="0.294120" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1098" name="RepeatedRepairKeepsGripElbowAndLoopContinuous(120)" fullname="Game.Tests.PlayMode.RaccoonHammerV42Tests.RepeatedRepairKeepsGripElbowAndLoopContinuous(120)" methodname="RepeatedRepairKeepsGripElbowAndLoopContinuous" classname="Game.Tests.PlayMode.RaccoonHammerV42Tests" runstate="Runnable" seed="1861772590" result="Passed" start-time="2026-11-02 06:32:22Z" end-time="2026-11-02 06:32:22Z" duration="0.290361" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1104" name="RaccoonHandsV37Tests" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-02 06:32:22Z" end-time="2026-11-02 06:32:26Z" duration="4.061576" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1106" name="EveryNonWeaponActionIgnoresCachedShotgunWristRotations" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.EveryNonWeaponActionIgnoresCachedShotgunWristRotations" methodname="EveryNonWeaponActionIgnoresCachedShotgunWristRotations" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" seed="866065017" result="Passed" start-time="2026-11-02 06:32:22Z" end-time="2026-11-02 06:32:24Z" duration="2.078446" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1105" name="NeutralHandsHangAtSidesWithPalmsInward" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.NeutralHandsHangAtSidesWithPalmsInward" methodname="NeutralHandsHangAtSidesWithPalmsInward" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" seed="990903979" result="Passed" start-time="2026-11-02 06:32:24Z" end-time="2026-11-02 06:32:25Z" duration="0.287904" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1107" name="NeutralTorsoIsCentredAndElbowsStaySoftlyBent" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.NeutralTorsoIsCentredAndElbowsStaySoftlyBent" methodname="NeutralTorsoIsCentredAndElbowsStaySoftlyBent" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" seed="479425897" result="Passed" start-time="2026-11-02 06:32:25Z" end-time="2026-11-02 06:32:25Z" duration="0.261073" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1111" name="PalmContactsAndHammerStrokeUseTheirOwnDirections" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.PalmContactsAndHammerStrokeUseTheirOwnDirections" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:25Z" end-time="2026-11-02 06:32:26Z" duration="1.130419" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1108" name="PalmContactsAndHammerStrokeUseTheirOwnDirections(30)" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.PalmContactsAndHammerStrokeUseTheirOwnDirections(30)" methodname="PalmContactsAndHammerStrokeUseTheirOwnDirections" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" seed="1658624711" result="Passed" start-time="2026-11-02 06:32:25Z" end-time="2026-11-02 06:32:25Z" duration="0.355403" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1109" name="PalmContactsAndHammerStrokeUseTheirOwnDirections(60)" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.PalmContactsAndHammerStrokeUseTheirOwnDirections(60)" methodname="PalmContactsAndHammerStrokeUseTheirOwnDirections" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" seed="89979645" result="Passed" start-time="2026-11-02 06:32:25Z" end-time="2026-11-02 06:32:26Z" duration="0.371765" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1110" name="PalmContactsAndHammerStrokeUseTheirOwnDirections(120)" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.PalmContactsAndHammerStrokeUseTheirOwnDirections(120)" methodname="PalmContactsAndHammerStrokeUseTheirOwnDirections" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" seed="1685016624" result="Passed" start-time="2026-11-02 06:32:26Z" end-time="2026-11-02 06:32:26Z" duration="0.393480" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1112" name="UnarmedOneShotReturnsToUnarmedNeutral" fullname="Game.Tests.PlayMode.RaccoonHandsV37Tests.UnarmedOneShotReturnsToUnarmedNeutral" methodname="UnarmedOneShotReturnsToUnarmedNeutral" classname="Game.Tests.PlayMode.RaccoonHandsV37Tests" runstate="Runnable" seed="592823130" result="Passed" start-time="2026-11-02 06:32:26Z" end-time="2026-11-02 06:32:26Z" duration="0.294317" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1157" name="RaccoonShotgunV41Tests" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-11-02 06:32:26Z" end-time="2026-11-02 06:32:39Z" duration="12.237955" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1173" name="DeathReleasesWeaponAndLeavesItAboveGround" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.DeathReleasesWeaponAndLeavesItAboveGround" methodname="DeathReleasesWeaponAndLeavesItAboveGround" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="1026559913" result="Passed" start-time="2026-11-02 06:32:26Z" end-time="2026-11-02 06:32:27Z" duration="0.302535" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1164" name="HitRecoveryIsContinuousInRaisedAndLoweredStates" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitRecoveryIsContinuousInRaisedAndLoweredStates" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-02 06:32:27Z" end-time="2026-11-02 06:32:33Z" duration="6.591802" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1158" name="HitRecoveryIsContinuousInRaisedAndLoweredStates(30,False)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitRecoveryIsContinuousInRaisedAndLoweredStates(30,False)" methodname="HitRecoveryIsContinuousInRaisedAndLoweredStates" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="1619829523" result="Passed" start-time="2026-11-02 06:32:27Z" end-time="2026-11-02 06:32:27Z" duration="0.554852" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1159" name="HitRecoveryIsContinuousInRaisedAndLoweredStates(60,False)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitRecoveryIsContinuousInRaisedAndLoweredStates(60,False)" methodname="HitRecoveryIsContinuousInRaisedAndLoweredStates" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="633320163" result="Passed" start-time="2026-11-02 06:32:27Z" end-time="2026-11-02 06:32:28Z" duration="1.209736" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1160" name="HitRecoveryIsContinuousInRaisedAndLoweredStates(120,False)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitRecoveryIsContinuousInRaisedAndLoweredStates(120,False)" methodname="HitRecoveryIsContinuousInRaisedAndLoweredStates" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="1360715727" result="Passed" start-time="2026-11-02 06:32:28Z" end-time="2026-11-02 06:32:30Z" duration="1.515309" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1161" name="HitRecoveryIsContinuousInRaisedAndLoweredStates(30,True)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitRecoveryIsContinuousInRaisedAndLoweredStates(30,True)" methodname="HitRecoveryIsContinuousInRaisedAndLoweredStates" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="1255163536" result="Passed" start-time="2026-11-02 06:32:30Z" end-time="2026-11-02 06:32:31Z" duration="0.637242" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1162" name="HitRecoveryIsContinuousInRaisedAndLoweredStates(60,True)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitRecoveryIsContinuousInRaisedAndLoweredStates(60,True)" methodname="HitRecoveryIsContinuousInRaisedAndLoweredStates" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="867276115" result="Passed" start-time="2026-11-02 06:32:31Z" end-time="2026-11-02 06:32:32Z" duration="0.997308" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1163" name="HitRecoveryIsContinuousInRaisedAndLoweredStates(120,True)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitRecoveryIsContinuousInRaisedAndLoweredStates(120,True)" methodname="HitRecoveryIsContinuousInRaisedAndLoweredStates" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="926499931" result="Passed" start-time="2026-11-02 06:32:32Z" end-time="2026-11-02 06:32:33Z" duration="1.672960" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1168" name="HitsPreserveRigidSupportAndReturnWithoutFootSliding" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitsPreserveRigidSupportAndReturnWithoutFootSliding" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:33Z" end-time="2026-11-02 06:32:35Z" duration="1.431398" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1165" name="HitsPreserveRigidSupportAndReturnWithoutFootSliding(30)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitsPreserveRigidSupportAndReturnWithoutFootSliding(30)" methodname="HitsPreserveRigidSupportAndReturnWithoutFootSliding" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="424830630" result="Passed" start-time="2026-11-02 06:32:33Z" end-time="2026-11-02 06:32:34Z" duration="0.365886" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1166" name="HitsPreserveRigidSupportAndReturnWithoutFootSliding(60)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitsPreserveRigidSupportAndReturnWithoutFootSliding(60)" methodname="HitsPreserveRigidSupportAndReturnWithoutFootSliding" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="918090165" result="Passed" start-time="2026-11-02 06:32:34Z" end-time="2026-11-02 06:32:34Z" duration="0.458799" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1167" name="HitsPreserveRigidSupportAndReturnWithoutFootSliding(120)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.HitsPreserveRigidSupportAndReturnWithoutFootSliding(120)" methodname="HitsPreserveRigidSupportAndReturnWithoutFootSliding" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="409400555" result="Passed" start-time="2026-11-02 06:32:34Z" end-time="2026-11-02 06:32:35Z" duration="0.598137" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1172" name="LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:35Z" end-time="2026-11-02 06:32:36Z" duration="1.034418" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1169" name="LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached(30)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached(30)" methodname="LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="407985178" result="Passed" start-time="2026-11-02 06:32:35Z" end-time="2026-11-02 06:32:35Z" duration="0.324608" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1170" name="LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached(60)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached(60)" methodname="LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="336524269" result="Passed" start-time="2026-11-02 06:32:35Z" end-time="2026-11-02 06:32:35Z" duration="0.304610" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1171" name="LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached(120)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached(120)" methodname="LowerRaiseAndRespawnKeepWeaponVisibleAndBothHandsAttached" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="581638997" result="Passed" start-time="2026-11-02 06:32:35Z" end-time="2026-11-02 06:32:36Z" duration="0.396205" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1177" name="WalkStrafeBackRunAndJumpRetainSupportContact" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.WalkStrafeBackRunAndJumpRetainSupportContact" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:36Z" end-time="2026-11-02 06:32:39Z" duration="2.869805" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1174" name="WalkStrafeBackRunAndJumpRetainSupportContact(30)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.WalkStrafeBackRunAndJumpRetainSupportContact(30)" methodname="WalkStrafeBackRunAndJumpRetainSupportContact" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="2072731130" result="Passed" start-time="2026-11-02 06:32:36Z" end-time="2026-11-02 06:32:36Z" duration="0.578614" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1175" name="WalkStrafeBackRunAndJumpRetainSupportContact(60)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.WalkStrafeBackRunAndJumpRetainSupportContact(60)" methodname="WalkStrafeBackRunAndJumpRetainSupportContact" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="542675214" result="Passed" start-time="2026-11-02 06:32:36Z" end-time="2026-11-02 06:32:37Z" duration="0.832155" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1176" name="WalkStrafeBackRunAndJumpRetainSupportContact(120)" fullname="Game.Tests.PlayMode.RaccoonShotgunV41Tests.WalkStrafeBackRunAndJumpRetainSupportContact(120)" methodname="WalkStrafeBackRunAndJumpRetainSupportContact" classname="Game.Tests.PlayMode.RaccoonShotgunV41Tests" runstate="Runnable" seed="1897028014" result="Passed" start-time="2026-11-02 06:32:37Z" end-time="2026-11-02 06:32:39Z" duration="1.453134" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1180" name="RaccoonStatesV38Tests" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-11-02 06:32:39Z" end-time="2026-11-02 06:32:42Z" duration="3.739053" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1185" name="EveryContextPersistsWithMatchingPropAndRejectsIncompatibleActions" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.EveryContextPersistsWithMatchingPropAndRejectsIncompatibleActions" methodname="EveryContextPersistsWithMatchingPropAndRejectsIncompatibleActions" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="1414934908" result="Passed" start-time="2026-11-02 06:32:39Z" end-time="2026-11-02 06:32:40Z" duration="0.900687" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1191" name="OneShotReturnsToItsEquippedBaseline" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.OneShotReturnsToItsEquippedBaseline" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-11-02 06:32:40Z" end-time="2026-11-02 06:32:41Z" duration="1.135120" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1186" name="OneShotReturnsToItsEquippedBaseline(&quot;Eat&quot;,Food)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.OneShotReturnsToItsEquippedBaseline(&quot;Eat&quot;,Food)" methodname="OneShotReturnsToItsEquippedBaseline" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="1723609215" result="Passed" start-time="2026-11-02 06:32:40Z" end-time="2026-11-02 06:32:40Z" duration="0.243066" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1187" name="OneShotReturnsToItsEquippedBaseline(&quot;RevolverFire&quot;,Revolver)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.OneShotReturnsToItsEquippedBaseline(&quot;RevolverFire&quot;,Revolver)" methodname="OneShotReturnsToItsEquippedBaseline" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="1513048917" result="Passed" start-time="2026-11-02 06:32:40Z" end-time="2026-11-02 06:32:40Z" duration="0.194867" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1188" name="OneShotReturnsToItsEquippedBaseline(&quot;RevolverReload&quot;,Revolver)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.OneShotReturnsToItsEquippedBaseline(&quot;RevolverReload&quot;,Revolver)" methodname="OneShotReturnsToItsEquippedBaseline" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="2122726755" result="Passed" start-time="2026-11-02 06:32:40Z" end-time="2026-11-02 06:32:40Z" duration="0.258512" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1189" name="OneShotReturnsToItsEquippedBaseline(&quot;HarpoonFire&quot;,Harpoon)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.OneShotReturnsToItsEquippedBaseline(&quot;HarpoonFire&quot;,Harpoon)" methodname="OneShotReturnsToItsEquippedBaseline" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="765970352" result="Passed" start-time="2026-11-02 06:32:40Z" end-time="2026-11-02 06:32:40Z" duration="0.227708" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1190" name="OneShotReturnsToItsEquippedBaseline(&quot;FishingCast&quot;,Fishing)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.OneShotReturnsToItsEquippedBaseline(&quot;FishingCast&quot;,Fishing)" methodname="OneShotReturnsToItsEquippedBaseline" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="2135061786" result="Passed" start-time="2026-11-02 06:32:40Z" end-time="2026-11-02 06:32:41Z" duration="0.204203" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1196" name="StopLoopFadesToSameContext" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.StopLoopFadesToSameContext" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-02 06:32:41Z" end-time="2026-11-02 06:32:42Z" duration="0.921368" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1192" name="StopLoopFadesToSameContext(&quot;Repair&quot;,Hammer)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.StopLoopFadesToSameContext(&quot;Repair&quot;,Hammer)" methodname="StopLoopFadesToSameContext" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="1157080501" result="Passed" start-time="2026-11-02 06:32:41Z" end-time="2026-11-02 06:32:41Z" duration="0.245108" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1193" name="StopLoopFadesToSameContext(&quot;Carry&quot;,Bundle)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.StopLoopFadesToSameContext(&quot;Carry&quot;,Bundle)" methodname="StopLoopFadesToSameContext" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="964487305" result="Passed" start-time="2026-11-02 06:32:41Z" end-time="2026-11-02 06:32:41Z" duration="0.204090" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1194" name="StopLoopFadesToSameContext(&quot;FishingReel&quot;,Fishing)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.StopLoopFadesToSameContext(&quot;FishingReel&quot;,Fishing)" methodname="StopLoopFadesToSameContext" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="816001106" result="Passed" start-time="2026-11-02 06:32:41Z" end-time="2026-11-02 06:32:41Z" duration="0.231296" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1195" name="StopLoopFadesToSameContext(&quot;SwimMove&quot;,Unarmed)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.StopLoopFadesToSameContext(&quot;SwimMove&quot;,Unarmed)" methodname="StopLoopFadesToSameContext" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="1895318907" result="Passed" start-time="2026-11-02 06:32:41Z" end-time="2026-11-02 06:32:42Z" duration="0.234756" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1184" name="UnarmedReturnNeverExposesShotgunPose" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.UnarmedReturnNeverExposesShotgunPose" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-02 06:32:42Z" end-time="2026-11-02 06:32:42Z" duration="0.775773" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1181" name="UnarmedReturnNeverExposesShotgunPose(30)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.UnarmedReturnNeverExposesShotgunPose(30)" methodname="UnarmedReturnNeverExposesShotgunPose" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="270000527" result="Passed" start-time="2026-11-02 06:32:42Z" end-time="2026-11-02 06:32:42Z" duration="0.210520" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1182" name="UnarmedReturnNeverExposesShotgunPose(60)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.UnarmedReturnNeverExposesShotgunPose(60)" methodname="UnarmedReturnNeverExposesShotgunPose" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="1157598994" result="Passed" start-time="2026-11-02 06:32:42Z" end-time="2026-11-02 06:32:42Z" duration="0.271301" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1183" name="UnarmedReturnNeverExposesShotgunPose(120)" fullname="Game.Tests.PlayMode.RaccoonStatesV38Tests.UnarmedReturnNeverExposesShotgunPose(120)" methodname="UnarmedReturnNeverExposesShotgunPose" classname="Game.Tests.PlayMode.RaccoonStatesV38Tests" runstate="Runnable" seed="1722195018" result="Passed" start-time="2026-11-02 06:32:42Z" end-time="2026-11-02 06:32:42Z" duration="0.287969" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

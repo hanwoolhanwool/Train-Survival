@@ -1,0 +1,403 @@
+{
+  "before/turns": {
+    "frames": 1200,
+    "phases": {
+      "Idle": {
+        "frames": 59,
+        "minClearance": 0.005551257636398077,
+        "maxError": 2.9811633339704713e-7,
+        "fullContactSamples": 118,
+        "meanContactSpeed": 0.000003345991439985837
+      },
+      "Start": {
+        "frames": 36,
+        "minClearance": 0.003999591805040836,
+        "maxError": 3.936840471396863e-7,
+        "fullContactSamples": 15,
+        "meanContactSpeed": 0.0024323367572075465
+      },
+      "Straight": {
+        "frames": 474,
+        "minClearance": 0.00599947664886713,
+        "maxError": 0.000001181616084977577,
+        "fullContactSamples": 326,
+        "meanContactSpeed": 0.001454646096074171
+      },
+      "Turn right 90": {
+        "frames": 270,
+        "minClearance": 0.00599960470572114,
+        "maxError": 0.044025909155607224,
+        "fullContactSamples": 186,
+        "meanContactSpeed": 0.016937302504893816
+      },
+      "Turn left 180": {
+        "frames": 180,
+        "minClearance": 0.005999656859785318,
+        "maxError": 0.03651433065533638,
+        "fullContactSamples": 125,
+        "meanContactSpeed": 0.013993173867056612
+      },
+      "Decelerate": {
+        "frames": 60,
+        "minClearance": 0.003999491222202778,
+        "maxError": 7.289394829967932e-7,
+        "fullContactSamples": 57,
+        "meanContactSpeed": 0.0011623267845020803
+      },
+      "Stop": {
+        "frames": 120,
+        "minClearance": 0.00433390075340867,
+        "maxError": 5.094802872918081e-7,
+        "fullContactSamples": 240,
+        "meanContactSpeed": 0.00006243918106321189
+      }
+    },
+    "lastRoot": {
+      "x": -0.15794257819652557,
+      "y": 0.02499997615814209,
+      "z": 7.49863862991333
+    },
+    "maxHipHeightStep": 0.01149129867553711,
+    "minFootClearance": 0.003999491222202778,
+    "maxFootError": 0.044025909155607224,
+    "fullContactSamples": 1067,
+    "meanFullContactSpeed": 0.0051469705109019,
+    "maxFullContactSpeed": 0.3168189227581024,
+    "minTailClearance": 0.0941404402256012,
+    "maxGripError": 0.0000013172365243008244
+  },
+  "before/slopes": {
+    "frames": 1200,
+    "phases": {
+      "Flat": {
+        "frames": 228,
+        "minClearance": -0.01371762901544571,
+        "maxError": 8.404308005083294e-7,
+        "fullContactSamples": 229,
+        "meanContactSpeed": 0.0007580743934655466
+      },
+      "Uphill 12": {
+        "frames": 300,
+        "minClearance": -0.14527034759521484,
+        "maxError": 0.813276469707489,
+        "fullContactSamples": 204,
+        "meanContactSpeed": 0.2310267835892577
+      },
+      "Landing": {
+        "frames": 113,
+        "minClearance": -0.17274171113967896,
+        "maxError": 0.8208298087120056,
+        "fullContactSamples": 80,
+        "meanContactSpeed": 0.35591378156095743
+      },
+      "Downhill 12": {
+        "frames": 300,
+        "minClearance": -0.19706356525421143,
+        "maxError": 0.7673197984695435,
+        "fullContactSamples": 201,
+        "meanContactSpeed": 0.20742077230953956
+      },
+      "Flat after slope": {
+        "frames": 258,
+        "minClearance": 0.003999378997832537,
+        "maxError": 0.0000011503850601002341,
+        "fullContactSamples": 353,
+        "meanContactSpeed": 0.00043423669078963026
+      }
+    },
+    "lastRoot": {
+      "x": 0,
+      "y": 0.024999916553497314,
+      "z": 12.953539848327637
+    },
+    "maxHipHeightStep": 0.011474609375,
+    "minFootClearance": -0.19706356525421143,
+    "maxFootError": 0.8208298087120056,
+    "fullContactSamples": 1067,
+    "meanFullContactSpeed": 0.11023526354194468,
+    "maxFullContactSpeed": 0.49158501625061035,
+    "minTailClearance": -0.07531671226024628,
+    "maxGripError": 0.000002090893531203619
+  },
+  "after/turns": {
+    "frames": 1200,
+    "phases": {
+      "Idle": {
+        "frames": 59,
+        "minClearance": 0.005551257636398077,
+        "maxError": 2.9811633339704713e-7,
+        "fullContactSamples": 118,
+        "meanContactSpeed": 0.000003345991439985837
+      },
+      "Start": {
+        "frames": 36,
+        "minClearance": 0.003999621141701937,
+        "maxError": 3.936840471396863e-7,
+        "fullContactSamples": 15,
+        "meanContactSpeed": 0.0024320586021985948
+      },
+      "Straight": {
+        "frames": 474,
+        "minClearance": 0.00599947664886713,
+        "maxError": 0.0000010662403155947686,
+        "fullContactSamples": 326,
+        "meanContactSpeed": 0.001455809289652776
+      },
+      "Turn right 90": {
+        "frames": 270,
+        "minClearance": 0.005999675486236811,
+        "maxError": 8.62209560636984e-7,
+        "fullContactSamples": 186,
+        "meanContactSpeed": 0.0017542241030730687
+      },
+      "Turn left 180": {
+        "frames": 180,
+        "minClearance": 0.005999688059091568,
+        "maxError": 0.0000014108181858318858,
+        "fullContactSamples": 112,
+        "meanContactSpeed": 0.0012677249873312185
+      },
+      "Decelerate": {
+        "frames": 60,
+        "minClearance": 0.00400000624358654,
+        "maxError": 7.289394829967932e-7,
+        "fullContactSamples": 57,
+        "meanContactSpeed": 0.0011623220308764391
+      },
+      "Stop": {
+        "frames": 120,
+        "minClearance": 0.00433390075340867,
+        "maxError": 5.331201577973843e-7,
+        "fullContactSamples": 240,
+        "meanContactSpeed": 0.00006148339668191246
+      }
+    },
+    "lastRoot": {
+      "x": -0.15794257819652557,
+      "y": 0.02499997615814209,
+      "z": 7.49863862991333
+    },
+    "maxHipHeightStep": 0.008473634719848633,
+    "minFootClearance": 0.003999621141701937,
+    "maxFootError": 0.0000014108181858318858,
+    "fullContactSamples": 1054,
+    "meanFullContactSpeed": 0.0010064030238766655,
+    "maxFullContactSpeed": 0.03540362790226936,
+    "minTailClearance": 0.09414029121398926,
+    "maxGripError": 0.0000013172365243008244
+  },
+  "after/slopes": {
+    "frames": 1200,
+    "phases": {
+      "Flat": {
+        "frames": 228,
+        "minClearance": 0.003999621141701937,
+        "maxError": 8.389764047933568e-7,
+        "fullContactSamples": 229,
+        "meanContactSpeed": 0.0007580013910503477
+      },
+      "Uphill 12": {
+        "frames": 300,
+        "minClearance": 0.005999565124511719,
+        "maxError": 0.010311497375369072,
+        "fullContactSamples": 204,
+        "meanContactSpeed": 0.005738650162165155
+      },
+      "Landing": {
+        "frames": 113,
+        "minClearance": 0.005999565124511719,
+        "maxError": 9.161487923847744e-7,
+        "fullContactSamples": 80,
+        "meanContactSpeed": 0.0015970932154573346
+      },
+      "Downhill 12": {
+        "frames": 300,
+        "minClearance": 0.0039997398853302,
+        "maxError": 0.0000019755141238420038,
+        "fullContactSamples": 201,
+        "meanContactSpeed": 0.0024983225144814833
+      },
+      "Flat after slope": {
+        "frames": 258,
+        "minClearance": 0.0039999461732804775,
+        "maxError": 0.0000011064049658671138,
+        "fullContactSamples": 353,
+        "meanContactSpeed": 0.00043903771718022095
+      }
+    },
+    "lastRoot": {
+      "x": 0,
+      "y": 0.024999916553497314,
+      "z": 12.953539848327637
+    },
+    "maxHipHeightStep": 0.019811272621154785,
+    "minFootClearance": 0.003999621141701937,
+    "maxFootError": 0.010311497375369072,
+    "fullContactSamples": 1067,
+    "meanFullContactSpeed": 0.0019954803640526747,
+    "maxFullContactSpeed": 0.13742922246456146,
+    "minTailClearance": 0.02997809648513794,
+    "maxGripError": 0.0000021166467831790214
+  },
+  "after/cross_slope": {
+    "frames": 1200,
+    "phases": {
+      "Cross slope idle": {
+        "frames": 59,
+        "minClearance": 0.0059996843338012695,
+        "maxError": 2.7092363552583265e-7,
+        "fullContactSamples": 118,
+        "meanContactSpeed": 0.000004055874769446129
+      },
+      "Cross slope walk 10": {
+        "frames": 960,
+        "minClearance": 0.0039997100830078125,
+        "maxError": 0.0000012201676327094901,
+        "fullContactSamples": 652,
+        "meanContactSpeed": 0.001421096271834561
+      },
+      "Cross slope decelerate": {
+        "frames": 60,
+        "minClearance": 0.003999590873718262,
+        "maxError": 0.0000012728069123113528,
+        "fullContactSamples": 57,
+        "meanContactSpeed": 0.0016048738487593813
+      },
+      "Cross slope stop": {
+        "frames": 120,
+        "minClearance": 0.0039997100830078125,
+        "maxError": 0.0000010699822041715379,
+        "fullContactSamples": 240,
+        "meanContactSpeed": 0.00002556385964093503
+      }
+    },
+    "lastRoot": {
+      "x": 0,
+      "y": 1.0285481214523315,
+      "z": 12.953539848327637
+    },
+    "maxHipHeightStep": 0.009124994277954102,
+    "minFootClearance": 0.003999590873718262,
+    "maxFootError": 0.0000012728069123113528,
+    "fullContactSamples": 1067,
+    "meanFullContactSpeed": 0.0009603059963936622,
+    "maxFullContactSpeed": 0.02870786562561989,
+    "minTailClearance": 0.06206536293029785,
+    "maxGripError": 0.000001771437268871523
+  },
+  "after/slope_turn": {
+    "frames": 1200,
+    "phases": {
+      "Cross slope idle": {
+        "frames": 59,
+        "minClearance": 0.0059996843338012695,
+        "maxError": 2.7092363552583265e-7,
+        "fullContactSamples": 118,
+        "meanContactSpeed": 0.000004055874769446129
+      },
+      "Cross slope walk 10": {
+        "frames": 300,
+        "minClearance": 0.00399935245513916,
+        "maxError": 0.0000012131412177041057,
+        "fullContactSamples": 201,
+        "meanContactSpeed": 0.0013444022109214714
+      },
+      "Slope turn right": {
+        "frames": 180,
+        "minClearance": 0.004000067710876465,
+        "maxError": 8.086540219665039e-7,
+        "fullContactSamples": 125,
+        "meanContactSpeed": 0.0013726421042592847
+      },
+      "Slope turn left": {
+        "frames": 240,
+        "minClearance": 0.003999829292297363,
+        "maxError": 0.0000010728836059570312,
+        "fullContactSamples": 163,
+        "meanContactSpeed": 0.0014283623662821883
+      },
+      "Slope return forward": {
+        "frames": 240,
+        "minClearance": 0.003999829292297363,
+        "maxError": 0.0000010663444527381216,
+        "fullContactSamples": 163,
+        "meanContactSpeed": 0.0016472455150879834
+      },
+      "Cross slope decelerate": {
+        "frames": 60,
+        "minClearance": 0.003999471664428711,
+        "maxError": 0.0000011252350304857828,
+        "fullContactSamples": 57,
+        "meanContactSpeed": 0.001607734109544062
+      },
+      "Cross slope stop": {
+        "frames": 120,
+        "minClearance": 0.003999829292297363,
+        "maxError": 0.0000010218166153208585,
+        "fullContactSamples": 240,
+        "meanContactSpeed": 0.000018449612688087313
+      }
+    },
+    "lastRoot": {
+      "x": -0.20362332463264465,
+      "y": 0.9926437139511108,
+      "z": 12.46358871459961
+    },
+    "maxHipHeightStep": 0.01145029067993164,
+    "minFootClearance": 0.00399935245513916,
+    "maxFootError": 0.0000012131412177041057,
+    "fullContactSamples": 1067,
+    "meanFullContactSpeed": 0.0009743922554853904,
+    "maxFullContactSpeed": 0.02935933880507946,
+    "minTailClearance": 0.034894704818725586,
+    "maxGripError": 0.0000018141666942028678
+  },
+  "checks": {
+    "turns": {
+      "frames": true,
+      "groundClearance": true,
+      "tailClearance": true,
+      "reach": true,
+      "contactCoverage": true,
+      "stableContacts": true,
+      "grip": true,
+      "hipContinuity": true
+    },
+    "slopes": {
+      "frames": true,
+      "groundClearance": true,
+      "tailClearance": true,
+      "reach": true,
+      "contactCoverage": true,
+      "stableContacts": true,
+      "grip": true,
+      "hipContinuity": true
+    },
+    "cross_slope": {
+      "frames": true,
+      "groundClearance": true,
+      "tailClearance": true,
+      "reach": true,
+      "contactCoverage": true,
+      "stableContacts": true,
+      "grip": true,
+      "hipContinuity": true
+    },
+    "slope_turn": {
+      "frames": true,
+      "groundClearance": true,
+      "tailClearance": true,
+      "reach": true,
+      "contactCoverage": true,
+      "stableContacts": true,
+      "grip": true,
+      "hipContinuity": true
+    },
+    "courseCoverage": {
+      "uphill": true,
+      "downhill": true,
+      "turn180": true,
+      "completesSlope": true
+    }
+  }
+}

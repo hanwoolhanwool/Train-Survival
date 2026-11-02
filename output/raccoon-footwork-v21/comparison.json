@@ -1,0 +1,145 @@
+{
+  "idle": [
+    {
+      "phase": "AuthoredIdle",
+      "beforeSlide": 0.0000061845462369092274,
+      "afterSlide": 0.000006526110610138858,
+      "reduction": -0.05522868778814871,
+      "minClearance": 0.0059787072241306305,
+      "maxGripError": 7.539457556049456e-7,
+      "maxHandStep": 0.00010737134289229289
+    }
+  ],
+  "transitions": [
+    {
+      "phase": "Idle",
+      "beforeSlide": 0.000005360258910513949,
+      "afterSlide": 0.000006163987563923001,
+      "reduction": -0.14994213280119162,
+      "minClearance": 0.005978823639452457,
+      "maxGripError": 6.678978934360202e-7,
+      "maxHandStep": 0.000054731233831262216
+    },
+    {
+      "phase": "Walk",
+      "beforeSlide": 3.914703607559204,
+      "afterSlide": 0.5305774211883545,
+      "reduction": 0.864465493590927,
+      "minClearance": 0.005879935808479786,
+      "maxGripError": 0.000002089579083985882,
+      "maxHandStep": 0.01640460081398487
+    },
+    {
+      "phase": "Run",
+      "beforeSlide": 4.76296854019165,
+      "afterSlide": 0.9596316814422607,
+      "reduction": 0.7985223556812224,
+      "minClearance": 0.005800615064799786,
+      "maxGripError": 0.000005080946266389219,
+      "maxHandStep": 0.010614721104502678
+    },
+    {
+      "phase": "RunToWalk",
+      "beforeSlide": 3.9691598415374756,
+      "afterSlide": 0.42748719453811646,
+      "reduction": 0.8922978132388524,
+      "minClearance": 0.005856131669133902,
+      "maxGripError": 0.000004654532403947087,
+      "maxHandStep": 0.017444701865315437
+    },
+    {
+      "phase": "Stop",
+      "beforeSlide": 0.05660725757479668,
+      "afterSlide": 0.00007090465078363195,
+      "reduction": 0.9987474282658908,
+      "minClearance": 0.005943388678133488,
+      "maxGripError": 0.00000506483866047347,
+      "maxHandStep": 0.005979733541607857
+    }
+  ],
+  "turn_stop": [
+    {
+      "phase": "Idle",
+      "beforeSlide": 0.000005360258910513949,
+      "afterSlide": 0.000006163987563923001,
+      "reduction": -0.14994213280119162,
+      "minClearance": 0.005978823639452457,
+      "maxGripError": 6.678978934360202e-7,
+      "maxHandStep": 0.000054731233831262216
+    },
+    {
+      "phase": "Run",
+      "beforeSlide": 5.541022777557373,
+      "afterSlide": 1.029130458831787,
+      "reduction": 0.8142706680434447,
+      "minClearance": 0.005813823081552982,
+      "maxGripError": 0.0000012358310641502612,
+      "maxHandStep": 0.01710689067840576
+    },
+    {
+      "phase": "Turn",
+      "beforeSlide": 4.131414890289307,
+      "afterSlide": 1.2436339855194092,
+      "reduction": 0.6989810952072348,
+      "minClearance": 0.0058100041933357716,
+      "maxGripError": 0.000005409429377323249,
+      "maxHandStep": 0.015932783484458923
+    },
+    {
+      "phase": "AbruptStop",
+      "beforeSlide": 0.06991653144359589,
+      "afterSlide": 0.003913055174052715,
+      "reduction": 0.9440324756783807,
+      "minClearance": 0.005803663749247789,
+      "maxGripError": 0.000005435963430500124,
+      "maxHandStep": 0.008784767240285873
+    }
+  ],
+  "terrain": [
+    {
+      "phase": "Flat",
+      "beforeSlide": 2.177083969116211,
+      "afterSlide": 0.32477304339408875,
+      "reduction": 0.8508219949247384,
+      "minClearance": 0.0058855824172496796,
+      "maxGripError": 0.0000013494397990143625,
+      "maxHandStep": 0.01641167141497135
+    },
+    {
+      "phase": "Ramp",
+      "beforeSlide": 4.0943145751953125,
+      "afterSlide": 0.3942395746707916,
+      "reduction": 0.9037104825654524,
+      "minClearance": 0.0031061172485351562,
+      "maxGripError": 0.000001884923221950885,
+      "maxHandStep": 0.014721397310495377
+    },
+    {
+      "phase": "Landing",
+      "beforeSlide": 3.801560401916504,
+      "afterSlide": 0.5460299849510193,
+      "reduction": 0.8563668790647794,
+      "minClearance": 0.00583648681640625,
+      "maxGripError": 0.000003192084705005982,
+      "maxHandStep": 0.01565675623714924
+    },
+    {
+      "phase": "Stairs",
+      "beforeSlide": 4.327676773071289,
+      "afterSlide": 0.8017836213111877,
+      "reduction": 0.8147311679328182,
+      "minClearance": 0.00580906867980957,
+      "maxGripError": 0.000001929168092829059,
+      "maxHandStep": 0.014839665032923222
+    },
+    {
+      "phase": "Top",
+      "beforeSlide": 3.7925796508789062,
+      "afterSlide": 0.5193167924880981,
+      "reduction": 0.8630703003514376,
+      "minClearance": 0.005883932113647461,
+      "maxGripError": 0.00001272410008823499,
+      "maxHandStep": 0.015547518618404865
+    }
+  ]
+}

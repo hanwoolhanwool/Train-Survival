@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Failed(Child)" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:13:26Z" duration="84.7388657">
+  <test-suite type="TestSuite" id="1101" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="71" result="Failed" site="Child" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:13:26Z" duration="84.738866" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1094" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="71" result="Failed" site="Child" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:13:26Z" duration="84.727053" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="48376" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1095" name="Game" fullname="Game" runstate="Runnable" testcasecount="71" result="Failed" site="Child" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:13:26Z" duration="84.721787" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1096" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="71" result="Failed" site="Child" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:13:26Z" duration="84.716720" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1097" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="71" result="Failed" site="Child" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:13:26Z" duration="84.713904" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1042" name="RaccoonDirectionalV29Tests" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:13:26Z" duration="84.710387" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-suite type="ParameterizedMethod" id="1051" name="AuthoredDirectionalClipsHaveContinuousLoopCurves" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.AuthoredDirectionalClipsHaveContinuousLoopCurves" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:12:02Z" duration="0.159400" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1048" name="AuthoredDirectionalClipsHaveContinuousLoopCurves(&quot;StrafeLeft&quot;)" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.AuthoredDirectionalClipsHaveContinuousLoopCurves(&quot;StrafeLeft&quot;)" methodname="AuthoredDirectionalClipsHaveContinuousLoopCurves" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" seed="1326505832" result="Passed" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:12:01Z" duration="0.062696" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1049" name="AuthoredDirectionalClipsHaveContinuousLoopCurves(&quot;StrafeRight&quot;)" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.AuthoredDirectionalClipsHaveContinuousLoopCurves(&quot;StrafeRight&quot;)" methodname="AuthoredDirectionalClipsHaveContinuousLoopCurves" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" seed="839820788" result="Passed" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:12:01Z" duration="0.044156" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1050" name="AuthoredDirectionalClipsHaveContinuousLoopCurves(&quot;WalkBackward&quot;)" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.AuthoredDirectionalClipsHaveContinuousLoopCurves(&quot;WalkBackward&quot;)" methodname="AuthoredDirectionalClipsHaveContinuousLoopCurves" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" seed="440850015" result="Passed" start-time="2026-11-01 20:12:01Z" end-time="2026-11-01 20:12:02Z" duration="0.041761" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1046" name="DirectionChangesKeepAimFeetAndGripStable" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.DirectionChangesKeepAimFeetAndGripStable" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-11-01 20:12:02Z" end-time="2026-11-01 20:13:26Z" duration="84.194199" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1043" name="DirectionChangesKeepAimFeetAndGripStable(30)" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.DirectionChangesKeepAimFeetAndGripStable(30)" methodname="DirectionChangesKeepAimFeetAndGripStable" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" seed="1093767802" result="Passed" start-time="2026-11-01 20:12:02Z" end-time="2026-11-01 20:12:17Z" duration="15.500270" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[DIRECTIONAL_V29 fps=30 minSole=0.00397837 contacts=870 minSeparation=0.1752319 maxGrip=0.0001505245 maxFootSpeed=8.006795 idleDrift=9.83025E-07
+]]></output>
+                </test-case>
+                <test-case id="1044" name="DirectionChangesKeepAimFeetAndGripStable(60)" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.DirectionChangesKeepAimFeetAndGripStable(60)" methodname="DirectionChangesKeepAimFeetAndGripStable" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" seed="585646260" result="Failed" start-time="2026-11-01 20:12:17Z" end-time="2026-11-01 20:12:29Z" duration="11.591839" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Feet must not cross when changing sideways direction
+  Expected: greater than 0.119999997f
+  But was:  0.106933594f
+]]></message>
+                    <stack-trace><![CDATA[at Game.Tests.PlayMode.RaccoonDirectionalV29Tests.DirectionChangesKeepAimFeetAndGripStable (System.Int32 fps) [0x00477] in C:\Users\iam12\Train Survival\Assets\_Project\Tests\PlayMode\RaccoonDirectionalV29Tests.cs:63
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1045" name="DirectionChangesKeepAimFeetAndGripStable(120)" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.DirectionChangesKeepAimFeetAndGripStable(120)" methodname="DirectionChangesKeepAimFeetAndGripStable" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" seed="50628336" result="Passed" start-time="2026-11-01 20:12:29Z" end-time="2026-11-01 20:13:26Z" duration="57.095087" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[DIRECTIONAL_V29 fps=120 minSole=0.00399629 contacts=3543 minSeparation=0.1567993 maxGrip=0.0001479171 maxFootSpeed=8.294656 idleDrift=1.999426E-06
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1047" name="ForwardWalkAndRunPreserveApprovedPoses" fullname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests.ForwardWalkAndRunPreserveApprovedPoses" methodname="ForwardWalkAndRunPreserveApprovedPoses" classname="Game.Tests.PlayMode.RaccoonDirectionalV29Tests" runstate="Runnable" seed="1915392973" result="Passed" start-time="2026-11-01 20:13:26Z" end-time="2026-11-01 20:13:26Z" duration="0.347864" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[DIRECTIONAL_V29_FORWARD maxDifference=0
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

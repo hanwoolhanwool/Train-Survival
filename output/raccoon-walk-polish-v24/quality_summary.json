@@ -1,0 +1,54 @@
+{
+  "contact_walk": {
+    "frames": 840,
+    "phaseRange": [
+      0.00000476837158203125,
+      0.9999986290931702
+    ],
+    "minimumSoleClearance": 0.005999208893626928,
+    "hipHeightRange": [
+      0.7982518672943115,
+      0.8252416253089905
+    ],
+    "maximumFootTargetError": 0.000001241187078449002,
+    "fullContactSamples": 575,
+    "meanFullContactSpeed": 0.000980448190258239,
+    "maxFullContactSpeed": 0.008162007667124271,
+    "maxStopSpeed": null
+  },
+  "transitions": {
+    "frames": 960,
+    "phaseRange": [
+      0.003010272979736328,
+      0.9999992251396179
+    ],
+    "minimumSoleClearance": 0.00399942509829998,
+    "hipHeightRange": [
+      0.7750391960144043,
+      0.8252282738685608
+    ],
+    "maximumFootTargetError": 0.0168932992964983,
+    "fullContactSamples": 1201,
+    "meanFullContactSpeed": 0.0010546823467983946,
+    "maxFullContactSpeed": 0.15714986622333527,
+    "maxStopSpeed": 0.0016729808412492275
+  },
+  "comparison": {
+    "beforeMeanNearFloorSpeed": 0.7807718515396118,
+    "afterMeanNearFloorSpeed": 0.4358813762664795,
+    "reduction": 0.4417301604726648,
+    "maxGripSeparationError": 0.0000014137268635749933
+  },
+  "checks": {
+    "activeAnimation": true,
+    "adequateContacts": true,
+    "stableFullContact": true,
+    "groundClearance": true,
+    "preservedWalkBob": true,
+    "walkingReach": true,
+    "transitionReach": true,
+    "stoppedFeetStable": true,
+    "gripPreserved": true,
+    "contactImproved": true
+  }
+}

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Failed(Child)" total="8" passed="4" failed="4" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="4.6327791">
+  <test-suite type="TestSuite" id="1156" name="Train Survival" fullname="Train Survival" runstate="Runnable" testcasecount="112" result="Failed" site="Child" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="4.632779" total="8" passed="4" failed="4" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1149" name="Game.Tests.PlayMode.dll" fullname="C:/Users/iam12/Train Survival/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="112" result="Failed" site="Child" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="4.617112" total="8" passed="4" failed="4" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="48376" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1150" name="Game" fullname="Game" runstate="Runnable" testcasecount="112" result="Failed" site="Child" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="4.613968" total="8" passed="4" failed="4" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1151" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="112" result="Failed" site="Child" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="4.607615" total="8" passed="4" failed="4" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1152" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="112" result="Failed" site="Child" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="4.601059" total="8" passed="4" failed="4" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1021" name="RaccoonActionsV36Tests" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" testcasecount="8" result="Failed" site="Child" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="4.590095" total="8" passed="4" failed="4" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1022" name="ActionInventoryHasFiniteDistinctClipsAndClosedLoops" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.ActionInventoryHasFiniteDistinctClipsAndClosedLoops" methodname="ActionInventoryHasFiniteDistinctClipsAndClosedLoops" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="2062074561" result="Passed" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:34Z" duration="0.850172" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1026" name="EveryActionKeepsFiniteBonesAndBoundedWrists" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:38Z" duration="3.552467" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1023" name="EveryActionKeepsFiniteBonesAndBoundedWrists(30)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists(30)" methodname="EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="947246179" result="Failed" start-time="2026-11-01 22:03:34Z" end-time="2026-11-01 22:03:36Z" duration="1.113238" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Equip unreachable contact
+  Expected: less than 0.0599999987f
+  But was:  0.0715070963f
+]]></message>
+                    <stack-trace><![CDATA[at Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists (System.Int32 fps) [0x00292] in C:\Users\iam12\Train Survival\Assets\_Project\Tests\PlayMode\RaccoonActionsV36Tests.cs:52
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[ACTION_V36 HitFront fps=30 wrist=0 contact=0 step=0
+ACTION_V36 HitBack fps=30 wrist=0 contact=0 step=0
+ACTION_V36 HitLeft fps=30 wrist=0 contact=0 step=0
+ACTION_V36 HitRight fps=30 wrist=0 contact=0 step=0
+ACTION_V36 Death fps=30 wrist=0 contact=0 step=0
+ACTION_V36 Respawn fps=30 wrist=31.90759 contact=6.180436E-05 step=6.15178E-05
+]]></output>
+                </test-case>
+                <test-case id="1024" name="EveryActionKeepsFiniteBonesAndBoundedWrists(60)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists(60)" methodname="EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="1091402647" result="Failed" start-time="2026-11-01 22:03:36Z" end-time="2026-11-01 22:03:37Z" duration="1.002871" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Equip unreachable contact
+  Expected: less than 0.0599999987f
+  But was:  0.0776628703f
+]]></message>
+                    <stack-trace><![CDATA[at Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists (System.Int32 fps) [0x00292] in C:\Users\iam12\Train Survival\Assets\_Project\Tests\PlayMode\RaccoonActionsV36Tests.cs:52
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[ACTION_V36 HitFront fps=60 wrist=0 contact=0 step=0
+ACTION_V36 HitBack fps=60 wrist=0 contact=0 step=0
+ACTION_V36 HitLeft fps=60 wrist=0 contact=0 step=0
+ACTION_V36 HitRight fps=60 wrist=0 contact=0 step=0
+ACTION_V36 Death fps=60 wrist=0 contact=0 step=0
+ACTION_V36 Respawn fps=60 wrist=32.00119 contact=6.290471E-05 step=5.885321E-05
+]]></output>
+                </test-case>
+                <test-case id="1025" name="EveryActionKeepsFiniteBonesAndBoundedWrists(120)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists(120)" methodname="EveryActionKeepsFiniteBonesAndBoundedWrists" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="617585937" result="Failed" start-time="2026-11-01 22:03:37Z" end-time="2026-11-01 22:03:38Z" duration="1.426019" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Equip unreachable contact
+  Expected: less than 0.0599999987f
+  But was:  0.0807224289f
+]]></message>
+                    <stack-trace><![CDATA[at Game.Tests.PlayMode.RaccoonActionsV36Tests.EveryActionKeepsFiniteBonesAndBoundedWrists (System.Int32 fps) [0x00292] in C:\Users\iam12\Train Survival\Assets\_Project\Tests\PlayMode\RaccoonActionsV36Tests.cs:52
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[ACTION_V36 HitFront fps=120 wrist=0 contact=0 step=0
+ACTION_V36 HitBack fps=120 wrist=0 contact=0 step=0
+ACTION_V36 HitLeft fps=120 wrist=0 contact=0 step=0
+ACTION_V36 HitRight fps=120 wrist=0 contact=0 step=0
+ACTION_V36 Death fps=120 wrist=0 contact=0 step=0
+ACTION_V36 Respawn fps=120 wrist=32.00637 contact=6.290471E-05 step=4.670407E-05
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1031" name="PumpSplitPreservesAllSourceTrianglesAndAudioDoesNotClip" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.PumpSplitPreservesAllSourceTrianglesAndAudioDoesNotClip" methodname="PumpSplitPreservesAllSourceTrianglesAndAudioDoesNotClip" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="887693260" result="Failed" start-time="2026-11-01 22:03:38Z" end-time="2026-11-01 22:03:38Z" duration="0.002583" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: greater than 300
+  But was:  0
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.RaccoonActionsV36Tests.PumpSplitPreservesAllSourceTrianglesAndAudioDoesNotClip () [0x00047] in C:\Users\iam12\Train Survival\Assets\_Project\Tests\PlayMode\RaccoonActionsV36Tests.cs:79
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Not allowed to access triangles/indices on mesh 'Shotgun_Body_v36' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access triangles/indices on mesh 'Shotgun_Pump_v36' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access triangles/indices on mesh 'Raccoon_Shotgun_Grip' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access triangles/indices on mesh 'Shotgun_Pump_v36' (isReadable is false; Read/Write must be enabled in import settings)
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1030" name="WeaponEventsMatchShotsAndActuallyInsertedShells" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-01 22:03:38Z" end-time="2026-11-01 22:03:38Z" duration="0.172609" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1027" name="WeaponEventsMatchShotsAndActuallyInsertedShells(30,1)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells(30,1)" methodname="WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="198529398" result="Passed" start-time="2026-11-01 22:03:38Z" end-time="2026-11-01 22:03:38Z" duration="0.057236" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1028" name="WeaponEventsMatchShotsAndActuallyInsertedShells(60,2)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells(60,2)" methodname="WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="778776365" result="Passed" start-time="2026-11-01 22:03:38Z" end-time="2026-11-01 22:03:38Z" duration="0.051729" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1029" name="WeaponEventsMatchShotsAndActuallyInsertedShells(120,2)" fullname="Game.Tests.PlayMode.RaccoonActionsV36Tests.WeaponEventsMatchShotsAndActuallyInsertedShells(120,2)" methodname="WeaponEventsMatchShotsAndActuallyInsertedShells" classname="Game.Tests.PlayMode.RaccoonActionsV36Tests" runstate="Runnable" seed="780839453" result="Passed" start-time="2026-11-01 22:03:38Z" end-time="2026-11-01 22:03:38Z" duration="0.051791" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/iam12/AppData/LocalLow/DefaultCompany/Train Survival\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
