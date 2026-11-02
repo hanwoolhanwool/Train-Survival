@@ -1,0 +1,427 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03c05877f14b3f448bd9b837b1774245, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Debugging.RaccoonActionLibraryV36
+  Entries:
+  - Id: DeathSoftV49
+    Label: "\uC0AC\uB9DD \uD6C4\uBCF4 1 \xB7 \uD798\uC5C6\uC774 \uBB34\uB108\uC9C0\uAE30"
+    Source: New unpowered articulated physics collapse v49; shared across equipment;
+      original death clips retained
+    Clip: {fileID: 0}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 4.2
+  - Id: HitFront
+    Label: "\uD53C\uACA9 \xB7 \uC815\uBA74"
+    Source: 'Shotgun action v41: full-body weight response and rigid two-hand grip'
+    Clip: {fileID: 7400000, guid: d7724307d3a9a544cb3cddb23f769709, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 0.85
+  - Id: HitBack
+    Label: "\uD53C\uACA9 \xB7 \uD6C4\uBA74"
+    Source: 'Shotgun action v41: full-body weight response and rigid two-hand grip'
+    Clip: {fileID: 7400000, guid: c8cc220b2321dd14995c15c34c1c2bb6, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 0.85
+  - Id: HitLeft
+    Label: "\uD53C\uACA9 \xB7 \uC67C\uCABD"
+    Source: 'Shotgun action v41: full-body weight response and rigid two-hand grip'
+    Clip: {fileID: 7400000, guid: 206a86a023a5d5248b8a0011bc7128f7, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 0.85
+  - Id: HitRight
+    Label: "\uD53C\uACA9 \xB7 \uC624\uB978\uCABD"
+    Source: 'Shotgun action v41: full-body weight response and rigid two-hand grip'
+    Clip: {fileID: 7400000, guid: 3610bfba72bde9f41a6a8244225d468e, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 0.85
+  - Id: Death
+    Label: "\uC0AC\uB9DD \xB7 \uAE30\uC874 \uBAA8\uC158 \uAE30\uBC18"
+    Source: Retargeted existing Raccoon_defeat_03; original preserved
+    Clip: {fileID: 7400000, guid: 9231d20eed7d2e2439f5279f35654aa5, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 5.541667
+  - Id: Respawn
+    Label: "\uC7AC\uB4F1\uC7A5 \xB7 \uC0F7\uAC74 \uC900\uBE44"
+    Source: 'Shotgun action v41: full-body weight response and rigid two-hand grip'
+    Clip: {fileID: 7400000, guid: 9b73ccd8b721ce645a07171792b86d7d, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 1.35
+  - Id: Equip
+    Label: "\uC0F7\uAC74 \uB4E4\uC5B4 \uC62C\uB9AC\uAE30"
+    Source: 'Shotgun action v41: full-body weight response and rigid two-hand grip'
+    Clip: {fileID: 7400000, guid: f361626afa3f7924abde00a566322708, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 1.1
+  - Id: Holster
+    Label: "\uC0F7\uAC74 \uB0AE\uCDB0 \uB4E4\uAE30"
+    Source: 'Shotgun action v41: full-body weight response and rigid two-hand grip'
+    Clip: {fileID: 7400000, guid: adaa4531870123a488fd6e23a137530f, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 1
+  - Id: Interact
+    Label: "\uC0C1\uD638\uC791\uC6A9 \xB7 \uBED7\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: e22cc3533aa6a124ea021f0a0a9c739d, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 1.2
+  - Id: Pickup
+    Label: "\uC90D\uAE30 \xB7 \uBB34\uB98E \uAD7D\uD798"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: c74c1b4767559b64780ed9cb286adb31, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 1.6
+  - Id: Repair
+    Label: "\uC218\uB9AC \xB7 \uD574\uBA38 \uBC18\uBCF5"
+    Source: 'Hammer v42: anatomical grip, stable elbow and short face-driven repair
+      stroke'
+    Clip: {fileID: 7400000, guid: 78ae616cc45b3e844a04811e25c3a542, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Hammer
+    Duration: 1.4
+  - Id: Melee
+    Label: "\uADFC\uC811 \xB7 \uD0C0\uACA9"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: ddd873528bb362f44ad5f70a1ba590c6, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 0.95
+  - Id: Eat
+    Label: "\uC12D\uCDE8"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: 395cc8f76268f134b9135f23a845d210, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Food
+    Duration: 1.8
+  - Id: Carry
+    Label: "\uC790\uC6D0 \uAFB8\uB7EC\uBBF8 \uB4E4\uAE30"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: a18a66d380ab5be43a991066c409eb75, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Bundle
+    Duration: 2.4
+  - Id: HarpoonFire
+    Label: "\uC791\uC0B4 \uBC1C\uC0AC"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: 9e11d1ec7fbc96e428a1035cba04a566, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Harpoon
+    Duration: 0.8
+  - Id: HarpoonReel
+    Label: "\uC791\uC0B4 \uB2F9\uAE30\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: d37de66d0e95792448f0761f5c3c26da, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Harpoon
+    Duration: 1.3
+  - Id: RevolverFire
+    Label: "\uB9AC\uBCFC\uBC84 \uBC1C\uC0AC"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: eceab00e1ef970f45a9f7f2b6fd81e85, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Revolver
+    Duration: 0.65
+  - Id: RevolverReload
+    Label: "\uB9AC\uBCFC\uBC84 \uC7A5\uC804 \xB7 \uC190\uB3D9\uC791"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: bb2ed1d2a5045c24caea8d517c7ff56e, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Revolver
+    Duration: 2.5
+  - Id: SwimIdle
+    Label: "\uC218\uC601 \xB7 \uC81C\uC790\uB9AC"
+    Source: New directional unarmed swimming v40; no production swimming dash exists
+    Clip: {fileID: 7400000, guid: 49d99e044fd4bff4b9dfd6ab93e0274e, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.4
+  - Id: SwimMove
+    Label: "\uC218\uC601 \xB7 \uC804\uC9C4"
+    Source: New directional unarmed swimming v40; no production swimming dash exists
+    Clip: {fileID: 7400000, guid: 32a6dc6d961b83a4bbc5034f74604318, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2
+  - Id: LadderHold
+    Label: "\uC0AC\uB2E4\uB9AC \xB7 \uB300\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: eaf248c12657911498e6784c9fdbcffb, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.4
+  - Id: LadderUp
+    Label: "\uC0AC\uB2E4\uB9AC \xB7 \uC624\uB974\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: 498a86ff67ba25948a414fae5c88fc23, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 1.6
+  - Id: LadderDown
+    Label: "\uC0AC\uB2E4\uB9AC \xB7 \uB0B4\uB824\uAC00\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: c882383d6d1dcfe41addf52380455940, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 1.8
+  - Id: Mantle
+    Label: "\uC0AC\uB2E4\uB9AC \uB05D \xB7 \uC62C\uB77C\uC11C\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: 98dda20936772764c8d53d0114a1fa10, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 1.2
+  - Id: Grabbed
+    Label: "\uBD99\uC7A1\uD798 \xB7 \uC800\uD56D"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: 86b9e3e15abcfc949bab28740f8cc5c4, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 1.6
+  - Id: Carried
+    Label: "\uB4E4\uB824\uAC00\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: c4e9e7a0bf476c647a7f095f4d5d4354, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.2
+  - Id: FishingCast
+    Label: "\uB09A\uC2DC \xB7 \uB358\uC9C0\uAE30 (\uAC80\uD1A0\uC6A9 \uB09A\uC2EF\uB300)"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: 60fbd0589712928458eb0f1b3eb1c24f, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Rod
+    Duration: 1.4
+  - Id: FishingWait
+    Label: "\uB09A\uC2DC \xB7 \uB300\uAE30"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: 9ea0ca068eab82b46ab1d131894235dd, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Rod
+    Duration: 2.8
+  - Id: FishingReel
+    Label: "\uB09A\uC2DC \xB7 \uAC10\uAE30"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: 056fd29b3964b8c4da36c5b0c0d55b41, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Rod
+    Duration: 1.4
+  - Id: RifleFire
+    Label: "\uC18C\uCD1D \uBC1C\uC0AC \xB7 \uC784\uC2DC \uC7A5\uCD1D\uC73C\uB85C
+      \uAC80\uD1A0"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: f71c6c47aac9cee418e3c6fbe51eece4, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 1.5
+  - Id: RifleReload
+    Label: "\uC18C\uCD1D \uC7A5\uC804 \xB7 \uC804\uC6A9 \uC18C\uD488 \uB300\uAE30"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: 9e00b2f4ab0714b4bb68473ac7add5bc, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 3.2
+  - Id: Neutral
+    Label: "\uB9E8\uC190 \uAE30\uBCF8 \uC790\uC138 \xB7 \uC218\uC815 \uAE30\uC900"
+    Source: 'Relaxed unarmed pose v39: centred torso, anatomy-relative arm targets
+      and relaxed digits'
+    Clip: {fileID: 7400000, guid: ec52e2a8ed122b143b3c220b6f9994f8, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.4
+  - Id: SwimLeft
+    Label: "\uC218\uC601 \xB7 \uC67C\uCABD"
+    Source: New directional unarmed swimming v40; no production swimming dash exists
+    Clip: {fileID: 7400000, guid: 08d6335a12ef7844c81c75bbee583d67, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.1
+  - Id: SwimRight
+    Label: "\uC218\uC601 \xB7 \uC624\uB978\uCABD"
+    Source: New directional unarmed swimming v40; no production swimming dash exists
+    Clip: {fileID: 7400000, guid: 6fe0a2cfb38eb174cbc691b561a24586, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.1
+  - Id: SwimBack
+    Label: "\uC218\uC601 \xB7 \uB4A4\uB85C"
+    Source: New directional unarmed swimming v40; no production swimming dash exists
+    Clip: {fileID: 7400000, guid: 498dd6490ec86464c921f61a6c264e72, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.2
+  - Id: ShotgunDeath
+    Label: "\uC0AC\uB9DD \xB7 \uC0F7\uAC74 \uB193\uAE30"
+    Source: Existing defeat body motion retimed to 2.1 s with a separate shotgun
+      release; v41
+    Clip: {fileID: 7400000, guid: 25004593a8cb96f49bca233ef7cc1eff, type: 2}
+    Loop: 0
+    UpperBody: 0
+    KeepWeapon: 1
+    Prop: 
+    Duration: 2.1
+  ContextPoses:
+  - Id: Neutral
+    Label: "\uB9E8\uC190 \uAE30\uBCF8 \uC790\uC138 \xB7 \uC218\uC815 \uAE30\uC900"
+    Source: 'Relaxed unarmed pose v39: centred torso, anatomy-relative arm targets
+      and relaxed digits'
+    Clip: {fileID: 7400000, guid: ec52e2a8ed122b143b3c220b6f9994f8, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: 
+    Duration: 2.4
+  - Id: HammerIdle
+    Label: "\uD574\uBA38 \uAE30\uBCF8 \uC790\uC138"
+    Source: 'Hammer v42: anatomical grip, stable elbow and short face-driven repair
+      stroke'
+    Clip: {fileID: 7400000, guid: 5a140c3dc093c3646aa4dcadf934214a, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Hammer
+    Duration: 1
+  - Id: RevolverIdle
+    Label: "\uB9AC\uBCFC\uBC84 \uAE30\uBCF8 \uC790\uC138"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: e338cbaf3bfb4df47a4fcda86e65fa57, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Revolver
+    Duration: 1
+  - Id: HarpoonIdle
+    Label: "\uC791\uC0B4\uCD1D \uAE30\uBCF8 \uC790\uC138"
+    Source: New authored raccoon pose curves, 60 Hz, v36
+    Clip: {fileID: 7400000, guid: 08f0bac1599a7a14cbb16ee164cfbacd, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Harpoon
+    Duration: 1
+  - Id: FoodIdle
+    Label: "\uC74C\uC2DD \uAE30\uBCF8 \uC790\uC138"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: 8a288b28a9be640408f1a3f48847753e, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Food
+    Duration: 1
+  - Id: Carry
+    Label: "\uC790\uC6D0 \uAFB8\uB7EC\uBBF8 \uB4E4\uAE30"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: a18a66d380ab5be43a991066c409eb75, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Bundle
+    Duration: 2.4
+  - Id: FishingWait
+    Label: "\uB09A\uC2DC \xB7 \uB300\uAE30"
+    Source: 'Prop posture v47: centred torso without clavicle levelling; existing
+      task timing and hand targets retained'
+    Clip: {fileID: 7400000, guid: 9ea0ca068eab82b46ab1d131894235dd, type: 2}
+    Loop: 1
+    UpperBody: 0
+    KeepWeapon: 0
+    Prop: Rod
+    Duration: 2.8
