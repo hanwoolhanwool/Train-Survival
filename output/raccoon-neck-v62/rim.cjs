@@ -1,0 +1,1 @@
+const fs=require('fs'),s=JSON.parse(fs.readFileSync('output/raccoon-chin-v61/source.json')),l=JSON.parse(fs.readFileSync('output/raccoon-neck-v62/loops.json'))[0];console.log(l.map((i,j)=>({j,i,p:s.vertices[i].map(x=>+x.toFixed(4))})).filter(x=>x.p[2]>.32));

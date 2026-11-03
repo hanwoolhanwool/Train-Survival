@@ -1,0 +1,10 @@
+var oldMesh=AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_AnatomicalSkin_v59.asset");
+var selected=Newtonsoft.Json.JsonConvert.DeserializeObject<int[]>(System.IO.File.ReadAllText("output/raccoon-chin-v60/face-triangles.json"));
+var tris=oldMesh.GetTriangles(1);var copy=selected.SelectMany(k=>new[]{tris[k],tris[k+1],tris[k+2]}).Distinct().ToArray();
+int n=oldMesh.vertexCount;var remap=copy.Select((v,i)=>new{v,i}).ToDictionary(x=>x.v,x=>n+x.i);var mesh=UnityEngine.Object.Instantiate(oldMesh);mesh.name="MESH_Raccoon_ChinSkin_v60";
+mesh.ClearBlendShapes();mesh.vertices=oldMesh.vertices.Concat(copy.Select(i=>oldMesh.vertices[i])).ToArray();mesh.normals=oldMesh.normals.Concat(copy.Select(i=>oldMesh.normals[i])).ToArray();mesh.tangents=oldMesh.tangents.Concat(copy.Select(i=>oldMesh.tangents[i])).ToArray();mesh.uv=oldMesh.uv.Concat(copy.Select(i=>oldMesh.uv[i])).ToArray();
+mesh.boneWeights=oldMesh.boneWeights.Concat(copy.Select(i=>new BoneWeight{boneIndex0=6,weight0=1})).ToArray();
+foreach(int k in selected)for(int a=0;a<3;a++)tris[k+a]=remap[tris[k+a]];mesh.SetTriangles(tris,1);
+for(int s=0;s<oldMesh.blendShapeCount;s++)for(int f=0;f<oldMesh.GetBlendShapeFrameCount(s);f++){var dv=new Vector3[n];var dn=new Vector3[n];var dt=new Vector3[n];oldMesh.GetBlendShapeFrameVertices(s,f,dv,dn,dt);mesh.AddBlendShapeFrame(oldMesh.GetBlendShapeName(s),oldMesh.GetBlendShapeFrameWeight(s,f),dv.Concat(copy.Select(i=>dv[i])).ToArray(),dn.Concat(copy.Select(i=>dn[i])).ToArray(),dt.Concat(copy.Select(i=>dt[i])).ToArray());}
+mesh.RecalculateBounds();var target=AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_ChinSkin_v60.asset");EditorUtility.CopySerialized(mesh,target);UnityEngine.Object.DestroyImmediate(mesh);EditorUtility.SetDirty(target);AssetDatabase.SaveAssets();
+var d=UnityEngine.Object.FindFirstObjectByType<Game.Gameplay.Debugging.RaccoonContextActionsV50>();d.RebuiltSkin=target;d.Paused=true;d.SetSkinRevision(true);return "Isolated fur triangles="+selected.Length+" duplicated vertices="+copy.Length;

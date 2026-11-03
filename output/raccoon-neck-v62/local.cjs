@@ -1,0 +1,1 @@
+const fs=require('fs'),s=JSON.parse(fs.readFileSync('output/raccoon-chin-v61/source.json')),ts=JSON.parse(fs.readFileSync('output/raccoon-neck-v62/collar-triangles.json'));let a=ts.filter(t=>t.k>=12200&&t.k<=12330);console.log(JSON.stringify(a,null,1));

@@ -1,0 +1,26 @@
+var src=AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_NeckBlend_v67.asset");
+var m=UnityEngine.Object.Instantiate(src);m.name="MESH_Raccoon_NeckTexture_v68";
+var pf=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Characters/Raccoon/PC_Raccoon_Skin_v59.prefab");var sk=pf.GetComponentInChildren<SkinnedMeshRenderer>();var map=pf.transform.worldToLocalMatrix*sk.transform.localToWorldMatrix;
+var info=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("output/raccoon-neck-v67/build-info.json"));var head=info["head"].ToObject<int[]>();var uv=src.uv;var changed=new System.Collections.Generic.HashSet<int>();
+// Use the existing chin atlas island's gray fur field. Unlike the v67 single
+// sample this spans an area, preserving texture and a valid tangent frame.
+for(int i=20933;i<m.vertexCount;i++){
+ var p=map.MultiplyPoint3x4(m.vertices[i]);float t=i<21201?new[]{0f,.2f,.45f,.72f}[(i-20933)/67]:1f;
+ float angle=Mathf.Atan2(p.z-.27f,p.x+.004f);float x=Mathf.PingPong((angle+Mathf.PI)/Mathf.PI*8,1);float front=Mathf.Clamp01((p.z-.32f)/.12f);
+ float white=0; if(i<21201){int j=(i-20933)%67;white=(j>=59&&j<=63)?1:0;}
+ float blend=white*(1-Mathf.SmoothStep(0,1,Mathf.Clamp01(t/.20f)));
+ uv[i]=new Vector2(Mathf.Lerp(.395f+.015f*x,.4145f,blend),.716f+.025f*t+.002f*front);changed.Add(i);
+}
+// Reunwrap only the inward-facing scarf lining and painted rim inside the
+// existing orange cloth patch, avoiding compressed repeated normal samples.
+for(int i=20073;i<20933;i++){
+ if(i>=20377&&i<20738)continue;
+ var old=uv[i];if(old.x<.209f||old.x>.221f||old.y<.044f||old.y>.051f)continue;
+ var p=map.MultiplyPoint3x4(m.vertices[i]);uv[i]=new Vector2(.213f+.006f*Mathf.Clamp(p.x/.23f,-1,1),.043f+.012f*Mathf.Clamp01((p.y-1.245f)/.10f));changed.Add(i);
+}
+m.uv=uv;m.RecalculateTangents();var ts=m.tangents;var oldts=src.tangents;for(int i=0;i<ts.Length;i++)if(!changed.Contains(i))ts[i]=oldts[i];m.tangents=ts;
+string path="Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_NeckTexture_v68.asset";var dest=AssetDatabase.LoadAssetAtPath<Mesh>(path);if(dest==null){AssetDatabase.CreateAsset(m,path);dest=m;}else{EditorUtility.CopySerialized(m,dest);dest.uv=m.uv;dest.tangents=m.tangents;dest.UploadMeshData(false);EditorUtility.SetDirty(dest);}AssetDatabase.SaveAssets();
+System.IO.File.WriteAllText("output/raccoon-texture-v68/build-info.json",Newtonsoft.Json.JsonConvert.SerializeObject(new{changed=changed.ToArray(),vertices=m.vertexCount}));
+var d=UnityEngine.Object.FindFirstObjectByType<Game.Gameplay.Debugging.RaccoonContextActionsV50>();if(d!=null&&Application.isPlaying){d.RebuiltSkin=UnityEngine.Object.Instantiate(dest);d.SetSkinRevision(true);}return new{changed=changed.Count,vertices=m.vertexCount};
+
+

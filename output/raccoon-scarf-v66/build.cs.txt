@@ -1,0 +1,23 @@
+var src=AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_ScarfClean_v65.asset");
+var pf=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Characters/Raccoon/PC_Raccoon_Skin_v59.prefab");var sk=pf.GetComponentInChildren<SkinnedMeshRenderer>();var map=pf.transform.worldToLocalMatrix*sk.transform.localToWorldMatrix;
+var info=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("output/raccoon-scarf-v64/build-info.json"));var surface=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("output/raccoon-scarf-v64/surface.json"));
+int surfaceCount=(int)info["surfaceCount"];var loops=info["bodyLoops"].ToObject<int[][]>();var headLoops=info["headLoops"].ToObject<int[][]>();var rim=loops.OrderByDescending(a=>a.Length).First();int count=rim.Length;
+int liningStart=surfaceCount+headLoops.Sum(a=>a.Length+1)+loops.Where(a=>a.Length<10).Sum(a=>a.Length+1);
+var v=src.vertices;var p=v.Select(x=>map.MultiplyPoint3x4(x)).ToArray();var w=src.boneWeights;var old=src.boneWeights;
+var body=new System.Collections.Generic.HashSet<int>(surface["body"].ToObject<int[]>());
+var used=new System.Collections.Generic.HashSet<int>(src.GetTriangles(1));var roots=info["origins"].ToObject<int[]>();
+Func<Vector3,string> key=x=>Vector3Int.RoundToInt(x*100000).ToString();
+Func<float,float> neck=y=>Mathf.SmoothStep(0,1,Mathf.InverseLerp(1.25f,1.34f,y));
+Func<BoneWeight,float,float,BoneWeight> blend=(bw,n,t)=>{var values=new System.Collections.Generic.Dictionary<int,float>();int[] bi={bw.boneIndex0,bw.boneIndex1,bw.boneIndex2,bw.boneIndex3,4,5};float[] ww={bw.weight0*(1-t),bw.weight1*(1-t),bw.weight2*(1-t),bw.weight3*(1-t),(1-n)*t,n*t};for(int j=0;j<6;j++){if(!values.ContainsKey(bi[j]))values[bi[j]]=0;values[bi[j]]+=ww[j];}var pairs=values.Where(a=>a.Value>.000001f).OrderByDescending(a=>a.Value).Take(4).ToArray();float total=pairs.Sum(a=>a.Value);int[] ids=new int[4];float[] weights=new float[4];for(int j=0;j<pairs.Length;j++){ids[j]=pairs[j].Key;weights[j]=pairs[j].Value/total;}return new BoneWeight{boneIndex0=ids[0],weight0=weights[0],boneIndex1=ids[1],weight1=weights[1],boneIndex2=ids[2],weight2=weights[2],boneIndex3=ids[3],weight3=weights[3]};};
+var targets=new System.Collections.Generic.Dictionary<string,BoneWeight>();
+foreach(int i in body){if(!used.Contains(i)&&!rim.Contains(i))continue;float distance=float.MaxValue;for(int j=0;j<count;j++){var a=p[rim[j]];var b=p[rim[(j+1)%count]];var ab=b-a;float t=Mathf.Clamp01(Vector3.Dot(p[i]-a,ab)/Mathf.Max(ab.sqrMagnitude,1e-12f));distance=Mathf.Min(distance,Vector3.Distance(p[i],a+ab*t));}float influence=1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.010f,.040f,distance));if(influence>0)targets[key(p[i])]=blend(old[i],neck(p[i].y),influence);}
+// The visible edge and the inward lining share a smoothly varying chest/neck field.
+for(int r=0;r<4;r++)for(int j=0;j<count;j++){int i=liningStart+r*count+j;float n=Mathf.Lerp(neck(p[rim[j]].y),1,r/3f);targets[key(p[i])]=new BoneWeight{boneIndex0=4,weight0=1-n,boneIndex1=5,weight1=n};}
+var changed=new System.Collections.Generic.List<int>();
+for(int i=0;i<v.Length;i++){bool isBody=body.Contains(i)||(i>=liningStart&&i<liningStart+4*count)||(i>=surfaceCount&&roots[i]>=0&&body.Contains(roots[i]));if(!isBody)continue;BoneWeight target;if(targets.TryGetValue(key(p[i]),out target)&&!target.Equals(old[i])){w[i]=target;changed.Add(i);}}
+// Match the coincident bottom row of the neck to the lining without changing its pose.
+for(int j=0;j<count;j++){int i=liningStart+4*count+j;w[i]=w[liningStart+3*count+j];if(!w[i].Equals(old[i]))changed.Add(i);}
+var mesh=UnityEngine.Object.Instantiate(src);mesh.name="MESH_Raccoon_ScarfSeam_v66";mesh.boneWeights=w;
+string path="Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_ScarfSeam_v66.asset";var targetMesh=AssetDatabase.LoadAssetAtPath<Mesh>(path);if(targetMesh==null){AssetDatabase.CreateAsset(mesh,path);targetMesh=mesh;}else{EditorUtility.CopySerialized(mesh,targetMesh);targetMesh.boneWeights=w;targetMesh.UploadMeshData(false);EditorUtility.SetDirty(targetMesh);}AssetDatabase.SaveAssets();
+System.IO.File.WriteAllText("output/raccoon-scarf-v66/changed.json",Newtonsoft.Json.JsonConvert.SerializeObject(new{changed,rim,liningStart,count}));
+var d=UnityEngine.Object.FindFirstObjectByType<Game.Gameplay.Debugging.RaccoonContextActionsV50>();if(d!=null&&Application.isPlaying){d.RebuiltSkin=UnityEngine.Object.Instantiate(targetMesh);d.SetSkinRevision(true);}return new{changed=changed.Count,liningStart,count};

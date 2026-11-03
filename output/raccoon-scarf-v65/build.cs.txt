@@ -1,0 +1,12 @@
+var src=AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_ScarfRestore_v64.asset");
+var groups=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText("output/raccoon-scarf-v65/edge-components.json"));
+var scraps=groups.Where(g=>(int)g["triangles"]<20&&(float)g["min"][1]>1.30f&&(float)g["max"][1]<1.34f&&(float)g["min"][0]>-.24f&&(float)g["max"][0]<.24f).ToArray();
+if(scraps.Length!=3)throw new Exception("Unexpected collar component selection");
+var removed=new System.Collections.Generic.HashSet<int>(scraps.SelectMany(g=>g["offsets"].ToObject<int[]>()));
+var tri=src.GetTriangles(1);var kept=Enumerable.Range(0,tri.Length/3).Where(i=>!removed.Contains(i*3)).SelectMany(i=>new[]{tri[i*3],tri[i*3+1],tri[i*3+2]}).ToArray();
+var mesh=UnityEngine.Object.Instantiate(src);mesh.name="MESH_Raccoon_ScarfClean_v65";mesh.SetTriangles(kept,1);mesh.RecalculateBounds();
+string path="Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_ScarfClean_v65.asset";var target=AssetDatabase.LoadAssetAtPath<Mesh>(path);
+if(target==null){AssetDatabase.CreateAsset(mesh,path);target=mesh;}else{EditorUtility.CopySerialized(mesh,target);target.SetTriangles(kept,1);target.UploadMeshData(false);EditorUtility.SetDirty(target);}
+AssetDatabase.SaveAssets();System.IO.File.WriteAllText("output/raccoon-scarf-v65/removed.json",Newtonsoft.Json.JsonConvert.SerializeObject(removed.OrderBy(i=>i).ToArray()));
+var d=UnityEngine.Object.FindFirstObjectByType<Game.Gameplay.Debugging.RaccoonContextActionsV50>();if(d!=null&&Application.isPlaying){d.RebuiltSkin=UnityEngine.Object.Instantiate(target);d.SetSkinRevision(true);}
+return new{removedPieces=scraps.Length,removedTriangles=removed.Count,vertices=mesh.vertexCount};

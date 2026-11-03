@@ -1,0 +1,1 @@
+const fs=require('fs'),s=JSON.parse(fs.readFileSync('output/raccoon-chin-v61/source.json'));for(let i of [12882,12883,12884,8471,8472,8473,10683,10684,10682])console.log(i,s.vertices[i],s.weights[i]);

@@ -1,0 +1,1 @@
+const fs=require('fs'),s=JSON.parse(fs.readFileSync('output/raccoon-chin-v61/source.json')),ls=JSON.parse(fs.readFileSync('output/raccoon-neck-v62/loops.json'));for(let l of ls){let area=0;for(let j=0;j<l.length-1;j++){let a=s.vertices[l[j]],b=s.vertices[l[j+1]];area+=a[0]*b[2]-b[0]*a[2]}console.log(l[0],area)}
