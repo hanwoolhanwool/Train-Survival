@@ -136,3 +136,10 @@ InitTestScene*.unity*
 /Perf/reports/
 /Perf/logs/
 /Perf/shots/
+
+# 제작 작업 공간: 검토를 거쳐 추적 중인 원본·제작 코드·검증 근거는 계속 버전 관리한다.
+# 새 파일은 기본 제외하고, 보존할 파일만 개별 검토 후 git add -f 로 등록한다.
+# 선별 기준과 2026-11-05 목록: docs/guide/artifact-retention.md
+/output/
+/tmp/
+/.codex-remote-attachments/
