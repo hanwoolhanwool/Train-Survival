@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Game.Gameplay.Player;
 using UnityEngine;
@@ -26,10 +26,38 @@ namespace Game.Gameplay.Debugging
         public string RebuiltSkinLabel;
         public string SkinReviewTitle;
         public bool UseRebuiltSkin = true;
+        public bool GroundLocomotion;
+        public RuntimeAnimatorController GroundLocomotionController;
+        public bool GroundRun;
+        // Retained for old scene serialization; locomotion now shares one gaze frame.
+        [HideInInspector] public float WalkHeadPitchOffset;
+        public float RevolverAimPitchOffset;
+        public float ShotgunAimPitchOffset;
+        public Transform LocomotionFloor;
+        public Vector2 GroundVelocity => locomotionActive?locomotionMotor.ActualVelocity:Vector2.zero;
+        RaccoonActionMotorV36 locomotionMotor;
+        bool locomotionActive;
         public bool ShoulderAimV71;
         public bool ContextAimV72;
         public bool ArmpitVolumeV73;
         public GameObject MachetePrefab;
+        public GameObject FishingPrefab;
+        RaccoonFishingReview fishing;
+        public RaccoonFishingReview FishingReview=>fishing;
+        public bool CanFish=>Candidate&&Equipment==Context.Fishing&&State==Situation.Ground&&!InteractionBusy;
+        public void StartFishingMotion(RaccoonFishingReview.Motion motion)
+        {
+            if(!CanFish)return;
+            if(Direction!=Motion.Idle)Configure(Equipment,State,Motion.Idle);
+            if(motion==RaccoonFishingReview.Motion.Carry||fishing?.Current==RaccoonFishingReview.Motion.Carry)CaptureTransition();
+            fishing?.Select(motion);Paused=false;
+            if(motion==RaccoonFishingReview.Motion.Hook)Notice="끌어올리기 → 장력 유지 → 대기";
+            if(motion==RaccoonFishingReview.Motion.Land)Notice="낚아 올리기 → 줄 잡기 → 완료 자세 유지";
+            if(motion==RaccoonFishingReview.Motion.Carry)Notice="낚시 전 · 낚싯대 들기";
+            if(motion==RaccoonFishingReview.Motion.Wait)Notice="입질 대기";
+            if(motion==RaccoonFishingReview.Motion.Cast)Notice="낚싯줄 던지기 → 입질 대기";
+            if(motion==RaccoonFishingReview.Motion.Reel)Notice="릴 감기 · 반복";
+        }
         public bool MacheteHammerGripV75;
         public GameObject MacheteModel {get;private set;}
         float macheteTime=99;
@@ -62,6 +90,7 @@ namespace Game.Gameplay.Debugging
         HandTask groundTask;
         bool TaskState => State==Situation.Ground&&groundTask!=HandTask.None;
         bool GroundPickup => TaskState&&groundTask==HandTask.Pickup;
+        bool GroundInteractionOverlay => TaskState&&groundTask==HandTask.Interact&&!TwoHandTask;
         float TaskDuration => TwoHandTask&&Equipment!=Context.Unarmed?2.4f:GroundPickup?RaccoonArmedInteractionV52.PickupDuration:RaccoonArmedInteractionV52.Duration;
         public bool CanStartTask => Candidate&&(State==Situation.Ground||Swimming)&&!InteractionBusy&&!MacheteAttacking;
         public HandTask ActiveTask => !InteractionBusy?HandTask.None:Swimming?SwimmingTask:groundTask;
@@ -94,6 +123,7 @@ namespace Game.Gameplay.Debugging
         Animator outputAnimator;
         RaccoonArmedInteractionV52 armedInteraction,unarmedInteraction;
         RaccoonActionHandsV37 backwardHands;
+        RaccoonFreeHandPose freeHands;
         RaccoonLadderSkinV58 ladderSkin;
         RaccoonArmpitVolumeV73 armpitVolume;
         Transform[] output,bodyTransforms,weaponTransforms;
@@ -123,6 +153,12 @@ namespace Game.Gameplay.Debugging
             if(SourcePrefab==null||Display==null)throw new InvalidOperationException("v50 requires the preserved review prefab and an output actor.");
             actorOrigin=Display.transform.position;
             body=CreateSampler("v50 body sampler",out bodyRig);
+            if(GroundLocomotionController!=null)
+            {
+                bodyRig.Animator.runtimeAnimatorController=GroundLocomotionController;
+                bodyRig.Initialize(body.transform);
+                bodyRig.Animator.enabled=false;
+            }
             weapon=CreateSampler("v50 weapon sampler",out weaponRig);
             weaponCombat=weapon.GetComponent<RaccoonWeaponPoseV36>();
             outputAnimator=Display.GetComponentInChildren<Animator>(true);
@@ -188,19 +224,44 @@ namespace Game.Gameplay.Debugging
         }
         public void Configure(Context equipment,Situation state,Motion motion,Hands freedom=Hands.BothFree)
         {
-            Initialize();CaptureTransition();
-            // Legacy callers still work, but State always stores the underlying environment.
+            Initialize();
             HandTask requestedTask=state==Situation.Interact?HandTask.Interact:state==Situation.Pickup?HandTask.Pickup:HandTask.None;
             if(requestedTask!=HandTask.None)state=Situation.Ground;
+            bool sameGround=State==Situation.Ground&&state==Situation.Ground&&equipment==Equipment&&freedom==Freedom;
+            if(sameGround&&requestedTask==HandTask.Interact&&!TwoHandTask)
+            {
+                // Start only the arm layer: do not select/reset the body or capture
+                // a frozen full-body pose while the locomotion sampler is running.
+                Direction=motion;CancelReload();groundTask=HandTask.Interact;taskTime=0;
+                if(Equipment==Context.Fishing&&fishing!=null&&fishing.Current!=RaccoonFishingReview.Motion.Carry)
+                    fishing.Select(RaccoonFishingReview.Motion.Carry);
+                Notice="이동 유지 · 한 손 상호작용";
+                return;
+            }
+            if(sameGround&&requestedTask==HandTask.None&&GroundInteractionOverlay&&InteractionBusy)
+            {
+                // Direction/speed buttons must not cancel or restart the arm action.
+                Direction=motion;return;
+            }
+            // Ground direction/speed changes already blend in the locomotion motor.
+            // A second frozen-pose crossfade stops the feet, then rushes them ahead.
+            bool continuousGround=GroundLocomotion&&Candidate&&locomotionActive&&
+                State==Situation.Ground&&state==Situation.Ground&&equipment==Equipment&&freedom==Freedom&&
+                groundTask==HandTask.None&&!InteractionBusy&&!MacheteAttacking;
+            if(!continuousGround)CaptureTransition();
+            // Legacy callers still work, but State always stores the underlying environment.
             bool changedEquipment=equipment!=Equipment;
+            bool changedState=state!=State;
             if(changedEquipment||(state!=Situation.Surface&&state!=Situation.Underwater))SwimmingTask=HandTask.None;
             bool lostHands=(state==Situation.Grabbed||state==Situation.Carried)&&freedom!=Hands.BothFree;
             if(changedEquipment||lostHands||requestedTask!=HandTask.None)CancelReload();
             Equipment=equipment;State=state;Direction=motion;Freedom=freedom;
+            if(equipment==Context.Fishing&&(changedEquipment||changedState||state!=Situation.Ground||motion!=Motion.Idle||requestedTask!=HandTask.None))
+                fishing?.Select(RaccoonFishingReview.Motion.Carry);
             groundTask=requestedTask;
             if(changedEquipment){weapon.SetContext(SamplerEquipment);rounds=Capacity;Shots=Reloads=Inserts=0;fireTime=10;}
             macheteTime=equipment==Context.Machete&&state==Situation.Melee?0:99;
-            taskTime=0;SelectBody();
+            taskTime=0;if(!continuousGround)SelectBody();
             Notice=Restricted&&Freedom==Hands.Restrained?"무기 손 제압 · 발사/장전 불가":State==Situation.Ladder&&Equipment==Context.RiflePreview?"소총 사다리 정책 미정 · 발사/장전 비활성":"수정 후보 · 원본은 보존됨";
         }
         public void PreviewSelection(Context equipment,Situation state,Motion motion,Hands freedom=Hands.BothFree)
@@ -234,6 +295,19 @@ namespace Game.Gameplay.Debugging
             if(armedInteraction==null)armedInteraction=new RaccoonArmedInteractionV52(outputAnimator,Display.transform);
             if(unarmedInteraction==null)unarmedInteraction=new RaccoonArmedInteractionV52(outputAnimator,Display.transform,false);
             if(backwardHands==null)backwardHands=new RaccoonActionHandsV37(outputAnimator);
+            if(freeHands==null)freeHands=new RaccoonFreeHandPose(outputAnimator,Display.transform);
+            if(fishing==null&&FishingPrefab!=null)
+            {
+                // A plain helper can be lost on hot reload while its prop survives.
+                // Retire only this review's old generated prop before rebuilding it.
+                for(int i=transform.childCount-1;i>=0;i--)
+                {
+                    var child=transform.GetChild(i);
+                    if(child.name!="Fishing · 동작 검토")continue;
+                    child.gameObject.SetActive(false);Destroy(child.gameObject);
+                }
+                fishing=new RaccoonFishingReview(FishingPrefab,outputAnimator,Display.transform,transform);
+            }
             if(ladderSkin==null)ladderSkin=new RaccoonLadderSkinV58(outputAnimator,Display.transform,body.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
         }
         public bool StartTask(HandTask task)
@@ -245,7 +319,7 @@ namespace Game.Gameplay.Debugging
             else
             {
                 Configure(Equipment,task==HandTask.Interact?Situation.Interact:Situation.Pickup,Direction,Freedom);
-                Notice=task==HandTask.Interact?"일반 · 상호작용":"일반 · 줍기";
+                Notice=GroundInteractionOverlay?"이동 유지 · 한 손 상호작용":task==HandTask.Interact?"일반 · 상호작용":"일반 · 줍기";
                 started=true;
             }
             // An explicit preview button should also play when the viewer was paused.
@@ -323,7 +397,11 @@ namespace Game.Gameplay.Debugging
                 swimmingTaskTime+=dt;
                 if(swimmingTaskTime>=(SwimmingTask==HandTask.Pickup?RaccoonArmedInteractionV52.PickupDuration:RaccoonArmedInteractionV52.Duration))SwimmingTask=HandTask.None;
             }
-            if(interactionWasBusy&&!InteractionBusy)Notice="작업 완료 · 원래 손 자세 복귀";
+            if(interactionWasBusy&&!InteractionBusy)
+            {
+                if(GroundInteractionOverlay)groundTask=HandTask.None;
+                Notice="작업 완료 · 원래 손 자세 복귀";
+            }
             if(loading)
             {
                 loadTime+=dt;
@@ -338,10 +416,11 @@ namespace Game.Gameplay.Debugging
             // only for explicit evaluation, then disable to prevent Unity's later pass
             // from replacing the composed pose (including while the preview is paused).
             bodyRig.Animator.enabled=true;
-            body.Tick(dt);bodyRig.Tick(dt,Vector2.zero,false,true);
+            bool movingBody=SampleLocomotion(dt);
+            if(!movingBody){body.Tick(dt);bodyRig.Tick(dt,Vector2.zero,false,true);}
             bodyRig.Animator.enabled=false;
             weaponRig.Animator.enabled=true;
-            weaponCombat.Step(dt);weapon.Tick(dt);weaponRig.Tick(dt,Vector2.zero,false,true);
+            weaponCombat.Step(dt);weapon.Tick(dt);weaponRig.Tick(dt,movingBody?GroundVelocity:Vector2.zero,movingBody&&GroundRun&&LongGun,true);
             weaponRig.Animator.enabled=false;
             // Copy the full authored body before applying equipment-specific arm chains.
             for(int i=1;i<output.Length;i++)Copy(output[i],Candidate?bodyTransforms[i]:weaponTransforms[i]);
@@ -353,6 +432,8 @@ namespace Game.Gameplay.Debugging
                 float leftTarget=stow?0:LongGun||Reloading||State==Situation.Ground||Equipment==Context.Bundle?1:0;
                 if(Equipment==Context.Machete)leftTarget=0;
                 if(TaskState)leftTarget=stow?0:1;
+                bool fishingCarry=Equipment==Context.Fishing&&(fishing==null||fishing.Current==RaccoonFishingReview.Motion.Carry||State!=Situation.Ground||Direction!=Motion.Idle||InteractionBusy);
+                if(Equipment==Context.Fishing){leftTarget=0;if(fishingCarry)rightTarget=0;}
                 // Pickup keeps the crouching body but replaces the old baked arm reach.
                 // Rebuild both arms from their neutral/equipment baseline on every frame.
                 if(GroundPickup&&Equipment==Context.Unarmed)rightTarget=leftTarget=1;
@@ -364,6 +445,13 @@ namespace Game.Gameplay.Debugging
                     if(w>0){output[i].localPosition=Vector3.Lerp(output[i].localPosition,weaponTransforms[i].localPosition,w);output[i].localRotation=Quaternion.Slerp(output[i].localRotation,weaponTransforms[i].localRotation,w);}
                 }
                 AimEquipment(dt);
+                AuthorGroundFreeHands(fishingCarry);
+                if(fishing!=null)
+                {
+                    if(fishingCarry&&!stow)fishing.ApplyCarry(dt,lookFrame,State,BodyPhase);
+                    else fishing.Apply(dt,lookFrame,Equipment==Context.Fishing&&!stow,
+                        State==Situation.Ground&&Direction==Motion.Idle&&!InteractionBusy&&GroundVelocity.sqrMagnitude<.000001f);
+                }
                 if(Equipment==Context.Machete&&rightBlend>0)
                 {
                     if(MacheteHammerGripV75)RaccoonMachetePoseV74.ApplyHammerAttack(outputAnimator,lookFrame,macheteTime,rightBlend);
@@ -381,18 +469,27 @@ namespace Game.Gameplay.Debugging
                 if(Equipment==Context.Harpoon&&loading)AuthorHarpoonReload();
                 SetProps(stow);
             }
-            else SetProps(false);
+            else {SetProps(false);if(fishing!=null)fishing.Model.SetActive(false);}
             float blend=Mathf.SmoothStep(0,1,transition);
             for(int i=1;i<output.Length;i++)if(skeleton[i]&&blend<1)
             {output[i].localPosition=Vector3.Lerp(blendPositions[i],output[i].localPosition,blend);output[i].localRotation=Quaternion.Slerp(blendRotations[i],output[i].localRotation,blend);}
+            // Local bone crossfades can tilt a world-space gaze as the torso settles.
+            // Resolve gaze after the final ground pose, with no transition-only gesture.
+            if(Candidate&&State==Situation.Ground&&(!InteractionBusy||GroundInteractionOverlay))ApplyHeadLook();
             // Mesh-only correctives run on the composed output, not on a previous source pose.
             outputAnimator.enabled=true;
-            var wrist=outputAnimator.GetComponent<RaccoonWristDeformation>();if(wrist!=null)wrist.Apply();
+            var wrist=outputAnimator.GetComponent<RaccoonWristDeformation>();
+            if(wrist!=null)
+            {
+                wrist.PreserveTwistPath=Candidate&&Equipment==Context.Shotgun&&(GroundInteractionOverlay||transition<1);
+                wrist.Apply();
+            }
             var elbows=outputAnimator.GetComponent<RaccoonElbowCorrectives>();if(elbows!=null)elbows.Apply();
             outputAnimator.enabled=false;
             ApplyReviewSkin(dt);
             // Follow the final blended wrist, including equipment/state transitions.
             UpdateMachete();
+            if(fishing!=null&&fishing.Model.activeSelf)fishing.FollowHand();
             HeadLookError=Candidate?Quaternion.Angle(outputAnimator.GetBoneTransform(HumanBodyBones.Head).rotation,lookFrame*neutralHead):0;
             UpdateGuides();
             SupportError=0;
@@ -405,13 +502,88 @@ namespace Game.Gameplay.Debugging
             }
         }
         static void Copy(Transform to,Transform from){to.localPosition=from.localPosition;to.localRotation=from.localRotation;to.localScale=from.localScale;}
+        void AuthorGroundFreeHands(bool fishingCarry)
+        {
+            if(State!=Situation.Ground||(InteractionBusy&&!GroundInteractionOverlay)||Reloading||MacheteAttacking)return;
+            bool unarmed=Equipment==Context.Unarmed;
+            bool oneHand=Equipment==Context.Hammer||Equipment==Context.Revolver||
+                Equipment==Context.Harpoon||Equipment==Context.Food||Equipment==Context.Machete||
+                (Equipment==Context.Fishing&&fishingCarry);
+            if(!unarmed&&!oneHand)return;
+            // Read swing from the body clip, never from a held weapon's grip.
+            var a=bodyRig.Animator;var r=body.transform;
+            Vector3 l=r.InverseTransformPoint(a.GetBoneTransform(HumanBodyBones.LeftHand).position);
+            Vector3 h=r.InverseTransformPoint(a.GetBoneTransform(HumanBodyBones.RightHand).position);
+            float swing=locomotionActive?Mathf.Clamp((h.z-l.z)*.5f,-.16f,.16f)*bodyRig.LocomotionWeight:0;
+            // The retained run has baked shotgun arms. Derive the free-arm rhythm
+            // from the opposite leg instead, while preserving its approved stride.
+            float run=locomotionActive?bodyRig.RunBlend:0;
+            Vector3 leftKnee=r.InverseTransformPoint(a.GetBoneTransform(HumanBodyBones.LeftLowerLeg).position);
+            Vector3 rightKnee=r.InverseTransformPoint(a.GetBoneTransform(HumanBodyBones.RightLowerLeg).position);
+            float runSwing=Mathf.Clamp((leftKnee.z-rightKnee.z)*.65f,-.16f,.16f);
+            swing=Mathf.Lerp(swing,runSwing,run);
+            freeHands.Apply(true,unarmed,swing,.025f*Mathf.Clamp01(Mathf.Abs(GroundVelocity.x)),run);
+        }
+        bool SampleLocomotion(float dt)
+        {
+            bool available=GroundLocomotion&&Candidate&&State==Situation.Ground&&
+                (!InteractionBusy||GroundInteractionOverlay)&&!MacheteAttacking;
+            if(!available)
+            {
+                if(locomotionActive)EndLocomotion();
+                return false;
+            }
+            var input=Direction==Motion.Forward?Vector2.up:Direction==Motion.Back?Vector2.down:
+                Direction==Motion.Left?Vector2.left:Direction==Motion.Right?Vector2.right:Vector2.zero;
+            if(!locomotionActive)
+            {
+                CaptureTransition();
+                body.GetComponent<CharacterController>().enabled=true;
+                locomotionMotor=body.GetComponent<RaccoonActionMotorV36>();
+                locomotionMotor.Initialize();locomotionMotor.Automatic=false;
+                locomotionMotor.ResetAt(Display.transform.position);
+                // This context unlocks the original motor; BodyOnly below removes
+                // its equipment pose so the clip's own torso and free arms survive.
+                body.SetContext(Context.Shotgun);
+                bodyRig.LocomotionBodyOnly=true;
+                locomotionActive=true;
+            }
+            // Equipment and free hands are composed after the body-only run sample.
+            // The review floor follows the actor. Publish its transform before
+            // CharacterController.Move, including manual frame-by-frame previews
+            // that do not run a FixedUpdate between samples.
+            if(LocomotionFloor!=null)Physics.SyncTransforms();
+            bodyRig.LocomotionInput=input;
+            locomotionMotor.Advance(dt,input,GroundRun);
+            locomotionMotor.Evaluate(dt);
+            Display.transform.position=body.transform.position;
+            weapon.transform.position=body.transform.position;
+            if(LocomotionFloor!=null)
+            {
+                var p=LocomotionFloor.position;p.x=body.transform.position.x;p.z=body.transform.position.z;
+                LocomotionFloor.position=p;
+            }
+            // Keep this sampler alive at rest. Rebind/reset on each stop restarts the
+            // gait and adds a second frozen-pose transition when movement resumes.
+            return true;
+        }
+        void EndLocomotion()
+        {
+            CaptureTransition();
+            locomotionMotor.ResetAt(Display.transform.position);
+            bodyRig.LocomotionBodyOnly=false;
+            body.SetContext(Context.Unarmed);SelectBody();
+            body.GetComponent<CharacterController>().enabled=false;
+            locomotionActive=false;
+        }
         bool ShouldStow()
         {
             if(Restricted&&(Freedom==Hands.Restrained||(LongGun&&Freedom!=Hands.BothFree)))return true;
             if(State==Situation.Ladder&&Equipment==Context.RiflePreview)return true;
             if(Equipment==Context.Unarmed)return true;
             if(TaskState&&TwoHandTask)return InteractionBusy;
-            if(Equipment==Context.Food||Equipment==Context.Bundle||Equipment==Context.Fishing)
+            if(Equipment==Context.Fishing)return State==Situation.Melee;
+            if(Equipment==Context.Food||Equipment==Context.Bundle)
                 return TaskState?InteractionBusy:State!=Situation.Ground;
             return false;
         }
@@ -481,6 +653,7 @@ namespace Game.Gameplay.Debugging
 
                 // Equipment owns its grip arm(s); only the remaining free arm sculls.
                 float free=1-(left?leftBlend:rightBlend);
+                if(!left&&Equipment==Context.Fishing&&!ShouldStow())free=0;
                 if(free<=0)continue;
                 var upper=outputAnimator.GetBoneTransform(left?HumanBodyBones.LeftUpperArm:HumanBodyBones.RightUpperArm);
                 var lower=outputAnimator.GetBoneTransform(left?HumanBodyBones.LeftLowerArm:HumanBodyBones.RightLowerArm);
@@ -491,6 +664,17 @@ namespace Game.Gameplay.Debugging
                 Solve(left,false,Vector3.Lerp(hand.position,stroke,free),oldRotation);
                 hand.rotation=Quaternion.Slerp(oldRotation,backwardHands.Rotation(outputAnimator,root,body.Entry,BodyPhase,left),free);
             }
+        }
+        void ApplyHeadLook()
+        {
+            var head=outputAnimator.GetBoneTransform(HumanBodyBones.Head);
+            var neck=outputAnimator.GetBoneTransform(HumanBodyBones.Neck);
+            // Idle, walk and run share the same user-directed gaze. Sampling the
+            // source head and fading a separate walk correction produced a head lift
+            // whenever the source blend tree passed through its idle pose.
+            var target=lookFrame*neutralHead;
+            if(neck!=null)neck.rotation=Quaternion.Slerp(Quaternion.identity,target*Quaternion.Inverse(head.rotation),.45f)*neck.rotation;
+            head.rotation=target;
         }
         void AimEquipment(float dt)
         {
@@ -533,7 +717,13 @@ namespace Game.Gameplay.Debugging
             }
             var chest=outputAnimator.GetBoneTransform(HumanBodyBones.UpperChest);
             var sourceChest=weaponRig.Animator.GetBoneTransform(HumanBodyBones.UpperChest);
-            var q=lookFrame*Quaternion.Inverse(weapon.transform.rotation);
+            // The meshes' barrels slope below their transform's aiming axis.
+            // Rotate the complete held pose, keeping fingers and
+            // reload contacts in the same frame instead of tilting only the prop.
+            float barrelPitch=Equipment==Context.Revolver?RevolverAimPitchOffset:
+                Equipment==Context.Shotgun?ShotgunAimPitchOffset:0;
+            var equipmentFrame=lookFrame*Quaternion.Euler(barrelPitch,0,0);
+            var q=equipmentFrame*Quaternion.Inverse(weapon.transform.rotation);
             foreach(bool left in new[]{true,false})
             {
                 float w=left?leftBlend:rightBlend;if(w<=0||Equipment==Context.Unarmed)continue;
@@ -544,13 +734,7 @@ namespace Game.Gameplay.Debugging
                 shoulder.position=Vector3.Lerp(shoulder.position,chest.position+q*(source.position-sourceChest.position),w);
                 shoulder.rotation=Quaternion.Slerp(shoulder.rotation,q*source.rotation,w);
             }
-            var head=outputAnimator.GetBoneTransform(HumanBodyBones.Head);
-            var neck=outputAnimator.GetBoneTransform(HumanBodyBones.Neck);
-            var headTarget=lookFrame*neutralHead;
-            // Divide the compensation between neck and head rather than twisting one
-            // joint. Torso lean, swimming direction, recoil and reload do not drag gaze.
-            if(neck!=null)neck.rotation=Quaternion.Slerp(Quaternion.identity,headTarget*Quaternion.Inverse(head.rotation),.45f)*neck.rotation;
-            head.rotation=headTarget;
+            ApplyHeadLook();
             if(ladderTurn&&leftBlend<1)
             {
                 float free=1-leftBlend;
@@ -571,7 +755,11 @@ namespace Game.Gameplay.Debugging
         void AuthorTask()
         {
             if(Equipment==Context.Unarmed){unarmedInteraction.Apply(taskTime,GroundPickup);return;}
-            if(!ShouldStow()){armedInteraction.Apply(taskTime,GroundPickup);return;}
+            if(!ShouldStow())
+            {
+                armedInteraction.Apply(taskTime,GroundPickup,Equipment==Context.Shotgun&&GroundInteractionOverlay);
+                return;
+            }
             if(!InteractionBusy)return;
             // A stowed item leaves the dominant hand free; use the same visible reach,
             // grasp and recovery instead of a small anonymous offset on the other arm.
@@ -600,7 +788,7 @@ namespace Game.Gameplay.Debugging
             string name=Equipment==Context.Hammer?"Hammer":Equipment==Context.Revolver?"Revolver":Equipment==Context.Harpoon?"Harpoon":Equipment==Context.Food?"Food":Equipment==Context.Bundle?"Bundle":Equipment==Context.Fishing?"Rod":"";
             for(int i=0;i<Display.Props.Length;i++)
             {
-                var p=Display.Props[i];p.SetActive(!stow&&p.name==name);
+                var p=Display.Props[i];p.SetActive(!stow&&p.name==name&&!(Candidate&&FishingPrefab!=null&&p.name=="Rod"));
                 var source=Array.Find(weapon.Props,x=>x.name==p.name);
                 if(source!=null){Copy(p.transform,source.transform);var mf=p.GetComponent<MeshFilter>();var sf=source.GetComponent<MeshFilter>();if(mf!=null&&sf!=null)mf.sharedMesh=sf.sharedMesh;}
             }
@@ -612,6 +800,12 @@ namespace Game.Gameplay.Debugging
             var wc=Display.GetComponent<RaccoonWeaponPoseV36>();
             MapAccessory(wc.Shell,weaponCombat.Shell,wr,dr,delta,!stow&&Equipment==Context.Shotgun);
             MapAccessory(wc.Flash,weaponCombat.Flash,wr,dr,delta,!stow&&Equipment==Context.Shotgun);
+            if(Candidate&&Equipment==Context.Shotgun&&wc.Flash!=null&&wc.Flash.gameObject.activeSelf)
+            {
+                var gun=Display.Weapon.transform;
+                var barrel=Quaternion.AngleAxis(ShotgunAimPitchOffset,Vector3.right)*Vector3.up;
+                wc.Flash.rotation=Quaternion.LookRotation(gun.TransformDirection(barrel),gun.forward);
+            }
             if(wc.Mechanics!=null&&weaponCombat.Mechanics!=null)
             {
                 MapAccessory(wc.Mechanics.Casing,weaponCombat.Mechanics.Casing,wr,dr,delta,!stow&&Equipment==Context.Shotgun);
@@ -624,6 +818,7 @@ namespace Game.Gameplay.Debugging
             if(!show||Equipment==Context.Unarmed||Equipment==Context.Machete)return;
             // Inventory presentation only: these copies never have colliders or inventory logic.
             GameObject prop=LongGun?Display.Weapon:Array.Find(Display.Props,x=>x.name==(Equipment==Context.Hammer?"Hammer":Equipment==Context.Revolver?"Revolver":Equipment==Context.Harpoon?"Harpoon":Equipment==Context.Food?"Food":Equipment==Context.Bundle?"Bundle":"Rod"));
+            if(Equipment==Context.Fishing&&FishingPrefab!=null)prop=FishingPrefab;
             if(prop==null)return;
             if(!stowed.TryGetValue(Equipment,out var copy))
             {
@@ -637,6 +832,15 @@ namespace Game.Gameplay.Debugging
             var hips=outputAnimator.GetBoneTransform(HumanBodyBones.Hips);
             copy.transform.position=hips.position+Display.transform.TransformVector(LongGun||Equipment==Context.Fishing?new Vector3(.16f,.20f,-.25f):new Vector3(.33f,.03f,-.08f));
             copy.transform.rotation=Display.transform.rotation*Quaternion.Euler(LongGun||Equipment==Context.Harpoon?0:90,0,25);
+            if(Equipment==Context.Fishing)
+            {
+                var chest=outputAnimator.GetBoneTransform(HumanBodyBones.UpperChest);
+                Vector3 up=(chest.position-hips.position).normalized;
+                var frame=Quaternion.LookRotation(Vector3.Cross(Display.transform.right,up),up);
+                copy.transform.position=chest.position+frame*new Vector3(.30f,-.36f,-.28f);
+                copy.transform.rotation=frame*Quaternion.Euler(-75,55,15);
+                RaccoonFishingReview.UpdatePackedFloat(copy.transform);
+            }
         }
         static void MapAccessory(Transform dst,Transform src,Transform from,Transform to,Quaternion delta,bool visible)
         {
@@ -686,7 +890,7 @@ namespace Game.Gameplay.Debugging
         void Update()
         {
             Initialize();var k=Keyboard.current;
-            if(k!=null){if(k.fKey.wasPressedThisFrame){if(Equipment==Context.Machete)StartMacheteAttack();else Fire();}if(k.rKey.wasPressedThisFrame)Reload();if(k.spaceKey.wasPressedThisFrame)Paused=!Paused;}
+            if(k!=null){if(k.fKey.wasPressedThisFrame){if(Equipment==Context.Machete)StartMacheteAttack();else if(Equipment==Context.Fishing)StartFishingMotion(RaccoonFishingReview.Motion.Land);else Fire();}if(k.rKey.wasPressedThisFrame)Reload();if(k.spaceKey.wasPressedThisFrame)Paused=!Paused;}
         }
         void LateUpdate(){if(!Paused)Step(Time.deltaTime*PlaybackSpeed);}
         GUIStyle label,button,title;
@@ -720,9 +924,31 @@ namespace Game.Gameplay.Debugging
             int equipmentCount=MachetePrefab!=null?EquipmentNames.Length:EquipmentNames.Length-1;
             for(int row=0;row<(equipmentCount+2)/3;row++){GUILayout.BeginHorizontal();for(int col=0;col<3;col++){int i=row*3+col;if(i>=equipmentCount)break;if(GUILayout.Button((Equipment==(Context)i?"● ":"")+EquipmentNames[i],button,GUILayout.Height(30)))PreviewSelection((Context)i,State,Direction,Freedom);}GUILayout.EndHorizontal();}
             GUILayout.Label("3. 이동",label);
+            if(GroundLocomotion&&State==Situation.Ground)
+            {
+                GUILayout.BeginHorizontal();
+                if(GUILayout.Button((!GroundRun?"● ":"")+"걷기",button)){GroundRun=false;Paused=false;}
+                if(GUILayout.Button((GroundRun?"● ":"")+"정면 달리기",button)){GroundRun=true;PreviewSelection(Equipment,State,Motion.Forward,Freedom);}
+                GUILayout.EndHorizontal();
+            }
             for(int row=0;row<3;row++){GUILayout.BeginHorizontal();for(int col=0;col<3;col++){int i=row*3+col;if(i>=7)break;if(GUILayout.Button((Direction==(Motion)i?"● ":"")+MotionNames[i],button,GUILayout.Height(28)))PreviewSelection(Equipment,State,(Motion)i,Freedom);}GUILayout.EndHorizontal();}
             if(Restricted){GUILayout.Label("자유로운 손",label);GUILayout.BeginHorizontal();string[] n={"양손","오른손","제압됨"};for(int i=0;i<3;i++)if(GUILayout.Button((Freedom==(Hands)i?"● ":"")+n[i],button))PreviewSelection(Equipment,State,Direction,(Hands)i);GUILayout.EndHorizontal();}
             GUILayout.Space(8);GUILayout.Label("4. 동작 실행",label);
+            if(Equipment==Context.Fishing&&fishing!=null)
+            {
+                GUI.enabled=CanFish;
+                if(GUILayout.Button((fishing.Current==RaccoonFishingReview.Motion.Carry?"● ":"")+"낚시 전 · 낚싯대 들기",button,GUILayout.Height(32)))StartFishingMotion(RaccoonFishingReview.Motion.Carry);
+                if(State!=Situation.Ground)GUILayout.Label("현재 상태: 휴대만 가능 · 낚시는 일반 상태에서",label);
+                GUILayout.BeginHorizontal();
+                if(GUILayout.Button("낚싯줄 던지기",button,GUILayout.Height(32)))StartFishingMotion(RaccoonFishingReview.Motion.Cast);
+                if(GUILayout.Button("입질 대기",button,GUILayout.Height(32)))StartFishingMotion(RaccoonFishingReview.Motion.Wait);
+                GUILayout.EndHorizontal();GUILayout.BeginHorizontal();
+                if(GUILayout.Button("릴 감기 · 반복",button,GUILayout.Height(32)))StartFishingMotion(RaccoonFishingReview.Motion.Reel);
+                if(GUILayout.Button("끌어올리기",button,GUILayout.Height(32)))StartFishingMotion(RaccoonFishingReview.Motion.Hook);
+                GUILayout.EndHorizontal();
+                if(GUILayout.Button("낚아 올리기 · 완료 [F]",button,GUILayout.Height(34)))StartFishingMotion(RaccoonFishingReview.Motion.Land);
+                GUI.enabled=true;
+            }
             if(Equipment==Context.Machete){GUI.enabled=CanMacheteAttack;if(GUILayout.Button("마체테 베기 [F]",button,GUILayout.Height(34)))StartMacheteAttack();GUI.enabled=true;}
             GUI.enabled=CanStartTask;GUILayout.BeginHorizontal();
             if(GUILayout.Button("상호작용",button,GUILayout.Height(34)))StartTask(HandTask.Interact);
@@ -751,6 +977,7 @@ namespace Game.Gameplay.Debugging
         }
         void OnDestroy()
         {
+            fishing?.Dispose();
             if(MacheteModel!=null)Destroy(MacheteModel);
             if(armpitVolume!=null)armpitVolume.Dispose();
             if(ladderSkin!=null)ladderSkin.Dispose();

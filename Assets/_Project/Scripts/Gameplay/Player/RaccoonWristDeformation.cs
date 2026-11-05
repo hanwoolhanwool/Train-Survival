@@ -13,10 +13,13 @@ namespace Game.Gameplay.Player
         private Transform[] _blend;
         private Animator _animator;
         private bool _bound;
+        public bool PreserveTwistPath {get;set;}
+        private bool _hasTwistPath;
+        private float _twistAngle;
 
         public void Bind()
         {
-            _bound=false;
+            _bound=false;_hasTwistPath=false;
             _animator=GetComponent<Animator>();
             var skin=GetComponentInChildren<SkinnedMeshRenderer>();
             if(_animator==null || !_animator.isHuman || skin==null)return;
@@ -52,11 +55,21 @@ namespace Game.Gameplay.Player
             float length=Mathf.Sqrt(Quaternion.Dot(twist,twist));
             twist=length>.00001f?new Quaternion(twist.x/length,twist.y/length,twist.z/length,twist.w/length):Quaternion.identity;
             Quaternion swing=relative*Quaternion.Inverse(twist);
+            if(PreserveTwistPath)
+            {
+                // A deliberate half-turn can pass the quaternion shortest-path seam.
+                // Keep the deformation joints on the hand's continuous route.
+                float angle=2*Mathf.Atan2(Vector3.Dot(new Vector3(twist.x,twist.y,twist.z),axis),twist.w)*Mathf.Rad2Deg;
+                angle=Mathf.DeltaAngle(0,angle);
+                _twistAngle=_hasTwistPath?_twistAngle+Mathf.DeltaAngle(_twistAngle,angle):angle;
+                _hasTwistPath=true;
+            }
+            else _hasTwistPath=false;
             for(int i=0;i<3;i++)
             {
                 float u=(i+1)/4f;
                 Quaternion rotation=Quaternion.Slerp(Quaternion.identity,swing,Mathf.SmoothStep(0,1,Mathf.InverseLerp(.5f,1,u)))
-                    *Quaternion.Slerp(Quaternion.identity,twist,u)*from;
+                    *(PreserveTwistPath?Quaternion.AngleAxis(_twistAngle*u,axis):Quaternion.Slerp(Quaternion.identity,twist,u))*from;
                 Vector3 center=Vector3.Lerp(_forearm.position,_hand.position,u);
                 Vector3 restOffset=_handRestPosition-Vector3.Lerp(_forearmRestPosition,_handRestPosition,u);
                 // The bind pivot is the wrist; compensate its translation to keep each

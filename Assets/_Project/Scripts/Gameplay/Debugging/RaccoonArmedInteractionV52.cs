@@ -18,6 +18,7 @@ namespace Game.Gameplay.Debugging
         readonly Quaternion[] graspFingers;
         Quaternion previousRotation;
         float previousTime=-1;
+        float supportRoll;
         public Vector3 PalmPosition => anatomy.PalmCenter(hand,left);
         public Quaternion PalmRotation => hand.rotation*palmFrame;
         public float WristAngle { get; private set; }
@@ -60,19 +61,19 @@ namespace Game.Gameplay.Debugging
         }
         static float S(float t)=>Mathf.SmoothStep(0,1,Mathf.Clamp01(t));
         public static bool HoldingObject(float time)=>time>=.90f&&time<1.48f;
-        public void Apply(float time,bool pickup=false)
+        public void Apply(float time,bool pickup=false,bool supportPalmDown=false)
         {
             Vector3 point=root.TransformPoint(pickup?new Vector3(left?-.23f:.23f,.50f,.40f):new Vector3(left?-.24f:.22f,.92f,.53f));
-            ApplyReach(time,pickup,point,root.rotation);
+            ApplyReach(time,pickup,point,root.rotation,supportPalmDown);
         }
         public void ApplySwimming(float time,bool pickup,Vector3 worldContact,Quaternion contactFrame)
         {
             ApplyReach(time,pickup,worldContact,contactFrame);
         }
-        void ApplyReach(float time,bool pickup,Vector3 contactPoint,Quaternion frame)
+        void ApplyReach(float time,bool pickup,Vector3 contactPoint,Quaternion frame,bool supportPalmDown=false)
         {
             ContactError=0;WristAngle=0;
-            float duration=pickup?PickupDuration:Duration,arrival=pickup?.60f:.45f,departure=pickup?1.48f:.82f;
+            float duration=pickup?PickupDuration:Duration,arrival=pickup?.60f:supportPalmDown?.55f:.45f,departure=pickup?1.48f:.82f;
             if(time<=0||time>=duration)return;
             float reach=time<arrival?S(time/arrival):time<=departure?1:1-S((time-departure)/(duration-departure));
             var upper=animator.GetBoneTransform(left?HumanBodyBones.LeftUpperArm:HumanBodyBones.RightUpperArm);
@@ -88,7 +89,30 @@ namespace Game.Gameplay.Debugging
             Vector3 pole=upper.position+root.TransformVector(new Vector3(left?-.38f:.38f,-.32f,-.12f));
             Quaternion desired=frame*Quaternion.LookRotation(pickup?new Vector3(0,-.18f,1):Vector3.forward,Vector3.down)*Quaternion.Inverse(palmFrame);
             Quaternion rotation=Quaternion.Slerp(baseRotation,desired,reach);
-            float limit=Mathf.Lerp(Mathf.Max(65,baselineAngle),65,reach);
+            if(supportPalmDown)
+            {
+                // Swing toward the contact, then pronate deliberately to palm-down.
+                // Unwrap the signed roll so a near-180-degree grip cannot change
+                // its rotation direction midway through release or recovery.
+                Vector3 gripAxis=baseRotation*palmFrame*Vector3.forward;
+                Vector3 targetAxis=frame*Vector3.forward;
+                Quaternion swing=Quaternion.FromToRotation(gripAxis,targetAxis);
+                Vector3 transportedPalm=swing*(baseRotation*palmFrame*Vector3.up);
+                float roll=Vector3.SignedAngle(transportedPalm,frame*Vector3.down,targetAxis);
+                // The left support hand pronates through the negative half-turn;
+                // the positive route twists it outward from the shotgun grip.
+                // Keep that branch as the moving grip crosses the +/-180 seam.
+                if(previousTime<0||time<=previousTime)
+                    supportRoll=left?-Mathf.Repeat(-roll,360):Mathf.Repeat(roll,360);
+                else supportRoll+=Mathf.DeltaAngle(supportRoll,roll);
+                Quaternion partialSwing=Quaternion.Slerp(Quaternion.identity,swing,reach);
+                float pronation=reach;
+                rotation=Quaternion.AngleAxis(supportRoll*pronation,partialSwing*gripAxis)*partialSwing*baseRotation;
+                // Preserve the current elbow plane at both ends of the action.
+                pole=Vector3.Lerp(lower.position,pole,reach);
+            }
+            float wristLimit=supportPalmDown?55:65;
+            float limit=Mathf.Lerp(Mathf.Max(wristLimit,baselineAngle),wristLimit,reach);
             Vector3 surface=root.TransformPoint(new Vector3(left?-.24f:.22f,.92f,.53f));
             Vector3 clearance=frame*new Vector3(left?-.055f:.055f,.07f,-.015f)*Mathf.Sin(Mathf.PI*reach);
             for(int iteration=0;iteration<6;iteration++)

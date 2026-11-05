@@ -23,6 +23,10 @@ namespace Game.Gameplay.Debugging
         private bool initialized,walking=true;
         private float previousHeading;
         private Vector2 direction=Vector2.up;
+        private bool directWalk;
+        private readonly float[] walkWeights={1,0,0,0};
+        private readonly float[] walkWeightVelocities=new float[4];
+        private static readonly string[] walkParameters={"ReviewWalkForward","ReviewWalkLeft","ReviewWalkRight","ReviewWalkBack"};
         private float jumpBlend;
         private Quaternion stableHead;
         private bool hasStableHead;
@@ -30,6 +34,11 @@ namespace Game.Gameplay.Debugging
         private float headStabilityWeight;
         public float RunBlend {get;private set;}
         public Animator Animator=>animator;
+        // The v76 composer supplies equipment separately. Keep its movement body
+        // free of the shotgun Hold layer, torso yaw, hand IK and context idle.
+        public bool LocomotionBodyOnly {get;set;}
+        public Vector2 LocomotionInput {get;set;}
+        public float LocomotionWeight {get;private set;}
         // Matches the candidate BlendTree's walk child offset; source walk clip is unchanged.
         public const float WalkCycleOffset=28f/120;
 
@@ -50,7 +59,9 @@ namespace Game.Gameplay.Debugging
             rawPositions=new Vector3[bones.Length];
             rawRotations=new Quaternion[bones.Length];
             walkGrounding=new RaccoonDirectionalContactsV30(animator,root);
-            direction=Vector2.up;hasStableHead=false;jumpHeadActive=false;headStabilityWeight=0;tail.ResetMotion();previousHeading=root.eulerAngles.y;initialized=true;walking=true;
+            directWalk=animator.parameters.Any(p=>p.name==walkParameters[0]);
+            for(int i=0;i<4;i++){walkWeights[i]=i==0?1:0;walkWeightVelocities[i]=0;}
+            direction=Vector2.up;LocomotionWeight=0;hasStableHead=false;jumpHeadActive=false;headStabilityWeight=0;tail.ResetMotion();previousHeading=root.eulerAngles.y;initialized=true;walking=true;
         }
 
         public void Tick(float dt,Vector2 velocity,bool sprint,bool grounded,float airborneWeight=0,float airbornePose=0)
@@ -69,29 +80,57 @@ namespace Game.Gameplay.Debugging
             dt=Mathf.Min(dt,.05f);speed=Mathf.Max(0,speed);
             // Interpolate the vector without normalizing each intermediate value: normalizing
             // a left-to-right blend can keep it stuck pointing left, or detour through forward.
-            if(speed>.025f) direction=Vector2.MoveTowards(direction,velocity.normalized,dt*6);
+            // Reversing physical velocity crosses zero; that is not an idle request.
+            // Keep the gait active and blend direction directly from review input.
+            if(LocomotionBodyOnly)
+            {
+                bool requested=LocomotionInput.sqrMagnitude>.001f;
+                LocomotionWeight=Mathf.MoveTowards(LocomotionWeight,requested?1:0,dt/(requested?.20f:.24f));
+                if(requested)direction=Vector2.MoveTowards(direction,LocomotionInput.normalized,dt*6);
+                if(directWalk)
+                {
+                    // Direct weights avoid the 2D tree's centre, which introduces
+                    // forward/back clips during a pure left/right reversal.
+                    float total=Mathf.Abs(LocomotionInput.x)+Mathf.Abs(LocomotionInput.y);
+                    for(int i=0;i<4;i++)
+                    {
+                        float value=i==0?LocomotionInput.y:i==1?-LocomotionInput.x:i==2?LocomotionInput.x:-LocomotionInput.y;
+                        if(requested)walkWeights[i]=Mathf.SmoothDamp(walkWeights[i],Mathf.Max(0,value)/total,ref walkWeightVelocities[i],.16f,Mathf.Infinity,dt);
+                        animator.SetFloat(walkParameters[i],walkWeights[i]);
+                    }
+                }
+            }
+            else if(speed>.025f) direction=Vector2.MoveTowards(direction,velocity.normalized,dt*6);
             animator.SetFloat("MoveX",direction.x);animator.SetFloat("MoveZ",direction.y);
             float forwardWeight=Mathf.Clamp01(direction.y)*(1-Mathf.Abs(direction.x));
             float nominal=RaccoonDirectionalMotorV29.WalkSpeed(speed>.025f?velocity:direction);
             float scaled=speed/nominal*.8f;
             RunBlend=forwardWeight*Mathf.SmoothStep(0,1,Mathf.InverseLerp(.9f,2.1f,speed));
             float parameter=scaled<=.8f?scaled/.8f*4.5f:4.5f+2.5f*RunBlend;
+            if(LocomotionBodyOnly)parameter=4.5f*LocomotionWeight+2.5f*RunBlend;
             animator.SetFloat("Speed",parameter);
             animator.SetLayerWeight(animator.GetLayerIndex("Hold"),1-RunBlend);
             jumpBlend=Mathf.Clamp01(airborneWeight);
             animator.SetFloat("JumpPhaseV32",airbornePose);
             animator.SetLayerWeight(animator.GetLayerIndex("Jump V32"),jumpBlend);
             if(actions!=null)actions.PrepareAnimator(animator);
+            if(LocomotionBodyOnly)
+            {
+                foreach(string layer in new[]{"Hold","Review Context V38","Actions Upper V36","Actions Full V36"})
+                {int index=animator.GetLayerIndex(layer);if(index>=0)animator.SetLayerWeight(index,0);}
+            }
             animator.speed=1;animator.Update(dt);animator.speed=0;
             for(int i=0;i<bones.Length;i++){rawPositions[i]=bones[i].localPosition;rawRotations[i]=bones[i].localRotation;}
             // The approved hybrid clip owns the running stride and pelvis.
             // Fade out only the walk correction; never replace the run with v21 foot paths.
-            bool fullAction=actions!=null&&actions.HasFullBodyPose;
+            bool fullAction=!LocomotionBodyOnly&&actions!=null&&actions.HasFullBodyPose;
             bool useWalk=grounded&&RunBlend<.999f&&jumpBlend<.001f&&!fullAction;
             if(useWalk)
             {
                 if(!walking)walkGrounding.ResetContacts(true);
-                walkGrounding.Step(dt,speed,Mathf.Repeat(animator.GetCurrentAnimatorStateInfo(0).normalizedTime+WalkCycleOffset,1));
+                float contactSpeed=LocomotionBodyOnly?Mathf.Max(speed,nominal*LocomotionWeight):speed;
+                walkGrounding.Step(dt,contactSpeed,Mathf.Repeat(animator.GetCurrentAnimatorStateInfo(0).normalizedTime+WalkCycleOffset,1),RunBlend<.05f,
+                    LocomotionBodyOnly&&LocomotionInput.sqrMagnitude<=.001f);
             }
             walking=useWalk;
             float weight=useWalk?1-RunBlend:0;
@@ -103,7 +142,7 @@ namespace Game.Gameplay.Debugging
             if(grounded&&!fullAction)walkGrounding.ClearSoles();
             var head=animator.GetBoneTransform(HumanBodyBones.Head);
             if(!fullAction)head.rotation=Quaternion.AngleAxis(equipment.Profile.HeadPitchFor(animator),root.right)*head.rotation;
-            if(actions==null||(actions.UsesShotgunBase&&(!actions.Active||actions.Entry.UpperBody||actions.ShotgunHit)))
+            if(!LocomotionBodyOnly&&(actions==null||(actions.UsesShotgunBase&&(!actions.Active||actions.Entry.UpperBody||actions.ShotgunHit))))
             {
                 equipment.Apply(HotbarItemType.Shotgun,false,0,dt,root);
                 if(combat!=null)combat.Apply(animator,root);
@@ -112,8 +151,8 @@ namespace Game.Gameplay.Debugging
             float heading=root.eulerAngles.y;
             tail.Step(speed,Mathf.DeltaAngle(previousHeading,heading)/dt,dt);previousHeading=heading;
             if(grounded&&!fullAction)walkGrounding.FitTail(dt);
-            if(actions!=null)actions.ApplyContacts(animator);
-            if(actions!=null)actions.ApplyShotgunActions(velocity,RunBlend,jumpBlend);
+            if(actions!=null&&!LocomotionBodyOnly)actions.ApplyContacts(animator);
+            if(actions!=null&&!LocomotionBodyOnly)actions.ApplyShotgunActions(velocity,RunBlend,jumpBlend);
             // Extra wrist joints are not Humanoid bones; update them for death too.
             var wrist=GetComponent<RaccoonWristDeformation>();if(wrist!=null)wrist.Apply();
             elbows.Apply();
