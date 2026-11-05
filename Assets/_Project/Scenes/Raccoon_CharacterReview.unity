@@ -277,13 +277,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gameplay::Game.Gameplay.Debugging.RaccoonContextActionsV50
   SourcePrefab: {fileID: 1392005683277586117, guid: 61fe6801fbd9d554694b05f8ac784a5c, type: 3}
   Display: {fileID: 808176978}
-  RebuiltSkin: {fileID: 4300000, guid: ce32662c340c87c498e37741b7eb7ca9, type: 2}
+  RebuiltSkin: {fileID: 4300000, guid: 42fa68175ed22514c8d03e56d50b25bd, type: 2}
   PreviousRebuiltSkin: {fileID: 0}
-  PreviousSkinLabel: "\uBAA9 \uC218\uC815 \uC804 v58"
-  RebuiltSkinLabel: "\uC5F0\uACB0\uBD80 \uC0C9 \uC815\uB9AC v69"
-  SkinReviewTitle: "\uBAA9 \uC5F0\uACB0\uBD80 \uBE44\uAD50 v69"
+  PreviousSkinLabel: "\uC218\uC815 \uC804 v58"
+  RebuiltSkinLabel: "\uD604\uC7AC \uC218\uC815\uBCF8 v76"
+  SkinReviewTitle: "v58 / \uD604\uC7AC \uC218\uC815\uBCF8 v76 \uBE44\uAD50"
   UseRebuiltSkin: 1
-  Equipment: 0
+  GroundLocomotion: 1
+  GroundLocomotionController: {fileID: 22100000, guid: 0c1c072ca04bfde44b3004ba8a4c3eee, type: 2}
+  GroundRun: 0
+  WalkHeadPitchOffset: -17.2
+  RevolverAimPitchOffset: -16
+  ShotgunAimPitchOffset: -10.2
+  LocomotionFloor: {fileID: 566556972}
+  ShoulderAimV71: 1
+  ContextAimV72: 1
+  ArmpitVolumeV73: 1
+  MachetePrefab: {fileID: 1426931457681162621, guid: 9a3adfad311adf64b98e0d1cf03d05b7, type: 3}
+  FishingPrefab: {fileID: 941587244403597960, guid: 9448ad719f77efb4a9680b753f023651, type: 3}
+  MacheteHammerGripV75: 1
+  Equipment: 7
   State: 0
   Direction: 0
   Freedom: 0
@@ -293,7 +306,7 @@ MonoBehaviour:
   TwoHandTask: 0
   PlaybackSpeed: 1
   AimYaw: 0
-  AimPitch: -30
+  AimPitch: 0
 --- !u!4 &430607705
 Transform:
   m_ObjectHideFlags: 0
@@ -516,7 +529,7 @@ PrefabInstance:
     - target: {fileID: 6318647192123943344, guid: 61fe6801fbd9d554694b05f8ac784a5c, type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: 4300000, guid: ce32662c340c87c498e37741b7eb7ca9, type: 2}
+      objectReference: {fileID: 4300000, guid: 42fa68175ed22514c8d03e56d50b25bd, type: 2}
     - target: {fileID: 6517705663663939888, guid: 61fe6801fbd9d554694b05f8ac784a5c, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -552,7 +565,7 @@ PrefabInstance:
     - target: {fileID: 9078694774565568314, guid: 61fe6801fbd9d554694b05f8ac784a5c, type: 3}
       propertyPath: WristAfterMesh
       value: 
-      objectReference: {fileID: 4300000, guid: ce32662c340c87c498e37741b7eb7ca9, type: 2}
+      objectReference: {fileID: 4300000, guid: 42fa68175ed22514c8d03e56d50b25bd, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
