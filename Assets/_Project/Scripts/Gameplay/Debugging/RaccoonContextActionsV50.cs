@@ -26,6 +26,7 @@ namespace Game.Gameplay.Debugging
         public string RebuiltSkinLabel;
         public string SkinReviewTitle;
         public bool UseRebuiltSkin = true;
+        public bool AllowSkinComparison = true;
         public bool GroundLocomotion;
         public RuntimeAnimatorController GroundLocomotionController;
         public bool GroundRun;
@@ -59,15 +60,25 @@ namespace Game.Gameplay.Debugging
             if(motion==RaccoonFishingReview.Motion.Reel)Notice="릴 감기 · 반복";
         }
         public bool MacheteHammerGripV75;
+        public bool MacheteSlashV81;
+        public bool MacheteSlashV82;
+        public bool MacheteNaturalV84;
         public GameObject MacheteModel {get;private set;}
         float macheteTime=99;
-        public bool MacheteAttacking=>Equipment==Context.Machete&&macheteTime<RaccoonMachetePoseV74.Duration;
+        public float MacheteAttackDuration=>MacheteNaturalV84?RaccoonMacheteMotionV84.Duration:MacheteSlashV82?RaccoonMacheteSlashV82.Duration:MacheteSlashV81?RaccoonMacheteSlashV81.Duration:RaccoonMachetePoseV74.Duration;
+        public bool MacheteAttacking=>Equipment==Context.Machete&&macheteTime<MacheteAttackDuration;
         public bool CanMacheteAttack=>Candidate&&Equipment==Context.Machete&&MachetePrefab!=null&&!ShouldStow()&&!InteractionBusy&&!MacheteAttacking;
         Context SamplerEquipment=>Equipment==Context.Machete?Context.Hammer:Equipment;
         public bool StartMacheteAttack()
         {
             Initialize();if(!CanMacheteAttack)return false;
             macheteTime=0;Paused=false;Notice="마체테 · 베기 후 준비 자세 복귀";return true;
+        }
+        public bool PreviewMacheteRevision(bool latest)
+        {
+            Initialize();if(!CanMacheteAttack)return false;
+            MacheteSlashV81=true;MacheteSlashV82=latest;
+            return StartMacheteAttack();
         }
         public Context Equipment = Context.Shotgun;
         public Situation State = Situation.Surface;
@@ -426,7 +437,11 @@ namespace Game.Gameplay.Debugging
             for(int i=1;i<output.Length;i++)Copy(output[i],Candidate?bodyTransforms[i]:weaponTransforms[i]);
             if(Candidate)
             {
-                AuthorBody();
+                // v84 starts from the ordinary arm pose, then turns the torso.
+                // Solving the resting free hand against an already turned chest
+                // changes its elbow plane underneath the authored joint motion.
+                bool naturalMachete=MacheteNaturalV84&&MacheteAttacking;
+                if(!naturalMachete)AuthorBody();
                 bool stow=ShouldStow();
                 float rightTarget=stow?0:1;
                 float leftTarget=stow?0:LongGun||Reloading||State==Situation.Ground||Equipment==Context.Bundle?1:0;
@@ -446,6 +461,7 @@ namespace Game.Gameplay.Debugging
                 }
                 AimEquipment(dt);
                 AuthorGroundFreeHands(fishingCarry);
+                if(naturalMachete)AuthorBody();
                 if(fishing!=null)
                 {
                     if(fishingCarry&&!stow)fishing.ApplyCarry(dt,lookFrame,State,BodyPhase);
@@ -454,7 +470,10 @@ namespace Game.Gameplay.Debugging
                 }
                 if(Equipment==Context.Machete&&rightBlend>0)
                 {
-                    if(MacheteHammerGripV75)RaccoonMachetePoseV74.ApplyHammerAttack(outputAnimator,lookFrame,macheteTime,rightBlend);
+                    if(MacheteNaturalV84)RaccoonMacheteMotionV84.ApplyArms(outputAnimator,lookFrame,macheteTime,MacheteSlashV82,rightBlend);
+                    else if(MacheteSlashV82)RaccoonMacheteSlashV82.ApplyArms(outputAnimator,backwardHands,lookFrame,macheteTime,rightBlend);
+                    else if(MacheteSlashV81)RaccoonMacheteSlashV81.ApplyArms(outputAnimator,backwardHands,lookFrame,macheteTime,rightBlend);
+                    else if(MacheteHammerGripV75)RaccoonMachetePoseV74.ApplyHammerAttack(outputAnimator,lookFrame,macheteTime,rightBlend);
                     else RaccoonMachetePoseV74.Apply(outputAnimator,Display.transform,backwardHands,lookFrame,macheteTime,rightBlend);
                 }
                 if(State==Situation.Underwater&&Direction==Motion.Back)AuthorUnderwaterBackward();
@@ -504,7 +523,8 @@ namespace Game.Gameplay.Debugging
         static void Copy(Transform to,Transform from){to.localPosition=from.localPosition;to.localRotation=from.localRotation;to.localScale=from.localScale;}
         void AuthorGroundFreeHands(bool fishingCarry)
         {
-            if(State!=Situation.Ground||(InteractionBusy&&!GroundInteractionOverlay)||Reloading||MacheteAttacking)return;
+            if(State!=Situation.Ground||(InteractionBusy&&!GroundInteractionOverlay)||Reloading||
+                (MacheteAttacking&&!MacheteSlashV81&&!MacheteSlashV82&&!MacheteNaturalV84))return;
             bool unarmed=Equipment==Context.Unarmed;
             bool oneHand=Equipment==Context.Hammer||Equipment==Context.Revolver||
                 Equipment==Context.Harpoon||Equipment==Context.Food||Equipment==Context.Machete||
@@ -527,7 +547,7 @@ namespace Game.Gameplay.Debugging
         bool SampleLocomotion(float dt)
         {
             bool available=GroundLocomotion&&Candidate&&State==Situation.Ground&&
-                (!InteractionBusy||GroundInteractionOverlay)&&!MacheteAttacking;
+                (!InteractionBusy||GroundInteractionOverlay)&&(!MacheteAttacking||MacheteSlashV81||MacheteSlashV82||MacheteNaturalV84);
             if(!available)
             {
                 if(locomotionActive)EndLocomotion();
@@ -535,6 +555,9 @@ namespace Game.Gameplay.Debugging
             }
             var input=Direction==Motion.Forward?Vector2.up:Direction==Motion.Back?Vector2.down:
                 Direction==Motion.Left?Vector2.left:Direction==Motion.Right?Vector2.right:Vector2.zero;
+            // Keep the planted-foot solver alive through the v81 slash. A moving
+            // attack settles through the existing stop steps, then resumes input.
+            if((MacheteSlashV81||MacheteSlashV82||MacheteNaturalV84)&&MacheteAttacking)input=Vector2.zero;
             if(!locomotionActive)
             {
                 CaptureTransition();
@@ -589,11 +612,12 @@ namespace Game.Gameplay.Debugging
         }
         public void SetSkinRevision(bool rebuilt)
         {
-            Initialize();UseRebuiltSkin=rebuilt;ApplyReviewSkin(1);
+            Initialize();UseRebuiltSkin=rebuilt||!AllowSkinComparison;ApplyReviewSkin(1);
             if(ShoulderAimV71||ContextAimV72||ArmpitVolumeV73)Sample(0);
         }
         void ApplyReviewSkin(float dt)
         {
+            if(!AllowSkinComparison)UseRebuiltSkin=true;
             if(Candidate&&UseRebuiltSkin&&RebuiltSkin!=null)
                 outputAnimator.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh=RebuiltSkin;
             else if(Candidate&&!UseRebuiltSkin&&PreviousRebuiltSkin!=null)
@@ -615,8 +639,14 @@ namespace Game.Gameplay.Debugging
             var hips=outputAnimator.GetBoneTransform(HumanBodyBones.Hips);
             if(MacheteAttacking)
             {
-                var chest=outputAnimator.GetBoneTransform(HumanBodyBones.UpperChest);
-                chest.rotation=Quaternion.AngleAxis(RaccoonMachetePoseV74.TorsoTurn(macheteTime),Display.transform.up)*chest.rotation;
+                if(MacheteNaturalV84)RaccoonMacheteMotionV84.ApplyBody(outputAnimator,lookFrame,macheteTime,MacheteSlashV82);
+                else if(MacheteSlashV82)RaccoonMacheteSlashV82.ApplyBody(outputAnimator,lookFrame,macheteTime,State==Situation.Ground);
+                else if(MacheteSlashV81)RaccoonMacheteSlashV81.ApplyBody(outputAnimator,lookFrame,macheteTime);
+                else
+                {
+                    var chest=outputAnimator.GetBoneTransform(HumanBodyBones.UpperChest);
+                    chest.rotation=Quaternion.AngleAxis(RaccoonMachetePoseV74.TorsoTurn(macheteTime),Display.transform.up)*chest.rotation;
+                }
             }
             if(State==Situation.Underwater)
             {
@@ -908,7 +938,7 @@ namespace Game.Gameplay.Debugging
             GUILayout.Label("원본 보존 · 검토 전용 / 실제 전투 아님",label);
             GUILayout.BeginHorizontal();if(GUILayout.Button(Paused?"▶ 재생":"Ⅱ 일시정지",button,GUILayout.Height(30)))Paused=!Paused;
             if(GUILayout.Button("처음부터 재생",button,GUILayout.Height(30))){RestartBody();Paused=false;}GUILayout.EndHorizontal();
-            if(RebuiltSkin!=null)
+            if(RebuiltSkin!=null&&AllowSkinComparison)
             {
                 GUILayout.Label(ArmpitVolumeV73?"겨드랑이 볼륨 비교 · 같은 자세 유지":ContextAimV72?"상체 회전 비교 · 같은 시선 유지":ShoulderAimV71?"조준·옷 변형 비교 · 같은 시선 유지":"메시 연결 비교 · 같은 자세 유지",label);
                 GUILayout.BeginHorizontal();
@@ -918,6 +948,7 @@ namespace Game.Gameplay.Debugging
                 GUILayout.EndHorizontal();
                 GUILayout.Label(UseRebuiltSkin&&!string.IsNullOrEmpty(RebuiltSkinLabel)?"현재: "+RebuiltSkinLabel:!UseRebuiltSkin&&!string.IsNullOrEmpty(PreviousSkinLabel)?"현재: "+PreviousSkinLabel:scarfFinish?(UseRebuiltSkin?"현재: 색상·경계 수정 v63":"현재: 수정 전 v62"):collarRepair?(UseRebuiltSkin?"현재: 목 주변 정리 v62":"현재: 수정 전 v60"):closedNeck?(UseRebuiltSkin?"현재: 턱·목 마감 v61":"현재: 수정 전 v60"):PreviousRebuiltSkin!=null?(UseRebuiltSkin?"현재: 턱 수정 v60":"현재: 기존 연결 v59"):(UseRebuiltSkin?"현재: 수정 연결 v59":"현재: 기존 연결 v58"),label);
             }
+            else if(RebuiltSkin!=null)GUILayout.Label("현재: "+RebuiltSkinLabel,label);
             GUILayout.Space(8);GUILayout.Label("1. 상태 선택 · 누르면 재생",label);
             for(int row=0;row<3;row++){GUILayout.BeginHorizontal();for(int col=0;col<3;col++){int i=row*3+col;if(i>=StateChoices.Length)break;if(GUILayout.Button((State==StateChoices[i]?"● ":"")+StateNames[i],button,GUILayout.Height(30)))PreviewSelection(Equipment,StateChoices[i],Direction,Freedom);}GUILayout.EndHorizontal();}
             GUILayout.Space(8);GUILayout.Label("2. 장비",label);
@@ -949,7 +980,17 @@ namespace Game.Gameplay.Debugging
                 if(GUILayout.Button("낚아 올리기 · 완료 [F]",button,GUILayout.Height(34)))StartFishingMotion(RaccoonFishingReview.Motion.Land);
                 GUI.enabled=true;
             }
-            if(Equipment==Context.Machete){GUI.enabled=CanMacheteAttack;if(GUILayout.Button("마체테 베기 [F]",button,GUILayout.Height(34)))StartMacheteAttack();GUI.enabled=true;}
+            if(Equipment==Context.Machete)
+            {
+                GUI.enabled=CanMacheteAttack;
+                if(MacheteSlashV81||MacheteSlashV82)
+                {
+                    GUILayout.Label("마체테 v85 · 대각선 베기",label);
+                    if(GUILayout.Button("마체테 v85",button,GUILayout.Height(34)))PreviewMacheteRevision(false);
+                }
+                if(GUILayout.Button("마체테 베기 [F]",button,GUILayout.Height(34)))StartMacheteAttack();
+                GUI.enabled=true;
+            }
             GUI.enabled=CanStartTask;GUILayout.BeginHorizontal();
             if(GUILayout.Button("상호작용",button,GUILayout.Height(34)))StartTask(HandTask.Interact);
             if(GUILayout.Button("줍기",button,GUILayout.Height(34)))StartTask(HandTask.Pickup);
@@ -968,8 +1009,8 @@ namespace Game.Gameplay.Debugging
             GUILayout.Label(Notice,label);
             GUILayout.Label("시선·조준 좌우",label);AimYaw=GUILayout.HorizontalSlider(AimYaw,-60,60);
             GUILayout.Label("시선·조준 상하",label);AimPitch=GUILayout.HorizontalSlider(AimPitch,-30,30);
-            GUILayout.Space(8);GUILayout.BeginHorizontal();if(GUILayout.Button("A 기존 장비 자세",button))SetComparison(false);if(GUILayout.Button("B 수정 후보",button))SetComparison(true);GUILayout.EndHorizontal();
-            GUILayout.Label(Candidate?"B · 현재 상황과 무기 동작 결합":"A · 보존된 지상 장비 동작",label);
+            GUILayout.Space(8);
+            GUILayout.Label("현재 상황과 무기 동작 결합",label);
             ShowGuides=GUILayout.Toggle(ShowGuides,"수면·사다리·접촉 기준 표시",button);
             GUILayout.Label("재생 속도 "+PlaybackSpeed.ToString("0.0")+"×",label);PlaybackSpeed=GUILayout.HorizontalSlider(PlaybackSpeed,.1f,1.5f);
             GUILayout.Label("우클릭 회전 · 휠 확대 · 가운데 버튼 이동\nF 발사 · R 장전 · Space 일시정지\n작살 장전: 손동작 후보 / 소총: 대체 모델",label);
@@ -995,7 +1036,10 @@ namespace Game.Gameplay.Debugging
                 var hips=outputAnimator.GetBoneTransform(HumanBodyBones.Hips);
                 MacheteModel.transform.SetPositionAndRotation(hips.position+Display.transform.TransformVector(new Vector3(.29f,-.02f,-.16f)),Display.transform.rotation*Quaternion.Euler(175,0,-12));
             }
-            else RaccoonMachetePoseV74.Place(MacheteModel.transform,outputAnimator.GetBoneTransform(HumanBodyBones.RightHand),backwardHands);
+            else
+            {
+                RaccoonMachetePoseV74.Place(MacheteModel.transform,outputAnimator.GetBoneTransform(HumanBodyBones.RightHand),backwardHands);
+            }
         }
     }
 }

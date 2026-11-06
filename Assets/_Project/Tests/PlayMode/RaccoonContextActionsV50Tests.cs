@@ -31,6 +31,208 @@ namespace Game.Tests.PlayMode
         [TearDown] public void Cleanup(){UnityEngine.Object.DestroyImmediate(owner);UnityEngine.Object.DestroyImmediate(actor);}
         void Advance(float duration,float rate=60){for(int i=0;i<Mathf.CeilToInt(duration*rate);i++)d.Step(1/rate);}
         const string SkinV59="Assets/_Project/Art/Characters/Raccoon/MESH_Raccoon_AnatomicalSkin_v59.asset";
+        [TestCase(false,30,0)] [TestCase(true,30,0)]
+        [TestCase(false,60,0)] [TestCase(true,60,0)]
+        [TestCase(false,120,0)] [TestCase(true,120,0)]
+        [TestCase(false,60,45)] [TestCase(true,60,-45)]
+        public void MacheteV85ElbowDrivenCutStaysNaturalAndContinuous(bool latest,int rate,float yaw)
+        {
+            d.MacheteNaturalV84=true;
+            // Reuse the independent geometry/finger/recovery assertions on the
+            // new route, in addition to the joint limits missing from v83.
+            MacheteV83BothTakesKeepRelaxedFreeHandAndClearBody(latest,rate,yaw);
+            var a=d.OutputAnimator;
+            var ids=new[]{HumanBodyBones.RightUpperArm,HumanBodyBones.RightLowerArm,HumanBodyBones.RightHand,
+                HumanBodyBones.LeftUpperArm,HumanBodyBones.LeftLowerArm,HumanBodyBones.LeftHand};
+            var bones=ids.Select(a.GetBoneTransform).ToArray();
+            var rest=bones.Select(b=>b.localRotation).ToArray();
+            var feet=new[]{a.GetBoneTransform(HumanBodyBones.LeftFoot),a.GetBoneTransform(HumanBodyBones.RightFoot)};
+            var feetRest=feet.Select(f=>f.position).ToArray();
+            for(int repeat=0;repeat<2;repeat++)
+            {
+                Assert.That(d.StartMacheteAttack(),Is.True);
+                var previous=bones.Select(b=>b.localRotation).ToArray();
+                var velocities=new Vector3[bones.Length];
+                Vector3 preparedTip=Vector3.zero,finishedTip=Vector3.zero,preparedAxis=Vector3.zero,finishedAxis=Vector3.zero;
+                float preparedFold=0,finishedFold=0;
+                bool prepared=false,finished=false;
+                for(int frame=0;frame<Mathf.CeilToInt((d.MacheteAttackDuration+.2f)*rate);frame++)
+                {
+                    d.Step(1f/rate);
+                    Assert.That(Quaternion.Angle(rest[2],bones[2].localRotation),Is.LessThan(.15f),"The wrist must keep its resting grip; the arm must produce the cut");
+                    for(int side=0;side<2;side++)
+                    {
+                        int j=side*3;
+                        float fold=180-Vector3.Angle(bones[j].position-bones[j+1].position,bones[j+2].position-bones[j+1].position);
+                        Assert.That(fold,Is.InRange(15,side==0?115:90),"Elbow hyperextends or over-folds");
+                        Assert.That(Vector3.Distance(feetRest[side],feet[side].position),Is.LessThan(.001f));
+                        if(side==0)
+                        {
+                            float time=(frame+1f)/rate;
+                            var blade=d.MacheteModel.transform;
+                            if(!prepared&&time>=.34f){prepared=true;preparedFold=fold;preparedTip=blade.position+blade.up*.65f;preparedAxis=blade.up;}
+                            if(!finished&&time>=.78f){finished=true;finishedFold=fold;finishedTip=blade.position+blade.up*.65f;finishedAxis=blade.up;}
+                        }
+                    }
+                    for(int j=0;j<bones.Length;j++)
+                    {
+                        Quaternion delta=bones[j].localRotation*Quaternion.Inverse(previous[j]);
+                        float angle;Vector3 axis;delta.ToAngleAxis(out angle,out axis);if(angle>180)angle-=360;
+                        Vector3 velocity=Mathf.Abs(angle)<.01f?Vector3.zero:axis*angle*rate;
+                        Assert.That(velocity.magnitude,Is.LessThan(600),ids[j]+" angular speed spike at frame "+frame);
+                        Assert.That((velocity-velocities[j]).magnitude*rate,Is.LessThan(6500),ids[j]+" angular acceleration spike at frame "+frame);
+                        velocities[j]=velocity;previous[j]=bones[j].localRotation;
+                    }
+                }
+                Assert.That(prepared&&finished,Is.True);
+                Assert.That(preparedFold-finishedFold,Is.GreaterThan(50),"The elbow must unfold through the cut instead of waving a fixed arm");
+                Assert.That(Vector3.Distance(preparedTip,finishedTip),Is.GreaterThan(1),"Blade tip must sweep through a substantial cutting arc");
+                Assert.That(Vector3.Angle(preparedAxis,finishedAxis),Is.GreaterThan(50),"Blade stays upright instead of cutting");
+                for(int j=0;j<bones.Length;j++)Assert.That(Quaternion.Angle(rest[j],bones[j].localRotation),Is.LessThan(.5f),"Does not return to the actual idle joint pose");
+            }
+        }
+        [TestCase(false,30,0)] [TestCase(true,30,0)]
+        [TestCase(false,60,0)] [TestCase(true,60,0)]
+        [TestCase(false,120,0)] [TestCase(true,120,0)]
+        [TestCase(false,60,45)] [TestCase(true,60,-45)]
+        public void MacheteV83BothTakesKeepRelaxedFreeHandAndClearBody(bool latest,int rate,float yaw)
+        {
+            d.MachetePrefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Weapon_CartoonMachete_v76.prefab");
+            d.MacheteHammerGripV75=d.MacheteSlashV81=true;d.MacheteSlashV82=latest;
+            d.ShoulderAimV71=d.ContextAimV72=true;d.AimYaw=yaw;
+            d.Configure(Context.Machete,Situation.Ground,Motion.Idle);Advance(.8f);
+            var a=d.OutputAnimator;
+            var left=new[]{a.GetBoneTransform(HumanBodyBones.LeftUpperArm),a.GetBoneTransform(HumanBodyBones.LeftLowerArm),a.GetBoneTransform(HumanBodyBones.LeftHand)};
+            var fingers=Enumerable.Range((int)HumanBodyBones.LeftThumbProximal,15).Select(b=>a.GetBoneTransform((HumanBodyBones)b)).ToArray();
+            var fingerRest=fingers.Select(b=>b.localRotation).ToArray();
+            var armRest=left.Select(b=>b.localRotation).ToArray();
+            var chest=a.GetBoneTransform(HumanBodyBones.UpperChest);var head=a.GetBoneTransform(HumanBodyBones.Head);
+            var upper=a.GetBoneTransform(HumanBodyBones.RightUpperArm);var elbow=a.GetBoneTransform(HumanBodyBones.RightLowerArm);var hand=a.GetBoneTransform(HumanBodyBones.RightHand);
+            var blade=d.MacheteModel.GetComponentInChildren<MeshFilter>();var vertices=blade.sharedMesh.vertices;
+            var facing=Quaternion.AngleAxis(yaw,Vector3.up)*d.Display.transform.rotation;
+            Assert.That(d.StartMacheteAttack(),Is.True);
+            var previous=left.Select(b=>b.localRotation).ToArray();
+            for(int i=0;i<Mathf.CeilToInt((d.MacheteAttackDuration+.2f)*rate);i++)
+            {
+                d.Step(1f/rate);
+                for(int j=0;j<15;j++)Assert.That(Quaternion.Angle(fingerRest[j],fingers[j].localRotation),Is.LessThan(.15f),"Free fingers switch to an unrelated curled pose");
+                float fold=180-Vector3.Angle(left[0].position-left[1].position,left[2].position-left[1].position);
+                Assert.That(fold,Is.LessThan(100),"Free elbow is over-folded");
+                if((i+1f)/rate>d.MacheteAttackDuration-.12f)
+                    for(int j=0;j<3;j++)Assert.That(Quaternion.Angle(previous[j],left[j].localRotation),Is.LessThan(9),"Free arm snaps at the end");
+                previous=left.Select(b=>b.localRotation).ToArray();
+                var right=upper.position-left[0].position;
+                var frame=Quaternion.LookRotation(Vector3.Cross(right,Vector3.up).normalized,Vector3.up);
+                for(int j=0;j<=10;j++)
+                {
+                    Vector3 local=Quaternion.Inverse(frame)*(Vector3.Lerp(elbow.position,hand.position,j/10f)-chest.position);
+                    float radius=new Vector3(local.x/.34f,(local.y+.15f)/.36f,local.z/.30f).magnitude;
+                    Assert.That(radius,Is.GreaterThan(1.02f),"Weapon forearm enters the clothed torso at frame "+i);
+                }
+                foreach(var vertex in vertices)
+                {
+                    Vector3 world=blade.transform.TransformPoint(vertex);
+                    Vector3 local=Quaternion.Inverse(frame)*(world-chest.position);
+                    Assert.That(new Vector3(local.x/.30f,(local.y+.15f)/.32f,local.z/.25f).magnitude,Is.GreaterThan(1.02f),"Blade enters torso at frame "+i);
+                    Vector3 h=Quaternion.Inverse(facing)*(world-head.position)-new Vector3(0,.28f,.08f);
+                    Assert.That(new Vector3(h.x/.38f,h.y/.35f,h.z/.34f).magnitude,Is.GreaterThan(1.02f),"Blade enters head at frame "+i);
+                }
+            }
+            for(int j=0;j<3;j++)Assert.That(Quaternion.Angle(armRest[j],left[j].localRotation),Is.LessThan(.5f),"Must finish in the real free-arm idle pose");
+            LogAssert.NoUnexpectedReceived();
+        }
+        [TestCase(30)] [TestCase(60)] [TestCase(120)]
+        public void MacheteV82SweepsFromLowDrawWithPlantedWeightTransfer(int rate)
+        {
+            SetupMacheteV74();d.ArmpitVolumeV73=false;d.MacheteHammerGripV75=true;
+            d.MacheteSlashV81=d.MacheteSlashV82=true;Advance(.7f);
+            var hand=d.OutputAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+            var hips=d.OutputAnimator.GetBoneTransform(HumanBodyBones.Hips);
+            var feet=new[]{d.OutputAnimator.GetBoneTransform(HumanBodyBones.LeftFoot),d.OutputAnimator.GetBoneTransform(HumanBodyBones.RightFoot)};
+            var positions=feet.Select(f=>f.position).ToArray();var rotations=feet.Select(f=>f.rotation).ToArray();
+            Vector3 origin=hand.position,hipOrigin=hips.position;
+            Quaternion restRotation=hand.rotation;
+            Vector3 grip=hand.InverseTransformPoint(d.MacheteModel.transform.position);
+            for(int repeat=0;repeat<2;repeat++)
+            {
+                Assert.That(d.PreviewMacheteRevision(true),Is.True);
+                Assert.That(d.PreviewMacheteRevision(false),Is.False,"Cannot replace an attack mid-swing");
+                Assert.That(d.MacheteSlashV82,Is.True);
+                var previous=hand.position;var previousRotation=hand.rotation;
+                float shift=0,minX=origin.x,maxX=origin.x;
+                for(int frame=0;frame<Mathf.CeilToInt(rate*1.5f);frame++)
+                {
+                    d.Step(1f/rate);
+                    shift=Mathf.Max(shift,Vector3.Distance(hipOrigin,hips.position));
+                    minX=Mathf.Min(minX,hand.position.x);maxX=Mathf.Max(maxX,hand.position.x);
+                    Assert.That(Vector3.Distance(previous,hand.position),Is.LessThan(.31f),"Hand teleports");
+                    Assert.That(Quaternion.Angle(previousRotation,hand.rotation),Is.LessThan(90),"Hand flips");
+                    Assert.That(Vector3.Distance(hand.TransformPoint(grip),d.MacheteModel.transform.position),Is.LessThan(.0004f));
+                    for(int s=0;s<2;s++)
+                    {
+                        Assert.That(Vector3.Distance(positions[s],feet[s].position),Is.LessThan(.001f),"Weight shift must preserve foot contact");
+                        Assert.That(Quaternion.Angle(rotations[s],feet[s].rotation),Is.LessThan(.1f));
+                    }
+                    previous=hand.position;previousRotation=hand.rotation;
+                }
+                Assert.That(shift,Is.GreaterThan(.07f),"The body must transfer weight");
+                // v83 keeps the hand on the reachable side of the ribcage;
+                // the torso and blade supply the rest of the cross-body sweep.
+                Assert.That(maxX-minX,Is.GreaterThan(.6f),"Must retain a broad sweep outside the body");
+                Assert.That(Vector3.Distance(origin,hand.position),Is.LessThan(.006f));
+                Assert.That(Quaternion.Angle(restRotation,hand.rotation),Is.LessThan(.3f));
+            }
+            Assert.That(d.PreviewMacheteRevision(false),Is.True);
+            Assert.That(d.MacheteSlashV82,Is.False);Assert.That(d.MacheteSlashV81,Is.True);
+            Advance(.3f,rate);float oldHeight=hand.position.y;
+            Advance(1.3f,rate);
+            Assert.That(d.PreviewMacheteRevision(true),Is.True);
+            Advance(.3f,rate);
+            Assert.That(oldHeight-hand.position.y,Is.GreaterThan(.25f),"v82 must have a distinct low draw, not another overhead v81 take");
+            LogAssert.NoUnexpectedReceived();
+        }
+        [TestCase(30,0)] [TestCase(60,0)] [TestCase(120,0)] [TestCase(60,45)]
+        public void MacheteV81WideSlashKeepsGripAndRecovers(int rate,float yaw)
+        {
+            SetupMacheteV74();d.MacheteSlashV81=true;d.MacheteHammerGripV75=true;
+            d.ArmpitVolumeV73=false;d.AimYaw=yaw;Advance(.7f);
+            var hand=d.OutputAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+            var chest=d.OutputAnimator.GetBoneTransform(HumanBodyBones.UpperChest);
+            var leftFoot=d.OutputAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            var rightFoot=d.OutputAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
+            Vector3 origin=hand.position,lf=leftFoot.position,rf=rightFoot.position;
+            Quaternion restRotation=hand.rotation,chestRotation=chest.rotation;
+            Vector3 grip=hand.InverseTransformPoint(d.MacheteModel.transform.position);
+            for(int repeat=0;repeat<2;repeat++)
+            {
+                Assert.That(d.StartMacheteAttack(),Is.True);
+                Assert.That(d.StartMacheteAttack()||d.CanStartTask,Is.False);
+                Vector3 previous=hand.position;Quaternion previousRotation=hand.rotation;
+                float reach=0,turn=0,tipTravel=0;
+                Vector3 previousTip=d.MacheteModel.transform.position+d.MacheteModel.transform.up*.65f;
+                for(int frame=0;frame<Mathf.CeilToInt(1.6f*rate);frame++)
+                {
+                    d.Step(1f/rate);
+                    reach=Mathf.Max(reach,Vector3.Distance(origin,hand.position));
+                    turn=Mathf.Max(turn,Quaternion.Angle(chestRotation,chest.rotation));
+                    Vector3 tip=d.MacheteModel.transform.position+d.MacheteModel.transform.up*.65f;
+                    tipTravel+=Vector3.Distance(previousTip,tip);previousTip=tip;
+                    Assert.That(Vector3.Distance(previous,hand.position),Is.LessThan(.22f),"Hand jumps");
+                    Assert.That(Quaternion.Angle(previousRotation,hand.rotation),Is.LessThan(70),"Hand flips");
+                    Assert.That(Vector3.Distance(hand.TransformPoint(grip),d.MacheteModel.transform.position),Is.LessThan(.0004f),"Handle slips");
+                    Assert.That(Vector3.Distance(lf,leftFoot.position),Is.LessThan(.001f),"Left foot moves during stationary slash");
+                    Assert.That(Vector3.Distance(rf,rightFoot.position),Is.LessThan(.001f),"Right foot moves during stationary slash");
+                    previous=hand.position;previousRotation=hand.rotation;
+                }
+                Assert.That(reach,Is.GreaterThan(.5f),"Wind-up must be visibly larger than the old swing");
+                Assert.That(turn,Is.GreaterThan(30),"Torso must participate in the cut");
+                Assert.That(tipTravel,Is.GreaterThan(2.5f),"Blade must describe a broad arc");
+                Assert.That(d.MacheteAttacking,Is.False);Assert.That(d.CanMacheteAttack,Is.True);
+                Assert.That(Vector3.Distance(origin,hand.position),Is.LessThan(.006f),"Must return to ready stance");
+                Assert.That(Quaternion.Angle(restRotation,hand.rotation),Is.LessThan(.3f));
+            }
+            LogAssert.NoUnexpectedReceived();
+        }
         void SetupMacheteV74()
         {
             d.MachetePrefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Weapon_CartoonMachete_v74.prefab");
